@@ -888,6 +888,25 @@ input, select, textarea { font-family: inherit; }
 .empty-state { font-size: 0.9rem; color: var(--muted); font-style: italic; padding: 3rem 0; }
 
 /* ============================================================
+   MEAL TAGS (protein sidebar)
+   ============================================================ */
+.meal-tag {
+  display: inline-block;
+  font-size: 0.58rem;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 4px;
+  line-height: 1.5;
+}
+.meal-tag-desayuno { background: #fef3c7; color: #92680a; }
+.meal-tag-comida   { background: #fde8d0; color: #8a4a1a; }
+.meal-tag-merienda { background: #ede9e0; color: #7a6a52; }
+.meal-tag-cena     { background: #e8eaf5; color: #3a4a7a; }
+
+/* ============================================================
    AUTH GATE
    ============================================================ */
 .auth-gate {

@@ -40,7 +40,14 @@ export default function PlatosTab() {
               onClick={() => selectProtein(key)}
             >
               <div className="bullet" />
-              <span className="pname">{pr.name}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <span className="pname">{pr.name}</span>
+                <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', marginTop: 3 }}>
+                  {(pr.meals ?? ['comida']).map(m => (
+                    <span key={m} className={`meal-tag meal-tag-${m}`}>{m}</span>
+                  ))}
+                </div>
+              </div>
               <span className="pprice">{fmt(cost)}<br />{kfmt(kcal)}</span>
             </div>
           )
