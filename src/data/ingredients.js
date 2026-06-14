@@ -11,7 +11,7 @@ export const ING = {
   maiz:            { name: 'Maíz congelado',      cat: 'base',     per100: 1.11,  kc: 85,  prot: 3.3, fat: 1.2, pack: '450 g · $4.99',          per: '60g → $0.67' },
   alcachofa:       { name: 'Alcachofa',           cat: 'base',     perUnit: 1.99, kcu: 67, pack: 'ud · $1.99',             per: 'ud → $1.99 · 67 kcal' },
   'pan-masa-madre':{ name: 'Pan masa madre',      cat: 'base',     per100: 0.70, kc: 265,  pack: 'hogaza · $7.00',          per: '100g → $0.70 · 265 kcal' },
-  avena:           { name: 'Avena (oats)',         cat: 'base',     per100: 0.25,  kc: 389, prot: 17,  fat: 7,   pack: 'estimado ~$0.25/100g',   per: '50g → $0.13 · 195 kcal' },
+  avena:           { name: 'Avena (oats)',         cat: 'base',     per100: 0.429, kc: 389, prot: 17,  fat: 7,   pack: '1 kg · $4.29',           per: '50g → $0.21 · 195 kcal' },
 
   // LEGUMBRES (peso seco)
   'lentejas-rojas':  { name: 'Lentejas rojas',    cat: 'legumbre', per100: 0.15,  kc: 340, prot: 24,  fat: 1,   pack: '55 lb · $36.69',         per: '80g seco → $0.12' },

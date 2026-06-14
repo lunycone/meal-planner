@@ -396,7 +396,7 @@ export default function CombinacionesTab() {
   const allCombos = useStore(selectAllCombos)
   const deletedCombos  = useStore(s => s.deletedCombos)
   const restoreCombo   = useStore(s => s.restoreCombo)
-  const customCombos   = useStore(s => s.customCombos)
+  const customCombos   = useStore(s => s.customCombos).filter(c => !c.desayuno)
 
   const [editingBaseKey,  setEditingBaseKey]  = useState(null)
   const [editingCustom,   setEditingCustom]   = useState(null)
@@ -418,7 +418,7 @@ export default function CombinacionesTab() {
 
   const toggleSelect = (key) => setSelectedKey(prev => prev === key ? null : key)
 
-  const baseCombos = Object.entries(allCombos).filter(([, c]) => !c.isCustom)
+  const baseCombos = Object.entries(allCombos).filter(([key, c]) => !c.isCustom && !key.startsWith('desayuno-'))
 
   return (
     <div>

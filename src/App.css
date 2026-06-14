@@ -1038,6 +1038,141 @@ input, select, textarea { font-family: inherit; }
 }
 
 /* ============================================================
+   DESAYUNOS TAB
+   ============================================================ */
+.dz-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem 1.2rem;
+  background: rgba(255, 252, 248, 0.82);
+  backdrop-filter: var(--glass-blur);
+  border: 1.5px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  margin-bottom: 0.4rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.dz-card:hover { background: rgba(255, 252, 248, 0.95); transform: translateY(-1px); }
+.dz-card.is-open {
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  border-bottom-color: transparent;
+  margin-bottom: 0;
+}
+.dz-card-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ink);
+  flex: 1;
+  min-width: 0;
+}
+.dz-card-stats {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  font-size: 0.82rem;
+}
+.dz-stat-cost { color: var(--brown); font-weight: 700; }
+.dz-stat-kcal { color: var(--kcal); }
+.dz-stat-prot { color: #4a7a3a; font-weight: 600; }
+.dz-stat-fat  { color: #7a4a6a; }
+.dz-stat-dot  { color: var(--muted); }
+
+.dz-detail {
+  background: rgba(255, 252, 248, 0.95);
+  backdrop-filter: var(--glass-blur);
+  border: 1.5px solid var(--glass-border);
+  border-top: none;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  margin-bottom: 0.4rem;
+  overflow: hidden;
+}
+.dz-detail-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--line-soft);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.dz-detail-macros {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex: 1;
+  background: var(--chip);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 1rem;
+}
+.dz-macro-block { display: flex; flex-direction: column; gap: 2px; }
+.dz-macro-val   { font-size: 1rem; font-weight: 700; letter-spacing: -0.02em; }
+.dz-macro-val.cost { color: var(--brown); }
+.dz-macro-val.kcal { color: var(--kcal); }
+.dz-macro-val.prot { color: #4a7a3a; }
+.dz-macro-val.fat  { color: #7a4a6a; }
+.dz-macro-lbl   { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.dz-macro-div   { width: 1px; height: 28px; background: var(--line); flex-shrink: 0; }
+.dz-close {
+  background: none; border: 1px solid var(--line); border-radius: 6px;
+  width: 28px; height: 28px; cursor: pointer; color: var(--muted); font-size: 0.75rem;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.12s;
+}
+.dz-close:hover { background: var(--chip); color: var(--ink); }
+
+.dz-ing-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+  display: block;
+  padding: 0;
+}
+.dz-ing-table thead tr { border-bottom: 1.5px solid var(--line-soft); }
+.dz-ing-table tbody tr { border-bottom: 1px solid var(--line-soft); }
+.dz-ing-table tbody tr:last-child { border-bottom: none; }
+.dz-ing-table th, .dz-ing-table td { padding: 0.5rem 0.75rem; text-align: left; }
+.dz-ing-table th { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.dz-td-name { font-weight: 500; color: var(--ink); }
+.dz-td-qty  { color: var(--muted); font-size: 0.8rem; }
+.dz-td-cost { color: var(--brown); font-weight: 600; }
+.dz-td-kcal { color: var(--kcal); }
+.dz-td-prot { color: #4a7a3a; font-weight: 600; }
+.dz-td-fat  { color: #7a4a6a; font-weight: 600; }
+
+.dz-note {
+  margin: 0.75rem 1.25rem;
+  padding: 0.5rem 0.8rem;
+  background: var(--warn-bg);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  color: var(--warn-ink);
+}
+.dz-detail-actions {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.9rem 1.25rem;
+  border-top: 1px solid var(--line-soft);
+  flex-wrap: wrap;
+}
+
+.dz-builder {
+  background: rgba(255, 252, 248, 0.9);
+  border: 1.5px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--glass-shadow);
+}
+.dz-builder-head {
+  display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem;
+}
+.dz-builder-body {
+  display: grid; grid-template-columns: 280px 1fr; gap: 1rem;
+}
+@media (max-width: 700px) {
+  .dz-builder-body { grid-template-columns: 1fr; }
+  .dz-card-stats { display: none; }
+}
+
+/* ============================================================
    MEAL TAGS (protein sidebar)
    ============================================================ */
 .meal-tag {

@@ -239,6 +239,31 @@ export const COMBO = {
       { k: 'arandanos', p: { grams: 60 } },
     ],
   },
+  'desayuno-huevos-al-horno': {
+    name: 'Huevos al horno + yogur',
+    items: [
+      { k: 'huevo',      p: { units: 2 } },
+      { k: 'yogur-cabra',p: { grams: 100 } },
+      { k: 'espinaca',   p: { grams: 60 } },
+      { k: 'passata',    p: { ml: 80 } },
+    ],
+  },
+  'desayuno-tostada-tomate-tortilla': {
+    name: 'Tostada tomate + tortilla',
+    items: [
+      { k: 'pan-masa-madre', p: { grams: 60 } },
+      { k: 'passata',        p: { ml: 80 } },
+      { k: 'huevo',          p: { units: 2 } },
+    ],
+  },
+  'desayuno-yogur-huevo-avena': {
+    name: 'Yogur cabra + huevo + avena',
+    items: [
+      { k: 'yogur-cabra', p: { grams: 150 } },
+      { k: 'huevo',       p: { units: 1 } },
+      { k: 'avena',       p: { grams: 50 } },
+    ],
+  },
 }
 
 // Which combos each protein group gets
@@ -256,6 +281,7 @@ export const COMBO_SETS = {
   desayuno: [
     'desayuno-cheesecake-yogur','desayuno-tortilla-aguacate','desayuno-tostada-caballa',
     'desayuno-overnight-oats','desayuno-bowl-caballa','desayuno-waffles-avena',
-    'desayuno-tortilla-queso-fruta',
+    'desayuno-tortilla-queso-fruta','desayuno-huevos-al-horno',
+    'desayuno-tostada-tomate-tortilla','desayuno-yogur-huevo-avena',
   ],
 }
