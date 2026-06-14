@@ -236,6 +236,7 @@ const useStore = create(
     {
       name:    STORAGE_KEY,
       storage: createStorageAdapter(),
+      skipHydration: true,
       partialize: s => ({
         priceOverrides:      s.priceOverrides,
         ingredientOverrides: s.ingredientOverrides,
