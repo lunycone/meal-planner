@@ -888,6 +888,152 @@ input, select, textarea { font-family: inherit; }
 .empty-state { font-size: 0.9rem; color: var(--muted); font-style: italic; padding: 3rem 0; }
 
 /* ============================================================
+   COMBO DETAIL PANEL
+   ============================================================ */
+.combo-detail-panel {
+  background: rgba(255, 252, 248, 0.95);
+  backdrop-filter: var(--glass-blur);
+  border: 1.5px solid var(--glass-border);
+  border-top: none;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  box-shadow: var(--glass-shadow);
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+}
+
+.cdp-header {
+  padding: 1.25rem 1.5rem 1rem;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.cdp-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.cdp-name {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.cdp-badges { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+
+.cdp-close {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  width: 28px; height: 28px;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.75rem;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.12s;
+}
+.cdp-close:hover { background: var(--chip); color: var(--ink); }
+
+.cdp-totals {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  background: var(--chip);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+}
+
+.cdp-total-block { display: flex; flex-direction: column; gap: 2px; }
+.cdp-total-val   { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; }
+.cdp-total-val.cost { color: var(--brown); }
+.cdp-total-val.kcal { color: var(--kcal); }
+.cdp-total-lbl   { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.cdp-divider     { width: 1px; height: 32px; background: var(--line); flex-shrink: 0; }
+
+/* Ingredients table */
+.cdp-ing-list { padding: 0 1.5rem; }
+
+.cdp-ing-header,
+.cdp-ing-row {
+  display: grid;
+  grid-template-columns: 1fr 70px 68px 120px 80px 120px;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.55rem 0;
+}
+
+.cdp-ing-header {
+  border-bottom: 1.5px solid var(--line-soft);
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.cdp-ing-row {
+  border-bottom: 1px solid var(--line-soft);
+  font-size: 0.85rem;
+}
+.cdp-ing-row:last-child { border-bottom: none; }
+
+.cdp-ing-name { color: var(--ink); font-weight: 500; }
+.cdp-qty      { color: var(--muted); font-size: 0.8rem; }
+.cdp-cost     { color: var(--brown); font-weight: 600; font-size: 0.85rem; }
+.cdp-kcal     { color: var(--kcal);  font-size: 0.82rem; }
+
+.cdp-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 14px;
+}
+.cdp-bar {
+  height: 5px;
+  border-radius: 3px;
+  min-width: 2px;
+  max-width: 70px;
+  transition: width 0.3s ease;
+}
+.cdp-bar-cost { background: var(--brown-soft); }
+.cdp-bar-kcal { background: var(--kcal); opacity: 0.6; }
+.cdp-bar-pct  { font-size: 0.7rem; color: var(--muted); white-space: nowrap; }
+
+.cdp-note {
+  margin: 0.75rem 1.5rem;
+  padding: 0.6rem 0.9rem;
+  background: var(--warn-bg);
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  color: var(--warn-ink);
+}
+
+.cdp-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--line-soft);
+  flex-wrap: wrap;
+}
+
+/* Card clickable + chevron */
+.saved-combo-card.clickable:hover { background: rgba(255, 252, 248, 0.95); }
+.sc-chevron {
+  font-size: 0.6rem;
+  color: var(--muted);
+  flex-shrink: 0;
+  margin-left: 0.5rem;
+}
+.saved-combo-card.is-active {
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  border-bottom-color: transparent;
+}
+
+/* ============================================================
    MEAL TAGS (protein sidebar)
    ============================================================ */
 .meal-tag {

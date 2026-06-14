@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import useStore, { selectAllIng, selectAllCombos, selectAllCats } from '../../store/useStore'
 import { ingCost, ingKcal, comboAgg, fmt, kfmt } from '../../engine/calc'
 import { CAT_ORDER } from '../../data/ingredients'
@@ -22,7 +22,6 @@ function buildP(it) {
   return { serv: it.qty }
 }
 
-// Convert a COMBO items array into builder-friendly items
 function comboItemsToBuilderItems(comboItems, allIng) {
   return comboItems.map(it => {
     const ing  = allIng[it.k]
@@ -34,32 +33,173 @@ function comboItemsToBuilderItems(comboItems, allIng) {
 
 const UNIT_LABEL = { grams: 'g', units: 'ud', ml: 'ml', serv: 'porción' }
 
+function portionLabel(p, ing) {
+  if (p.grams != null) return `${p.grams}g`
+  if (p.units != null) return `${p.units} ud`
+  if (p.ml    != null) return `${p.ml}ml`
+  return '1 porción'
+}
+
+// ─── Detail Panel ─────────────────────────────────────────────────────────
+
+function ComboDetailPanel({ comboKey, combo, allIng, onEdit, onClose, isBase }) {
+  const deleteCombo        = useStore(s => s.deleteCombo)
+  const removeCustomCombo  = useStore(s => s.removeCustomCombo)
+  const resetComboOverride = useStore(s => s.resetComboOverride)
+  const comboOverrides     = useStore(s => s.comboOverrides)
+  const isModified         = isBase && !!comboOverrides[comboKey]
+  const [confirmDel, setConfirmDel] = useState(false)
+
+  const agg = comboAgg(combo, allIng)
+  const totalCost = agg.cost
+  const totalKcal = agg.kcal
+
+  const rows = combo.items.map(it => {
+    const ing  = allIng[it.k]
+    const cost = ingCost(it.k, it.p, allIng)
+    const kcal = ingKcal(it.k, it.p, allIng)
+    return { k: it.k, ing, p: it.p, cost, kcal }
+  })
+
+  return (
+    <div className="combo-detail-panel">
+      {/* Header */}
+      <div className="cdp-header">
+        <div className="cdp-title-row">
+          <div>
+            <div className="cdp-name">{combo.name}</div>
+            <div className="cdp-badges">
+              {isModified      && <span className="badge badge-modified">editado</span>}
+              {combo.jessica   && <span className="badge badge-jessica">María</span>}
+              {combo.isCustom  && <span className="badge badge-custom">custom</span>}
+              {agg.incomplete  && <span className="badge badge-incomplete">incompleto</span>}
+            </div>
+          </div>
+          <button className="cdp-close" onClick={onClose}>✕</button>
+        </div>
+
+        {/* Summary totals */}
+        <div className="cdp-totals">
+          <div className="cdp-total-block">
+            <span className="cdp-total-val cost">{agg.incomplete ? '~' : ''}{fmt(totalCost)}</span>
+            <span className="cdp-total-lbl">precio total</span>
+          </div>
+          <div className="cdp-divider" />
+          <div className="cdp-total-block">
+            <span className="cdp-total-val kcal">{kfmt(totalKcal)}</span>
+            <span className="cdp-total-lbl">kcal total</span>
+          </div>
+          <div className="cdp-divider" />
+          <div className="cdp-total-block">
+            <span className="cdp-total-val" style={{ color: 'var(--ink)' }}>{combo.items.length}</span>
+            <span className="cdp-total-lbl">ingredientes</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Ingredients table */}
+      <div className="cdp-ing-list">
+        <div className="cdp-ing-header">
+          <span className="cdp-col-name">Ingrediente</span>
+          <span className="cdp-col-qty">Cantidad</span>
+          <span className="cdp-col-cost">Precio</span>
+          <span className="cdp-col-pct">% coste</span>
+          <span className="cdp-col-kcal">Kcal</span>
+          <span className="cdp-col-pct">% kcal</span>
+        </div>
+
+        {rows.map(({ k, ing, p, cost, kcal }) => {
+          const costPct = totalCost > 0 ? (cost / totalCost) * 100 : 0
+          const kcalPct = totalKcal > 0 ? (kcal / totalKcal) * 100 : 0
+          return (
+            <div key={k} className="cdp-ing-row">
+              <span className="cdp-col-name cdp-ing-name">{ing?.name ?? k}</span>
+              <span className="cdp-col-qty cdp-qty">{portionLabel(p, ing)}</span>
+              <span className="cdp-col-cost cdp-cost">{fmt(cost)}</span>
+              <span className="cdp-col-pct">
+                <div className="cdp-bar-wrap">
+                  <div className="cdp-bar cdp-bar-cost" style={{ width: `${costPct}%` }} />
+                  <span className="cdp-bar-pct">{Math.round(costPct)}%</span>
+                </div>
+              </span>
+              <span className="cdp-col-kcal cdp-kcal">{Math.round(kcal)} kcal</span>
+              <span className="cdp-col-pct">
+                <div className="cdp-bar-wrap">
+                  <div className="cdp-bar cdp-bar-kcal" style={{ width: `${kcalPct}%` }} />
+                  <span className="cdp-bar-pct">{Math.round(kcalPct)}%</span>
+                </div>
+              </span>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Note */}
+      {combo.note && (
+        <div className="cdp-note">📌 {combo.note}</div>
+      )}
+
+      {/* Actions */}
+      <div className="cdp-actions">
+        <button className="btn-primary" onClick={() => { onEdit(isBase ? comboKey : combo); onClose() }}>
+          ✎ Editar combo
+        </button>
+        {isBase && isModified && (
+          <button className="btn-ghost" onClick={() => resetComboOverride(comboKey)}>
+            ↺ Restaurar original
+          </button>
+        )}
+        {!confirmDel ? (
+          <button className="btn-danger" style={{ marginLeft: 'auto' }} onClick={() => setConfirmDel(true)}>
+            {isBase ? '✕ Ocultar' : '✕ Eliminar'}
+          </button>
+        ) : (
+          <span style={{ marginLeft: 'auto', display: 'flex', gap: 6, alignItems: 'center', fontSize: '0.82rem' }}>
+            ¿{isBase ? 'Ocultar' : 'Eliminar'}?
+            <button className="btn-danger" onClick={() => {
+              if (isBase) deleteCombo(comboKey); else removeCustomCombo(combo.id)
+              onClose()
+            }}>Sí</button>
+            <button className="btn-ghost" onClick={() => setConfirmDel(false)}>No</button>
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ─── Builder ──────────────────────────────────────────────────────────────
 
-function Builder({ editingBaseKey, setEditingBaseKey }) {
-  const allIng         = useStore(selectAllIng)
-  const allCats        = useStore(selectAllCats)
-  const addCustomCombo = useStore(s => s.addCustomCombo)
+function Builder({ editingBaseKey, setEditingBaseKey, editingCustom, setEditingCustom }) {
+  const allIng           = useStore(selectAllIng)
+  const allCats          = useStore(selectAllCats)
+  const addCustomCombo   = useStore(s => s.addCustomCombo)
   const setComboOverride = useStore(s => s.setComboOverride)
+  const updateCustomCombo = useStore(s => s.updateCustomCombo)
   const catOrder = [...CAT_ORDER, ...useStore(s => s.customCategories).map(c => c.key)]
 
   const [search,    setSearch]    = useState('')
   const [comboName, setComboName] = useState('')
   const [items,     setItems]     = useState([])
 
-  // When editingBaseKey changes from outside, load that combo
-  const [loadedKey, setLoadedKey] = useState(null)
-  if (editingBaseKey && editingBaseKey !== loadedKey) {
-    const src = COMBO[editingBaseKey]
-    if (src) {
-      setComboName(src.name)
-      setItems(comboItemsToBuilderItems(src.items, allIng))
+  // Load combo into builder via useEffect (not during render)
+  useEffect(() => {
+    if (!editingBaseKey) return
+    if (editingBaseKey.startsWith('__custom__') && editingCustom) {
+      setComboName(editingCustom.name)
+      setItems(comboItemsToBuilderItems(editingCustom.items, allIng))
+    } else {
+      const src = COMBO[editingBaseKey]
+      if (src) {
+        setComboName(src.name)
+        setItems(comboItemsToBuilderItems(src.items, allIng))
+      }
     }
-    setLoadedKey(editingBaseKey)
-  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingBaseKey])
 
   function clearBuilder() {
-    setItems([]); setComboName(''); setLoadedKey(null); setEditingBaseKey(null)
+    setItems([]); setComboName(''); setEditingBaseKey(null); setEditingCustom(null)
   }
 
   const inComboKeys = new Set(items.map(it => it.k))
@@ -87,16 +227,21 @@ function Builder({ editingBaseKey, setEditingBaseKey }) {
 
   function save() {
     if (!items.length) return
-    const name   = comboName.trim() || 'Combo sin nombre'
+    const name = comboName.trim() || 'Combo sin nombre'
     const builtItems = items.map(it => ({ k: it.k, p: buildP(it) }))
-    if (editingBaseKey) {
-      // Overriding a base combo
+    if (editingBaseKey && !editingBaseKey.startsWith('__custom__')) {
       setComboOverride(editingBaseKey, { name, items: builtItems })
+    } else if (editingBaseKey && editingBaseKey.startsWith('__custom__') && editingCustom) {
+      updateCustomCombo(editingCustom.id, { name, items: builtItems })
     } else {
       addCustomCombo({ name, items: builtItems })
     }
     clearBuilder()
   }
+
+  const editingName = editingBaseKey
+    ? (editingBaseKey.startsWith('__custom__') ? editingCustom?.name : COMBO[editingBaseKey]?.name)
+    : null
 
   return (
     <div>
@@ -107,8 +252,8 @@ function Builder({ editingBaseKey, setEditingBaseKey }) {
           fontSize: '0.78rem', color: 'var(--warn-ink)',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between'
         }}>
-          <span>✎ Editando combo base: <strong>{COMBO[editingBaseKey]?.name}</strong></span>
-          <button className="btn-ghost" style={{ fontSize: '0.72rem' }} onClick={clearBuilder}>Cancelar edición</button>
+          <span>✎ Editando: <strong>{editingName}</strong></span>
+          <button className="btn-ghost" style={{ fontSize: '0.72rem' }} onClick={clearBuilder}>Cancelar</button>
         </div>
       )}
 
@@ -162,8 +307,8 @@ function Builder({ editingBaseKey, setEditingBaseKey }) {
             <>
               <div className="combo-items-list">
                 {items.map(it => {
-                  const ing  = allIng[it.k]
-                  const p    = buildP(it)
+                  const ing = allIng[it.k]
+                  const p   = buildP(it)
                   return (
                     <div key={it.k} className="combo-item-row">
                       <span className="ci-name">{ing?.name ?? it.k}</span>
@@ -200,72 +345,32 @@ function Builder({ editingBaseKey, setEditingBaseKey }) {
   )
 }
 
-// ─── Custom combo row ─────────────────────────────────────────────────────
+// ─── Combo Card ───────────────────────────────────────────────────────────
 
-function CustomComboRow({ saved, allIng, onEdit }) {
-  const removeCustomCombo = useStore(s => s.removeCustomCombo)
-  const [confirmDel, setConfirmDel] = useState(false)
-  const agg = comboAgg({ items: saved.items, incomplete: false }, allIng)
-  return (
-    <div className={`saved-combo-card${confirmDel ? ' is-active' : ''}`}>
-      <span className="sc-name">{saved.name} <span className="badge badge-custom">custom</span></span>
-      <div className="sc-stats">
-        <span className="sc-stat cost">{fmt(agg.cost)}</span>
-        <span className="sc-stat kcal">{kfmt(agg.kcal)}</span>
-        <span className="sc-stat">{saved.items.length} ing.</span>
-      </div>
-      <div className="row-actions">
-        <button className="btn-ghost" style={{ fontSize: '0.76rem' }} onClick={() => onEdit(saved)}>✎ Editar</button>
-        {!confirmDel
-          ? <button className="btn-danger" onClick={() => setConfirmDel(true)}>✕</button>
-          : <>
-              <span style={{ fontSize: '0.78rem' }}>¿Eliminar?</span>
-              <button className="btn-danger" onClick={() => removeCustomCombo(saved.id)}>Sí</button>
-              <button className="btn-ghost"  onClick={() => setConfirmDel(false)}>No</button>
-            </>
-        }
-      </div>
-    </div>
-  )
-}
-
-// ─── Base combo row ───────────────────────────────────────────────────────
-
-function BaseComboRow({ comboKey, combo, allIng, onEdit }) {
-  const deleteCombo        = useStore(s => s.deleteCombo)
-  const resetComboOverride = useStore(s => s.resetComboOverride)
-  const comboOverrides     = useStore(s => s.comboOverrides)
-  const isModified         = !!comboOverrides[comboKey]
-  const [confirmDel, setConfirmDel] = useState(false)
+function ComboCard({ comboKey, combo, allIng, isBase, onClick, isSelected }) {
+  const comboOverrides = useStore(s => s.comboOverrides)
+  const isModified     = isBase && !!comboOverrides[comboKey]
   const agg = comboAgg(combo, allIng)
 
   return (
-    <div className={`saved-combo-card${isModified ? ' modified' : ''}${confirmDel ? ' is-active' : ''}`}>
+    <div
+      className={`saved-combo-card clickable${isSelected ? ' is-active' : ''}${isModified ? ' modified' : ''}`}
+      onClick={onClick}
+      style={{ cursor: 'pointer' }}
+    >
       <span className="sc-name">
         {combo.name}
-        {isModified && <span className="badge badge-modified" style={{ marginLeft: 6 }}>editado</span>}
-        {combo.jessica   && <span className="badge badge-jessica"    style={{ marginLeft: 6 }}>María</span>}
-        {agg.incomplete  && <span className="badge badge-incomplete" style={{ marginLeft: 6 }}>incompleto</span>}
+        {isModified     && <span className="badge badge-modified"    style={{ marginLeft: 6 }}>editado</span>}
+        {combo.jessica  && <span className="badge badge-jessica"     style={{ marginLeft: 6 }}>María</span>}
+        {combo.isCustom && <span className="badge badge-custom"      style={{ marginLeft: 6 }}>custom</span>}
+        {agg.incomplete && <span className="badge badge-incomplete"  style={{ marginLeft: 6 }}>incompleto</span>}
       </span>
       <div className="sc-stats">
         <span className="sc-stat cost">{agg.incomplete ? '~' : ''}{fmt(agg.cost)}</span>
         <span className="sc-stat kcal">{kfmt(agg.kcal)}</span>
         <span className="sc-stat">{combo.items.length} ing.</span>
       </div>
-      <div className="row-actions">
-        <button className="btn-ghost" style={{ fontSize: '0.76rem' }} onClick={() => onEdit(comboKey)}>✎ Editar</button>
-        {isModified && (
-          <button className="btn-ghost" style={{ fontSize: '0.72rem' }} onClick={() => resetComboOverride(comboKey)}>↺ Original</button>
-        )}
-        {!confirmDel
-          ? <button className="btn-danger" onClick={() => setConfirmDel(true)}>✕</button>
-          : <>
-              <span style={{ fontSize: '0.78rem' }}>¿Ocultar?</span>
-              <button className="btn-danger" onClick={() => deleteCombo(comboKey)}>Sí</button>
-              <button className="btn-ghost"  onClick={() => setConfirmDel(false)}>No</button>
-            </>
-        }
-      </div>
+      <span className="sc-chevron">{isSelected ? '▲' : '▼'}</span>
     </div>
   )
 }
@@ -275,31 +380,31 @@ function BaseComboRow({ comboKey, combo, allIng, onEdit }) {
 export default function CombinacionesTab() {
   const allIng    = useStore(selectAllIng)
   const allCombos = useStore(selectAllCombos)
-  const deletedCombos    = useStore(s => s.deletedCombos)
-  const restoreCombo     = useStore(s => s.restoreCombo)
-  const updateCustomCombo = useStore(s => s.updateCustomCombo)
+  const deletedCombos  = useStore(s => s.deletedCombos)
+  const restoreCombo   = useStore(s => s.restoreCombo)
+  const customCombos   = useStore(s => s.customCombos)
 
-  // Key of a BASE combo being edited in the builder
-  const [editingBaseKey, setEditingBaseKey] = useState(null)
-  // Custom combo being edited (for re-loading into builder)
-  const [editingCustom, setEditingCustom]   = useState(null)
-
-  // If a custom combo is being edited, we convert it into builder items
-  // The builder component handles this via editingBaseKey for base combos.
-  // For custom combos, we pass them through a separate flow:
-  const handleEditCustom = (saved) => {
-    setEditingCustom(saved)
-    setEditingBaseKey('__custom__' + saved.id)
-  }
+  const [editingBaseKey,  setEditingBaseKey]  = useState(null)
+  const [editingCustom,   setEditingCustom]   = useState(null)
+  const [selectedKey,     setSelectedKey]     = useState(null)  // for detail panel
 
   const handleEditBase = (key) => {
     setEditingCustom(null)
     setEditingBaseKey(key)
+    setSelectedKey(null)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  // Separate base and custom combos
-  const baseCombos   = Object.entries(allCombos).filter(([, c]) => !c.isCustom)
-  const customCombos = useStore(s => s.customCombos)
+  const handleEditCustom = (saved) => {
+    setEditingCustom(saved)
+    setEditingBaseKey('__custom__' + saved.id)
+    setSelectedKey(null)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const toggleSelect = (key) => setSelectedKey(prev => prev === key ? null : key)
+
+  const baseCombos = Object.entries(allCombos).filter(([, c]) => !c.isCustom)
 
   return (
     <div>
@@ -309,19 +414,42 @@ export default function CombinacionesTab() {
         </h2>
         <p style={{ fontSize: '0.82rem', color: 'var(--muted)' }}>
           Selecciona ingredientes · ajusta cantidades · guarda o edita cualquier combo.
-          Precios en tiempo real según tus ediciones en Ingredientes.
+          Haz clic en un combo para ver el desglose completo.
         </p>
       </div>
 
-      <Builder editingBaseKey={editingBaseKey} setEditingBaseKey={setEditingBaseKey} />
+      <Builder
+        editingBaseKey={editingBaseKey}
+        setEditingBaseKey={setEditingBaseKey}
+        editingCustom={editingCustom}
+        setEditingCustom={setEditingCustom}
+      />
 
       {/* Custom combos */}
       {customCombos.length > 0 && (
         <div style={{ marginTop: '2rem' }}>
           <div className="section-label" style={{ marginBottom: '0.75rem' }}>Mis combos ({customCombos.length})</div>
-          {customCombos.map(saved => (
-            <CustomComboRow key={saved.id} saved={saved} allIng={allIng} onEdit={handleEditCustom} />
-          ))}
+          {customCombos.map(saved => {
+            const key = '__custom__' + saved.id
+            const isSelected = selectedKey === key
+            return (
+              <div key={saved.id}>
+                <ComboCard
+                  comboKey={key} combo={saved} allIng={allIng}
+                  isBase={false} isSelected={isSelected}
+                  onClick={() => toggleSelect(key)}
+                />
+                {isSelected && (
+                  <ComboDetailPanel
+                    comboKey={key} combo={saved} allIng={allIng}
+                    isBase={false}
+                    onEdit={() => handleEditCustom(saved)}
+                    onClose={() => setSelectedKey(null)}
+                  />
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
 
@@ -331,14 +459,31 @@ export default function CombinacionesTab() {
           Combos base ({baseCombos.length})
         </div>
         <p style={{ fontSize: '0.78rem', color: 'var(--muted)', marginBottom: '1rem' }}>
-          Edita o elimina cualquier combo base. Los cambios se reflejan en el tab Platos.
+          Haz clic para ver desglose · ✎ Editar para modificar · los cambios se reflejan en Platos.
         </p>
-        {baseCombos.map(([key, combo]) => (
-          <BaseComboRow key={key} comboKey={key} combo={combo} allIng={allIng} onEdit={handleEditBase} />
-        ))}
+        {baseCombos.map(([key, combo]) => {
+          const isSelected = selectedKey === key
+          return (
+            <div key={key}>
+              <ComboCard
+                comboKey={key} combo={combo} allIng={allIng}
+                isBase isSelected={isSelected}
+                onClick={() => toggleSelect(key)}
+              />
+              {isSelected && (
+                <ComboDetailPanel
+                  comboKey={key} combo={combo} allIng={allIng}
+                  isBase
+                  onEdit={handleEditBase}
+                  onClose={() => setSelectedKey(null)}
+                />
+              )}
+            </div>
+          )
+        })}
       </div>
 
-      {/* Deleted (hidden) base combos */}
+      {/* Deleted combos */}
       {deletedCombos.length > 0 && (
         <div style={{ marginTop: '1.5rem', padding: '1rem', background: '#f9f6f0', border: '1px solid var(--line-soft)', borderRadius: 10 }}>
           <div className="section-label" style={{ marginBottom: '0.5rem' }}>Combos ocultos ({deletedCombos.length})</div>
