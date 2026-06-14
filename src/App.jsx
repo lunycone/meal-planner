@@ -1,0 +1,91 @@
+import { useState } from 'react'
+import useStore            from './store/useStore'
+import HomeView            from './views/HomeView'
+import MealPlannerView     from './views/MealPlannerView'
+import PlatosTab           from './components/tabs/PlatosTab'
+import IngredientesTab     from './components/tabs/IngredientesTab'
+import CombinacionesTab    from './components/tabs/CombinacionesTab'
+import MenuTab             from './components/tabs/MenuTab'
+import AuthGate            from './components/AuthGate'
+import { MEALS }           from './config/meals'
+
+const CONFIG_TABS = [
+  { id: 'platos',        label: 'Platos',        Component: PlatosTab },
+  { id: 'combinaciones', label: 'Combinaciones',  Component: CombinacionesTab },
+  { id: 'ingredientes',  label: 'Ingredientes',   Component: IngredientesTab },
+  { id: 'menu',          label: 'Menú mensual',   Component: MenuTab },
+]
+
+function AppShell() {
+  const activeView      = useStore(s => s.activeView)
+  const activeMeal      = useStore(s => s.activeMeal)
+  const setView         = useStore(s => s.setView)
+  const activeConfigTab = CONFIG_TABS.find(t => t.id === activeView)
+
+  const atHome = activeView === 'home'
+
+  return (
+    <div className="app-shell">
+      <div className="app-header">
+        {/* Back button — always rendered to prevent layout jump */}
+        <button
+          className="app-back-btn"
+          style={{ visibility: atHome ? 'hidden' : 'visible' }}
+          tabIndex={atHome ? -1 : 0}
+          onClick={() => setView('home')}
+        >
+          ←&nbsp;
+          {activeView === 'meal'
+            ? MEALS[activeMeal]?.label
+            : activeConfigTab?.label ?? 'Inicio'}
+        </button>
+        <h1>Meal Planner</h1>
+        <div className="subtitle">Batch cooking · precio + kcal · todo conectado</div>
+      </div>
+
+      {/* Navigation — single persistent tab bar */}
+      <div className="tab-bar">
+        <button
+          className={`tab-btn${atHome ? ' active' : ''}`}
+          onClick={() => setView('home')}
+        >
+          Inicio
+        </button>
+        {CONFIG_TABS.map(t => (
+          <button
+            key={t.id}
+            className={`tab-btn${activeView === t.id ? ' active' : ''}`}
+            onClick={() => setView(t.id)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Content */}
+      {atHome                && <HomeView />}
+      {activeView === 'meal' && <MealPlannerView />}
+      {activeConfigTab       && <activeConfigTab.Component />}
+    </div>
+  )
+}
+
+export default function App() {
+  // Auth gate — persists in sessionStorage (cleared when browser closes)
+  const [authed, setAuthed] = useState(() => {
+    const pw = import.meta.env.VITE_APP_PASSWORD
+    if (!pw) return true                          // no password → open
+    return sessionStorage.getItem('mp-auth') === '1'
+  })
+
+  if (!authed) {
+    return (
+      <AuthGate onAuth={() => {
+        sessionStorage.setItem('mp-auth', '1')
+        setAuthed(true)
+      }} />
+    )
+  }
+
+  return <AppShell />
+}
