@@ -9,6 +9,8 @@ export const ING = {
   arroz:           { name: 'Arroz',               cat: 'base',     per100: 0.18,  kc: 360, pack: '20 kg · $36.69',         per: '75g seco → $0.14' },
   pasta:           { name: 'Pasta',               cat: 'base',     per100: 0.66,  kc: 360, pack: '1 lb · $3.00',           per: '100g seco → $0.66' },
   maiz:            { name: 'Maíz congelado',      cat: 'base',     per100: 1.11,  kc: 85,  pack: '450 g · $4.99',          per: '60g → $0.67' },
+  alcachofa:       { name: 'Alcachofa',           cat: 'base',     perUnit: 1.99, kcu: 67, pack: 'ud · $1.99',             per: 'ud → $1.99 · 67 kcal' },
+  'pan-masa-madre':{ name: 'Pan masa madre',      cat: 'base',     per100: 0.70, kc: 265,  pack: 'hogaza · $7.00',          per: '100g → $0.70 · 265 kcal' },
 
   // LEGUMBRES (peso seco)
   'lentejas-rojas':  { name: 'Lentejas rojas',    cat: 'legumbre', per100: 0.15,  kc: 340, pack: '55 lb · $36.69',         per: '80g seco → $0.12' },
@@ -35,6 +37,9 @@ export const ING = {
   calabacin:         { name: 'Calabacín',         cat: 'fresco',   per100: 0.45,  kc: 17,  pack: 'A1 ref.',                per: '100g → $0.45', hideInTable: true },
   esparragos:        { name: 'Espárragos',        cat: 'fresco',   per100: 0.44,  kc: 20,  pack: '~0.68 kg · $2.97',      per: '120g → $0.53', jessica: true },
   brocoli:           { name: 'Brócoli',           cat: 'fresco',   per100: 0.55,  kc: 34,  pack: 'estimado · Jessica',    per: '—', est: true, jessica: true },
+  'pimiento-verde': { name: 'Pimiento verde',   cat: 'fresco',   per100: 0.86,  kc: 30,  pack: '~0.28kg · $2.42',        per: '100g → $0.86 · 30 kcal' },
+  jalapeno:          { name: 'Jalapeno',          cat: 'fresco',   per100: 0.95,  kc: 29,  pack: 'ud ~40g · $0.38',       per: 'ud → $0.38 · 12 kcal' },
+  'green-beans':     { name: 'Ejotes / Green beans', cat: 'fresco', per100: 0.60,  kc: 31,  pack: 'bunch ~0.08kg · $0.48', per: '80g → $0.48 · 25 kcal' },
 
   // LÁCTEOS
   'feta-vaca':    { name: 'Feta (Krinos)',    cat: 'lacteo', per100: 1.59, kc: 265, pack: '3 kg · $47.59',   per: '30g → $0.48 · 80 kcal', tag: 'vaca' },
@@ -57,7 +62,7 @@ export const ING = {
   mostaza:          { name: 'Mostaza (Koops)',  cat: 'otro', per100: 0.98, kc: 66, pack: '340 g · $3.33',   per: 'uso mínimo' },
   'taco-seasoning': { name: 'Taco seasoning',  cat: 'otro', flat: 0.10,   kcf: 15, pack: 'estimado',        per: '—', est: true },
   parsley:          { name: 'Perejil',          cat: 'otro', flat: 0.10,   kcf: 2,  pack: 'estimado',        per: '—', est: true },
-  huevo:            { name: 'Huevo',            cat: 'otro', perUnit: 0.667, kcu: 72, pack: 'docena · $8.00', per: 'ud → $0.67 · 72 kcal' },
+  huevo:            { name: 'Huevo',            cat: 'otro', perUnit: 0.488, kcu: 72, pack: 'docena · $5.85', per: 'ud → $0.49 · 72 kcal' },
   tahini:           { name: 'Tahini',           cat: 'otro', pend: true,   pack: '—', per: 'taco dip, hummus' },
   'tomate-conserva':{ name: 'Tomate cherry/conserva', cat: 'otro', pend: true, pack: '—', per: 'ensaladas' },
   vinagre:          { name: 'Vinagre',          cat: 'otro', pend: true,   pack: '—', per: 'alioli, vinagretas' },
