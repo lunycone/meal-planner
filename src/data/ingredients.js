@@ -52,6 +52,8 @@ export const ING = {
   apio:             { name: 'Apio',             cat: 'otro', perServing: 0.45, kcs: 8, pack: 'ud · $4.49',  per: '~$0.45/plato' },
   pan:              { name: 'Pan sourdough',    cat: 'otro', perUnit: 6.50, kcu: 0, pack: 'pieza · $6–7',   per: '~260 kcal/100g' },
   setas:            { name: 'Setas frescas',    cat: 'otro', per100: 1.54, kc: 22, pack: '227 g · $3.49',   per: '100g → $1.54' },
+  mejillones:       { name: 'Mejillones (Canadian Cove Organic)', cat: 'otro', per100: 0.771, kc: 172, pack: '907 g · $6.99', per: '150g → $1.16 · 258 kcal' },
+  'cerdo-picado':   { name: 'Cerdo picado (Heritage, Linton)', cat: 'otro', per100: 1.899, kc: 260, pack: 'kg · $18.99', per: '100g → $1.90 · 260 kcal' },
   mostaza:          { name: 'Mostaza (Koops)',  cat: 'otro', per100: 0.98, kc: 66, pack: '340 g · $3.33',   per: 'uso mínimo' },
   'taco-seasoning': { name: 'Taco seasoning',  cat: 'otro', flat: 0.10,   kcf: 15, pack: 'estimado',        per: '—', est: true },
   parsley:          { name: 'Perejil',          cat: 'otro', flat: 0.10,   kcf: 2,  pack: 'estimado',        per: '—', est: true },

@@ -15,4 +15,6 @@ export const PROTEIN = {
   'higado-vaca':   { name: 'Hígado de vaca',     ration: { grams: 150 },                            per100: 1.653, kc: 135, cookFat: 235, preps: [],                                             combos: 'higado-vaca' },
   'sardinas':      { name: 'Sardinas / Caballa',  ration: { flat: 2.29, kc: 250, label: 'lata sardinas' }, altRation: { flat: 3.49, kc: 300, label: 'lata caballa' }, cookFat: 120, preps: [], combos: 'sardinas' },
   'calamares':     { name: 'Calamares',          ration: { grams: 150 },                            per100: 1.760, kc: 92,  cookFat: 235, preps: [],                                             combos: 'shared', sauce: true },
+  'mejillones':    { name: 'Mejillones (lata)',  ration: { grams: 150 },                            per100: 0.771, kc: 172, cookFat: 120, preps: [],                                             combos: 'mejillones' },
+  'cerdo-picado':  { name: 'Cerdo picado',       ration: { grams: 100 },                            per100: 1.899, kc: 260, cookFat: 235, preps: ['lima-cebolla','solo-cebolla','tomate-cebolla'], combos: 'shared' },
 }

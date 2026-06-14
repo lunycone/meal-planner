@@ -160,6 +160,22 @@ export const COMBO = {
       { k: 'puerro', p: { units: 0.5 } },
     ],
   },
+  'mejillones-arroz-tomate': {
+    name: 'Arroz + tomate + puerro',
+    items: [
+      { k: 'arroz',   p: { grams: 75 } },
+      { k: 'passata', p: { ml: 150 } },
+      { k: 'puerro',  p: { units: 0.5 } },
+    ],
+  },
+  'mejillones-patata-vapor': {
+    name: 'Patata al vapor + cebolla morada',
+    items: [
+      { k: 'patata',         p: { grams: 200 } },
+      { k: 'cebolla-morada', p: { grams: 50 } },
+      { k: 'parsley',        p: {} },
+    ],
+  },
 }
 
 // Which combos each protein group gets
@@ -173,4 +189,5 @@ export const COMBO_SETS = {
   'higado-bacalao': ['arroz-huevos-veg','ens-legumbres-sc'],
   'higado-vaca':    ['lentejas-sep','pure-patata','esparragos-j'],
   sardinas:         ['pasta-tomate-cross','ens-garbanzos','ens-mediterranea','burger-bowl','taco-bell','burrito-bowl','taco-dip','ens-alubias','ens-lentejas','lentejas-beet-rucula','arroz-aguacate','lentejas-rojas-espinaca','patata-setas-puerro'],
+  mejillones:       ['mejillones-arroz-tomate','mejillones-patata-vapor','ens-mediterranea','arroz-aguacate','patata-setas-puerro','pure-patata'],
 }
