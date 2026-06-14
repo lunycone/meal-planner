@@ -1002,6 +1002,10 @@ input, select, textarea { font-family: inherit; }
 .cdp-bar-kcal { background: var(--kcal); opacity: 0.6; }
 .cdp-bar-pct  { font-size: 0.7rem; color: var(--muted); white-space: nowrap; }
 
+.cdp-macro { font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
+.cdp-col-prot .cdp-macro { color: #4a7a3a; }
+.cdp-col-fat  .cdp-macro { color: #7a4a6a; }
+
 .cdp-note {
   margin: 0.75rem 1.5rem;
   padding: 0.6rem 0.9rem;
