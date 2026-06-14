@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import useStore, { selectAllIng, selectAllCombos, selectAllCats } from '../../store/useStore'
-import { ingCost, ingKcal, comboAgg, fmt, kfmt } from '../../engine/calc'
+import { ingCost, ingKcal, ingProt, ingFat, comboAgg, fmt, kfmt } from '../../engine/calc'
 import { CAT_ORDER } from '../../data/ingredients'
 import { COMBO } from '../../data/combos'
 
@@ -91,6 +91,16 @@ function ComboDetailPanel({ comboKey, combo, allIng, onEdit, onClose, isBase }) 
           </div>
           <div className="cdp-divider" />
           <div className="cdp-total-block">
+            <span className="cdp-total-val" style={{ color: '#4a7a3a' }}>{Math.round(agg.prot)}g</span>
+            <span className="cdp-total-lbl">proteína</span>
+          </div>
+          <div className="cdp-divider" />
+          <div className="cdp-total-block">
+            <span className="cdp-total-val" style={{ color: '#7a4a6a' }}>{Math.round(agg.fat)}g</span>
+            <span className="cdp-total-lbl">grasa</span>
+          </div>
+          <div className="cdp-divider" />
+          <div className="cdp-total-block">
             <span className="cdp-total-val" style={{ color: 'var(--ink)' }}>{combo.items.length}</span>
             <span className="cdp-total-lbl">ingredientes</span>
           </div>
@@ -99,20 +109,22 @@ function ComboDetailPanel({ comboKey, combo, allIng, onEdit, onClose, isBase }) 
 
       {/* Ingredients table */}
       <div className="cdp-ing-list">
-        <div className="cdp-ing-header">
+        <div className="cdp-ing-header" style={{ gridTemplateColumns: '1fr 70px 60px 100px 70px 100px 55px 55px' }}>
           <span className="cdp-col-name">Ingrediente</span>
           <span className="cdp-col-qty">Cantidad</span>
           <span className="cdp-col-cost">Precio</span>
           <span className="cdp-col-pct">% coste</span>
           <span className="cdp-col-kcal">Kcal</span>
           <span className="cdp-col-pct">% kcal</span>
+          <span className="cdp-col-prot">Prot</span>
+          <span className="cdp-col-fat">Grasa</span>
         </div>
 
         {rows.map(({ k, ing, p, cost, kcal }) => {
           const costPct = totalCost > 0 ? (cost / totalCost) * 100 : 0
           const kcalPct = totalKcal > 0 ? (kcal / totalKcal) * 100 : 0
           return (
-            <div key={k} className="cdp-ing-row">
+            <div key={k} className="cdp-ing-row" style={{ gridTemplateColumns: '1fr 70px 60px 100px 70px 100px 55px 55px' }}>
               <span className="cdp-col-name cdp-ing-name">{ing?.name ?? k}</span>
               <span className="cdp-col-qty cdp-qty">{portionLabel(p, ing)}</span>
               <span className="cdp-col-cost cdp-cost">{fmt(cost)}</span>
@@ -129,6 +141,8 @@ function ComboDetailPanel({ comboKey, combo, allIng, onEdit, onClose, isBase }) 
                   <span className="cdp-bar-pct">{Math.round(kcalPct)}%</span>
                 </div>
               </span>
+              <span className="cdp-col-prot cdp-macro">{Math.round(ingProt(k, p, allIng))}g P</span>
+              <span className="cdp-col-fat cdp-macro">{Math.round(ingFat(k, p, allIng))}g G</span>
             </div>
           )
         })}

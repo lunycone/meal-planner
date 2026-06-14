@@ -176,6 +176,69 @@ export const COMBO = {
       { k: 'parsley',        p: {} },
     ],
   },
+
+  // ── DESAYUNOS ────────────────────────────────────────────────────────────────
+  'desayuno-cheesecake-yogur': {
+    name: 'Cheesecake yogur cabra',
+    items: [
+      { k: 'yogur-cabra', p: { grams: 170 } },
+      { k: 'huevo',       p: { units: 1 } },
+      { k: 'arandanos',   p: { grams: 40 } },
+      { k: 'miel',        p: { grams: 15 } },
+    ],
+  },
+  'desayuno-tortilla-aguacate': {
+    name: 'Tortilla francesa + aguacate + setas',
+    items: [
+      { k: 'huevo',    p: { units: 2 } },
+      { k: 'aguacate', p: { units: 0.5 } },
+      { k: 'setas',    p: { grams: 80 } },
+      { k: 'espinaca', p: { grams: 60 } },
+    ],
+  },
+  'desayuno-tostada-caballa': {
+    name: 'Tostada caballa + aguacate',
+    items: [
+      { k: 'caballa-media',  p: {} },
+      { k: 'aguacate',       p: { units: 0.5 } },
+      { k: 'queso-cabra',    p: { grams: 20 } },
+      { k: 'pan-masa-madre', p: { grams: 60 } },
+    ],
+  },
+  'desayuno-overnight-oats': {
+    name: 'Overnight oats',
+    items: [
+      { k: 'avena',      p: { grams: 50 } },
+      { k: 'yogur-cabra',p: { grams: 150 } },
+      { k: 'arandanos',  p: { grams: 40 } },
+    ],
+  },
+  'desayuno-bowl-caballa': {
+    name: 'Bowl caballa + aguacate + limón',
+    items: [
+      { k: 'caballa-media', p: {} },
+      { k: 'aguacate',      p: { units: 0.5 } },
+      { k: 'limon',         p: { units: 0.5 } },
+      { k: 'queso-cabra',   p: { grams: 20 } },
+    ],
+  },
+  'desayuno-waffles-avena': {
+    name: 'Waffles avena + queso + berries',
+    items: [
+      { k: 'avena',      p: { grams: 60 } },
+      { k: 'huevo',      p: { units: 1 } },
+      { k: 'arandanos',  p: { grams: 40 } },
+      { k: 'feta-vaca',  p: { grams: 30 } },
+    ],
+  },
+  'desayuno-tortilla-queso-fruta': {
+    name: 'Tortilla francesa + queso + fruta',
+    items: [
+      { k: 'huevo',     p: { units: 2 } },
+      { k: 'feta-vaca', p: { grams: 30 } },
+      { k: 'arandanos', p: { grams: 60 } },
+    ],
+  },
 }
 
 // Which combos each protein group gets
@@ -190,4 +253,9 @@ export const COMBO_SETS = {
   'higado-vaca':    ['lentejas-sep','pure-patata','esparragos-j'],
   sardinas:         ['pasta-tomate-cross','ens-garbanzos','ens-mediterranea','burger-bowl','taco-bell','burrito-bowl','taco-dip','ens-alubias','ens-lentejas','lentejas-beet-rucula','arroz-aguacate','lentejas-rojas-espinaca','patata-setas-puerro'],
   mejillones:       ['mejillones-arroz-tomate','mejillones-patata-vapor','ens-mediterranea','arroz-aguacate','patata-setas-puerro','pure-patata'],
+  desayuno: [
+    'desayuno-cheesecake-yogur','desayuno-tortilla-aguacate','desayuno-tostada-caballa',
+    'desayuno-overnight-oats','desayuno-bowl-caballa','desayuno-waffles-avena',
+    'desayuno-tortilla-queso-fruta',
+  ],
 }
