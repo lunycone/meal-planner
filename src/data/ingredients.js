@@ -58,6 +58,7 @@ export const ING = {
 
   // OTROS
   aceite:           { name: 'Aceite de oliva',  cat: 'otro', flat: 0,    kcf: 0,  pack: 'ya tienes',        per: '~120 kcal/cda · NO contado' },
+  'aceite-coco':    { name: 'Aceite coco refinado (Nutiva)', cat: 'otro', per100: 2.02, kc: 892, prot: 0, fat: 99.5, pack: '1.6L · CA$29.69', per: '15g → $0.30' },
   suet:             { name: 'Beef Suet',        cat: 'otro', per100: 1.768, kc: 895, prot: 0, fat: 99.5, pack: '2.2lb · $17.64',  per: '15g → $0.27' },
   canela:           { name: 'Canela',           cat: 'otro', flat: 0.05, kcf: 5,  pack: 'especia',          per: 'uso → $0.05', est: true },
   'chocolate-negro':{ name: 'Chocolate negro (chips)', cat: 'otro', per100: 3.00, kc: 550, prot: 6, fat: 32, pack: 'estimado',   per: '20g → $0.60', est: true },
@@ -78,6 +79,8 @@ export const ING = {
   alioli:           { name: 'Alioli',           cat: 'otro', pend: true,   pack: '—', per: 'calamares' },
   miel:             { name: 'Miel',             cat: 'otro', per100: 2.00, kc: 304, prot: 0.3, fat: 0,  pack: 'estimado',        per: '15g → $0.30 · 46 kcal', est: true },
   'caballa-media':  { name: 'Caballa (½ lata)', cat: 'otro', flat: 1.745,  kcf: 150, protf: 12, fatf: 9, pack: '½ lata caballa 120g', per: '½ lata → $1.75 · 150 kcal · 12g prot' },
+  'sardina-media':  { name: 'Sardinas (½ lata)', cat: 'otro', flat: 1.145, kcf: 125, protf: 12, fatf: 6,  pack: '½ lata sardinas ~100g', per: '½ lata → $1.15 · 125 kcal · 12g prot' },
+  'sardina-cuarto': { name: 'Sardinas (¼ lata)', cat: 'otro', flat: 0.573, kcf: 62, protf: 6, fatf: 3,   pack: '¼ lata sardinas ~50g', per: '¼ lata → $0.57 · 62 kcal · 6g prot' },
 }
 
 export const CAT_LABELS = {

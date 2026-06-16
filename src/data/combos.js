@@ -268,6 +268,26 @@ export const COMBO = {
       { k: 'suet',      p: { grams: 10 } },
     ],
   },
+  'desayuno-pizza-sardinas-light': {
+    name: 'Pizza Sardinas Light (batch)',
+    items: [
+      { k: 'huevo',           p: { units: 2 } },
+      { k: 'sardina-cuarto',  p: {} },
+      { k: 'tomate-fresco',   p: { grams: 40 } },
+      { k: 'cebolla-amarilla',p: { grams: 30 } },
+      { k: 'suet',            p: { grams: 10 } },
+    ],
+  },
+  'desayuno-pizza-sardinas-max': {
+    name: 'Pizza Sardinas Proteína Máxima (batch)',
+    items: [
+      { k: 'huevo',       p: { units: 2 } },
+      { k: 'sardina-media',p: {} },
+      { k: 'passata',     p: { ml: 30 } },
+      { k: 'feta-vaca',   p: { grams: 30 } },
+      { k: 'suet',        p: { grams: 10 } },
+    ],
+  },
   'desayuno-magdalenas': {
     name: 'Magdalenas yogur (ocasional)',
     items: [
@@ -316,6 +336,7 @@ export const COMBO_SETS = {
     'desayuno-overnight-oats','desayuno-bowl-caballa','desayuno-waffles-avena',
     'desayuno-tortilla-queso-fruta','desayuno-huevos-al-horno','desayuno-yogur-huevo-avena',
     'desayuno-tortilla-patata','desayuno-egg-muffins','desayuno-omelette-feta',
+    'desayuno-pizza-sardinas-light','desayuno-pizza-sardinas-max',
     'desayuno-magdalenas','desayuno-magdalenas-chocolate',
   ],
 }
