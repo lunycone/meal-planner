@@ -346,34 +346,22 @@ function CalendarView({ week, weekIdx }) {
 export default function MenuTab() {
   return (
     <div>
-      <div className="menu-legend">
-        <span><span className="legend-dot" style={{ background: '#f0e8d8' }} /> Batch domingo</span>
-        <span><span className="legend-dot" style={{ background: '#e4eedc' }} /> Batch jueves</span>
-        <span><span className="legend-dot" style={{ background: 'var(--jessica-bg)' }} /> Día especial</span>
-        <span style={{ color: 'var(--brown)' }}>↗ al momento</span>
-        <span>Target: 1000–1100 kcal/comida</span>
-        <span style={{ color: 'var(--muted)', fontSize: '0.72rem' }}>✎ editar batch · ✕ ocultar</span>
-      </div>
-
-      <div className="menu-grid">
-        {MENU.map((week, i) => <WeekCard key={i} week={week} weekIdx={i} />)}
-      </div>
-
-      <div style={{ marginTop: '2.5rem' }}>
-        <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: '1.1rem', fontWeight: 600, marginBottom: '0.25rem' }}>
-          Vista día a día
+      {/* ─── Overview: Cobertura visual (MAIN) ─────────────────────────────── */}
+      <div style={{ marginBottom: '2.5rem' }}>
+        <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.25rem' }}>
+          Plan mensual
         </h2>
         <p style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '1.5rem' }}>
-          Cobertura de cada batch · beige = batch domingo · verde = batch jueves
+          Cobertura visual de cada batch · 🟫 Batch domingo (4 días) · 🟩 Batch jueves (3 días)
         </p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
           {MENU.map((week, i) => (
             <div key={i}>
               <div style={{
                 fontSize: '0.75rem',
                 fontWeight: 700,
-                color: 'var(--muted)',
-                marginBottom: '0.6rem',
+                color: 'var(--text)',
+                marginBottom: '0.75rem',
                 textTransform: 'uppercase',
                 letterSpacing: '0.07em'
               }}>
@@ -382,6 +370,23 @@ export default function MenuTab() {
               <CalendarView week={week} weekIdx={i} />
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* ─── Legacy: Edición detallada (SECONDARY) ─────────────────────────── */}
+      <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '2px solid var(--line)' }}>
+        <h3 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>
+          Editar batches
+        </h3>
+        <div className="menu-legend" style={{ marginBottom: '1.5rem' }}>
+          <span><span className="legend-dot" style={{ background: '#f0e8d8' }} /> Batch domingo</span>
+          <span><span className="legend-dot" style={{ background: '#e4eedc' }} /> Batch jueves</span>
+          <span><span className="legend-dot" style={{ background: 'var(--jessica-bg)' }} /> Día especial</span>
+          <span style={{ color: 'var(--muted)', fontSize: '0.72rem' }}>✎ editar · ✕ ocultar</span>
+        </div>
+
+        <div className="menu-grid">
+          {MENU.map((week, i) => <WeekCard key={i} week={week} weekIdx={i} />)}
         </div>
       </div>
 
