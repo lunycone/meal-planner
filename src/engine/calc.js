@@ -41,6 +41,15 @@ export function ingFat(key, p, allIng) {
   return 0
 }
 
+export function ingFib(key, p, allIng) {
+  const i = allIng[key]
+  if (!i) return 0
+  if (i.fib  != null && p.grams != null) return i.fib * p.grams / 100
+  if (i.fibu != null && p.units != null) return i.fibu * p.units
+  if (i.fibf != null) return i.fibf
+  return 0
+}
+
 export function ingIsEst(key, allIng) {
   return !!(allIng[key]?.est)
 }
@@ -62,15 +71,16 @@ export function proteinKcal(pr, useAlt = false) {
 }
 
 export function comboAgg(combo, allIng) {
-  let cost = 0, kcal = 0, prot = 0, fat = 0, hasEst = false
+  let cost = 0, kcal = 0, prot = 0, fat = 0, fib = 0, hasEst = false
   for (const it of combo.items) {
     cost += ingCost(it.k, it.p, allIng)
     kcal += ingKcal(it.k, it.p, allIng)
     prot += ingProt(it.k, it.p, allIng)
     fat  += ingFat(it.k, it.p, allIng)
+    fib  += ingFib(it.k, it.p, allIng)
     if (ingIsEst(it.k, allIng)) hasEst = true
   }
-  return { cost, kcal, prot, fat, hasEst, incomplete: !!combo.incomplete }
+  return { cost, kcal, prot, fat, fib, hasEst, incomplete: !!combo.incomplete }
 }
 
 export function prepAgg(prep, allIng) {

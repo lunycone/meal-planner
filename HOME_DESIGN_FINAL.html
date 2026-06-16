@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meal Planner · Hoy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper:      #f6f4ef;
+    --paper-card: #fcfbf8;
+    --ink:        #1c1a17;
+    --ink-soft:   #6b665d;
+    --ink-faint:  #a8a298;
+    --line:       rgba(28,26,23,0.08);
+    --line-soft:  rgba(28,26,23,0.05);
+    --amber:      #a8742e;
+    --olive:      #5f6f3c;
+    --slate:      #46566e;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    line-height: 1.5;
+    min-height: 100vh;
+    /* sutil textura de papel */
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(168,116,46,0.015) 0%, transparent 40%),
+      radial-gradient(circle at 80% 80%, rgba(70,86,110,0.012) 0%, transparent 40%);
+  }
+
+  .canvas {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 7rem 2.5rem 5rem;
+  }
+
+  /* ─── Header ─────────────────────────────────────── */
+  .masthead {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 4.5rem;
+  }
+
+  .eyebrow {
+    font-size: 0.7rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 500;
+    margin-bottom: 1rem;
+  }
+
+  .today {
+    font-family: 'Fraunces', serif;
+    font-size: 5.5rem;
+    font-weight: 400;
+    line-height: 0.85;
+    letter-spacing: -0.035em;
+    font-optical-sizing: auto;
+  }
+
+  .date-block {
+    text-align: right;
+    padding-bottom: 0.6rem;
+  }
+  .date-day {
+    font-family: 'Newsreader', serif;
+    font-size: 1.35rem;
+    font-weight: 500;
+    font-style: italic;
+    color: var(--ink);
+    line-height: 1.1;
+  }
+  .date-rest {
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-top: 0.45rem;
+  }
+
+  /* ─── Meal entries ───────────────────────────────── */
+  .meals { }
+
+  .meal {
+    display: grid;
+    grid-template-columns: 88px 1fr;
+    gap: 1.5rem;
+    padding: 2.4rem 0;
+    border-top: 1px solid var(--line);
+    position: relative;
+    transition: background 0.4s ease;
+  }
+  .meal:hover { background: linear-gradient(90deg, transparent, rgba(252,251,248,0.6) 12%, rgba(252,251,248,0.6) 88%, transparent); }
+  .meal:first-of-type { border-top: 1px solid var(--ink); }
+
+  .meal-time {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+    padding-top: 0.55rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.55rem;
+  }
+  .dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    margin-top: 0.52rem;
+    flex-shrink: 0;
+  }
+  .dot.am { background: var(--amber); }
+  .dot.mid { background: var(--olive); }
+  .dot.pm { background: var(--slate); }
+
+  .meal-body { }
+
+  .meal-kind {
+    font-size: 0.66rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 500;
+    margin-bottom: 0.7rem;
+  }
+
+  .meal-name {
+    font-family: 'Newsreader', serif;
+    font-size: 1.55rem;
+    font-weight: 400;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin-bottom: 1.1rem;
+    max-width: 30ch;
+  }
+
+  .meal-stats {
+    display: flex;
+    align-items: baseline;
+    gap: 1.4rem;
+  }
+  .stat {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+  }
+  .stat-num {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+  .stat-unit {
+    font-size: 0.72rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.02em;
+  }
+  .stat.lead .stat-num { color: var(--amber); }
+
+  /* ─── Summary ────────────────────────────────────── */
+  .ledger {
+    margin-top: 4rem;
+    padding-top: 2.5rem;
+    border-top: 1px solid var(--ink);
+  }
+  .ledger-label {
+    font-family: 'Newsreader', serif;
+    font-style: italic;
+    font-size: 1.05rem;
+    color: var(--ink-soft);
+    margin-bottom: 2rem;
+  }
+  .ledger-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+  }
+  .ledger-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .ledger-num {
+    font-family: 'Fraunces', serif;
+    font-size: 2.1rem;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: -0.025em;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .ledger-cap {
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 500;
+  }
+  .ledger-cell.done .ledger-num { color: var(--olive); }
+
+  /* footnote */
+  .footnote {
+    margin-top: 3.5rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    color: var(--ink-faint);
+    text-align: center;
+    font-style: italic;
+    font-family: 'Newsreader', serif;
+  }
+
+  @media (max-width: 560px) {
+    .canvas { padding: 4rem 1.5rem 3rem; }
+    .today { font-size: 3.8rem; }
+    .masthead { margin-bottom: 3rem; }
+    .meal { grid-template-columns: 60px 1fr; gap: 1rem; }
+    .meal-name { font-size: 1.3rem; }
+    .ledger-grid { gap: 1rem; }
+    .ledger-num { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="canvas">
+
+  <header class="masthead">
+    <div>
+      <div class="eyebrow">Tu día</div>
+      <h1 class="today">Hoy</h1>
+    </div>
+    <div class="date-block">
+      <div class="date-day">Lunes</div>
+      <div class="date-rest">16 Junio</div>
+    </div>
+  </header>
+
+  <main class="meals">
+
+    <article class="meal">
+      <div class="meal-time"><span class="dot am"></span>07:00</div>
+      <div class="meal-body">
+        <div class="meal-kind">Desayuno</div>
+        <h2 class="meal-name">Batido de leche, avena, canela y plátano</h2>
+        <div class="meal-stats">
+          <span class="stat lead"><span class="stat-num">18g</span><span class="stat-unit">proteína</span></span>
+          <span class="stat"><span class="stat-num">$1.24</span></span>
+          <span class="stat"><span class="stat-num">441</span><span class="stat-unit">kcal</span></span>
+        </div>
+      </div>
+    </article>
+
+    <article class="meal">
+      <div class="meal-time"><span class="dot mid"></span>12:30</div>
+      <div class="meal-body">
+        <div class="meal-kind">Comida</div>
+        <h2 class="meal-name">Carne picada con burrito bowl</h2>
+        <div class="meal-stats">
+          <span class="stat lead"><span class="stat-num">23g</span><span class="stat-unit">proteína</span></span>
+          <span class="stat"><span class="stat-num">$4.28</span></span>
+          <span class="stat"><span class="stat-num">886</span><span class="stat-unit">kcal</span></span>
+        </div>
+      </div>
+    </article>
+
+    <article class="meal">
+      <div class="meal-time"><span class="dot pm"></span>19:30</div>
+      <div class="meal-body">
+        <div class="meal-kind">Cena</div>
+        <h2 class="meal-name">Mejillones en lata, patata al vapor y cebolla morada</h2>
+        <div class="meal-stats">
+          <span class="stat lead"><span class="stat-num">5g</span><span class="stat-unit">proteína</span></span>
+          <span class="stat"><span class="stat-num">$1.55</span></span>
+          <span class="stat"><span class="stat-num">669</span><span class="stat-unit">kcal</span></span>
+        </div>
+      </div>
+    </article>
+
+  </main>
+
+  <section class="ledger">
+    <div class="ledger-label">El resumen de tu día</div>
+    <div class="ledger-grid">
+      <div class="ledger-cell">
+        <div class="ledger-num">$7.07</div>
+        <div class="ledger-cap">Coste</div>
+      </div>
+      <div class="ledger-cell">
+        <div class="ledger-num">1996</div>
+        <div class="ledger-cap">Kcal</div>
+      </div>
+      <div class="ledger-cell">
+        <div class="ledger-num">45g</div>
+        <div class="ledger-cap">Proteína</div>
+      </div>
+      <div class="ledger-cell done">
+        <div class="ledger-num">3/3</div>
+        <div class="ledger-cap">Comidas</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="footnote">Cocinado en casa · Pensado para la semana</div>
+
+</div>
+
+</body>
+</html>

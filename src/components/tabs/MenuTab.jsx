@@ -202,141 +202,155 @@ function WeekCard({ week, weekIdx }) {
   )
 }
 
-// ─── Batch group (2 visual blocks per week) ───────────────────────────────
+// ─── Monthly editorial view (Notion+Luxury) ──────────────────────────────
 
-function BatchGroup({ protein, combo, cookDay, eatDays, accent, kcalEst, costEst }) {
-  const allDays = [cookDay, ...eatDays]
-  return (
-    <div style={{ flex: eatDays.length === 3 ? '3' : '4', minWidth: 0 }}>
-      {/* Group header band */}
-      <div style={{
-        background: accent,
-        borderRadius: '0.6rem 0.6rem 0 0',
-        padding: '0.5rem 0.75rem',
-        display: 'flex',
-        alignItems: 'baseline',
-        gap: '0.5rem',
-      }}>
-        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#5a4a3a' }}>
-          {protein}
-        </span>
-        <span style={{ fontSize: '0.7rem', color: '#7a6a5a' }}>·</span>
-        <span style={{ fontSize: '0.7rem', color: '#7a6a5a' }}>{combo}</span>
-        <span style={{ marginLeft: 'auto', fontSize: '0.68rem', color: '#7a6a5a' }}>
-          ~{costEst ? `$${costEst}` : '—'} · {kcalEst ? `${kcalEst} kcal` : '—'}
-        </span>
-      </div>
-
-      {/* Day cells */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: `repeat(${allDays.length}, 1fr)`,
-        border: `1.5px solid ${accent}`,
-        borderTop: 'none',
-        borderRadius: '0 0 0.6rem 0.6rem',
-        overflow: 'hidden',
-      }}>
-        {allDays.map((day, i) => {
-          const isCookDay = i === 0
-          return (
-            <div key={day} style={{
-              padding: '0.6rem 0.5rem',
-              textAlign: 'center',
-              borderLeft: i > 0 ? `1px solid ${accent}` : 'none',
-              background: isCookDay ? accent : 'transparent',
-            }}>
-              <div style={{
-                fontSize: '0.72rem',
-                fontWeight: isCookDay ? 700 : 500,
-                color: isCookDay ? '#5a4a3a' : 'var(--muted)',
-              }}>
-                {day}
-              </div>
-              {isCookDay && (
-                <div style={{ fontSize: '0.58rem', color: '#8b7355', marginTop: '0.2rem' }}>
-                  🔥 batch
-                </div>
-              )}
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-// ─── Special day pill ──────────────────────────────────────────────────────
-
-function SpecialDayPill({ protein, combo }) {
-  return (
-    <div style={{ width: '130px', flexShrink: 0 }}>
-      <div style={{
-        background: 'var(--jessica-bg)',
-        borderRadius: '0.6rem 0.6rem 0 0',
-        padding: '0.5rem 0.75rem',
-      }}>
-        <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#7a4a4a' }}>★ Especial</span>
-      </div>
-      <div style={{
-        border: '1.5px solid #d4b8b8',
-        borderTop: 'none',
-        borderRadius: '0 0 0.6rem 0.6rem',
-        padding: '0.6rem 0.5rem',
-      }}>
-        <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#7a4a4a', textAlign: 'center' }}>Dom</div>
-        <div style={{ fontSize: '0.65rem', color: '#9a6a6a', textAlign: 'center', marginTop: '0.2rem' }}>1 ración</div>
-        <div style={{ fontSize: '0.65rem', color: '#9a6a6a', textAlign: 'center', marginTop: '0.3rem', fontStyle: 'italic' }}>
-          {protein}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ─── Calendar view (grouped layout) ───────────────────────────────────────
-
-function CalendarView({ week, weekIdx }) {
+function MonthlyTable() {
   const batchOverrides = useStore(s => s.batchOverrides)
   const deletedBatches = useStore(s => s.deletedBatches)
 
-  const b0 = { ...week.batches[0], ...batchOverrides[`w${weekIdx}-b0`] }
-  const b1 = { ...week.batches[1], ...batchOverrides[`w${weekIdx}-b1`] }
-  const ss = week.sundaySpecial
-    ? { ...week.sundaySpecial, ...batchOverrides[`w${weekIdx}-special`] }
-    : null
-  const ssDeleted = deletedBatches.includes(`w${weekIdx}-special`)
-  const hasSpecial = ss && !ssDeleted
-
-  // Batch 0 covers: dom (unless special) + lun + mar + mié
-  const b0CookDay = hasSpecial ? 'Lun' : 'Dom'
-  const b0EatDays = hasSpecial ? ['Mar', 'Mié', 'Jue'] : ['Lun', 'Mar', 'Mié']
-
   return (
-    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'stretch' }}>
-      {/* Special Sunday pill */}
-      {hasSpecial && <SpecialDayPill protein={ss.protein} combo={ss.combo} />}
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      {MENU.map((week, weekIdx) => {
+        const b0 = { ...week.batches[0], ...batchOverrides[`w${weekIdx}-b0`] }
+        const b1 = { ...week.batches[1], ...batchOverrides[`w${weekIdx}-b1`] }
+        const ss = week.sundaySpecial
+          ? { ...week.sundaySpecial, ...batchOverrides[`w${weekIdx}-special`] }
+          : null
+        const ssDeleted = deletedBatches.includes(`w${weekIdx}-special`)
+        const hasSpecial = ss && !ssDeleted
 
-      {/* Batch 0 block */}
-      <BatchGroup
-        protein={b0.protein}
-        combo={b0.combo}
-        cookDay={b0CookDay}
-        eatDays={b0EatDays}
-        accent="#ede3d5"
-        kcalEst={b0.kcalEst}
-        costEst={b0.costEst}
-      />
+        return (
+          <div key={weekIdx} style={{
+            padding: '2rem 0',
+            borderBottom: '1px solid var(--t-border)',
+          }}>
+            {/* Week label */}
+            <div style={{
+              fontSize: '0.62rem',
+              fontWeight: 700,
+              letterSpacing: '0.14em',
+              textTransform: 'uppercase',
+              color: 'var(--t-text-faint)',
+              marginBottom: '1.5rem',
+            }}>
+              {week.label}
+            </div>
 
-      {/* Batch 1 block */}
-      <BatchGroup
-        protein={b1.protein}
-        combo={b1.combo}
-        cookDay="Jue"
-        eatDays={['Vie', 'Sáb', hasSpecial ? null : 'Dom'].filter(Boolean)}
-        accent="#dce8d8"
-        kcalEst={b1.kcalEst}
-        costEst={b1.costEst}
-      />
+            {/* Batch columns */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: hasSpecial ? '1fr 1fr 1fr' : '1fr 1fr',
+              gap: '0',
+            }}>
+              {/* Batch domingo */}
+              <div style={{ paddingRight: '2.5rem', borderRight: '1px solid var(--t-border)' }}>
+                <div style={{
+                  fontSize: '0.68rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  color: 'var(--t-accent)',
+                  marginBottom: '0.6rem',
+                }}>
+                  Domingo
+                </div>
+                <div style={{
+                  fontFamily: 'var(--t-font-display)',
+                  fontSize: '1.25rem',
+                  fontWeight: 300,
+                  color: 'var(--t-text)',
+                  lineHeight: 1.2,
+                  marginBottom: '0.3rem',
+                  fontOpticalSizing: 'auto',
+                }}>
+                  {b0.protein}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--t-text-soft)', marginBottom: '1rem' }}>
+                  {b0.combo}
+                </div>
+                <div style={{ display: 'flex', gap: '1.2rem', fontSize: '0.75rem' }}>
+                  <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--t-text)', fontWeight: 600 }}>
+                    ~${fmt(b0.costEst)}
+                  </span>
+                  <span style={{ color: 'var(--t-text-faint)' }}>
+                    {b0.kcalEst} kcal
+                  </span>
+                </div>
+              </div>
+
+              {/* Batch jueves */}
+              <div style={{
+                paddingLeft: '2.5rem',
+                paddingRight: hasSpecial ? '2.5rem' : '0',
+                borderRight: hasSpecial ? '1px solid var(--t-border)' : 'none',
+              }}>
+                <div style={{
+                  fontSize: '0.68rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  color: 'var(--t-accent)',
+                  marginBottom: '0.6rem',
+                }}>
+                  Jueves
+                </div>
+                <div style={{
+                  fontFamily: 'var(--t-font-display)',
+                  fontSize: '1.25rem',
+                  fontWeight: 300,
+                  color: 'var(--t-text)',
+                  lineHeight: 1.2,
+                  marginBottom: '0.3rem',
+                  fontOpticalSizing: 'auto',
+                }}>
+                  {b1.protein}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--t-text-soft)', marginBottom: '1rem' }}>
+                  {b1.combo}
+                </div>
+                <div style={{ display: 'flex', gap: '1.2rem', fontSize: '0.75rem' }}>
+                  <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--t-text)', fontWeight: 600 }}>
+                    ~${fmt(b1.costEst)}
+                  </span>
+                  <span style={{ color: 'var(--t-text-faint)' }}>
+                    {b1.kcalEst} kcal
+                  </span>
+                </div>
+              </div>
+
+              {/* Especial */}
+              {hasSpecial && (
+                <div style={{ paddingLeft: '2.5rem' }}>
+                  <div style={{
+                    fontSize: '0.68rem',
+                    fontWeight: 600,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                    color: 'var(--t-text-faint)',
+                    marginBottom: '0.6rem',
+                  }}>
+                    ★ Especial
+                  </div>
+                  <div style={{
+                    fontFamily: 'var(--t-font-display)',
+                    fontSize: '1.25rem',
+                    fontWeight: 300,
+                    color: 'var(--t-text)',
+                    lineHeight: 1.2,
+                    marginBottom: '0.3rem',
+                    fontOpticalSizing: 'auto',
+                  }}>
+                    {ss.protein}
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--t-text-soft)', marginBottom: '1rem' }}>
+                    1 ración · fresco
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -346,59 +360,15 @@ function CalendarView({ week, weekIdx }) {
 export default function MenuTab() {
   return (
     <div>
-      {/* ─── Overview: Cobertura visual (MAIN) ─────────────────────────────── */}
-      <div style={{ marginBottom: '2.5rem' }}>
-        <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.25rem' }}>
-          Plan mensual
-        </h2>
-        <p style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '1.5rem' }}>
-          Cobertura visual de cada batch · 🟫 Batch domingo (4 días) · 🟩 Batch jueves (3 días)
-        </p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
-          {MENU.map((week, i) => (
-            <div key={i}>
-              <div style={{
-                fontSize: '0.75rem',
-                fontWeight: 700,
-                color: 'var(--text)',
-                marginBottom: '0.75rem',
-                textTransform: 'uppercase',
-                letterSpacing: '0.07em'
-              }}>
-                {week.label}
-              </div>
-              <CalendarView week={week} weekIdx={i} />
-            </div>
-          ))}
-        </div>
+      <div className="menu-legend" style={{ marginBottom: '1.5rem' }}>
+        <span><span className="legend-dot" style={{ background: '#f0e8d8' }} /> Batch domingo</span>
+        <span><span className="legend-dot" style={{ background: '#e4eedc' }} /> Batch jueves</span>
+        <span><span className="legend-dot" style={{ background: 'var(--jessica-bg)' }} /> Día especial</span>
+        <span style={{ color: 'var(--t-text-faint)', fontSize: '0.72rem' }}>✎ editar · ✕ ocultar</span>
       </div>
 
-      {/* ─── Legacy: Edición detallada (SECONDARY) ─────────────────────────── */}
-      <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '2px solid var(--line)' }}>
-        <h3 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>
-          Editar batches
-        </h3>
-        <div className="menu-legend" style={{ marginBottom: '1.5rem' }}>
-          <span><span className="legend-dot" style={{ background: '#f0e8d8' }} /> Batch domingo</span>
-          <span><span className="legend-dot" style={{ background: '#e4eedc' }} /> Batch jueves</span>
-          <span><span className="legend-dot" style={{ background: 'var(--jessica-bg)' }} /> Día especial</span>
-          <span style={{ color: 'var(--muted)', fontSize: '0.72rem' }}>✎ editar · ✕ ocultar</span>
-        </div>
-
-        <div className="menu-grid">
-          {MENU.map((week, i) => <WeekCard key={i} week={week} weekIdx={i} />)}
-        </div>
-      </div>
-
-      <div className="section-label" style={{ margin: '1.5rem 0 0.25rem' }}>Lista de compra — mes completo (2 personas)</div>
-      <p style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '1rem' }}>Cantidades orientativas.</p>
-      <div className="shopping-grid">
-        {SHOPPING.map((s, i) => (
-          <div key={i} className="shopping-card">
-            <div className="sc-cat">{s.cat}</div>
-            <ul>{s.items.map((item, j) => <li key={j}>{item}</li>)}</ul>
-          </div>
-        ))}
+      <div className="menu-grid">
+        {MENU.map((week, i) => <WeekCard key={i} week={week} weekIdx={i} />)}
       </div>
     </div>
   )

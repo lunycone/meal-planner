@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hoy · Meal Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:         #fafaf9;
+    --surface:    #ffffff;
+    --border:     #e5e5e3;
+    --text:       #1a1a18;
+    --text-soft:  #626259;
+    --text-faint: #9c9c96;
+    --accent:     #9a7b43;
+    --success:    #5f7a3c;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    min-height: 100vh;
+    padding: 3.5rem 1.5rem;
+  }
+
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  /* ─── Header ─────────────────────────────────────── */
+  .header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 3.5rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-left h1 {
+    font-family: 'Fraunces', serif;
+    font-optical-sizing: auto;
+    font-size: 3.5rem;
+    font-weight: 300;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    margin-bottom: 0.5rem;
+  }
+
+  .header-meta {
+    font-size: 14px;
+    color: var(--text-soft);
+    letter-spacing: 0.01em;
+  }
+
+  .header-right {
+    text-align: right;
+  }
+
+  .date-day {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 0.3rem;
+  }
+
+  .date-rest {
+    font-size: 13px;
+    color: var(--text-faint);
+    letter-spacing: 0.02em;
+  }
+
+  /* ─── Meals section ───────────────────────────────── */
+  .meals {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+  }
+
+  .meal-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .meal-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 4px 12px rgba(154, 123, 67, 0.08);
+  }
+
+  .meal-card.empty {
+    background: rgba(154, 123, 67, 0.02);
+    border-style: dashed;
+    border-color: var(--text-faint);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 120px;
+    text-align: center;
+    color: var(--text-faint);
+  }
+
+  .meal-card.empty:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(154, 123, 67, 0.04);
+  }
+
+  .meal-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 0.8rem;
+  }
+
+  .meal-time {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-soft);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  .meal-time::before {
+    content: "";
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-right: 0.6rem;
+  }
+
+  .meal-type {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    font-weight: 600;
+  }
+
+  .meal-name {
+    font-family: 'Fraunces', serif;
+    font-optical-sizing: auto;
+    font-size: 1.5rem;
+    font-weight: 400;
+    line-height: 1.3;
+    margin-bottom: 1rem;
+    color: var(--text);
+  }
+
+  .meal-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.2rem;
+    font-size: 14px;
+  }
+
+  .stat {
+    display: flex;
+    align-items: baseline;
+    gap: 0.25rem;
+  }
+
+  .stat-value {
+    font-weight: 600;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stat-label {
+    color: var(--text-soft);
+    font-size: 12px;
+  }
+
+  .stat.key .stat-value {
+    color: var(--accent);
+  }
+
+  /* ─── Summary ────────────────────────────────────── */
+  .summary {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2rem;
+    margin-bottom: 3rem;
+  }
+
+  .summary-title {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 2rem;
+  }
+
+  .summary-item {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .summary-value {
+    font-family: 'Fraunces', serif;
+    font-optical-sizing: auto;
+    font-size: 2rem;
+    font-weight: 400;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .summary-label {
+    font-size: 12px;
+    letter-spacing: 0.02em;
+    color: var(--text-soft);
+  }
+
+  .summary-item.complete .summary-value {
+    color: var(--success);
+  }
+
+  /* ─── Footer ─────────────────────────────────────── */
+  .footer {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-faint);
+    letter-spacing: 0.01em;
+  }
+
+  /* ─── Empty state message ────────────────────────── */
+  .empty-msg {
+    font-size: 14px;
+    color: var(--text-faint);
+  }
+
+  @media (max-width: 560px) {
+    body { padding: 2rem 1rem; }
+    .header { margin-bottom: 2.5rem; padding-bottom: 1.5rem; }
+    .header-left h1 { font-size: 2.5rem; }
+    .meal-card { padding: 1.2rem; }
+    .meal-name { font-size: 1.25rem; }
+    .summary { padding: 1.5rem; }
+    .summary-grid { gap: 1.5rem; }
+    .summary-value { font-size: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <header class="header">
+    <div class="header-left">
+      <h1>Hoy</h1>
+      <div class="header-meta">Tu día</div>
+    </div>
+    <div class="header-right">
+      <div class="date-day">Lunes</div>
+      <div class="date-rest">16 de junio</div>
+    </div>
+  </header>
+
+  <section class="meals">
+
+    <div class="meal-card">
+      <div class="meal-header">
+        <div>
+          <div class="meal-time">07:00</div>
+          <div class="meal-type">Desayuno</div>
+        </div>
+      </div>
+      <h2 class="meal-name">Batido de leche, avena, canela y plátano</h2>
+      <div class="meal-stats">
+        <span class="stat key"><span class="stat-value">12g</span><span class="stat-label">carbh.</span></span>
+        <span class="stat"><span class="stat-value">18g</span><span class="stat-label">proteína</span></span>
+        <span class="stat"><span class="stat-value">441</span><span class="stat-label">kcal</span></span>
+        <span class="stat"><span class="stat-value">$1.24</span></span>
+      </div>
+    </div>
+
+    <div class="meal-card">
+      <div class="meal-header">
+        <div>
+          <div class="meal-time">12:30</div>
+          <div class="meal-type">Comida</div>
+        </div>
+      </div>
+      <h2 class="meal-name">Carne picada con burrito bowl</h2>
+      <div class="meal-stats">
+        <span class="stat key"><span class="stat-value">16g</span><span class="stat-label">carbh.</span></span>
+        <span class="stat"><span class="stat-value">23g</span><span class="stat-label">proteína</span></span>
+        <span class="stat"><span class="stat-value">886</span><span class="stat-label">kcal</span></span>
+        <span class="stat"><span class="stat-value">$4.28</span></span>
+      </div>
+    </div>
+
+    <div class="meal-card">
+      <div class="meal-header">
+        <div>
+          <div class="meal-time">19:30</div>
+          <div class="meal-type">Cena</div>
+        </div>
+      </div>
+      <h2 class="meal-name">Mejillones en lata, patata al vapor y cebolla morada</h2>
+      <div class="meal-stats">
+        <span class="stat key"><span class="stat-value">15g</span><span class="stat-label">carbh.</span></span>
+        <span class="stat"><span class="stat-value">5g</span><span class="stat-label">proteína</span></span>
+        <span class="stat"><span class="stat-value">669</span><span class="stat-label">kcal</span></span>
+        <span class="stat"><span class="stat-value">$1.55</span></span>
+      </div>
+    </div>
+
+  </section>
+
+  <section class="summary">
+    <div class="summary-title">Resumen del día</div>
+    <div class="summary-grid">
+      <div class="summary-item">
+        <div class="summary-value">$7.07</div>
+        <div class="summary-label">Coste</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-value">1996</div>
+        <div class="summary-label">kcal</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-value">45g</div>
+        <div class="summary-label">Proteína</div>
+      </div>
+      <div class="summary-item complete">
+        <div class="summary-value">3/3</div>
+        <div class="summary-label">Comidas</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="footer">
+    Cocinado en casa · Pensado para la semana
+  </div>
+
+</div>
+
+</body>
+</html>

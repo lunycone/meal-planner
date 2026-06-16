@@ -13,12 +13,12 @@ import AuthGate            from './components/AuthGate'
 import { MEALS }           from './config/meals'
 
 const CONFIG_TABS = [
-  { id: 'platos',        label: 'Platos',        Component: PlatosTab },
-  { id: 'desayunos',     label: 'Desayunos',     Component: DesayunosTab },
+  { id: 'platos',        label: 'Platos',         Component: PlatosTab },
+  { id: 'desayunos',     label: 'Desayunos',      Component: DesayunosTab },
   { id: 'combinaciones', label: 'Combinaciones',  Component: CombinacionesTab },
   { id: 'ingredientes',  label: 'Ingredientes',   Component: IngredientesTab },
-  { id: 'planificador',  label: '📅 Planificador', Component: WeeklyMealPlannerTab },
-  { id: 'compra',        label: '🛒 Compra',      Component: ShoppingListTab },
+  { id: 'planificador',  label: 'Planificador',   Component: WeeklyMealPlannerTab },
+  { id: 'compra',        label: 'Compra',         Component: ShoppingListTab },
   { id: 'menu',          label: 'Menú mensual',   Component: MenuTab },
 ]
 
@@ -32,25 +32,8 @@ function AppShell() {
 
   return (
     <div className="app-shell">
-      <div className="app-header">
-        {/* Back button — always rendered to prevent layout jump */}
-        <button
-          className="app-back-btn"
-          style={{ visibility: atHome ? 'hidden' : 'visible' }}
-          tabIndex={atHome ? -1 : 0}
-          onClick={() => setView('home')}
-        >
-          ←&nbsp;
-          {activeView === 'meal'
-            ? MEALS[activeMeal]?.label
-            : activeConfigTab?.label ?? 'Inicio'}
-        </button>
-        <h1>Meal Planner</h1>
-        <div className="subtitle">Batch cooking · precio + kcal · todo conectado</div>
-      </div>
-
-      {/* Navigation — single persistent tab bar */}
-      <div className="tab-bar">
+      {/* Navigation banner — always visible, Notion-style */}
+      <nav className="tab-bar">
         <button
           className={`tab-btn${atHome ? ' active' : ''}`}
           onClick={() => setView('home')}
@@ -66,7 +49,16 @@ function AppShell() {
             {t.label}
           </button>
         ))}
-      </div>
+      </nav>
+
+      {/* Back button — only on non-home views */}
+      {!atHome && (
+        <div className="app-header">
+          <button className="app-back-btn" onClick={() => setView('home')}>
+            ←&nbsp;Inicio
+          </button>
+        </div>
+      )}
 
       {/* Content */}
       {atHome                && <HomeView />}
