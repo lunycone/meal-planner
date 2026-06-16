@@ -252,21 +252,29 @@ export default function DesayunosTab() {
   const [selectedKey, setSelectedKey] = useState(null)
   const [showBuilder, setShowBuilder] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
-  const [sortBy, setSortBy] = useState('name') // 'name', 'price', 'kcal', 'prot'
+  const [sortBy, setSortBy] = useState('name')
+  const [activeFilter, setActiveFilter] = useState(null) // 'batch', 'rapido', 'ocasional', null (all)
 
   const toggle = (key) => setSelectedKey(prev => prev === key ? null : key)
 
-  // Base desayuno combos (key starts with 'desayuno-')
+  // Base desayuno combos with filtering & grouping
   const baseRecipes = useMemo(() => {
     let recipes = Object.entries(allCombos)
       .filter(([key]) => key.startsWith('desayuno-'))
       .map(([key, combo]) => ({ key, combo }))
 
+    // Filter by search
     if (searchTerm) {
       const q = searchTerm.toLowerCase()
       recipes = recipes.filter(r => r.combo.name.toLowerCase().includes(q))
     }
 
+    // Filter by flag (batch, rapido, ocasional)
+    if (activeFilter) {
+      recipes = recipes.filter(r => r.combo.flags && r.combo.flags.includes(activeFilter))
+    }
+
+    // Sort
     recipes.sort((a, b) => {
       const agg_a = comboAgg(a.combo, allIng)
       const agg_b = comboAgg(b.combo, allIng)
@@ -277,7 +285,25 @@ export default function DesayunosTab() {
     })
 
     return recipes
-  }, [allCombos, allIng, searchTerm, sortBy])
+  }, [allCombos, allIng, searchTerm, sortBy, activeFilter])
+
+  // Group recipes by tag
+  const groupedRecipes = useMemo(() => {
+    const grouped = {}
+    const tagOrder = { batido: 0, yogur: 1, huevo: 2, batch: 3, ocasional: 4 }
+    const tagIcons = { batido: '🥤', yogur: '🥣', huevo: '🥚', batch: '🍳', ocasional: '🍰' }
+    const tagLabels = { batido: 'BATIDOS', yogur: 'BOWLS & YOGUR', huevo: 'HUEVOS', batch: 'BATCH & ESPECIALES', ocasional: 'OCASIONAL' }
+
+    baseRecipes.forEach(r => {
+      const tag = r.combo.tag || 'otro'
+      if (!grouped[tag]) grouped[tag] = []
+      grouped[tag].push(r)
+    })
+
+    return Object.entries(grouped)
+      .sort(([a], [b]) => (tagOrder[a] || 999) - (tagOrder[b] || 999))
+      .map(([tag, items]) => ({ tag, label: tagLabels[tag] || tag, icon: tagIcons[tag] || '📌', items }))
+  }, [baseRecipes])
 
   // Custom desayuno combos (flagged with desayuno: true)
   const customRecipes = useMemo(() => {
@@ -351,6 +377,34 @@ export default function DesayunosTab() {
 
       {showBuilder && <DesayunoBuilder onClose={() => setShowBuilder(false)} />}
 
+      {/* Filter pills */}
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+        {[
+          { flag: null, label: 'Todo', icon: '📌' },
+          { flag: 'batch', label: 'Batch', icon: '⚡' },
+          { flag: 'rapido', label: 'Rápido', icon: '⏱️' },
+          { flag: 'ocasional', label: 'Ocasional', icon: '✨' },
+        ].map(({ flag, label, icon }) => (
+          <button
+            key={flag || 'all'}
+            onClick={() => setActiveFilter(flag)}
+            style={{
+              padding: '0.5rem 1rem',
+              border: `2px solid ${activeFilter === flag ? 'var(--text)' : 'var(--border)'}`,
+              background: activeFilter === flag ? 'var(--card)' : 'transparent',
+              color: 'var(--text)',
+              borderRadius: '9999px',
+              cursor: 'pointer',
+              fontSize: '0.875rem',
+              fontWeight: activeFilter === flag ? 600 : 400,
+              transition: 'all 0.2s',
+            }}
+          >
+            {icon} {label}
+          </button>
+        ))}
+      </div>
+
       {/* Custom recipes */}
       {customRecipes.length > 0 && (
         <div style={{ marginBottom: '1.5rem' }}>
@@ -370,26 +424,32 @@ export default function DesayunosTab() {
         </div>
       )}
 
-      {/* Base recipes */}
+      {/* Base recipes grouped by tag */}
       {baseRecipes.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--muted)' }}>
           <p>No hay recetas que coincidan con tu búsqueda</p>
         </div>
       ) : (
         <>
-          <div className="section-label" style={{ marginBottom: '0.75rem' }}>Recetas base ({baseRecipes.length})</div>
-          {baseRecipes.map(({ key, combo }) => {
-            const isSelected = selectedKey === key
-            return (
-              <div key={key}>
-                <RecipeCard comboKey={key} combo={combo} allIng={allIng} isSelected={isSelected} onClick={() => toggle(key)} />
-                {isSelected && (
-                  <RecipeDetail comboKey={key} combo={combo} allIng={allIng} isBase
-                    onEdit={handleEdit} onClose={() => setSelectedKey(null)} />
-                )}
-              </div>
-            )
-          })}
+          {groupedRecipes.map(({ tag, label, icon, items }) => (
+            <div key={tag} style={{ marginBottom: '2rem' }}>
+              <h3 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--muted)', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {icon} {label} ({items.length})
+              </h3>
+              {items.map(({ key, combo }) => {
+                const isSelected = selectedKey === key
+                return (
+                  <div key={key}>
+                    <RecipeCard comboKey={key} combo={combo} allIng={allIng} isSelected={isSelected} onClick={() => toggle(key)} />
+                    {isSelected && (
+                      <RecipeDetail comboKey={key} combo={combo} allIng={allIng} isBase
+                        onEdit={handleEdit} onClose={() => setSelectedKey(null)} />
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          ))}
         </>
       )}
     </div>

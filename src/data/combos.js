@@ -178,207 +178,29 @@ export const COMBO = {
   },
 
   // ── DESAYUNOS ────────────────────────────────────────────────────────────────
-  'desayuno-cheesecake-yogur': {
-    name: 'Cheesecake yogur cabra',
-    items: [
-      { k: 'yogur-cabra', p: { grams: 170 } },
-      { k: 'huevo',       p: { units: 1 } },
-      { k: 'arandanos',   p: { grams: 10 } },
-      { k: 'canela',      p: {} },
-    ],
-  },
-  'desayuno-tortilla-aguacate': {
-    name: 'Tortilla francesa + aguacate + setas',
-    items: [
-      { k: 'huevo',    p: { units: 2 } },
-      { k: 'aguacate', p: { units: 0.5 } },
-      { k: 'setas',    p: { grams: 80 } },
-      { k: 'espinaca', p: { grams: 60 } },
-    ],
-  },
-  // desayuno-tostada-caballa eliminado (pan = carbs, no apto PCOS diario)
-  'desayuno-overnight-oats': {
-    name: 'Overnight oats',
-    items: [
-      { k: 'avena',      p: { grams: 50 } },
-      { k: 'yogur-cabra',p: { grams: 150 } },
-      { k: 'arandanos',  p: { grams: 40 } },
-    ],
-  },
-  'desayuno-bowl-caballa': {
-    name: 'Bowl caballa + aguacate + limón',
-    items: [
-      { k: 'caballa-media', p: {} },
-      { k: 'aguacate',      p: { units: 0.5 } },
-      { k: 'limon',         p: { units: 0.5 } },
-      { k: 'queso-cabra',   p: { grams: 20 } },
-    ],
-  },
-  'desayuno-waffles-avena': {
-    name: 'Waffles avena + queso + berries',
-    items: [
-      { k: 'avena',      p: { grams: 60 } },
-      { k: 'huevo',      p: { units: 1 } },
-      { k: 'arandanos',  p: { grams: 40 } },
-      { k: 'feta-vaca',  p: { grams: 30 } },
-    ],
-  },
-  'desayuno-tortilla-queso-fruta': {
-    name: 'Tortilla francesa + queso + fruta',
-    items: [
-      { k: 'huevo',     p: { units: 2 } },
-      { k: 'feta-vaca', p: { grams: 30 } },
-      { k: 'arandanos', p: { grams: 60 } },
-    ],
-  },
-  'desayuno-huevos-al-horno': {
-    name: 'Shakshuka (huevos + espinaca)',
-    items: [
-      { k: 'huevo',    p: { units: 2 } },
-      { k: 'passata',  p: { ml: 100 } },
-      { k: 'espinaca', p: { grams: 60 } },
-      { k: 'feta-vaca',p: { grams: 20 } },
-    ],
-  },
-  // desayuno-tostada-tomate-tortilla eliminado (pan = carbs, no apto PCOS diario)
-  'desayuno-tortilla-patata': {
-    name: 'Tortilla de patata (batch)',
-    items: [
-      { k: 'huevo',            p: { units: 2 } },
-      { k: 'patata',           p: { grams: 150 } },
-      { k: 'cebolla-amarilla', p: { grams: 50 } },
-      { k: 'suet',             p: { grams: 15 } },
-    ],
-  },
-  'desayuno-egg-muffins': {
-    name: 'Egg Muffins Espinaca + Passata (batch)',
-    items: [
-      { k: 'huevo',       p: { units: 2 } },
-      { k: 'espinaca',    p: { grams: 50 } },
-      { k: 'passata',     p: { ml: 30 } },
-      { k: 'queso-cabra', p: { grams: 25 } },
-      { k: 'suet',        p: { grams: 10 } },
-    ],
-  },
-  'desayuno-omelette-feta': {
-    name: 'Omelette Feta + Orégano',
-    items: [
-      { k: 'huevo',     p: { units: 2 } },
-      { k: 'feta-vaca', p: { grams: 40 } },
-      { k: 'suet',      p: { grams: 10 } },
-    ],
-  },
-  'desayuno-pizza-sardinas-light': {
-    name: 'Pizza Sardinas Light (batch)',
-    items: [
-      { k: 'huevo',           p: { units: 2 } },
-      { k: 'sardina-cuarto',  p: {} },
-      { k: 'tomate-fresco',   p: { grams: 40 } },
-      { k: 'cebolla-amarilla',p: { grams: 30 } },
-      { k: 'suet',            p: { grams: 10 } },
-    ],
-  },
-  'desayuno-pizza-sardinas-max': {
-    name: 'Pizza Sardinas Proteína Máxima (batch)',
-    items: [
-      { k: 'huevo',       p: { units: 2 } },
-      { k: 'sardina-media',p: {} },
-      { k: 'passata',     p: { ml: 30 } },
-      { k: 'feta-vaca',   p: { grams: 30 } },
-      { k: 'suet',        p: { grams: 10 } },
-    ],
-  },
-  'desayuno-yogur-almendras-pumpkin': {
-    name: 'Yogur · Almendras · Pumpkin · Chocolate',
-    items: [
-      { k: 'yogur-cabra',    p: { grams: 150 } },
-      { k: 'almendras',      p: { grams: 20 } },
-      { k: 'pumpkin-seeds',  p: { grams: 20 } },
-      { k: 'chocolate-negro',p: { grams: 15 } },
-      { k: 'canela',         p: {} },
-    ],
-  },
-  'desayuno-yogur-pumpkin-coco': {
-    name: 'Yogur · Pumpkin Seeds · Coco · Canela',
-    items: [
-      { k: 'yogur-cabra',  p: { grams: 150 } },
-      { k: 'pumpkin-seeds',p: { grams: 50 } },
-      { k: 'coco-rallado', p: { grams: 20 } },
-      { k: 'canela',       p: {} },
-    ],
-  },
-  'desayuno-batido-yogur-leche-avena': {
-    name: 'Batido: Yogur · Leche · Avena · Canela',
-    items: [
-      { k: 'yogur-cabra', p: { grams: 150 } },
-      { k: 'leche',       p: { grams: 200 } },
-      { k: 'avena',       p: { grams: 50 } },
-      { k: 'canela',      p: {} },
-    ],
-  },
-  'desayuno-batido-leche-avena-banana': {
-    name: 'Batido: Leche · Avena · Canela · Banana',
-    items: [
-      { k: 'leche',   p: { grams: 250 } },
-      { k: 'avena',   p: { grams: 50 } },
-      { k: 'banana',  p: { grams: 100 } },
-      { k: 'canela',  p: {} },
-    ],
-  },
-  'desayuno-batido-leche-yogur-chocolate': {
-    name: 'Batido: Leche · Yogur · Chocolate · Arándanos',
-    items: [
-      { k: 'leche',            p: { grams: 200 } },
-      { k: 'yogur-cabra',      p: { grams: 100 } },
-      { k: 'chocolate-negro',  p: { grams: 20 } },
-      { k: 'arandanos',        p: { grams: 10 } },
-    ],
-  },
-  'desayuno-yogur-sunflower-arandanos': {
-    name: 'Yogur · Sunflower Seeds · Arándanos',
-    items: [
-      { k: 'yogur-cabra',      p: { grams: 150 } },
-      { k: 'sunflower-seeds',  p: { grams: 25 } },
-      { k: 'arandanos',        p: { grams: 25 } },
-    ],
-  },
-  'desayuno-huevo-queso': {
-    name: 'Huevo · Queso Feta · Simple',
-    items: [
-      { k: 'huevo',      p: { units: 2 } },
-      { k: 'feta-vaca',  p: { grams: 30 } },
-      { k: 'suet',       p: { grams: 10 } },
-    ],
-  },
-  'desayuno-magdalenas': {
-    name: 'Magdalenas yogur (ocasional)',
-    items: [
-      { k: 'huevo',       p: { units: 1 } },
-      { k: 'yogur-cabra', p: { grams: 80 } },
-      { k: 'harina',      p: { grams: 60 } },
-      { k: 'azucar',      p: { grams: 15 } },
-      { k: 'mantequilla', p: { grams: 25 } },
-    ],
-  },
-  'desayuno-magdalenas-chocolate': {
-    name: 'Magdalenas chocolate (ocasional)',
-    items: [
-      { k: 'huevo',            p: { units: 1 } },
-      { k: 'yogur-cabra',      p: { grams: 80 } },
-      { k: 'harina',           p: { grams: 60 } },
-      { k: 'azucar',           p: { grams: 15 } },
-      { k: 'mantequilla',      p: { grams: 25 } },
-      { k: 'chocolate-negro',  p: { grams: 20 } },
-    ],
-  },
-  'desayuno-yogur-huevo-avena': {
-    name: 'Yogur cabra + huevo + avena',
-    items: [
-      { k: 'yogur-cabra', p: { grams: 150 } },
-      { k: 'huevo',       p: { units: 1 } },
-      { k: 'avena',       p: { grams: 50 } },
-    ],
-  },
+  'desayuno-cheesecake-yogur': { tag: 'yogur', flags: ['rapido'], name: 'Cheesecake yogur cabra', items: [{ k: 'yogur-cabra', p: { grams: 170 } },{ k: 'huevo', p: { units: 1 } },{ k: 'arandanos', p: { grams: 10 } },{ k: 'canela', p: {} },] },
+  'desayuno-tortilla-aguacate': { tag: 'huevo', flags: ['rapido'], name: 'Tortilla francesa + aguacate + setas', items: [{ k: 'huevo', p: { units: 2 } },{ k: 'aguacate', p: { units: 0.5 } },{ k: 'setas', p: { grams: 80 } },{ k: 'espinaca', p: { grams: 60 } },] },
+  'desayuno-overnight-oats': { tag: 'batch', flags: ['batch'], name: 'Overnight oats', items: [{ k: 'avena', p: { grams: 50 } },{ k: 'yogur-cabra', p: { grams: 150 } },{ k: 'arandanos', p: { grams: 40 } },] },
+  'desayuno-bowl-caballa': { tag: 'huevo', flags: ['rapido'], name: 'Bowl caballa + aguacate + limón', items: [{ k: 'caballa-media', p: {} },{ k: 'aguacate', p: { units: 0.5 } },{ k: 'limon', p: { units: 0.5 } },{ k: 'queso-cabra', p: { grams: 20 } },] },
+  'desayuno-waffles-avena': { tag: 'ocasional', flags: ['ocasional'], name: 'Waffles avena + queso + berries', items: [{ k: 'avena', p: { grams: 60 } },{ k: 'huevo', p: { units: 1 } },{ k: 'arandanos', p: { grams: 40 } },{ k: 'feta-vaca', p: { grams: 30 } },] },
+  'desayuno-tortilla-queso-fruta': { tag: 'huevo', flags: ['rapido'], name: 'Tortilla francesa + queso + fruta', items: [{ k: 'huevo', p: { units: 2 } },{ k: 'feta-vaca', p: { grams: 30 } },{ k: 'arandanos', p: { grams: 60 } },] },
+  'desayuno-huevos-al-horno': { tag: 'huevo', flags: ['rapido'], name: 'Shakshuka (huevos + espinaca)', items: [{ k: 'huevo', p: { units: 2 } },{ k: 'passata', p: { ml: 100 } },{ k: 'espinaca', p: { grams: 60 } },{ k: 'feta-vaca', p: { grams: 20 } },] },
+  'desayuno-tortilla-patata': { tag: 'huevo', flags: ['batch'], name: 'Tortilla de patata (batch)', items: [{ k: 'huevo', p: { units: 2 } },{ k: 'patata', p: { grams: 150 } },{ k: 'cebolla-amarilla', p: { grams: 50 } },{ k: 'suet', p: { grams: 15 } },] },
+  'desayuno-egg-muffins': { tag: 'huevo', flags: ['batch'], name: 'Egg Muffins Espinaca + Passata (batch)', items: [{ k: 'huevo', p: { units: 2 } },{ k: 'espinaca', p: { grams: 50 } },{ k: 'passata', p: { ml: 30 } },{ k: 'queso-cabra', p: { grams: 25 } },{ k: 'suet', p: { grams: 10 } },] },
+  'desayuno-omelette-feta': { tag: 'huevo', flags: ['rapido'], name: 'Omelette Feta + Orégano', items: [{ k: 'huevo', p: { units: 2 } },{ k: 'feta-vaca', p: { grams: 40 } },{ k: 'suet', p: { grams: 10 } },] },
+  'desayuno-pizza-sardinas-light': { tag: 'huevo', flags: ['batch'], name: 'Pizza Sardinas Light (batch)', items: [{ k: 'huevo', p: { units: 2 } },{ k: 'sardina-cuarto', p: {} },{ k: 'tomate-fresco', p: { grams: 40 } },{ k: 'cebolla-amarilla', p: { grams: 30 } },{ k: 'suet', p: { grams: 10 } },] },
+  'desayuno-pizza-sardinas-max': { tag: 'huevo', flags: ['batch'], name: 'Pizza Sardinas Proteína Máxima (batch)', items: [{ k: 'huevo', p: { units: 2 } },{ k: 'sardina-media', p: {} },{ k: 'passata', p: { ml: 30 } },{ k: 'feta-vaca', p: { grams: 30 } },{ k: 'suet', p: { grams: 10 } },] },
+  'desayuno-yogur-almendras-pumpkin': { tag: 'yogur', flags: ['rapido'], name: 'Yogur · Almendras · Pumpkin · Chocolate', items: [{ k: 'yogur-cabra', p: { grams: 150 } },{ k: 'almendras', p: { grams: 20 } },{ k: 'pumpkin-seeds', p: { grams: 20 } },{ k: 'chocolate-negro', p: { grams: 15 } },{ k: 'canela', p: {} },] },
+  'desayuno-yogur-pumpkin-coco': { tag: 'yogur', flags: ['rapido'], name: 'Yogur · Pumpkin Seeds · Coco · Canela', items: [{ k: 'yogur-cabra', p: { grams: 150 } },{ k: 'pumpkin-seeds', p: { grams: 50 } },{ k: 'coco-rallado', p: { grams: 20 } },{ k: 'canela', p: {} },] },
+  'desayuno-batido-yogur-leche-avena': { tag: 'batido', flags: ['rapido'], name: 'Batido: Yogur · Leche · Avena · Canela', items: [{ k: 'yogur-cabra', p: { grams: 150 } },{ k: 'leche', p: { grams: 200 } },{ k: 'avena', p: { grams: 50 } },{ k: 'canela', p: {} },] },
+  'desayuno-batido-leche-avena-banana': { tag: 'batido', flags: ['rapido'], name: 'Batido: Leche · Avena · Canela · Banana', items: [{ k: 'leche', p: { grams: 250 } },{ k: 'avena', p: { grams: 50 } },{ k: 'banana', p: { grams: 100 } },{ k: 'canela', p: {} },] },
+  'desayuno-batido-leche-yogur-chocolate': { tag: 'batido', flags: ['rapido'], name: 'Batido: Leche · Yogur · Chocolate · Arándanos', items: [{ k: 'leche', p: { grams: 200 } },{ k: 'yogur-cabra', p: { grams: 100 } },{ k: 'chocolate-negro', p: { grams: 20 } },{ k: 'arandanos', p: { grams: 10 } },] },
+  'desayuno-yogur-sunflower-arandanos': { tag: 'yogur', flags: ['rapido'], name: 'Yogur · Sunflower Seeds · Arándanos', items: [{ k: 'yogur-cabra', p: { grams: 150 } },{ k: 'sunflower-seeds', p: { grams: 25 } },{ k: 'arandanos', p: { grams: 25 } },] },
+  'desayuno-huevo-queso': { tag: 'huevo', flags: ['rapido'], name: 'Huevo · Queso Feta · Simple', items: [{ k: 'huevo', p: { units: 2 } },{ k: 'feta-vaca', p: { grams: 30 } },{ k: 'suet', p: { grams: 10 } },] },
+  'desayuno-brownie-chocolate': { tag: 'ocasional', flags: ['ocasional'], name: 'Brownie Chocolate Desayuno', items: [{ k: 'huevo', p: { units: 2 } },{ k: 'chocolate-negro', p: { grams: 30 } },{ k: 'almendras', p: { grams: 40 } },{ k: 'mantequilla', p: { grams: 20 } },{ k: 'canela', p: {} },] },
+  'desayuno-magdalenas': { tag: 'ocasional', flags: ['ocasional'], name: 'Magdalenas yogur (ocasional)', items: [{ k: 'huevo', p: { units: 1 } },{ k: 'yogur-cabra', p: { grams: 80 } },{ k: 'harina', p: { grams: 60 } },{ k: 'azucar', p: { grams: 15 } },{ k: 'mantequilla', p: { grams: 25 } },] },
+  'desayuno-magdalenas-chocolate': { tag: 'ocasional', flags: ['ocasional'], name: 'Magdalenas chocolate (ocasional)', items: [{ k: 'huevo', p: { units: 1 } },{ k: 'yogur-cabra', p: { grams: 80 } },{ k: 'harina', p: { grams: 60 } },{ k: 'azucar', p: { grams: 15 } },{ k: 'mantequilla', p: { grams: 25 } },{ k: 'chocolate-negro', p: { grams: 20 } },] },
+  'desayuno-yogur-huevo-avena': { tag: 'yogur', flags: ['rapido'], name: 'Yogur cabra + huevo + avena', items: [{ k: 'yogur-cabra', p: { grams: 150 } },{ k: 'huevo', p: { units: 1 } },{ k: 'avena', p: { grams: 50 } },] },
 }
 
 // Which combos each protein group gets
@@ -402,6 +224,6 @@ export const COMBO_SETS = {
     'desayuno-yogur-almendras-pumpkin','desayuno-yogur-pumpkin-coco',
     'desayuno-batido-yogur-leche-avena','desayuno-batido-leche-avena-banana','desayuno-batido-leche-yogur-chocolate',
     'desayuno-yogur-sunflower-arandanos','desayuno-huevo-queso',
-    'desayuno-magdalenas','desayuno-magdalenas-chocolate',
+    'desayuno-brownie-chocolate','desayuno-magdalenas','desayuno-magdalenas-chocolate',
   ],
 }
