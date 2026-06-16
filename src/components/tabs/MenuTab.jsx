@@ -202,9 +202,55 @@ function WeekCard({ week, weekIdx }) {
   )
 }
 
-// ─── Calendar strip ────────────────────────────────────────────────────────
+// ─── Day card (modern design) ──────────────────────────────────────────────
 
-function CalendarStrip({ week, weekIdx }) {
+function DayCard({ day, type, protein, combo, isBatch, isSpecial }) {
+  const bgColor = isSpecial ? 'var(--jessica-bg)' : isBatch ? '#f0e8d8' : '#f8f8f8'
+  const borderColor = isSpecial ? '#d4c4b0' : isBatch ? '#d4c4a0' : '#e8e8e8'
+
+  return (
+    <div style={{
+      background: bgColor,
+      border: `2px solid ${borderColor}`,
+      borderRadius: '0.75rem',
+      padding: '1rem',
+      minWidth: '140px',
+      textAlign: 'center',
+      transition: 'all 0.2s'
+    }}>
+      <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.5rem' }}>
+        {day}
+      </div>
+      <div style={{ fontSize: '0.7rem', color: 'var(--muted)', marginBottom: '0.75rem', fontWeight: 500 }}>
+        {protein}
+      </div>
+      <div style={{
+        fontSize: '0.75rem',
+        color: 'var(--text)',
+        background: 'rgba(255,255,255,0.6)',
+        padding: '0.4rem 0.6rem',
+        borderRadius: '0.4rem',
+        lineHeight: '1.4'
+      }}>
+        {combo}
+      </div>
+      {isBatch && (
+        <div style={{ fontSize: '0.65rem', color: '#8b7355', marginTop: '0.5rem', fontStyle: 'italic' }}>
+          Cocinar domingo
+        </div>
+      )}
+      {isSpecial && (
+        <div style={{ fontSize: '0.65rem', color: '#8b5a5a', marginTop: '0.5rem', fontWeight: 600 }}>
+          Especial
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Calendar grid (modern layout) ──────────────────────────────────────────
+
+function CalendarView({ week, weekIdx }) {
   const batchOverrides = useStore(s => s.batchOverrides)
   const deletedBatches = useStore(s => s.deletedBatches)
 
@@ -216,23 +262,28 @@ function CalendarStrip({ week, weekIdx }) {
   const ssDeleted = deletedBatches.includes(`w${weekIdx}-special`)
 
   const days = [
-    { d: ss && !ssDeleted ? 'Dom ★' : 'Dom ↺', type: ss && !ssDeleted ? 'special-day' : 'batch-sun', prot: ss && !ssDeleted ? ss.protein : b0.protein, sub: ss && !ssDeleted ? ss.combo?.split(' ')[0] : b0.combo?.split(' ')[0] },
-    { d: 'Lun', type: 'eat-sun', prot: b0.protein, sub: b0.combo?.split(' ')[0] },
-    { d: 'Mar', type: 'eat-sun', prot: b0.protein, sub: b0.combo?.split(' ')[0] },
-    { d: 'Mié', type: 'eat-sun', prot: b0.protein, sub: b0.combo?.split(' ')[0] },
-    { d: 'Jue ↺', type: 'batch-thu', prot: b1.protein, sub: b1.combo?.split(' ')[0] },
-    { d: 'Vie', type: 'eat-thu', prot: b1.protein, sub: b1.combo?.split(' ')[0] },
-    { d: 'Sáb', type: 'eat-thu', prot: b1.protein, sub: b1.combo?.split(' ')[0] },
+    ss && !ssDeleted
+      ? { day: 'Dom', prot: ss.protein, combo: ss.combo, isSpecial: true, isBatch: false }
+      : { day: 'Dom', prot: b0.protein, combo: b0.combo, isSpecial: false, isBatch: true },
+    { day: 'Lun', prot: b0.protein, combo: b0.combo, isSpecial: false, isBatch: false },
+    { day: 'Mar', prot: b0.protein, combo: b0.combo, isSpecial: false, isBatch: false },
+    { day: 'Mié', prot: b0.protein, combo: b0.combo, isSpecial: false, isBatch: false },
+    { day: 'Jue', prot: b1.protein, combo: b1.combo, isSpecial: false, isBatch: true },
+    { day: 'Vie', prot: b1.protein, combo: b1.combo, isSpecial: false, isBatch: false },
+    { day: 'Sáb', prot: b1.protein, combo: b1.combo, isSpecial: false, isBatch: false },
   ]
 
   return (
-    <div className="cal-strip">
+    <div style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
       {days.map((d, i) => (
-        <div key={i} className={`cal-day ${d.type}`}>
-          <div className="cdn">{d.d}</div>
-          <div className="cdp">{d.prot}</div>
-          <div className="cds">{d.sub}</div>
-        </div>
+        <DayCard
+          key={i}
+          day={d.day}
+          protein={d.prot}
+          combo={d.combo}
+          isBatch={d.isBatch}
+          isSpecial={d.isSpecial}
+        />
       ))}
     </div>
   )
@@ -256,13 +307,26 @@ export default function MenuTab() {
         {MENU.map((week, i) => <WeekCard key={i} week={week} weekIdx={i} />)}
       </div>
 
-      <div className="section-label" style={{ marginBottom: '0.5rem' }}>Vista día a día — mes completo</div>
-      {MENU.map((week, i) => (
-        <div key={i}>
-          <div className="section-label" style={{ margin: '1rem 0 0.4rem', color: 'var(--brown)' }}>{week.label}</div>
-          <CalendarStrip week={week} weekIdx={i} />
+      <div style={{ marginTop: '2rem' }}>
+        <div className="section-label" style={{ marginBottom: '1rem', fontSize: '1rem', fontWeight: 600 }}>
+          📅 Vista día a día — mes completo
         </div>
-      ))}
+        {MENU.map((week, i) => (
+          <div key={i} style={{ marginBottom: '2rem' }}>
+            <div style={{
+              fontSize: '0.9rem',
+              fontWeight: 600,
+              color: 'var(--text)',
+              marginBottom: '0.75rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em'
+            }}>
+              {week.label}
+            </div>
+            <CalendarView week={week} weekIdx={i} />
+          </div>
+        ))}
+      </div>
 
       <div className="section-label" style={{ margin: '1.5rem 0 0.25rem' }}>Lista de compra — mes completo (2 personas)</div>
       <p style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '1rem' }}>Cantidades orientativas.</p>
