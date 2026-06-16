@@ -288,6 +288,25 @@ export const COMBO = {
       { k: 'suet',        p: { grams: 10 } },
     ],
   },
+  'desayuno-yogur-almendras-pumpkin': {
+    name: 'Yogur · Almendras · Pumpkin · Chocolate',
+    items: [
+      { k: 'yogur-cabra',    p: { grams: 150 } },
+      { k: 'almendras',      p: { grams: 20 } },
+      { k: 'pumpkin-seeds',  p: { grams: 20 } },
+      { k: 'chocolate-negro',p: { grams: 15 } },
+      { k: 'canela',         p: {} },
+    ],
+  },
+  'desayuno-yogur-pumpkin-coco': {
+    name: 'Yogur · Pumpkin Seeds · Coco · Canela',
+    items: [
+      { k: 'yogur-cabra',  p: { grams: 150 } },
+      { k: 'pumpkin-seeds',p: { grams: 50 } },
+      { k: 'coco-rallado', p: { grams: 20 } },
+      { k: 'canela',       p: {} },
+    ],
+  },
   'desayuno-magdalenas': {
     name: 'Magdalenas yogur (ocasional)',
     items: [

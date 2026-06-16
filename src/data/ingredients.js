@@ -45,6 +45,10 @@ export const ING = {
   'green-beans':     { name: 'Ejotes / Green beans', cat: 'fresco', per100: 0.60,  kc: 31,  pack: 'bunch ~0.08kg · $0.48', per: '80g → $0.48 · 25 kcal' },
   arandanos:         { name: 'Arándanos congelados (Farm Boy)', cat: 'fresco', per100: 0.977, kc: 57, prot: 0.7, fat: 0.3, pack: '2.25 kg · $21.99', per: '40g → $0.39 · 23 kcal' },
   banana:            { name: 'Banana',            cat: 'fresco',   per100: 0.25,  kc: 89,  prot: 1.1, fat: 0.3, pack: 'estimado ~$0.30/ud',    per: '120g → $0.30 · 107 kcal' },
+  'pumpkin-seeds':   { name: 'Pumpkin Seeds (Ambrosia)', cat: 'fresco', per100: 1.143, kc: 559, prot: 30.2, fat: 49.1, pack: '1 lb · $5.19', per: '30g → $0.34 · 168 kcal' },
+  'sunflower-seeds': { name: 'Sunflower Seeds (Ambrosia)', cat: 'fresco', per100: 1.076, kc: 584, prot: 20.8, fat: 51.5, pack: '454g · $4.89', per: '30g → $0.32 · 175 kcal' },
+  almendras:         { name: 'Almendras (Whole Natural)', cat: 'fresco', per100: 1.781, kc: 579, prot: 21.2, fat: 49.9, pack: '1 lb · $8.09', per: '20g → $0.36 · 116 kcal' },
+  'coco-rallado':    { name: 'Coco rallado (Ambrosia Organic)', cat: 'fresco', per100: 2.154, kc: 660, prot: 6.9, fat: 65, pack: '227g · CA$4.89', per: '20g → $0.43 · 132 kcal' },
 
   // LÁCTEOS
   'feta-vaca':    { name: 'Feta (Krinos)',    cat: 'lacteo', per100: 1.59, kc: 265, prot: 14, fat: 21, pack: '3 kg · $47.59',   per: '30g → $0.48 · 80 kcal', tag: 'vaca' },
