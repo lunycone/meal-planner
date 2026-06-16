@@ -13,6 +13,39 @@ function getISOWeek(date) {
   return `${d.getUTCFullYear()}-W${String(Math.ceil((d - yearStart) / 86400000 / 7)).padStart(2, '0')}`
 }
 
+// Get actual dates for a week (Monday to Sunday)
+function getWeekDates(weekOffset) {
+  const now = new Date()
+  const target = new Date(now.getTime() + weekOffset * 7 * 24 * 60 * 60 * 1000)
+
+  // Get Monday of that week
+  const day = target.getDay()
+  const diff = target.getDate() - day + (day === 0 ? -6 : 1)
+  const monday = new Date(target.setDate(diff))
+
+  const dates = []
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday)
+    d.setDate(d.getDate() + i)
+    dates.push(d)
+  }
+  return dates
+}
+
+// Format date as "16 jun"
+function formatDateShort(date) {
+  const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+  return `${date.getDate()} ${months[date.getMonth()]}`
+}
+
+// Check if date is today
+function isToday(date) {
+  const today = new Date()
+  return date.getDate() === today.getDate() &&
+         date.getMonth() === today.getMonth() &&
+         date.getFullYear() === today.getFullYear()
+}
+
 // Days and meals
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 const DAY_KEYS = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom']
@@ -300,6 +333,7 @@ export default function WeeklyMealPlannerTab() {
   const targetDate = new Date(currentDate)
   targetDate.setDate(targetDate.getDate() + weekOffset * 7)
   const weekKey = getISOWeek(targetDate)
+  const weekDates = getWeekDates(weekOffset)
 
   const currentWeek = weekPlan[weekKey] ?? {}
   const slotKey = (dayKey, mealType) => `${dayKey}-${mealType}`
@@ -312,22 +346,49 @@ export default function WeeklyMealPlannerTab() {
     clearMealSlot(weekKey, slotKey(dayKey, mealType))
   }
 
-  // Calculate week totals
-  const weekTotals = useMemo(() => {
-    let totalCost = 0
-    let totalKcal = 0
-    Object.values(currentWeek).forEach(meal => {
-      if (meal?.type === 'desayuno') {
-        const recipe = allCombos[meal.recipeKey]
-        if (recipe) {
-          const agg = comboAgg(recipe, allIng)
-          totalCost += agg.cost
-          totalKcal += agg.kcal
+  // Calculate day and week totals
+  const dayTotals = useMemo(() => {
+    const totals = {}
+    DAY_KEYS.forEach(dayKey => {
+      let dayC = 0, dayK = 0
+      MEALS.forEach(meal => {
+        const m = currentWeek[`${dayKey}-${meal}`]
+        if (!m) return
+        if (m.type === 'desayuno') {
+          const recipe = allCombos[m.recipeKey]
+          if (recipe) {
+            const agg = comboAgg(recipe, allIng)
+            dayC += agg.cost
+            dayK += agg.kcal
+          }
+        } else if (m.type === 'plato') {
+          const protein = PROTEIN[m.proteinKey]
+          const combo = allCombos[m.comboKey]
+          if (protein && combo) {
+            const protCost = proteinCost(protein)
+            const protKcal = proteinKcal(protein)
+            const combAgg = comboAgg(combo, allIng)
+            dayC += protCost + combAgg.cost
+            dayK += protKcal + combAgg.kcal + 235
+          }
         }
-      }
+      })
+      totals[dayKey] = { cost: dayC, kcal: dayK }
     })
-    return { totalCost, totalKcal }
+    return totals
   }, [currentWeek, allCombos, allIng])
+
+  const weekTotals = useMemo(() => {
+    let totalCost = 0, totalKcal = 0, filledSlots = 0
+    Object.entries(dayTotals).forEach(([, { cost, kcal }]) => {
+      totalCost += cost
+      totalKcal += kcal
+    })
+    Object.values(currentWeek).forEach(meal => {
+      if (meal) filledSlots++
+    })
+    return { totalCost, totalKcal, filledSlots }
+  }, [dayTotals, currentWeek])
 
   return (
     <div>
@@ -337,25 +398,36 @@ export default function WeeklyMealPlannerTab() {
             Planificador semanal
           </h2>
           <p style={{ fontSize: '0.82rem', color: 'var(--muted)' }}>
-            Semana {weekKey} — {fmt(weekTotals.totalCost)} · {Math.round(weekTotals.totalKcal)} kcal
+            {formatDateShort(weekDates[0])} - {formatDateShort(weekDates[6])} · {weekKey}
+          </p>
+          <p style={{ fontSize: '0.78rem', color: 'var(--muted)', marginTop: '0.25rem' }}>
+            {fmt(weekTotals.totalCost)} · {Math.round(weekTotals.totalKcal)} kcal · {weekTotals.filledSlots}/21 comidas planificadas
           </p>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button className="btn-ghost" onClick={() => setWeekOffset(w => w - 1)}>← Semana anterior</button>
+          <button className="btn-ghost" onClick={() => setWeekOffset(w => w - 1)}>← Anterior</button>
           <button className="btn-ghost" onClick={() => setWeekOffset(0)}>Hoy</button>
-          <button className="btn-ghost" onClick={() => setWeekOffset(w => w + 1)}>Semana siguiente →</button>
+          <button className="btn-ghost" onClick={() => setWeekOffset(w => w + 1)}>Siguiente →</button>
         </div>
       </div>
 
       <div className="week-grid">
         <div className="week-header">
           <div className="wh-corner" />
-          {DAY_KEYS.map((dayKey, i) => (
-            <div key={dayKey} className="wh-day">
-              <div className="wh-name">{DAYS[i]}</div>
-              <div className="wh-date">{dayKey}</div>
-            </div>
-          ))}
+          {DAY_KEYS.map((dayKey, i) => {
+            const date = weekDates[i]
+            const today = isToday(date)
+            return (
+              <div key={dayKey} className={`wh-day${today ? ' is-today' : ''}`} style={today ? { background: 'var(--card)', borderRadius: '0.5rem', padding: '0.5rem' } : {}}>
+                <div className="wh-name">{DAYS[i]}</div>
+                <div className="wh-date">{date.getDate()} {['E', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'][date.getMonth()]}</div>
+                {today && <div style={{ fontSize: '0.65rem', color: 'var(--muted)', marginTop: '0.25rem', fontWeight: 600 }}>HOY</div>}
+                <div style={{ fontSize: '0.7rem', color: 'var(--muted)', marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border)' }}>
+                  {fmt(dayTotals[dayKey]?.cost ?? 0)} · {Math.round(dayTotals[dayKey]?.kcal ?? 0)} kcal
+                </div>
+              </div>
+            )
+          })}
         </div>
 
         {MEALS.map(mealType => (
