@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import useStore, { selectAllIng, selectAllCombos } from '../../store/useStore'
 import { PROTEIN, COOK_FAT } from '../../data/proteins'
 import { PREP, COMBO_SETS } from '../../data/combos'
@@ -17,6 +17,23 @@ export default function PlatosTab() {
   const [selPrep, setSelPrep] = useState(null)
   const [useAlt, setUseAlt]   = useState(false)
   const [sortByPrice, setSortByPrice] = useState(false)
+  const [searchProt, setSearchProt] = useState('')
+  const [filterMeal, setFilterMeal] = useState('all')
+
+  const filteredProteins = useMemo(() => {
+    const q = searchProt.toLowerCase()
+    let entries = Object.entries(PROTEIN)
+
+    if (filterMeal !== 'all') {
+      entries = entries.filter(([, p]) => (p.meals ?? ['comida']).includes(filterMeal))
+    }
+
+    if (q) {
+      entries = entries.filter(([, p]) => p.name.toLowerCase().includes(q))
+    }
+
+    return entries.sort((a, b) => a[1].name.localeCompare(b[1].name))
+  }, [searchProt, filterMeal])
 
   function selectProtein(key) {
     setSelProt(key)
@@ -30,7 +47,26 @@ export default function PlatosTab() {
       {/* ── Sidebar ── */}
       <div>
         <div className="section-label">Proteínas</div>
-        {Object.entries(PROTEIN).map(([key, pr]) => {
+        <input
+          className="picker-search"
+          placeholder="Buscar proteína…"
+          value={searchProt}
+          onChange={e => setSearchProt(e.target.value)}
+          style={{ marginBottom: '0.75rem' }}
+        />
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+          {['all', 'desayuno', 'comida', 'cena'].map(meal => (
+            <button
+              key={meal}
+              className={`btn-pill${filterMeal === meal ? ' active' : ''}`}
+              onClick={() => setFilterMeal(meal)}
+              style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+            >
+              {meal === 'all' ? 'Todas' : meal}
+            </button>
+          ))}
+        </div>
+        {filteredProteins.map(([key, pr]) => {
           const cost = proteinCost(pr)
           const kcal = proteinKcal(pr)
           return (

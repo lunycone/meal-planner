@@ -401,6 +401,8 @@ export default function CombinacionesTab() {
   const [editingBaseKey,  setEditingBaseKey]  = useState(null)
   const [editingCustom,   setEditingCustom]   = useState(null)
   const [selectedKey,     setSelectedKey]     = useState(null)  // for detail panel
+  const [searchTerm,      setSearchTerm]      = useState('')
+  const [sortBy,          setSortBy]          = useState('name') // 'name', 'price', 'kcal'
 
   const handleEditBase = (key) => {
     setEditingCustom(null)
@@ -418,7 +420,24 @@ export default function CombinacionesTab() {
 
   const toggleSelect = (key) => setSelectedKey(prev => prev === key ? null : key)
 
-  const baseCombos = Object.entries(allCombos).filter(([key, c]) => !c.isCustom && !key.startsWith('desayuno-'))
+  const baseCombos = useMemo(() => {
+    let combos = Object.entries(allCombos).filter(([key, c]) => !c.isCustom && !key.startsWith('desayuno-'))
+
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase()
+      combos = combos.filter(([, c]) => c.name.toLowerCase().includes(q))
+    }
+
+    combos.sort((a, b) => {
+      const agg_a = comboAgg(a[1], allIng)
+      const agg_b = comboAgg(b[1], allIng)
+      if (sortBy === 'price') return agg_a.cost - agg_b.cost
+      if (sortBy === 'kcal') return agg_a.kcal - agg_b.kcal
+      return a[1].name.localeCompare(b[1].name)
+    })
+
+    return combos
+  }, [allCombos, allIng, searchTerm, sortBy])
 
   return (
     <div>
@@ -469,6 +488,32 @@ export default function CombinacionesTab() {
 
       {/* Base combos */}
       <div style={{ marginTop: '2rem' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <input
+            className="picker-search"
+            placeholder="Buscar combo…"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            style={{ flex: 1, minWidth: '200px' }}
+          />
+          <select
+            value={sortBy}
+            onChange={e => setSortBy(e.target.value)}
+            style={{
+              padding: '0.5rem 0.75rem',
+              border: '1px solid var(--border)',
+              borderRadius: '0.5rem',
+              background: 'var(--bg-2)',
+              color: 'var(--text)',
+              fontSize: '0.875rem',
+            }}
+          >
+            <option value="name">Nombre A-Z</option>
+            <option value="price">Precio (menor a mayor)</option>
+            <option value="kcal">Kcal (menor a mayor)</option>
+          </select>
+        </div>
+
         <div className="section-label" style={{ marginBottom: '0.5rem' }}>
           Combos base ({baseCombos.length})
         </div>

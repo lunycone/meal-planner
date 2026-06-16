@@ -6,6 +6,8 @@ import PlatosTab           from './components/tabs/PlatosTab'
 import DesayunosTab        from './components/tabs/DesayunosTab'
 import IngredientesTab     from './components/tabs/IngredientesTab'
 import CombinacionesTab    from './components/tabs/CombinacionesTab'
+import WeeklyMealPlannerTab from './components/tabs/WeeklyMealPlannerTab'
+import ShoppingListTab     from './components/tabs/ShoppingListTab'
 import MenuTab             from './components/tabs/MenuTab'
 import AuthGate            from './components/AuthGate'
 import { MEALS }           from './config/meals'
@@ -15,6 +17,8 @@ const CONFIG_TABS = [
   { id: 'desayunos',     label: 'Desayunos',     Component: DesayunosTab },
   { id: 'combinaciones', label: 'Combinaciones',  Component: CombinacionesTab },
   { id: 'ingredientes',  label: 'Ingredientes',   Component: IngredientesTab },
+  { id: 'planificador',  label: '📅 Planificador', Component: WeeklyMealPlannerTab },
+  { id: 'compra',        label: '🛒 Compra',      Component: ShoppingListTab },
   { id: 'menu',          label: 'Menú mensual',   Component: MenuTab },
 ]
 

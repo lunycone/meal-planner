@@ -251,14 +251,56 @@ export default function DesayunosTab() {
 
   const [selectedKey, setSelectedKey] = useState(null)
   const [showBuilder, setShowBuilder] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [sortBy, setSortBy] = useState('name') // 'name', 'price', 'kcal', 'prot'
 
   const toggle = (key) => setSelectedKey(prev => prev === key ? null : key)
 
   // Base desayuno combos (key starts with 'desayuno-')
-  const baseRecipes = Object.entries(allCombos).filter(([key]) => key.startsWith('desayuno-'))
+  const baseRecipes = useMemo(() => {
+    let recipes = Object.entries(allCombos)
+      .filter(([key]) => key.startsWith('desayuno-'))
+      .map(([key, combo]) => ({ key, combo }))
+
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase()
+      recipes = recipes.filter(r => r.combo.name.toLowerCase().includes(q))
+    }
+
+    recipes.sort((a, b) => {
+      const agg_a = comboAgg(a.combo, allIng)
+      const agg_b = comboAgg(b.combo, allIng)
+      if (sortBy === 'price') return agg_a.cost - agg_b.cost
+      if (sortBy === 'kcal') return agg_a.kcal - agg_b.kcal
+      if (sortBy === 'prot') return agg_b.prot - agg_a.prot
+      return a.combo.name.localeCompare(b.combo.name)
+    })
+
+    return recipes
+  }, [allCombos, allIng, searchTerm, sortBy])
 
   // Custom desayuno combos (flagged with desayuno: true)
-  const customRecipes = customCombos.filter(c => c.desayuno)
+  const customRecipes = useMemo(() => {
+    let recipes = customCombos
+      .filter(c => c.desayuno)
+      .map(c => ({ key: '__dz__' + c.id, combo: c }))
+
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase()
+      recipes = recipes.filter(r => r.combo.name.toLowerCase().includes(q))
+    }
+
+    recipes.sort((a, b) => {
+      const agg_a = comboAgg(a.combo, allIng)
+      const agg_b = comboAgg(b.combo, allIng)
+      if (sortBy === 'price') return agg_a.cost - agg_b.cost
+      if (sortBy === 'kcal') return agg_a.kcal - agg_b.kcal
+      if (sortBy === 'prot') return agg_b.prot - agg_a.prot
+      return a.combo.name.localeCompare(b.combo.name)
+    })
+
+    return recipes
+  }, [customCombos, allIng, searchTerm, sortBy])
 
   function handleEdit() {
     setShowBuilder(true)
@@ -280,20 +322,46 @@ export default function DesayunosTab() {
         </button>
       </div>
 
+      <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+        <input
+          className="picker-search"
+          placeholder="Buscar receta…"
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+          style={{ flex: 1, minWidth: '200px' }}
+        />
+        <select
+          value={sortBy}
+          onChange={e => setSortBy(e.target.value)}
+          style={{
+            padding: '0.5rem 0.75rem',
+            border: '1px solid var(--border)',
+            borderRadius: '0.5rem',
+            background: 'var(--bg-2)',
+            color: 'var(--text)',
+            fontSize: '0.875rem',
+          }}
+        >
+          <option value="name">Nombre A-Z</option>
+          <option value="price">Precio (menor a mayor)</option>
+          <option value="kcal">Kcal (menor a mayor)</option>
+          <option value="prot">Proteína (mayor a menor)</option>
+        </select>
+      </div>
+
       {showBuilder && <DesayunoBuilder onClose={() => setShowBuilder(false)} />}
 
       {/* Custom recipes */}
       {customRecipes.length > 0 && (
         <div style={{ marginBottom: '1.5rem' }}>
           <div className="section-label" style={{ marginBottom: '0.75rem' }}>Mis recetas ({customRecipes.length})</div>
-          {customRecipes.map(saved => {
-            const key = '__dz__' + saved.id
+          {customRecipes.map(({ key, combo }) => {
             const isSelected = selectedKey === key
             return (
-              <div key={saved.id}>
-                <RecipeCard comboKey={key} combo={saved} allIng={allIng} isSelected={isSelected} onClick={() => toggle(key)} />
+              <div key={key}>
+                <RecipeCard comboKey={key} combo={combo} allIng={allIng} isSelected={isSelected} onClick={() => toggle(key)} />
                 {isSelected && (
-                  <RecipeDetail comboKey={key} combo={saved} allIng={allIng} isBase={false}
+                  <RecipeDetail comboKey={key} combo={combo} allIng={allIng} isBase={false}
                     onEdit={handleEdit} onClose={() => setSelectedKey(null)} />
                 )}
               </div>
@@ -303,19 +371,27 @@ export default function DesayunosTab() {
       )}
 
       {/* Base recipes */}
-      <div className="section-label" style={{ marginBottom: '0.75rem' }}>Recetas base ({baseRecipes.length})</div>
-      {baseRecipes.map(([key, combo]) => {
-        const isSelected = selectedKey === key
-        return (
-          <div key={key}>
-            <RecipeCard comboKey={key} combo={combo} allIng={allIng} isSelected={isSelected} onClick={() => toggle(key)} />
-            {isSelected && (
-              <RecipeDetail comboKey={key} combo={combo} allIng={allIng} isBase
-                onEdit={handleEdit} onClose={() => setSelectedKey(null)} />
-            )}
-          </div>
-        )
-      })}
+      {baseRecipes.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--muted)' }}>
+          <p>No hay recetas que coincidan con tu búsqueda</p>
+        </div>
+      ) : (
+        <>
+          <div className="section-label" style={{ marginBottom: '0.75rem' }}>Recetas base ({baseRecipes.length})</div>
+          {baseRecipes.map(({ key, combo }) => {
+            const isSelected = selectedKey === key
+            return (
+              <div key={key}>
+                <RecipeCard comboKey={key} combo={combo} allIng={allIng} isSelected={isSelected} onClick={() => toggle(key)} />
+                {isSelected && (
+                  <RecipeDetail comboKey={key} combo={combo} allIng={allIng} isBase
+                    onEdit={handleEdit} onClose={() => setSelectedKey(null)} />
+                )}
+              </div>
+            )
+          })}
+        </>
+      )}
     </div>
   )
 }

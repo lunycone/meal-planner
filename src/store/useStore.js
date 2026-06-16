@@ -231,6 +231,34 @@ const useStore = create(
           },
         }))
       },
+
+      // ── WEEKLY MEAL PLANNER ───────────────────────────────────────────────
+      weekPlan: {}, // { 'YYYY-Www': { 'lun-desayuno': {...}, 'lun-comida': {...}, ... } }
+
+      setMealSlot(weekKey, slotKey, mealData) {
+        set(s => ({
+          weekPlan: {
+            ...s.weekPlan,
+            [weekKey]: {
+              ...(s.weekPlan[weekKey] ?? {}),
+              [slotKey]: mealData,
+            },
+          },
+        }))
+      },
+
+      clearMealSlot(weekKey, slotKey) {
+        set(s => {
+          const week = { ...(s.weekPlan[weekKey] ?? {}) }
+          delete week[slotKey]
+          return {
+            weekPlan: {
+              ...s.weekPlan,
+              [weekKey]: Object.keys(week).length === 0 ? undefined : week,
+            },
+          }
+        })
+      },
     }),
 
     {
@@ -251,6 +279,7 @@ const useStore = create(
         mealBatchOverrides:  s.mealBatchOverrides,
         mealDeletedBatches:  s.mealDeletedBatches,
         mealCustomWeeks:     s.mealCustomWeeks,
+        weekPlan:            s.weekPlan,
         // activeView / activeMeal NOT persisted → always start at home
       }),
     }

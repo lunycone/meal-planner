@@ -183,8 +183,8 @@ export const COMBO = {
     items: [
       { k: 'yogur-cabra', p: { grams: 170 } },
       { k: 'huevo',       p: { units: 1 } },
-      { k: 'arandanos',   p: { grams: 40 } },
-      { k: 'miel',        p: { grams: 15 } },
+      { k: 'arandanos',   p: { grams: 10 } },
+      { k: 'canela',      p: {} },
     ],
   },
   'desayuno-tortilla-aguacate': {
@@ -196,15 +196,7 @@ export const COMBO = {
       { k: 'espinaca', p: { grams: 60 } },
     ],
   },
-  'desayuno-tostada-caballa': {
-    name: 'Tostada caballa + aguacate',
-    items: [
-      { k: 'caballa-media',  p: {} },
-      { k: 'aguacate',       p: { units: 0.5 } },
-      { k: 'queso-cabra',    p: { grams: 20 } },
-      { k: 'pan-masa-madre', p: { grams: 60 } },
-    ],
-  },
+  // desayuno-tostada-caballa eliminado (pan = carbs, no apto PCOS diario)
   'desayuno-overnight-oats': {
     name: 'Overnight oats',
     items: [
@@ -240,20 +232,61 @@ export const COMBO = {
     ],
   },
   'desayuno-huevos-al-horno': {
-    name: 'Huevos al horno + yogur',
+    name: 'Shakshuka (huevos + espinaca)',
     items: [
-      { k: 'huevo',      p: { units: 2 } },
-      { k: 'yogur-cabra',p: { grams: 100 } },
-      { k: 'espinaca',   p: { grams: 60 } },
-      { k: 'passata',    p: { ml: 80 } },
+      { k: 'huevo',    p: { units: 2 } },
+      { k: 'passata',  p: { ml: 100 } },
+      { k: 'espinaca', p: { grams: 60 } },
+      { k: 'feta-vaca',p: { grams: 20 } },
     ],
   },
-  'desayuno-tostada-tomate-tortilla': {
-    name: 'Tostada tomate + tortilla',
+  // desayuno-tostada-tomate-tortilla eliminado (pan = carbs, no apto PCOS diario)
+  'desayuno-tortilla-patata': {
+    name: 'Tortilla de patata (batch)',
     items: [
-      { k: 'pan-masa-madre', p: { grams: 60 } },
-      { k: 'passata',        p: { ml: 80 } },
-      { k: 'huevo',          p: { units: 2 } },
+      { k: 'huevo',            p: { units: 2 } },
+      { k: 'patata',           p: { grams: 150 } },
+      { k: 'cebolla-amarilla', p: { grams: 50 } },
+      { k: 'suet',             p: { grams: 15 } },
+    ],
+  },
+  'desayuno-egg-muffins': {
+    name: 'Egg Muffins Espinaca + Passata (batch)',
+    items: [
+      { k: 'huevo',       p: { units: 2 } },
+      { k: 'espinaca',    p: { grams: 50 } },
+      { k: 'passata',     p: { ml: 30 } },
+      { k: 'queso-cabra', p: { grams: 25 } },
+      { k: 'suet',        p: { grams: 10 } },
+    ],
+  },
+  'desayuno-omelette-feta': {
+    name: 'Omelette Feta + Orégano',
+    items: [
+      { k: 'huevo',     p: { units: 2 } },
+      { k: 'feta-vaca', p: { grams: 40 } },
+      { k: 'suet',      p: { grams: 10 } },
+    ],
+  },
+  'desayuno-magdalenas': {
+    name: 'Magdalenas yogur (ocasional)',
+    items: [
+      { k: 'huevo',       p: { units: 1 } },
+      { k: 'yogur-cabra', p: { grams: 80 } },
+      { k: 'harina',      p: { grams: 60 } },
+      { k: 'azucar',      p: { grams: 15 } },
+      { k: 'mantequilla', p: { grams: 25 } },
+    ],
+  },
+  'desayuno-magdalenas-chocolate': {
+    name: 'Magdalenas chocolate (ocasional)',
+    items: [
+      { k: 'huevo',            p: { units: 1 } },
+      { k: 'yogur-cabra',      p: { grams: 80 } },
+      { k: 'harina',           p: { grams: 60 } },
+      { k: 'azucar',           p: { grams: 15 } },
+      { k: 'mantequilla',      p: { grams: 25 } },
+      { k: 'chocolate-negro',  p: { grams: 20 } },
     ],
   },
   'desayuno-yogur-huevo-avena': {
@@ -279,9 +312,10 @@ export const COMBO_SETS = {
   sardinas:         ['pasta-tomate-cross','ens-garbanzos','ens-mediterranea','burger-bowl','taco-bell','burrito-bowl','taco-dip','ens-alubias','ens-lentejas','lentejas-beet-rucula','arroz-aguacate','lentejas-rojas-espinaca','patata-setas-puerro'],
   mejillones:       ['mejillones-arroz-tomate','mejillones-patata-vapor','ens-mediterranea','arroz-aguacate','patata-setas-puerro','pure-patata'],
   desayuno: [
-    'desayuno-cheesecake-yogur','desayuno-tortilla-aguacate','desayuno-tostada-caballa',
+    'desayuno-cheesecake-yogur','desayuno-tortilla-aguacate',
     'desayuno-overnight-oats','desayuno-bowl-caballa','desayuno-waffles-avena',
-    'desayuno-tortilla-queso-fruta','desayuno-huevos-al-horno',
-    'desayuno-tostada-tomate-tortilla','desayuno-yogur-huevo-avena',
+    'desayuno-tortilla-queso-fruta','desayuno-huevos-al-horno','desayuno-yogur-huevo-avena',
+    'desayuno-tortilla-patata','desayuno-egg-muffins','desayuno-omelette-feta',
+    'desayuno-magdalenas','desayuno-magdalenas-chocolate',
   ],
 }

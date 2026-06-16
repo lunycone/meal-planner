@@ -12,6 +12,8 @@ export const ING = {
   alcachofa:       { name: 'Alcachofa',           cat: 'base',     perUnit: 1.99, kcu: 67, pack: 'ud · $1.99',             per: 'ud → $1.99 · 67 kcal' },
   'pan-masa-madre':{ name: 'Pan masa madre',      cat: 'base',     per100: 0.70, kc: 265,  pack: 'hogaza · $7.00',          per: '100g → $0.70 · 265 kcal' },
   avena:           { name: 'Avena (oats)',         cat: 'base',     per100: 0.429, kc: 389, prot: 17,  fat: 7,   pack: '1 kg · $4.29',           per: '50g → $0.21 · 195 kcal' },
+  harina:          { name: 'Harina (Robin Hood)', cat: 'base',     per100: 0.20,  kc: 364, prot: 10,  fat: 1.4, pack: '2.5kg · ~$4.99',         per: '60g → $0.12', est: true },
+  azucar:          { name: 'Azúcar',              cat: 'base',     per100: 0.15,  kc: 400, prot: 0,   fat: 0,   pack: 'estimado',                per: '15g → $0.02', est: true },
 
   // LEGUMBRES (peso seco)
   'lentejas-rojas':  { name: 'Lentejas rojas',    cat: 'legumbre', per100: 0.15,  kc: 340, prot: 24,  fat: 1,   pack: '55 lb · $36.69',         per: '80g seco → $0.12' },
@@ -51,10 +53,14 @@ export const ING = {
   cheddar:        { name: 'Cheddar',         cat: 'lacteo', per100: 4.90, kc: 400, prot: 25, fat: 33, pack: '300 g · $14.69',  per: '30g → $1.47 · 120 kcal' },
   'yogur-cabra':  { name: 'Yogur de cabra',  cat: 'lacteo', per100: 0.57, kc: 70,  prot: 5,  fat: 4,  pack: '750 g · $4.29',   per: '50g → $0.29' },
   'sour-cream':   { name: 'Sour cream',      cat: 'lacteo', per100: 0.70, kc: 190, prot: 2,  fat: 19, pack: '500 ml · $3.49',  per: '40g → $0.28 · 76 kcal' },
+  mantequilla:    { name: 'Mantequilla',     cat: 'lacteo', per100: 1.958, kc: 717, prot: 0.9, fat: 81, pack: '454g · $8.89',   per: '25g → $0.49' },
   nachos:         { name: 'Nachos',          cat: 'lacteo', per100: 1.83, kc: 500, pack: '240 g · $4.39',   per: '40g → $0.73 · 200 kcal' },
 
   // OTROS
   aceite:           { name: 'Aceite de oliva',  cat: 'otro', flat: 0,    kcf: 0,  pack: 'ya tienes',        per: '~120 kcal/cda · NO contado' },
+  suet:             { name: 'Beef Suet',        cat: 'otro', per100: 1.768, kc: 895, prot: 0, fat: 99.5, pack: '2.2lb · $17.64',  per: '15g → $0.27' },
+  canela:           { name: 'Canela',           cat: 'otro', flat: 0.05, kcf: 5,  pack: 'especia',          per: 'uso → $0.05', est: true },
+  'chocolate-negro':{ name: 'Chocolate negro (chips)', cat: 'otro', per100: 3.00, kc: 550, prot: 6, fat: 32, pack: 'estimado',   per: '20g → $0.60', est: true },
   lima:             { name: 'Lima',             cat: 'otro', perUnit: 1.00, kcu: 20, protu: 0.5, fatu: 0.1, pack: 'ud · $1.00',    per: '½ → $0.50' },
   limon:            { name: 'Limón',            cat: 'otro', perUnit: 1.00, kcu: 17, protu: 0.5, fatu: 0.1, pack: 'ud · $1.00',    per: '½ → $0.50' },
   apio:             { name: 'Apio',             cat: 'otro', perServing: 0.45, kcs: 8, pack: 'ud · $4.49',  per: '~$0.45/plato' },
