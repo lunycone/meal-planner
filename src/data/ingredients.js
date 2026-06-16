@@ -24,6 +24,7 @@ export const ING = {
   cranberry:         { name: 'Cranberry beans',   cat: 'legumbre', per100: 0.44,  kc: 335, prot: 22,  fat: 1,   pack: '10 lb · $19.79',         per: '80g seco → $0.35' },
 
   // FRESCOS
+  leche:             { name: 'Leche entera',      cat: 'fresco',   per100: 0.29,  kc: 61,  prot: 3.2, fat: 3.3, pack: '4L · $12.00',          per: '200ml → $0.58 · 122 kcal' },
   aguacate:          { name: 'Aguacate',          cat: 'fresco',   perUnit: 1.00, kcu: 250, protu: 3,  fatu: 23, pack: '1 ud · $1.00',          per: '½ → $0.50 · 125 kcal' },
   passata:           { name: 'Tomate passata',    cat: 'fresco',   perML: 0.004861, kcml: 0.33, pack: '720 ml · $3.50',   per: '½ bote → $1.75' },
   'cebolla-amarilla':{ name: 'Cebolla amarilla',  cat: 'fresco',   per100: 0.185, kc: 40,  prot: 1.1, fat: 0.1, pack: '10 lb · $8.39',         per: 'media ~$0.17' },

@@ -307,6 +307,49 @@ export const COMBO = {
       { k: 'canela',       p: {} },
     ],
   },
+  'desayuno-batido-yogur-leche-avena': {
+    name: 'Batido: Yogur · Leche · Avena · Canela',
+    items: [
+      { k: 'yogur-cabra', p: { grams: 150 } },
+      { k: 'leche',       p: { grams: 200 } },
+      { k: 'avena',       p: { grams: 50 } },
+      { k: 'canela',      p: {} },
+    ],
+  },
+  'desayuno-batido-leche-avena-banana': {
+    name: 'Batido: Leche · Avena · Canela · Banana',
+    items: [
+      { k: 'leche',   p: { grams: 250 } },
+      { k: 'avena',   p: { grams: 50 } },
+      { k: 'banana',  p: { grams: 100 } },
+      { k: 'canela',  p: {} },
+    ],
+  },
+  'desayuno-batido-leche-yogur-chocolate': {
+    name: 'Batido: Leche · Yogur · Chocolate · Arándanos',
+    items: [
+      { k: 'leche',            p: { grams: 200 } },
+      { k: 'yogur-cabra',      p: { grams: 100 } },
+      { k: 'chocolate-negro',  p: { grams: 20 } },
+      { k: 'arandanos',        p: { grams: 10 } },
+    ],
+  },
+  'desayuno-yogur-sunflower-arandanos': {
+    name: 'Yogur · Sunflower Seeds · Arándanos',
+    items: [
+      { k: 'yogur-cabra',      p: { grams: 150 } },
+      { k: 'sunflower-seeds',  p: { grams: 25 } },
+      { k: 'arandanos',        p: { grams: 25 } },
+    ],
+  },
+  'desayuno-huevo-queso': {
+    name: 'Huevo · Queso Feta · Simple',
+    items: [
+      { k: 'huevo',      p: { units: 2 } },
+      { k: 'feta-vaca',  p: { grams: 30 } },
+      { k: 'suet',       p: { grams: 10 } },
+    ],
+  },
   'desayuno-magdalenas': {
     name: 'Magdalenas yogur (ocasional)',
     items: [
@@ -356,6 +399,9 @@ export const COMBO_SETS = {
     'desayuno-tortilla-queso-fruta','desayuno-huevos-al-horno','desayuno-yogur-huevo-avena',
     'desayuno-tortilla-patata','desayuno-egg-muffins','desayuno-omelette-feta',
     'desayuno-pizza-sardinas-light','desayuno-pizza-sardinas-max',
+    'desayuno-yogur-almendras-pumpkin','desayuno-yogur-pumpkin-coco',
+    'desayuno-batido-yogur-leche-avena','desayuno-batido-leche-avena-banana','desayuno-batido-leche-yogur-chocolate',
+    'desayuno-yogur-sunflower-arandanos','desayuno-huevo-queso',
     'desayuno-magdalenas','desayuno-magdalenas-chocolate',
   ],
 }
