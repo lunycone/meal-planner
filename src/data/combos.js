@@ -6,6 +6,7 @@ export const PREP = {
 
 export const COMBO = {
   'ens-garbanzos': {
+    base: 'legumbres',
     name: 'Ensalada garbanzos',
     items: [
       { k: 'garbanzos',        p: { grams: 80 } },
@@ -16,6 +17,7 @@ export const COMBO = {
     ],
   },
   'ens-mediterranea': {
+    base: 'otros',
     name: 'Ensalada mediterránea',
     items: [
       { k: 'calabacin',     p: { grams: 100 } },
@@ -26,6 +28,7 @@ export const COMBO = {
     ],
   },
   'burger-bowl': {
+    base: 'patata',
     name: 'Burger bowl',
     items: [
       { k: 'patata',         p: { grams: 200 } },
@@ -38,6 +41,7 @@ export const COMBO = {
     ],
   },
   'taco-bell': {
+    base: 'otros',
     name: 'Taco bell',
     items: [
       { k: 'cheddar',       p: { grams: 30 } },
@@ -49,6 +53,7 @@ export const COMBO = {
     ],
   },
   'burrito-bowl': {
+    base: 'otros',
     name: 'Burrito bowl',
     items: [
       { k: 'black-beans',    p: { grams: 80 } },
@@ -60,6 +65,7 @@ export const COMBO = {
     ],
   },
   'taco-dip': {
+    base: 'otros',
     name: 'Taco dip',
     items: [
       { k: 'black-beans',   p: { grams: 80 } },
@@ -72,16 +78,19 @@ export const COMBO = {
     ],
   },
   'ens-alubias': {
+    base: 'legumbres',
     name: 'Ensalada alubias blancas',
     items: [{ k: 'alubias-blancas', p: { grams: 80 } }],
     incomplete: true,
   },
   'ens-lentejas': {
+    base: 'legumbres',
     name: 'Ensalada lentejas',
     items: [{ k: 'lentejas-verdes', p: { grams: 80 } }],
     incomplete: true,
   },
   'lentejas-beet-rucula': {
+    base: 'legumbres',
     name: 'Lentejas con beet y rúcula',
     items: [
       { k: 'lentejas-verdes', p: { grams: 80 } },
@@ -90,6 +99,7 @@ export const COMBO = {
     ],
   },
   'salsa-zanahoria-arroz': {
+    base: 'arroz',
     name: 'Salsa zanahoria + arroz',
     items: [
       { k: 'zanahoria',        p: { grams: 100 } },
@@ -99,6 +109,7 @@ export const COMBO = {
     ],
   },
   'arroz-huevos-veg': {
+    base: 'arroz',
     name: 'Arroz + 2 huevos + verde',
     items: [
       { k: 'arroz',  p: { grams: 75 } },
@@ -108,6 +119,7 @@ export const COMBO = {
     note: 'Julio: puerro · María: brócoli / espárragos',
   },
   'ens-legumbres-sc': {
+    base: 'legumbres',
     name: 'Ensalada legumbres + sour cream',
     items: [
       { k: 'lentejas-verdes', p: { grams: 80 } },
@@ -115,10 +127,12 @@ export const COMBO = {
     ],
   },
   'lentejas-sep': {
+    base: 'legumbres',
     name: 'Lentejas (por separado)',
     items: [{ k: 'lentejas-verdes', p: { grams: 80 } }],
   },
   'pure-patata': {
+    base: 'patata',
     name: 'Puré patata + puerro/zanahoria',
     items: [
       { k: 'patata', p: { grams: 200 } },
@@ -126,11 +140,13 @@ export const COMBO = {
     ],
   },
   'esparragos-j': {
+    base: 'otros',
     name: 'Espárragos (María)',
     items: [{ k: 'esparragos', p: { grams: 120 } }],
     jessica: true,
   },
   'pasta-tomate-cross': {
+    base: 'pasta',
     name: 'Pasta con tomate',
     items: [
       { k: 'pasta',   p: { grams: 100 } },
@@ -138,6 +154,7 @@ export const COMBO = {
     ],
   },
   'arroz-aguacate': {
+    base: 'arroz',
     name: 'Arroz + aguacate',
     items: [
       { k: 'arroz',   p: { grams: 75 } },
@@ -145,6 +162,7 @@ export const COMBO = {
     ],
   },
   'lentejas-rojas-espinaca': {
+    base: 'legumbres',
     name: 'Lentejas rojas + espinaca',
     items: [
       { k: 'lentejas-rojas', p: { grams: 80 } },
@@ -153,6 +171,7 @@ export const COMBO = {
     ],
   },
   'patata-setas-puerro': {
+    base: 'patata',
     name: 'Patata asada + setas',
     items: [
       { k: 'patata', p: { grams: 200 } },
@@ -161,6 +180,7 @@ export const COMBO = {
     ],
   },
   'mejillones-arroz-tomate': {
+    base: 'arroz',
     name: 'Arroz + tomate + puerro',
     items: [
       { k: 'arroz',   p: { grams: 75 } },
@@ -169,6 +189,7 @@ export const COMBO = {
     ],
   },
   'mejillones-patata-vapor': {
+    base: 'patata',
     name: 'Patata al vapor + cebolla morada',
     items: [
       { k: 'patata',         p: { grams: 200 } },

@@ -447,6 +447,24 @@ export default function CombinacionesTab() {
     return combos
   }, [allCombos, allIng, searchTerm, sortBy])
 
+  // Group combos by base type
+  const groupedCombos = useMemo(() => {
+    const grouped = {}
+    const baseOrder = { arroz: 0, pasta: 1, legumbres: 2, patata: 3, otros: 4 }
+    const baseIcons = { arroz: '🍚', pasta: '🍝', legumbres: '🫘', patata: '🥔', otros: '🥗' }
+    const baseLabels = { arroz: 'ARROZ', pasta: 'PASTA', legumbres: 'LEGUMBRES', patata: 'PATATA', otros: 'OTROS' }
+
+    baseCombos.forEach(([key, combo]) => {
+      const base = combo.base || 'otros'
+      if (!grouped[base]) grouped[base] = []
+      grouped[base].push([key, combo])
+    })
+
+    return Object.entries(grouped)
+      .sort(([a], [b]) => (baseOrder[a] || 999) - (baseOrder[b] || 999))
+      .map(([base, items]) => ({ base, label: baseLabels[base] || base, icon: baseIcons[base] || '📌', items }))
+  }, [baseCombos])
+
   return (
     <div>
       <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
@@ -459,7 +477,7 @@ export default function CombinacionesTab() {
           </p>
         </div>
         <button className="btn-primary" onClick={() => setShowBuilder(true)}>
-          ➕ Nueva combinación
+          Nueva combinación
         </button>
       </div>
 
@@ -528,32 +546,44 @@ export default function CombinacionesTab() {
           </select>
         </div>
 
-        <div className="section-label" style={{ marginBottom: '0.5rem' }}>
-          Combos base ({baseCombos.length})
-        </div>
         <p style={{ fontSize: '0.78rem', color: 'var(--muted)', marginBottom: '1rem' }}>
           Haz clic para ver desglose · ✎ Editar para modificar · los cambios se reflejan en Platos.
         </p>
-        {baseCombos.map(([key, combo]) => {
-          const isSelected = selectedKey === key
-          return (
-            <div key={key}>
-              <ComboCard
-                comboKey={key} combo={combo} allIng={allIng}
-                isBase isSelected={isSelected}
-                onClick={() => toggleSelect(key)}
-              />
-              {isSelected && (
-                <ComboDetailPanel
-                  comboKey={key} combo={combo} allIng={allIng}
-                  isBase
-                  onEdit={handleEditBase}
-                  onClose={() => setSelectedKey(null)}
-                />
-              )}
-            </div>
-          )
-        })}
+        {baseCombos.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--muted)' }}>
+            <p>No hay combos que coincidan con tu búsqueda</p>
+          </div>
+        ) : (
+          <>
+            {groupedCombos.map(({ base, label, icon, items }) => (
+              <div key={base} style={{ marginBottom: '2rem' }}>
+                <h3 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--muted)', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  {icon} {label} ({items.length})
+                </h3>
+                {items.map(([key, combo]) => {
+                  const isSelected = selectedKey === key
+                  return (
+                    <div key={key}>
+                      <ComboCard
+                        comboKey={key} combo={combo} allIng={allIng}
+                        isBase isSelected={isSelected}
+                        onClick={() => toggleSelect(key)}
+                      />
+                      {isSelected && (
+                        <ComboDetailPanel
+                          comboKey={key} combo={combo} allIng={allIng}
+                          isBase
+                          onEdit={handleEditBase}
+                          onClose={() => setSelectedKey(null)}
+                        />
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            ))}
+          </>
+        )}
       </div>
 
       {/* Deleted combos */}
