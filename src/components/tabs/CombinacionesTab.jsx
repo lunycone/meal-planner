@@ -182,9 +182,10 @@ function ComboDetailPanel({ comboKey, combo, allIng, onEdit, onClose, isBase }) 
   )
 }
 
-// ─── Builder ──────────────────────────────────────────────────────────────
+// ─── Builder Modal ────────────────────────────────────────────────────────
 
-function Builder({ editingBaseKey, setEditingBaseKey, editingCustom, setEditingCustom }) {
+function BuilderModal({ isOpen, onClose, editingBaseKey, setEditingBaseKey, editingCustom, setEditingCustom }) {
+  if (!isOpen) return null
   const allIng           = useStore(selectAllIng)
   const allCats          = useStore(selectAllCats)
   const addCustomCombo   = useStore(s => s.addCustomCombo)
@@ -213,7 +214,7 @@ function Builder({ editingBaseKey, setEditingBaseKey, editingCustom, setEditingC
   }, [editingBaseKey])
 
   function clearBuilder() {
-    setItems([]); setComboName(''); setEditingBaseKey(null); setEditingCustom(null)
+    setItems([]); setComboName(''); setEditingBaseKey(null); setEditingCustom(null); onClose()
   }
 
   const inComboKeys = new Set(items.map(it => it.k))
@@ -258,19 +259,14 @@ function Builder({ editingBaseKey, setEditingBaseKey, editingCustom, setEditingC
     : null
 
   return (
-    <div>
-      {editingBaseKey && (
-        <div style={{
-          padding: '8px 12px', marginBottom: 12, borderRadius: 8,
-          background: 'var(--warn-bg)', border: '1px solid #ecdcc4',
-          fontSize: '0.78rem', color: 'var(--warn-ink)',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between'
-        }}>
-          <span>✎ Editando: <strong>{editingName}</strong></span>
-          <button className="btn-ghost" style={{ fontSize: '0.72rem' }} onClick={clearBuilder}>Cancelar</button>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-dialog" onClick={e => e.stopPropagation()} style={{ maxWidth: '90%', height: 'auto' }}>
+        <div className="modal-header">
+          <h3>{editingBaseKey ? `✎ Editando: ${editingName}` : '➕ Nueva combinación'}</h3>
+          <button className="modal-close" onClick={onClose}>✕</button>
         </div>
-      )}
 
+        <div className="modal-body">
       <div className="combo-builder">
         {/* Picker */}
         <div className="ing-picker">
@@ -309,10 +305,6 @@ function Builder({ editingBaseKey, setEditingBaseKey, editingCustom, setEditingC
               value={comboName}
               onChange={e => setComboName(e.target.value)}
             />
-            <button className="btn-primary" onClick={save} disabled={!items.length}>
-              {editingBaseKey ? 'Guardar cambios' : 'Guardar combo'}
-            </button>
-            {items.length > 0 && <button className="btn-ghost" onClick={clearBuilder}>Limpiar</button>}
           </div>
 
           {items.length === 0 ? (
@@ -353,6 +345,15 @@ function Builder({ editingBaseKey, setEditingBaseKey, editingCustom, setEditingC
               </div>
             </>
           )}
+        </div>
+      </div>
+        </div>
+
+        <div className="modal-footer">
+          <button className="btn-ghost" onClick={onClose}>Cancelar</button>
+          <button className="btn-primary" onClick={save} disabled={!items.length}>
+            {editingBaseKey ? 'Guardar cambios' : 'Guardar combo'}
+          </button>
         </div>
       </div>
     </div>
@@ -398,6 +399,7 @@ export default function CombinacionesTab() {
   const restoreCombo   = useStore(s => s.restoreCombo)
   const customCombos   = useStore(s => s.customCombos).filter(c => !c.desayuno)
 
+  const [showBuilder,     setShowBuilder]     = useState(false)
   const [editingBaseKey,  setEditingBaseKey]  = useState(null)
   const [editingCustom,   setEditingCustom]   = useState(null)
   const [selectedKey,     setSelectedKey]     = useState(null)  // for detail panel
@@ -408,14 +410,20 @@ export default function CombinacionesTab() {
     setEditingCustom(null)
     setEditingBaseKey(key)
     setSelectedKey(null)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setShowBuilder(true)
   }
 
   const handleEditCustom = (saved) => {
     setEditingCustom(saved)
     setEditingBaseKey('__custom__' + saved.id)
     setSelectedKey(null)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setShowBuilder(true)
+  }
+
+  const handleCloseBuilder = () => {
+    setShowBuilder(false)
+    setEditingBaseKey(null)
+    setEditingCustom(null)
   }
 
   const toggleSelect = (key) => setSelectedKey(prev => prev === key ? null : key)
@@ -441,17 +449,23 @@ export default function CombinacionesTab() {
 
   return (
     <div>
-      <div style={{ marginBottom: '1.5rem' }}>
-        <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.25rem' }}>
-          Constructor de combinaciones
-        </h2>
-        <p style={{ fontSize: '0.82rem', color: 'var(--muted)' }}>
-          Selecciona ingredientes · ajusta cantidades · guarda o edita cualquier combo.
-          Haz clic en un combo para ver el desglose completo.
-        </p>
+      <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+        <div>
+          <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.25rem' }}>
+            Combinaciones
+          </h2>
+          <p style={{ fontSize: '0.82rem', color: 'var(--muted)' }}>
+            Haz clic en un combo para ver el desglose completo. ✎ Editar para modificar.
+          </p>
+        </div>
+        <button className="btn-primary" onClick={() => setShowBuilder(true)}>
+          ➕ Nueva combinación
+        </button>
       </div>
 
-      <Builder
+      <BuilderModal
+        isOpen={showBuilder}
+        onClose={handleCloseBuilder}
         editingBaseKey={editingBaseKey}
         setEditingBaseKey={setEditingBaseKey}
         editingCustom={editingCustom}
