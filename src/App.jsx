@@ -11,6 +11,7 @@ import ShoppingListTab     from './components/tabs/ShoppingListTab'
 import MenuTab             from './components/tabs/MenuTab'
 import AuthGate            from './components/AuthGate'
 import ProfileSelector     from './components/ProfileSelector'
+import SyncStatus          from './components/SyncStatus'
 import { MEALS }           from './config/meals'
 
 const CONFIG_TABS = [
@@ -52,7 +53,10 @@ function AppShell() {
             </button>
           ))}
         </div>
-        <ProfileSelector />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <SyncStatus />
+          <ProfileSelector />
+        </div>
       </nav>
 
       {/* Back button — only on non-home views */}

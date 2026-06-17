@@ -33,9 +33,9 @@ const useStore = create(
 
       // ── PROFILES ──────────────────────────────────────────────────────────
       profiles: [
-        { id: 'julio',   name: 'Julio', initial: 'J', kcalTarget: 2900, proteinTarget: 180 },
-        { id: 'maria',   name: 'María', initial: 'M', kcalTarget: 2300, proteinTarget: 144 },
-        { id: 'carla',   name: 'Carla', initial: 'C', kcalTarget: 2000, proteinTarget: 125, validoHasta: '2026-07-08T17:00:00' },
+        { id: 'julio',   name: 'Julio', initial: 'J', kcalTarget: 2900, proteinTarget: 100 },
+        { id: 'maria',   name: 'María', initial: 'M', kcalTarget: 2300, proteinTarget: 100 },
+        { id: 'carla',   name: 'Carla', initial: 'C', kcalTarget: 2000, proteinTarget: 90, validoHasta: '2026-07-08T17:00:00' },
       ],
       activeProfileId: 'all',
 

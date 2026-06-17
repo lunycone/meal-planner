@@ -28,6 +28,7 @@ export function createStorageAdapter() {
   }
 
   let hydrated = false
+let lastSyncError = null
 
   return {
     async getItem(_name) {
@@ -37,7 +38,11 @@ export function createStorageAdapter() {
         .eq('id', 1)
         .maybeSingle()
 
-      if (error) { console.error('[storage] getItem error', error); return null }
+      if (error) {
+        console.error('[storage] getItem error', error)
+        hydrated = true  // Allow writes even if initial read failed
+        return null
+      }
 
       const raw = data?.data ?? null
       if (raw === null) { hydrated = true; return null }
@@ -60,7 +65,20 @@ export function createStorageAdapter() {
         .from('plan_state')
         .upsert({ id: 1, data: JSON.stringify(value), updated_at: new Date().toISOString() })
 
-      if (error) console.error('[storage] setItem error', error)
+      if (error) {
+        console.error('[storage] setItem error', error)
+        lastSyncError = error
+        // Emit sync error event so UI can notify user
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('syncError', { detail: error }))
+        }
+      } else {
+        lastSyncError = null
+        // Emit sync success event
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('syncSuccess'))
+        }
+      }
     },
 
     async removeItem(_name) {
