@@ -1,12 +1,12 @@
 import useStore, { selectAllIng, selectAllCombos } from '../store/useStore'
-import { comboAgg, proteinCost, proteinKcal } from '../engine/calc'
+import { comboAgg, proteinKcal } from '../engine/calc'
+import { PROTEIN } from '../data/proteins'
 
 export default function DailyProgress() {
   const allIng = useStore(selectAllIng)
   const allCombos = useStore(selectAllCombos)
   const activeProfile = useStore(s => s.getActiveProfile())
   const weekPlan = useStore(s => s.weekPlan)
-  const { PROTEIN } = require('../data/proteins')
 
   // Calculate today's kcal from meals
   let todayKcal = 0
