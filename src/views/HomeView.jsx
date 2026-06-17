@@ -3,6 +3,7 @@ import useStore, { selectAllIng, selectAllCombos } from '../store/useStore'
 import { PROTEIN } from '../data/proteins'
 import { PREP } from '../data/combos'
 import { comboAgg, fmt, proteinCost, proteinKcal, ingKcal, ingFat, ingFib, fmtPortion } from '../engine/calc'
+import DailyProgress from '../components/DailyProgress'
 
 // ─── Utility functions ────────────────────────────────────────────────────────
 
@@ -712,6 +713,10 @@ export default function HomeView() {
           <div className="home-date-rest">{fullDate}</div>
         </div>
       </header>
+
+      <div style={{ padding: '0 1.5rem', marginTop: '1.5rem' }}>
+        <DailyProgress />
+      </div>
 
       <div className="home-meals">
         <MealBlock
