@@ -198,6 +198,203 @@ export const COMBO = {
     ],
   },
 
+  // ── CENAS NUEVAS ─────────────────────────────────────────────────────────────
+  // Vegetales asados
+  'calabacin-asado-limon': {
+    base: 'otros',
+    name: 'Calabacín asado + limón + ajo',
+    items: [
+      { k: 'calabacin',           p: { grams: 150 } },
+      { k: 'limon',               p: { units: 0.5 } },
+      { k: 'cebolla-morada',      p: { grams: 50 } },
+      { k: 'parsley',             p: {} },
+    ],
+  },
+  'esparragos-feta-vinagre': {
+    base: 'otros',
+    name: 'Espárragos asados + feta + vinagre balsámico',
+    items: [
+      { k: 'esparragos',          p: { grams: 120 } },
+      { k: 'feta-vaca',           p: { grams: 30 } },
+      { k: 'vinagre',             p: { ml: 15 } },
+      { k: 'cebolla-morada',      p: { grams: 40 } },
+    ],
+  },
+  'verduras-arco-iris': {
+    base: 'otros',
+    name: 'Verduras arco iris (calabacín + zanahoria + pimiento)',
+    items: [
+      { k: 'calabacin',           p: { grams: 80 } },
+      { k: 'zanahoria',           p: { grams: 80 } },
+      { k: 'pimiento-verde',      p: { grams: 80 } },
+      { k: 'cebolla-amarilla',    p: { grams: 40 } },
+      { k: 'parsley',             p: {} },
+    ],
+  },
+
+  // Opciones cremosas/ligeras
+  'espinaca-queso-crema': {
+    base: 'otros',
+    name: 'Espinaca salteada + queso cabra + sour cream',
+    items: [
+      { k: 'espinaca',            p: { grams: 100 } },
+      { k: 'queso-cabra',         p: { grams: 30 } },
+      { k: 'sour-cream',          p: { grams: 30 } },
+      { k: 'cebolla-amarilla',    p: { grams: 50 } },
+    ],
+  },
+  'puerro-crema-limon': {
+    base: 'otros',
+    name: 'Puerro gratinado + crema + limón',
+    items: [
+      { k: 'puerro',              p: { units: 1 } },
+      { k: 'sour-cream',          p: { grams: 40 } },
+      { k: 'limon',               p: { units: 0.5 } },
+      { k: 'parsley',             p: {} },
+    ],
+  },
+  'coliflor-tahini': {
+    base: 'otros',
+    name: 'Coliflor asada + salsa tahini + lima',
+    items: [
+      { k: 'brocoli',             p: { grams: 100 } },
+      { k: 'tahini',              p: { grams: 15 } },
+      { k: 'lima',                p: { units: 0.5 } },
+      { k: 'cebolla-morada',      p: { grams: 40 } },
+    ],
+  },
+
+  // Granos alternativos / bases diferentes
+  'lentejas-rojas-con-curry': {
+    base: 'legumbre',
+    name: 'Lentejas rojas curry + coco + zanahoria',
+    items: [
+      { k: 'lentejas-rojas',      p: { grams: 80 } },
+      { k: 'zanahoria',           p: { grams: 100 } },
+      { k: 'cebolla-amarilla',    p: { grams: 50 } },
+      { k: 'aceite-coco',         p: { grams: 10 } },
+    ],
+  },
+  'black-beans-cumin': {
+    base: 'legumbre',
+    name: 'Black beans + comino + cebolla morada',
+    items: [
+      { k: 'black-beans',         p: { grams: 80 } },
+      { k: 'cebolla-morada',      p: { grams: 60 } },
+      { k: 'limon',               p: { units: 0.5 } },
+      { k: 'parsley',             p: {} },
+    ],
+  },
+  'alubias-tomate-oregano': {
+    base: 'legumbre',
+    name: 'Alubias blancas + tomate + orégano',
+    items: [
+      { k: 'alubias-blancas',     p: { grams: 80 } },
+      { k: 'passata',             p: { ml: 100 } },
+      { k: 'cebolla-amarilla',    p: { grams: 50 } },
+      { k: 'parsley',             p: {} },
+    ],
+  },
+
+  // Opciones de verano / ligeras
+  'tomate-feta-pepino-verano': {
+    base: 'otros',
+    name: 'Ensalada verano: tomate + feta + pepino + basil',
+    items: [
+      { k: 'tomate-fresco',       p: { grams: 100 } },
+      { k: 'feta-vaca',           p: { grams: 30 } },
+      { k: 'limon',               p: { units: 0.5 } },
+      { k: 'cebolla-morada',      p: { grams: 40 } },
+    ],
+  },
+  'aguacate-tomate-cilantro': {
+    base: 'otros',
+    name: 'Aguacate + tomate fresco + cilantro + lima',
+    items: [
+      { k: 'aguacate',            p: { units: 1 } },
+      { k: 'tomate-fresco',       p: { grams: 100 } },
+      { k: 'lima',                p: { units: 0.5 } },
+      { k: 'jalapeno',            p: { units: 0.5 } },
+    ],
+  },
+
+  // Opciones invernales / reconfortantes
+  'patata-crema-setas-invierno': {
+    base: 'patata',
+    name: 'Patata cremosa + setas + puerro',
+    items: [
+      { k: 'patata',              p: { grams: 200 } },
+      { k: 'setas',               p: { grams: 100 } },
+      { k: 'puerro',              p: { units: 0.5 } },
+      { k: 'sour-cream',          p: { grams: 30 } },
+    ],
+  },
+  'zanahoria-puerro-pure-calido': {
+    base: 'patata',
+    name: 'Puré zanahoria + puerro + mantequilla',
+    items: [
+      { k: 'zanahoria',           p: { grams: 120 } },
+      { k: 'puerro',              p: { units: 0.5 } },
+      { k: 'patata',              p: { grams: 100 } },
+      { k: 'mantequilla',         p: { grams: 15 } },
+    ],
+  },
+
+  // Opciones de sabor (Mediterranean, Asian, Latin)
+  'lentejas-mediterranea-beet': {
+    base: 'legumbre',
+    name: 'Lentejas beet + tomate + cebolla morada',
+    items: [
+      { k: 'lentejas-verdes',     p: { grams: 80 } },
+      { k: 'beet',                p: { grams: 80 } },
+      { k: 'tomate-conserva',     p: { grams: 50 } },
+      { k: 'cebolla-morada',      p: { grams: 40 } },
+    ],
+  },
+  'arroz-cilantro-lima-asiatico': {
+    base: 'arroz',
+    name: 'Arroz cilantro + lima + cebolla verde',
+    items: [
+      { k: 'arroz',               p: { grams: 75 } },
+      { k: 'lima',                p: { units: 1 } },
+      { k: 'cebolla-amarilla',    p: { grams: 50 } },
+      { k: 'parsley',             p: {} },
+    ],
+  },
+  'garbanzos-tostados-citrico': {
+    base: 'legumbre',
+    name: 'Garbanzos tostados + cítricos (limón + lima)',
+    items: [
+      { k: 'garbanzos',           p: { grams: 80 } },
+      { k: 'limon',               p: { units: 0.5 } },
+      { k: 'lima',                p: { units: 0.5 } },
+      { k: 'parsley',             p: {} },
+    ],
+  },
+
+  // Batch-friendly options
+  'pasta-salsa-tomate-batch': {
+    base: 'pasta',
+    name: 'Pasta salsa tomate casera (batch)',
+    items: [
+      { k: 'pasta',               p: { grams: 100 } },
+      { k: 'passata',             p: { ml: 200 } },
+      { k: 'cebolla-amarilla',    p: { grams: 60 } },
+      { k: 'zanahoria',           p: { grams: 80 } },
+      { k: 'parsley',             p: {} },
+    ],
+  },
+  'arroz-tomado-comino': {
+    base: 'arroz',
+    name: 'Arroz tomado con comino + cebolla',
+    items: [
+      { k: 'arroz',               p: { grams: 75 } },
+      { k: 'tomate-conserva',     p: { grams: 80 } },
+      { k: 'cebolla-amarilla',    p: { grams: 60 } },
+      { k: 'limon',               p: { units: 0.5 } },
+    ],
+  },
+
   // ── DESAYUNOS ────────────────────────────────────────────────────────────────
   'desayuno-cheesecake-yogur': { tag: 'yogur', flags: ['rapido'], name: 'Cheesecake yogur cabra', items: [{ k: 'yogur-cabra', p: { grams: 170 } },{ k: 'huevo', p: { units: 1 } },{ k: 'arandanos', p: { grams: 10 } },{ k: 'canela', p: {} },] },
   'desayuno-tortilla-aguacate': { tag: 'huevo', flags: ['rapido'], name: 'Tortilla francesa + aguacate + setas', items: [{ k: 'huevo', p: { units: 2 } },{ k: 'aguacate', p: { units: 0.5 } },{ k: 'setas', p: { grams: 80 } },{ k: 'espinaca', p: { grams: 60 } },] },
@@ -230,12 +427,17 @@ export const COMBO_SETS = {
     'ens-garbanzos','ens-mediterranea','burger-bowl','taco-bell',
     'burrito-bowl','taco-dip','ens-alubias','ens-lentejas',
     'lentejas-beet-rucula','arroz-aguacate','lentejas-rojas-espinaca','patata-setas-puerro',
+    'calabacin-asado-limon','esparragos-feta-vinagre','verduras-arco-iris','espinaca-queso-crema',
+    'puerro-crema-limon','coliflor-tahini','lentejas-rojas-con-curry','black-beans-cumin',
+    'alubias-tomate-oregano','tomate-feta-pepino-verano','aguacate-tomate-cilantro','patata-crema-setas-invierno',
+    'zanahoria-puerro-pure-calido','lentejas-mediterranea-beet','arroz-cilantro-lima-asiatico','garbanzos-tostados-citrico',
+    'pasta-salsa-tomate-batch','arroz-tomado-comino',
   ],
-  lomo:          ['salsa-zanahoria-arroz','ens-garbanzos','ens-mediterranea','burger-bowl','taco-bell','burrito-bowl','taco-dip','ens-alubias','ens-lentejas','lentejas-beet-rucula','arroz-aguacate','lentejas-rojas-espinaca','patata-setas-puerro'],
-  'higado-bacalao': ['arroz-huevos-veg','ens-legumbres-sc'],
-  'higado-vaca':    ['lentejas-sep','pure-patata','esparragos-j'],
-  sardinas:         ['pasta-tomate-cross','ens-garbanzos','ens-mediterranea','burger-bowl','taco-bell','burrito-bowl','taco-dip','ens-alubias','ens-lentejas','lentejas-beet-rucula','arroz-aguacate','lentejas-rojas-espinaca','patata-setas-puerro'],
-  mejillones:       ['mejillones-arroz-tomate','mejillones-patata-vapor','ens-mediterranea','arroz-aguacate','patata-setas-puerro','pure-patata'],
+  lomo:          ['salsa-zanahoria-arroz','ens-garbanzos','ens-mediterranea','burger-bowl','taco-bell','burrito-bowl','taco-dip','ens-alubias','ens-lentejas','lentejas-beet-rucula','arroz-aguacate','lentejas-rojas-espinaca','patata-setas-puerro','calabacin-asado-limon','esparragos-feta-vinagre','verduras-arco-iris','espinaca-queso-crema','puerro-crema-limon','lentejas-rojas-con-curry','black-beans-cumin','alubias-tomate-oregano','patata-crema-setas-invierno','zanahoria-puerro-pure-calido','lentejas-mediterranea-beet','arroz-cilantro-lima-asiatico','garbanzos-tostados-citrico','pasta-salsa-tomate-batch','arroz-tomado-comino'],
+  'higado-bacalao': ['arroz-huevos-veg','ens-legumbres-sc','coliflor-tahini','tomate-feta-pepino-verano'],
+  'higado-vaca':    ['lentejas-sep','pure-patata','esparragos-j','verduras-arco-iris','espinaca-queso-crema','zanahoria-puerro-pure-calido'],
+  sardinas:         ['pasta-tomate-cross','ens-garbanzos','ens-mediterranea','burger-bowl','taco-bell','burrito-bowl','taco-dip','ens-alubias','ens-lentejas','lentejas-beet-rucula','arroz-aguacate','lentejas-rojas-espinaca','patata-setas-puerro','calabacin-asado-limon','esparragos-feta-vinagre','tomate-feta-pepino-verano','patata-crema-setas-invierno','lentejas-mediterranea-beet','pasta-salsa-tomate-batch'],
+  mejillones:       ['mejillones-arroz-tomate','mejillones-patata-vapor','ens-mediterranea','arroz-aguacate','patata-setas-puerro','pure-patata','esparragos-feta-vinagre','verduras-arco-iris','espinaca-queso-crema'],
   desayuno: [
     'desayuno-cheesecake-yogur','desayuno-tortilla-aguacate',
     'desayuno-overnight-oats','desayuno-bowl-caballa','desayuno-waffles-avena',
