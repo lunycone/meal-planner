@@ -10,6 +10,7 @@ import WeeklyMealPlannerTab from './components/tabs/WeeklyMealPlannerTab'
 import ShoppingListTab     from './components/tabs/ShoppingListTab'
 import MenuTab             from './components/tabs/MenuTab'
 import AuthGate            from './components/AuthGate'
+import ProfileSelector     from './components/ProfileSelector'
 import { MEALS }           from './config/meals'
 
 const CONFIG_TABS = [
@@ -33,22 +34,25 @@ function AppShell() {
   return (
     <div className="app-shell">
       {/* Navigation banner — always visible, Notion-style */}
-      <nav className="tab-bar">
-        <button
-          className={`tab-btn${atHome ? ' active' : ''}`}
-          onClick={() => setView('home')}
-        >
-          Inicio
-        </button>
-        {CONFIG_TABS.map(t => (
+      <nav className="tab-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 0 }}>
           <button
-            key={t.id}
-            className={`tab-btn${activeView === t.id ? ' active' : ''}`}
-            onClick={() => setView(t.id)}
+            className={`tab-btn${atHome ? ' active' : ''}`}
+            onClick={() => setView('home')}
           >
-            {t.label}
+            Inicio
           </button>
-        ))}
+          {CONFIG_TABS.map(t => (
+            <button
+              key={t.id}
+              className={`tab-btn${activeView === t.id ? ' active' : ''}`}
+              onClick={() => setView(t.id)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+        <ProfileSelector />
       </nav>
 
       {/* Back button — only on non-home views */}

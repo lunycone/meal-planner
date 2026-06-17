@@ -31,6 +31,51 @@ const useStore = create(
 
       setView(view, meal = null) { set({ activeView: view, activeMeal: meal }) },
 
+      // ── PROFILES ──────────────────────────────────────────────────────────
+      profiles: [
+        { id: 'julio', name: 'Julio', emoji: '👨', kcalTarget: 2900, active: true },
+        { id: 'novia', name: 'Novia', emoji: '👩', kcalTarget: 2300, active: false },
+        { id: 'hermana', name: 'Hermana', emoji: '👩', kcalTarget: 2000, active: false, validoHasta: '2026-07-08T17:00:00' },
+      ],
+      activeProfileId: 'julio',
+
+      getActiveProfile() {
+        const s = get()
+        return s.profiles.find(p => p.id === s.activeProfileId) || s.profiles[0]
+      },
+
+      setActiveProfile(id) {
+        set(s => ({
+          profiles: s.profiles.map(p => ({ ...p, active: p.id === id })),
+          activeProfileId: id
+        }))
+      },
+
+      addProfile(name, kcalTarget, validoHasta = null) {
+        set(s => {
+          const id = 'profile-' + Date.now()
+          return {
+            profiles: [...s.profiles, { id, name, emoji: '👤', kcalTarget, active: false, ...(validoHasta && { validoHasta }) }]
+          }
+        })
+      },
+
+      removeProfile(id) {
+        set(s => {
+          const filtered = s.profiles.filter(p => p.id !== id)
+          return {
+            profiles: filtered,
+            activeProfileId: s.activeProfileId === id ? (filtered[0]?.id || '') : s.activeProfileId
+          }
+        })
+      },
+
+      updateProfile(id, data) {
+        set(s => ({
+          profiles: s.profiles.map(p => p.id === id ? { ...p, ...data } : p)
+        }))
+      },
+
       // ── INGREDIENTS ───────────────────────────────────────────────────────
       priceOverrides:      {},
       ingredientOverrides: {},
