@@ -714,10 +714,6 @@ export default function HomeView() {
         </div>
       </header>
 
-      <div style={{ padding: '0 1.5rem', marginTop: '1.5rem' }}>
-        <DailyProgress />
-      </div>
-
       <div className="home-meals">
         <MealBlock
           time="7:00"
@@ -754,6 +750,10 @@ export default function HomeView() {
       </div>
 
       <DailySummary todayMeals={todayMeals} allIng={allIng} allCombos={allCombos} />
+
+      <div style={{ padding: '0 1.5rem', marginTop: '1.5rem' }}>
+        <DailyProgress todayMeals={todayMeals} allIng={allIng} allCombos={allCombos} />
+      </div>
 
       {/* Detail modal (when clicking a filled meal) */}
       {modalType === 'detail' && mealTypeFromModal && (

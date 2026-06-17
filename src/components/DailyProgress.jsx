@@ -1,99 +1,93 @@
-import useStore, { selectAllIng, selectAllCombos } from '../store/useStore'
+import useStore from '../store/useStore'
 import { comboAgg, proteinKcal } from '../engine/calc'
 import { PROTEIN } from '../data/proteins'
 
-export default function DailyProgress() {
-  const allIng = useStore(selectAllIng)
-  const allCombos = useStore(selectAllCombos)
-  const activeProfile = useStore(s => s.getActiveProfile())
-  const weekPlan = useStore(s => s.weekPlan)
+function calcMealKcal(meal, allIng, allCombos) {
+  if (!meal) return 0
+  if (meal.type === 'desayuno') {
+    const recipe = allCombos[meal.recipeKey]
+    if (!recipe) return 0
+    return comboAgg(recipe, allIng).kcal
+  }
+  if (meal.type === 'plato') {
+    const protein = PROTEIN[meal.proteinKey]
+    const combo   = allCombos[meal.comboKey]
+    if (!protein || !combo) return 0
+    return proteinKcal(protein) + comboAgg(combo, allIng).kcal + 235
+  }
+  return 0
+}
 
-  // Calculate today's kcal from meals
-  let todayKcal = 0
+export default function DailyProgress({ todayMeals, allIng, allCombos }) {
+  const profiles       = useStore(s => s.profiles)
+  const activeProfileId = useStore(s => s.activeProfileId)
+
   const today = new Date()
-  const dayKey = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'][today.getDay() === 0 ? 6 : today.getDay() - 1]
+  const validProfiles = profiles.filter(p => !p.validoHasta || new Date(p.validoHasta) > today)
 
-  // Get this week's plan
-  const d = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()))
-  const dayNum = d.getUTCDay() || 7
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum)
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
-  const weekKey = `${d.getUTCFullYear()}-W${String(Math.ceil((d - yearStart) / 86400000 / 7)).padStart(2, '0')}`
+  // Total kcal planeadas hoy (comida compartida)
+  const totalKcal = Math.round(
+    Object.values(todayMeals).reduce((sum, meal) => sum + calcMealKcal(meal, allIng, allCombos), 0)
+  )
 
-  const currentWeek = weekPlan[weekKey] ?? {}
-
-  // Sum all meal types for today
-  ['desayuno', 'comida', 'merienda', 'cena'].forEach(mealType => {
-    const slotKey = `${dayKey}-${mealType}`
-    const meal = currentWeek[slotKey]
-    if (!meal) return
-
-    if (meal.type === 'desayuno') {
-      const recipe = allCombos[meal.recipeKey]
-      if (recipe) {
-        const agg = comboAgg(recipe, allIng)
-        todayKcal += agg.kcal
-      }
-    } else if (meal.type === 'plato') {
-      const protein = PROTEIN[meal.proteinKey]
-      const combo = allCombos[meal.comboKey]
-      if (protein && combo) {
-        const protKcal = proteinKcal(protein)
-        const combAgg = comboAgg(combo, allIng)
-        todayKcal += protKcal + combAgg.kcal + 235
-      }
-    }
-  })
-
-  const target = activeProfile.kcalTarget
-  const percent = Math.min(100, (todayKcal / target) * 100)
-  const remaining = Math.max(0, target - todayKcal)
+  if (totalKcal === 0) {
+    return (
+      <div style={{
+        background: 'var(--t-tinted-bg)',
+        borderRadius: 'var(--t-radius-lg)',
+        padding: '1.25rem 1.5rem',
+        border: '1px solid var(--t-border)',
+        fontSize: '0.85rem',
+        color: 'var(--t-text-faint)',
+      }}>
+        Sin comidas planeadas para hoy
+      </div>
+    )
+  }
 
   return (
     <div style={{
       background: 'var(--t-tinted-bg)',
       borderRadius: 'var(--t-radius-lg)',
-      padding: '1.5rem',
-      marginBottom: '1.5rem',
-      border: '1px solid var(--t-border)'
+      padding: '1.25rem 1.5rem',
+      border: '1px solid var(--t-border)',
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1rem' }}>
-        <div>
-          <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--t-text-faint)', letterSpacing: '0.1em', marginBottom: '0.25rem' }}>
-            Progreso del día
-          </div>
-          <div style={{ fontSize: '1.4rem', fontFamily: 'var(--t-font-display)', fontWeight: 300, color: 'var(--t-text)' }}>
-            {Math.round(todayKcal)} kcal
-          </div>
-        </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: '0.8rem', color: 'var(--t-text-soft)' }}>
-            de {target} kcal
-          </div>
-          <div style={{ fontSize: '0.9rem', fontWeight: 600, color: remaining <= 0 ? 'var(--t-success)' : 'var(--t-accent)' }}>
-            {remaining > 0 ? `+${Math.round(remaining)}` : '✓'} kcal
-          </div>
-        </div>
+      <div style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--t-text-faint)', letterSpacing: '0.1em', marginBottom: '0.75rem' }}>
+        Reparto por persona
       </div>
 
-      {/* Progress bar */}
       <div style={{
-        width: '100%',
-        height: '6px',
-        background: 'var(--t-border)',
-        borderRadius: '99px',
-        overflow: 'hidden'
+        display: 'grid',
+        gridTemplateColumns: validProfiles.length > 1 ? 'repeat(auto-fit, minmax(120px, 1fr))' : '1fr',
+        gap: '0.75rem',
       }}>
-        <div style={{
-          width: `${percent}%`,
-          height: '100%',
-          background: remaining <= 0 ? 'var(--t-success)' : 'var(--t-accent)',
-          transition: 'width 0.4s ease'
-        }} />
-      </div>
+        {validProfiles.map(p => {
+          const percent = Math.round((totalKcal / p.kcalTarget) * 100)
+          const isActive = activeProfileId === p.id || activeProfileId === 'all'
 
-      <div style={{ fontSize: '0.72rem', color: 'var(--t-text-faint)', marginTop: '0.6rem' }}>
-        {percent.toFixed(0)}% del objetivo
+          return (
+            <div
+              key={p.id}
+              style={{
+                padding: '0.75rem',
+                background: isActive ? 'rgba(154,123,67,0.08)' : 'rgba(0,0,0,0.02)',
+                border: isActive ? '1px solid var(--t-accent)' : '1px solid var(--t-border)',
+                borderRadius: 'var(--t-radius)',
+                textAlign: 'center',
+              }}
+            >
+              <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--t-text-soft)', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {p.initial} {p.name}
+              </div>
+              <div style={{ fontFamily: 'var(--t-font-display)', fontSize: '1.2rem', fontWeight: 300, color: percent > 100 ? 'var(--t-danger)' : 'var(--t-text)', lineHeight: 1, marginBottom: '0.3rem' }}>
+                {percent}%
+              </div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--t-text-faint)' }}>
+                {totalKcal} / {p.kcalTarget} kcal
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )

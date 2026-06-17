@@ -33,14 +33,19 @@ const useStore = create(
 
       // ── PROFILES ──────────────────────────────────────────────────────────
       profiles: [
-        { id: 'julio', name: 'Julio', emoji: '👨', kcalTarget: 2900, active: true },
-        { id: 'novia', name: 'Novia', emoji: '👩', kcalTarget: 2300, active: false },
-        { id: 'hermana', name: 'Hermana', emoji: '👩', kcalTarget: 2000, active: false, validoHasta: '2026-07-08T17:00:00' },
+        { id: 'julio',   name: 'Julio', initial: 'J', kcalTarget: 2900 },
+        { id: 'maria',   name: 'María', initial: 'M', kcalTarget: 2300 },
+        { id: 'carla',   name: 'Carla', initial: 'C', kcalTarget: 2000, validoHasta: '2026-07-08T17:00:00' },
       ],
-      activeProfileId: 'julio',
+      activeProfileId: 'all',
 
       getActiveProfile() {
         const s = get()
+        if (s.activeProfileId === 'all') {
+          const today = new Date()
+          const valid = s.profiles.filter(p => !p.validoHasta || new Date(p.validoHasta) > today)
+          return { id: 'all', name: 'Todos', initial: 'T', kcalTarget: valid.reduce((sum, p) => sum + p.kcalTarget, 0) }
+        }
         return s.profiles.find(p => p.id === s.activeProfileId) || s.profiles[0]
       },
 
