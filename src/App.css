@@ -18,9 +18,9 @@
   --t-text-faint:   #9c9c96;
 
   /* Accent */
-  --t-accent:       #9a7b43;   /* gold — hover, key stats, active tab */
-  --t-accent-dark:  #2a1f18;   /* buttons, dots */
-  --t-accent-mid:   #3d2f26;   /* hover states */
+  --t-accent:       #6B4423;   /* dark brown — hover, key stats, active tab */
+  --t-accent-dark:  #4A3728;   /* buttons, dots */
+  --t-accent-mid:   #8B5E3C;   /* hover states */
 
   /* Semantic */
   --t-success:      #5f7a3c;
