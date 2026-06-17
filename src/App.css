@@ -1486,18 +1486,17 @@ input, select, textarea { font-family: inherit; }
   align-items: center;
   justify-content: center;
   padding: 2rem;
+  background: var(--t-bg);
 }
 
 .auth-card {
-  background: var(--t-card-bg);
-  backdrop-filter: var(--t-card-blur);
-  -webkit-backdrop-filter: var(--t-card-blur);
-  border: 1.5px solid var(--t-card-border);
-  box-shadow: var(--t-shadow-lg);
-  border-radius: var(--radius-xl);
-  padding: 3rem 2.5rem 2.5rem;
+  background: var(--t-surface);
+  border: 1px solid var(--t-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+  border-radius: var(--t-radius-lg);
+  padding: 3.5rem 2.5rem;
   width: 100%;
-  max-width: 380px;
+  max-width: 420px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1505,85 +1504,102 @@ input, select, textarea { font-family: inherit; }
 }
 
 .auth-icon {
-  width: 60px;
-  height: 60px;
-  background: rgba(138, 92, 53, 0.1);
+  width: 56px;
+  height: 56px;
+  background: rgba(154, 123, 67, 0.06);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.auth-icon svg {
+  color: var(--t-accent);
 }
 
 .auth-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: var(--ink);
-  margin-bottom: 0.35rem;
+  fontFamily: var(--t-font-display);
+  font-size: 1.6rem;
+  font-weight: 300;
+  letter-spacing: -0.01em;
+  color: var(--t-text);
+  margin-bottom: 0.5rem;
+  fontOpticalSizing: auto;
 }
 
 .auth-sub {
   font-size: 0.82rem;
-  color: var(--muted);
+  color: var(--t-text-soft);
   text-align: center;
   margin-bottom: 2rem;
+  line-height: 1.5;
 }
 
 .auth-form {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
 .auth-input {
   width: 100%;
-  padding: 0.7rem 1rem;
-  border: 1.5px solid var(--line);
-  border-radius: var(--radius-md);
-  background: var(--t-input-bg);
-  font-family: inherit;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--t-border);
+  border-radius: var(--t-radius);
+  background: var(--t-surface);
+  font-family: var(--t-font-ui);
   font-size: 0.95rem;
-  color: var(--ink);
+  color: var(--t-text);
   outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color 0.2s, box-shadow 0.2s;
   text-align: center;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
+}
+.auth-input::placeholder {
+  color: var(--t-text-faint);
 }
 .auth-input:focus {
-  border-color: var(--brown);
-  box-shadow: 0 0 0 3px rgba(138, 92, 53, 0.12);
+  border-color: var(--t-accent);
+  box-shadow: 0 0 0 3px rgba(154, 123, 67, 0.1);
 }
 .auth-input-error {
   border-color: var(--t-danger) !important;
-  box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.12) !important;
+  box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.08) !important;
 }
 
 .auth-error {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--t-danger);
   text-align: center;
-  margin-top: -0.25rem;
+  margin-top: -0.5rem;
+  line-height: 1.4;
 }
 
 .auth-btn {
   width: 100%;
-  padding: 0.72rem 1rem;
-  background: var(--brown);
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-md);
-  font-family: inherit;
-  font-size: 0.95rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--t-accent);
+  color: #ffffff;
+  border: 1px solid var(--t-accent);
+  border-radius: var(--t-radius);
+  font-family: var(--t-font-ui);
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s, transform 0.1s, opacity 0.15s;
+  transition: all 0.2s ease;
   margin-top: 0.25rem;
+  letter-spacing: 0.02em;
 }
-.auth-btn:hover:not(:disabled) { background: #6e4828; }
-.auth-btn:active:not(:disabled) { transform: scale(0.98); }
-.auth-btn:disabled { opacity: 0.45; cursor: default; }
+.auth-btn:hover:not(:disabled) {
+  background: var(--t-accent-dark);
+  border-color: var(--t-accent-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(154, 123, 67, 0.15);
+}
+.auth-btn:active:not(:disabled) { transform: translateY(0); }
+.auth-btn:disabled { opacity: 0.5; cursor: default; }
 
 /* Shake animation for wrong password */
 @keyframes shake {
