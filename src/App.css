@@ -1448,19 +1448,21 @@ input, select, textarea { font-family: inherit; }
    ============================================================ */
 .meal-tag {
   display: inline-block;
-  font-size: 0.58rem;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.62rem;
+  font-family: var(--t-font-ui);
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  padding: 1px 5px;
-  border-radius: 4px;
-  line-height: 1.5;
+  padding: 2px 7px;
+  border: 1px solid;
+  border-radius: var(--t-radius);
+  line-height: 1.4;
+  background: #ffffff;
 }
-.meal-tag-desayuno { background: #fef3c7; color: #92680a; }
-.meal-tag-comida   { background: #fde8d0; color: #8a4a1a; }
-.meal-tag-merienda { background: #ede9e0; color: #7a6a52; }
-.meal-tag-cena     { background: #e8eaf5; color: #3a4a7a; }
+.meal-tag-desayuno { border-color: #E8D4A0; color: #9a8a6a; }
+.meal-tag-comida   { border-color: #D4A880; color: #8B6B3A; }
+.meal-tag-merienda { border-color: #C0B8A8; color: #7a6a5a; }
+.meal-tag-cena     { border-color: #9AB8D4; color: #3a5a7a; }
 
 /* ============================================================
    MEAL DETAIL SHEET
