@@ -5,16 +5,27 @@ export default function DailyProgress() {
   const allIng = useStore(selectAllIng)
   const allCombos = useStore(selectAllCombos)
   const activeProfile = useStore(s => s.getActiveProfile())
-  const meals = useStore(s => s.meals)
+  const weekPlan = useStore(s => s.weekPlan)
+  const { PROTEIN } = require('../data/proteins')
 
   // Calculate today's kcal from meals
   let todayKcal = 0
   const today = new Date()
   const dayKey = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'][today.getDay() === 0 ? 6 : today.getDay() - 1]
 
+  // Get this week's plan
+  const d = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()))
+  const dayNum = d.getUTCDay() || 7
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum)
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
+  const weekKey = `${d.getUTCFullYear()}-W${String(Math.ceil((d - yearStart) / 86400000 / 7)).padStart(2, '0')}`
+
+  const currentWeek = weekPlan[weekKey] ?? {}
+
   // Sum all meal types for today
   ['desayuno', 'comida', 'merienda', 'cena'].forEach(mealType => {
-    const meal = meals[mealType]?.[dayKey]
+    const slotKey = `${dayKey}-${mealType}`
+    const meal = currentWeek[slotKey]
     if (!meal) return
 
     if (meal.type === 'desayuno') {
@@ -24,7 +35,7 @@ export default function DailyProgress() {
         todayKcal += agg.kcal
       }
     } else if (meal.type === 'plato') {
-      const protein = useStore.getState()['PROTEIN']?.[meal.proteinKey]
+      const protein = PROTEIN[meal.proteinKey]
       const combo = allCombos[meal.comboKey]
       if (protein && combo) {
         const protKcal = proteinKcal(protein)
