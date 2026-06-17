@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import useStore, { selectAllIng, selectAllCombos } from '../store/useStore'
 import { PROTEIN } from '../data/proteins'
 import { PREP } from '../data/combos'
-import { comboAgg, fmt, proteinCost, proteinKcal, ingKcal, ingFat, ingFib, fmtPortion } from '../engine/calc'
+import { comboAgg, fmt, proteinCost, proteinKcal, proteinProt, ingKcal, ingFat, ingFib, fmtPortion } from '../engine/calc'
 import DailyProgress from '../components/DailyProgress'
 
 // ─── Utility functions ────────────────────────────────────────────────────────
@@ -347,10 +347,11 @@ function MealDetailModal({ mealType, meal, allIng, allCombos, onEdit, onClear, o
       title = `${proteinObj.name} + ${combo.name}`
       const protCost = proteinCost(proteinObj)
       const protKcal = proteinKcal(proteinObj)
+      const protProt = proteinProt(proteinObj)
       const combAgg  = comboAgg(combo, allIng)
       cost    = protCost + combAgg.cost
       kcal    = protKcal + combAgg.kcal + 235
-      protein = (proteinObj.prot ?? 0) + (combAgg.prot ?? 0)
+      protein = protProt + (combAgg.prot ?? 0)
       fat     = combAgg.fat ?? 0
       fiber   = combAgg.fib ?? 0
       proteinKey  = meal.proteinKey
@@ -558,10 +559,11 @@ function MealBlock({ time, mealType, meal, allIng, allCombos, onEdit, onClear, o
       title = `${proteinObj.name} + ${combo.name}`
       const protCost = proteinCost(proteinObj)
       const protKcal = proteinKcal(proteinObj)
+      const protProt = proteinProt(proteinObj)
       const combAgg = comboAgg(combo, allIng)
       cost = protCost + combAgg.cost
       kcal = protKcal + combAgg.kcal + 235
-      protein = (proteinObj.prot ?? 0) + (combAgg.prot ?? 0)
+      protein = protProt + (combAgg.prot ?? 0)
     }
   }
 
@@ -623,10 +625,11 @@ function DailySummary({ todayMeals, allIng, allCombos }) {
         if (proteinObj && combo) {
           const protCost = proteinCost(proteinObj)
           const protKcal = proteinKcal(proteinObj)
+          const protProt = proteinProt(proteinObj)
           const combAgg = comboAgg(combo, allIng)
           totalCost += protCost + combAgg.cost
           totalKcal += protKcal + combAgg.kcal + 235
-          totalProtein += (proteinObj.prot ?? 0) + (combAgg.prot ?? 0)
+          totalProtein += protProt + (combAgg.prot ?? 0)
         }
       }
     })

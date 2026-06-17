@@ -70,6 +70,14 @@ export function proteinKcal(pr, useAlt = false) {
   return 0
 }
 
+export function proteinProt(pr, useAlt = false) {
+  const r = (useAlt && pr.altRation) ? pr.altRation : pr.ration
+  if (r.grams != null) return pr.prot != null ? pr.prot * r.grams / 100 : 0
+  if (r.units != null) return pr.protu != null ? pr.protu * r.units : 0
+  if (pr.protf != null) return pr.protf
+  return 0
+}
+
 export function comboAgg(combo, allIng) {
   let cost = 0, kcal = 0, prot = 0, fat = 0, fib = 0, hasEst = false
   for (const it of combo.items) {
