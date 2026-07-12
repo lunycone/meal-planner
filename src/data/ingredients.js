@@ -90,6 +90,7 @@ export const ING = {
   parsley:          { name: 'Perejil',          cat: 'otro', flat: 0.10,   kcf: 2,  pack: 'estimado',        per: '—', est: true },
   'pimienta-negra': { name: 'Pimienta negra',   cat: 'otro', flat: 0.05,   kcf: 2,  pack: 'especia',         per: 'uso → $0.05', est: true },
   pimenton:         { name: 'Pimentón',         cat: 'otro', flat: 0.05,   kcf: 3,  pack: 'especia',         per: 'uso → $0.05', est: true },
+  cacao:            { name: 'Cacao puro en polvo', cat: 'otro', per100: 4.00, kc: 350, prot: 20, fat: 12, fib: 30, pack: '225g · $9.00', per: '15g → $0.60 · 53 kcal' },
   ajo:              { name: 'Ajo',              cat: 'otro', flat: 0.10,   kcf: 5,  pack: 'estimado',        per: 'uso → $0.10', est: true },
   rabanos:          { name: 'Rábanos',          cat: 'fresco', per100: 0.664, kc: 16, prot: 0.7, fat: 0.1, fib: 1.6, pack: '450g · $2.99', per: '60g → $0.40 · 10 kcal' },
   huevo:            { name: 'Huevo',            cat: 'otro', perUnit: 0.624, kcu: 72, protu: 6, fatu: 5, pack: 'docena · $7.49', per: 'ud → $0.62 · 72 kcal' },
