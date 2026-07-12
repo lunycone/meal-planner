@@ -277,6 +277,7 @@ export const COMBO = {
   'huevos-turcos': {
     base: 'otros',
     name: 'Huevos turcos · yogur, ajo y pimentón',
+    noAove: true,
     items: [
       { k: 'yogur-cabra', p: { grams: 120 } },
       { k: 'mantequilla', p: { grams: 15 } },

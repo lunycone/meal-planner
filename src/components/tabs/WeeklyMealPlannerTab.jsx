@@ -757,7 +757,7 @@ function MealDetailModal({ meal, allIng, allCombos, onEdit, onClose }) {
     const pProt = proteinProt(protein, false, meal.proteinUnits)
     const cAgg  = comboAgg(combo, allIng, meal.comboVariants || {}, {}, meal.comboOptionals || [])
     const totalCost = pCost + cAgg.cost
-    const totalKcal = pKcal + cAgg.kcal + 235
+    const totalKcal = pKcal + cAgg.kcal + (combo.noAove ? 0 : 235)
     const totalProt = pProt + (cAgg.prot ?? 0)
     // Protein portion label
     const r = protein.ration
@@ -822,7 +822,7 @@ function MealDetailModal({ meal, allIng, allCombos, onEdit, onClose }) {
                 ))}
               </>
             )}
-            {pKcal > 0 && (
+            {pKcal > 0 && !combo.noAove && (
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.4rem 0', borderBottom: '1px solid var(--t-border)', fontSize: '0.72rem', color: 'var(--t-text-faint)' }}>
                 <span>AOVE estimado</span>
                 <span>235 kcal</span>

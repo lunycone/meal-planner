@@ -169,7 +169,7 @@ export function mealKcal(meal, allIng, allCombos, gramsOverride = {}) {
     if (!protein || !combo) return 0
     return proteinKcal(protein, false, meal.proteinUnits)
          + comboAgg(combo, allIng, meal.comboVariants || {}, gramsOverride, meal.comboOptionals || []).kcal
-         + 235
+         + (combo.noAove ? 0 : 235)
   }
   return 0
 }
