@@ -12,6 +12,8 @@ export const ING = {
   alcachofa:       { name: 'Alcachofa',           cat: 'base',     perUnit: 1.99, kcu: 67, fibu: 5.4, pack: 'ud · $1.99',             per: 'ud → $1.99 · 67 kcal' },
   'pan-masa-madre':{ name: 'Pan masa madre',      cat: 'base',     per100: 1.083, kc: 265, fib: 2.4, pack: '600 g · $6.50',           per: '60g → $0.65 · 159 kcal' },
   avena:           { name: 'Avena (oats)',         cat: 'base',     per100: 0.429, kc: 389, prot: 17,  fat: 7,   fib: 10.6, pack: '1 kg · $4.29',           per: '50g → $0.21 · 195 kcal' },
+  buckwheat:       { name: 'Trigo sarraceno (Ambrosia Organic Toasted)', cat: 'base', per100: 1.033, kc: 343, prot: 13, fat: 3.4, fib: 10, pack: '454g · $4.69', per: '70g → $0.72 · 240 kcal' },
+  pesto:           { name: 'Pesto',               cat: 'otro',     per100: 1.579, kc: 430, prot: 5,   fat: 42,  fib: 1,   pack: '190g · $3.00',           per: '30g → $0.47 · 129 kcal', est: true },
   harina:          { name: 'Harina Ambrosia Unbleached All Purpose', cat: 'base', per100: 0.277, kc: 364, prot: 10, fat: 1.4, fib: 2.7, pack: '2270g · $6.29', per: '80g → $0.22' },
   azucar:          { name: 'Azúcar',              cat: 'base',     per100: 0.15,  kc: 400, prot: 0,   fat: 0,   fib: 0,   pack: 'estimado',                per: '15g → $0.02', est: true },
 

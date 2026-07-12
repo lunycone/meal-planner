@@ -274,6 +274,15 @@ export const COMBO = {
       { k: 'limon',              p: { units: 0.5 } },
     ],
   },
+  'buckwheat-pesto': {
+    base: 'otros',
+    name: 'Buckwheat con pesto',
+    noAove: true,
+    items: [
+      { k: 'buckwheat', p: { grams: 70 } },
+      { k: 'pesto',     p: { grams: 30 } },
+    ],
+  },
   'huevos-turcos': {
     base: 'otros',
     name: 'Huevos turcos · yogur, ajo y pimentón',
@@ -469,7 +478,7 @@ export const COMBO_SETS = {
     'zanahoria-puerro-pure-calido','lentejas-mediterranea-beet','arroz-cilantro-lima-asiatico','garbanzos-tostados-citrico',
     'pasta-salsa-tomate-batch','arroz-tomado-comino','ensalada-eataly','bocadillo','bocadillo-tortilla-patata',
     'pure-patata-zanahoria','pure-patata-leche-mantequilla','pure-patata-calabacin','arroz-tomate-cebolla','patata-setas-zanahoria','patata-puerro-asada','patata-setas-cebolla','patata-setas-esparragos','arroz-sofrito','bandeja-asada-patata-zanahoria',
-    'huevos-turcos','tortilla-esparragos-beet-rabanos',
+    'huevos-turcos','tortilla-esparragos-beet-rabanos','buckwheat-pesto',
   ],
   salchichas: [
     'hot-dog',
