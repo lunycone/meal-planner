@@ -1114,6 +1114,30 @@ export default function WeeklyMealPlannerTab() {
     return result
   }, [activeProfileId, profiles, currentWeek, allIng, allCombos])
 
+  // ── Batido merienda suggestion per person per day ────────────────────────────
+  const batidoSuggestions = useMemo(() => {
+    if (validProfiles.length === 0) return {}
+    const batidos = Object.entries(allCombos)
+      .filter(([, r]) => r.tag === 'batido')
+      .map(([key, r]) => { const a = comboAgg(r, allIng); return { key, name: r.name.replace('Batido: ', '').replace('Batido económico: ', ''), kcal: a.kcal, cost: a.cost } })
+      .sort((a, b) => a.cost - b.cost)
+    if (batidos.length === 0) return {}
+    const result = {}
+    DAY_KEYS.forEach(dk => {
+      const day = Object.fromEntries(MEALS.map(m => [m, currentWeek[slotKey(dk, m)] ?? null]))
+      if (!MEALS.some(m => day[m])) { result[dk] = []; return }
+      result[dk] = validProfiles.map(person => {
+        const scale = personLunchScale(day, person, allIng, allCombos)
+        const achieved = scale ? scale.dayKcalAchieved : dayKcal(day, allIng, allCombos)
+        const deficit = Math.round(person.kcalTarget - achieved)
+        if (deficit < 150) return null
+        const best = batidos.reduce((a, b) => Math.abs(a.kcal - deficit) <= Math.abs(b.kcal - deficit) ? a : b)
+        return { person, deficit, batido: best }
+      }).filter(Boolean)
+    })
+    return result
+  }, [currentWeek, validProfiles, allCombos, allIng])
+
   function clearCurrentWeek() {
     DAY_KEYS.forEach(dayKey => {
       MEALS.forEach(mealType => clearMealSlot(weekKey, slotKey(dayKey, mealType)))
@@ -1314,6 +1338,12 @@ export default function WeeklyMealPlannerTab() {
                       <span>{Math.round(personalizedDayKcal ? (personalizedDayKcal[dayKey] ?? 0) : (dayTotals[dayKey]?.kcal ?? 0))} kcal</span>
                       {(dayTotals[dayKey]?.prot ?? 0) > 0 && <span style={{ color: 'var(--t-accent)', fontWeight: 600 }}>{Math.round(dayTotals[dayKey].prot)}g prot</span>}
                     </div>
+                    {(batidoSuggestions[dayKey] ?? []).map(({ person, deficit, batido }) => (
+                      <div key={person.id} style={{ fontSize: '0.6rem', color: 'var(--t-text-faint)', marginTop: '0.2rem', lineHeight: 1.3 }}>
+                        🥤 {person.initial} +{deficit} kcal<br/>
+                        <span style={{ color: 'var(--t-accent)' }}>{batido.name}</span> {fmt(batido.cost)}
+                      </div>
+                    ))}
                   </div>
                 )
               })}
