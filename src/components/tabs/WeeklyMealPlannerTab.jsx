@@ -460,7 +460,7 @@ function MealSelectorModal({ allIng, allCombos, onSelect, onClose, dayKey, mealT
                           <span style={{ marginLeft: 5, fontSize: '0.7em', opacity: 0.7 }}>{mealTag(protein.meals)}</span>
                         </div>
                         <div className="po-detail">
-                          {fmt(proteinCost(protein))} · {Math.round(proteinProt(protein))}g
+                          {fmt(proteinCost(protein, false, selectedProtein === protein.key ? (selectedProteinUnits ?? protein.ration?.units) : null))} · {Math.round(proteinProt(protein, false, selectedProtein === protein.key ? (selectedProteinUnits ?? protein.ration?.units) : null))}g
                           <span style={{ marginLeft: 6, color: 'var(--t-accent)', fontWeight: 600 }}>
                             {fmt(protein._costPerG)}/g
                           </span>
@@ -500,7 +500,7 @@ function MealSelectorModal({ allIng, allCombos, onSelect, onClose, dayKey, mealT
                               {protein.name}
                               <span style={{ marginLeft: 5, fontSize: '0.7em', opacity: 0.7 }}>{mealTag(protein.meals)}</span>
                             </div>
-                            <div className="po-detail">{fmt(proteinCost(protein))} · {Math.round(proteinProt(protein))}g</div>
+                            <div className="po-detail">{fmt(proteinCost(protein, false, selectedProtein === protein.key ? (selectedProteinUnits ?? protein.ration?.units) : null))} · {Math.round(proteinProt(protein, false, selectedProtein === protein.key ? (selectedProteinUnits ?? protein.ration?.units) : null))}g</div>
                           </div>
                           {selectedProtein === protein.key && protein.variableRation && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 10px 8px', background: 'rgba(154,123,67,0.06)', borderRadius: '0 0 8px 8px', marginTop: -4 }}>
