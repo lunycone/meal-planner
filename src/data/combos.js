@@ -458,6 +458,10 @@ export const COMBO = {
   // Merienda económica: avena + leche mínima + banana + agua (implícita) · ~$0.50 · ~300 kcal
   'desayuno-batido-avena-economico': { tag: 'batido', flags: ['rapido', 'economico'], name: 'Batido económico: Avena · Banana · Leche · Canela', items: [{ k: 'avena', p: { grams: 50 } },{ k: 'banana', p: { grams: 120 } },{ k: 'leche', p: { grams: 100 } },{ k: 'canela', p: {} },] },
   // Batidos merienda sin avena · alta kcal
+  'batido-avena-banana-leche':             { tag: 'batido', flags: ['rapido'], name: 'Batido: Avena · Banana · Leche',                     items: [{ k: 'leche', p: { ml: 300 } },{ k: 'avena', p: { grams: 50 } },{ k: 'banana', p: { grams: 120 } }] },
+  'batido-avena-girasol-banana-leche':    { tag: 'batido', flags: ['rapido'], name: 'Batido: Avena · Girasol · Banana · Leche',            items: [{ k: 'leche', p: { ml: 250 } },{ k: 'avena', p: { grams: 40 } },{ k: 'banana', p: { grams: 120 } },{ k: 'sunflower-seeds', p: { grams: 25 } }] },
+  'batido-avena-yogur-banana-leche':      { tag: 'batido', flags: ['rapido'], name: 'Batido: Avena · Yogur · Banana · Leche',              items: [{ k: 'yogur-cabra', p: { grams: 150 } },{ k: 'leche', p: { ml: 200 } },{ k: 'avena', p: { grams: 50 } },{ k: 'banana', p: { grams: 120 } }] },
+  'batido-avena-cacao-banana-leche':      { tag: 'batido', flags: ['rapido'], name: 'Batido: Avena · Cacao · Banana · Leche',              items: [{ k: 'leche', p: { ml: 300 } },{ k: 'avena', p: { grams: 50 } },{ k: 'banana', p: { grams: 120 } },{ k: 'cacao', p: { grams: 15 } }] },
   'batido-girasol-banana-leche':          { tag: 'batido', flags: ['rapido'], name: 'Batido: Girasol · Banana · Leche',                    items: [{ k: 'leche', p: { ml: 300 } },{ k: 'banana', p: { grams: 120 } },{ k: 'sunflower-seeds', p: { grams: 40 } }] },
   'batido-yogur-leche-banana-girasol':    { tag: 'batido', flags: ['rapido'], name: 'Batido: Yogur · Leche · Banana · Girasol',            items: [{ k: 'yogur-cabra', p: { grams: 150 } },{ k: 'leche', p: { ml: 200 } },{ k: 'banana', p: { grams: 120 } },{ k: 'sunflower-seeds', p: { grams: 30 } }] },
   'batido-mantequilla-banana-cacao-leche':{ tag: 'batido', flags: ['rapido'], name: 'Batido: Mantequilla · Banana · Cacao · Leche',        items: [{ k: 'leche', p: { ml: 300 } },{ k: 'banana', p: { grams: 120 } },{ k: 'mantequilla', p: { grams: 25 } },{ k: 'cacao', p: { grams: 15 } }] },
@@ -520,6 +524,7 @@ export const COMBO_SETS = {
     'desayuno-pizza-sardinas-light','desayuno-pizza-sardinas-max',
     'desayuno-yogur-almendras-pumpkin','desayuno-yogur-pumpkin-coco',
     'desayuno-batido-yogur-leche-avena','desayuno-batido-leche-avena-banana','desayuno-batido-leche-yogur-chocolate',
+    'batido-avena-banana-leche','batido-avena-girasol-banana-leche','batido-avena-yogur-banana-leche','batido-avena-cacao-banana-leche',
     'batido-girasol-banana-leche','batido-yogur-leche-banana-girasol','batido-mantequilla-banana-cacao-leche',
     'batido-mantequilla-girasol-banana','batido-almendra-banana-leche','batido-cacao-banana-girasol-leche',
     'desayuno-yogur-sunflower-arandanos','desayuno-huevo-queso',
