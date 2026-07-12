@@ -153,6 +153,17 @@ export const COMBO = {
       { k: 'pimienta-negra',  p: {} },
     ],
   },
+  'pure-patata-calabacin': {
+    base: 'patata',
+    name: 'Puré de patata con calabacín y leche',
+    blend: { label: 'Puré', base: true },
+    items: [
+      { k: 'patata',        p: { grams: 180 } },
+      { k: 'calabacin-org', p: { grams: 100 } },
+      { k: 'leche',         p: { ml: 60 } },
+      { k: 'pimienta-negra',p: {} },
+    ],
+  },
   'esparragos-j': {
     base: 'otros',
     name: 'Espárragos (María)',
@@ -435,7 +446,7 @@ export const COMBO_SETS = {
     'alubias-tomate-oregano','tomate-feta-pepino-verano','aguacate-tomate-cilantro','patata-crema-setas-invierno',
     'zanahoria-puerro-pure-calido','lentejas-mediterranea-beet','arroz-cilantro-lima-asiatico','garbanzos-tostados-citrico',
     'pasta-salsa-tomate-batch','arroz-tomado-comino','ensalada-eataly','bocadillo','bocadillo-tortilla-patata',
-    'pure-patata-zanahoria','pure-patata-leche-mantequilla','arroz-tomate-cebolla','patata-setas-zanahoria','patata-puerro-asada','patata-setas-cebolla','patata-setas-esparragos','arroz-sofrito','bandeja-asada-patata-zanahoria',
+    'pure-patata-zanahoria','pure-patata-leche-mantequilla','pure-patata-calabacin','arroz-tomate-cebolla','patata-setas-zanahoria','patata-puerro-asada','patata-setas-cebolla','patata-setas-esparragos','arroz-sofrito','bandeja-asada-patata-zanahoria',
   ],
   salchichas: [
     'hot-dog',
