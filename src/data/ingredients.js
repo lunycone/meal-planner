@@ -58,7 +58,7 @@ export const ING = {
   'feta-oveja':   { name: 'Feta',            cat: 'lacteo', per100: 3.50, kc: 265, prot: 14, fat: 21, pack: '400 g · $13.99',  per: '30g → $1.05', tag: 'oveja' },
   'queso-cabra':  { name: 'Queso de cabra',  cat: 'lacteo', per100: 2.90, kc: 290, prot: 19, fat: 23, pack: '1 kg · $28.99',   per: '30g → $0.87' },
   cheddar:        { name: 'Cheddar',         cat: 'lacteo', per100: 4.90, kc: 400, prot: 25, fat: 33, pack: '300 g · $14.69',  per: '30g → $1.47 · 120 kcal' },
-  'yogur-cabra':  { name: 'Yogur de cabra',  cat: 'lacteo', per100: 0.57,  kc: 70, prot: 5,   fat: 4,  pack: '750 g · $4.29',              per: '120g → $0.68 · 6g prot' },
+  'yogur-cabra':  { name: 'Yogur de cabra',  cat: 'lacteo', per100: 0.57,  kc: 81, prot: 5.1, fat: 3.4, pack: '750 g · $4.29',             per: '120g → $0.68 · 6.1g prot' },
   'yogur-vaca':   { name: 'Yogur de vaca (Saugeen Organic)', cat: 'lacteo', per100: 0.539, kc: 69, prot: 3.4, fat: 4, pack: '908 g · $4.89', per: '120g → $0.65 · 4.1g prot' },
   'sour-cream':   { name: 'Sour cream',      cat: 'lacteo', per100: 0.70, kc: 190, prot: 2,  fat: 19, pack: '500 ml · $3.49',  per: '40g → $0.28 · 76 kcal' },
   mantequilla:    { name: 'Mantequilla',     cat: 'lacteo', per100: 1.958, kc: 717, prot: 0.9, fat: 81, pack: '454g · $8.89',   per: '25g → $0.49' },
