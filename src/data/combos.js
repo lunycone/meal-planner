@@ -274,6 +274,25 @@ export const COMBO = {
       { k: 'limon',              p: { units: 0.5 } },
     ],
   },
+  'huevos-turcos': {
+    base: 'otros',
+    name: 'Huevos turcos · yogur, ajo y pimentón',
+    items: [
+      { k: 'yogur-cabra', p: { grams: 120 } },
+      { k: 'mantequilla', p: { grams: 15 } },
+      { k: 'ajo',         p: {} },
+      { k: 'pimenton',    p: {} },
+    ],
+  },
+  'tortilla-esparragos-beet-rabanos': {
+    base: 'otros',
+    name: 'Con espárragos, remolacha y rábanos',
+    items: [
+      { k: 'esparragos', p: { grams: 80 } },
+      { k: 'beet',       p: { grams: 60 } },
+      { k: 'rabanos',    p: { grams: 60 } },
+    ],
+  },
   'hot-dog': {
     base: 'otros',
     name: 'Hot dog',
@@ -447,6 +466,7 @@ export const COMBO_SETS = {
     'zanahoria-puerro-pure-calido','lentejas-mediterranea-beet','arroz-cilantro-lima-asiatico','garbanzos-tostados-citrico',
     'pasta-salsa-tomate-batch','arroz-tomado-comino','ensalada-eataly','bocadillo','bocadillo-tortilla-patata',
     'pure-patata-zanahoria','pure-patata-leche-mantequilla','pure-patata-calabacin','arroz-tomate-cebolla','patata-setas-zanahoria','patata-puerro-asada','patata-setas-cebolla','patata-setas-esparragos','arroz-sofrito','bandeja-asada-patata-zanahoria',
+    'huevos-turcos','tortilla-esparragos-beet-rabanos',
   ],
   salchichas: [
     'hot-dog',
