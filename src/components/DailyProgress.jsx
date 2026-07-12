@@ -1,5 +1,5 @@
 import useStore from '../store/useStore'
-import { comboAgg, proteinKcal, proteinProt } from '../engine/calc'
+import { comboAgg, proteinKcal, proteinProt, personLunchScale } from '../engine/calc'
 import { PROTEIN } from '../data/proteins'
 
 function calcMealKcal(meal, allIng, allCombos) {
@@ -13,7 +13,7 @@ function calcMealKcal(meal, allIng, allCombos) {
     const protein = PROTEIN[meal.proteinKey]
     const combo   = allCombos[meal.comboKey]
     if (!protein || !combo) return 0
-    return proteinKcal(protein) + comboAgg(combo, allIng).kcal + 235
+    return proteinKcal(protein, false, meal.proteinUnits) + comboAgg(combo, allIng, meal.comboVariants || {}).kcal + 235
   }
   return 0
 }
@@ -29,7 +29,7 @@ function calcMealProt(meal, allIng, allCombos) {
     const protein = PROTEIN[meal.proteinKey]
     const combo   = allCombos[meal.comboKey]
     if (!protein || !combo) return 0
-    return proteinProt(protein) + (comboAgg(combo, allIng).prot ?? 0)
+    return proteinProt(protein, false, meal.proteinUnits) + (comboAgg(combo, allIng, meal.comboVariants || {}).prot ?? 0)
   }
   return 0
 }
@@ -81,7 +81,11 @@ export default function DailyProgress({ todayMeals, allIng, allCombos }) {
         gap: '0.75rem',
       }}>
         {validProfiles.map(p => {
-          const kcalPercent = Math.round((totalKcal / p.kcalTarget) * 100)
+          // Personalized day kcal: lunch base scales per person, so each
+          // person's total differs even though the menu is shared.
+          const scale = personLunchScale(todayMeals, p, allIng, allCombos)
+          const personKcal = scale ? scale.dayKcalAchieved : totalKcal
+          const kcalPercent = Math.round((personKcal / p.kcalTarget) * 100)
           const protPercent = Math.round((totalProt / (p.proteinTarget || 1)) * 100)
           const isActive = activeProfileId === p.id || activeProfileId === 'all'
 
@@ -103,7 +107,7 @@ export default function DailyProgress({ todayMeals, allIng, allCombos }) {
                 {kcalPercent}%
               </div>
               <div style={{ fontSize: '0.7rem', color: 'var(--t-text-faint)', marginBottom: '0.5rem' }}>
-                {totalKcal} / {p.kcalTarget} kcal
+                {personKcal} / {p.kcalTarget} kcal
               </div>
               <div style={{ fontFamily: 'var(--t-font-display)', fontSize: '1rem', fontWeight: 300, color: protPercent > 100 ? 'var(--t-danger)' : 'var(--t-text)', lineHeight: 1, marginBottom: '0.2rem' }}>
                 {protPercent}%

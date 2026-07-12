@@ -10,18 +10,19 @@ export const ING = {
   pasta:           { name: 'Pasta',               cat: 'base',     per100: 0.66,  kc: 360, prot: 13,  fat: 1.5, fib: 2.5, pack: '1 lb · $3.00',           per: '100g seco → $0.66' },
   maiz:            { name: 'Maíz congelado',      cat: 'base',     per100: 1.11,  kc: 85,  prot: 3.3, fat: 1.2, fib: 2.4, pack: '450 g · $4.99',          per: '60g → $0.67' },
   alcachofa:       { name: 'Alcachofa',           cat: 'base',     perUnit: 1.99, kcu: 67, fibu: 5.4, pack: 'ud · $1.99',             per: 'ud → $1.99 · 67 kcal' },
-  'pan-masa-madre':{ name: 'Pan masa madre',      cat: 'base',     per100: 0.70, kc: 265,  fib: 2.4, pack: 'hogaza · $7.00',          per: '100g → $0.70 · 265 kcal' },
+  'pan-masa-madre':{ name: 'Pan masa madre',      cat: 'base',     per100: 1.083, kc: 265, fib: 2.4, pack: '600 g · $6.50',           per: '60g → $0.65 · 159 kcal' },
   avena:           { name: 'Avena (oats)',         cat: 'base',     per100: 0.429, kc: 389, prot: 17,  fat: 7,   fib: 10.6, pack: '1 kg · $4.29',           per: '50g → $0.21 · 195 kcal' },
-  harina:          { name: 'Harina (Robin Hood)', cat: 'base',     per100: 0.20,  kc: 364, prot: 10,  fat: 1.4, fib: 2.7, pack: '2.5kg · ~$4.99',         per: '60g → $0.12', est: true },
+  harina:          { name: 'Harina Ambrosia Unbleached All Purpose', cat: 'base', per100: 0.277, kc: 364, prot: 10, fat: 1.4, fib: 2.7, pack: '2270g · $6.29', per: '80g → $0.22' },
   azucar:          { name: 'Azúcar',              cat: 'base',     per100: 0.15,  kc: 400, prot: 0,   fat: 0,   fib: 0,   pack: 'estimado',                per: '15g → $0.02', est: true },
 
-  // LEGUMBRES (peso seco)
-  'lentejas-rojas':  { name: 'Lentejas rojas',    cat: 'legumbre', per100: 0.15,  kc: 340, prot: 24,  fat: 1,   fib: 7.9, pack: '55 lb · $36.69',         per: '80g seco → $0.12' },
-  'lentejas-verdes': { name: 'Lentejas verdes',   cat: 'legumbre', per100: 0.27,  kc: 350, prot: 26,  fat: 1,   fib: 7.9, pack: '10 lb · $12.09',         per: '80g seco → $0.22' },
-  garbanzos:         { name: 'Garbanzos',         cat: 'legumbre', per100: 0.17,  kc: 364, prot: 19,  fat: 6,   fib: 7.6, pack: '55 lb · $42.99',         per: '80g seco → $0.14' },
-  'black-beans':     { name: 'Black beans',       cat: 'legumbre', per100: 0.27,  kc: 340, prot: 22,  fat: 1.4, fib: 8.7, pack: '10 lb · $12.09',         per: '80g seco → $0.22' },
-  'alubias-blancas': { name: 'Alubias blancas',   cat: 'legumbre', per100: 0.42,  kc: 330, prot: 22,  fat: 1,   fib: 6.3, pack: '10 lb · $18.89',         per: '80g seco → $0.34' },
-  cranberry:         { name: 'Cranberry beans',   cat: 'legumbre', per100: 0.44,  kc: 335, prot: 22,  fat: 1,   fib: 7.0, pack: '10 lb · $19.79',         per: '80g seco → $0.35' },
+  // LEGUMBRES (peso seco) — precios actualizados jun 2026
+  'lentejas-rojas':  { name: 'Lentejas rojas',    cat: 'legumbre', per100: 0.220, kc: 340, prot: 24,  fat: 1,   fib: 7.9, brand: 'Divya Red Split Lentils',          store: 'Food Basics', pack: '1.81 kg · $3.98', per: '80g seco → $0.18' },
+  'lentejas-verdes': { name: 'Lentejas verdes',   cat: 'legumbre', per100: 0.325, kc: 350, prot: 26,  fat: 1,   fib: 7.9, brand: "President's Choice Blue Menu",      store: 'No Frills',   pack: '2 kg · $6.50',    per: '80g seco → $0.26' },
+  garbanzos:         { name: 'Garbanzos',         cat: 'legumbre', per100: 0.375, kc: 364, prot: 19,  fat: 6,   fib: 7.6, brand: 'Dunya Harvest Dried Chickpeas',    store: 'No Frills',   pack: '2 kg · $7.50',    per: '80g seco → $0.30' },
+  'black-beans':     { name: 'Black beans',       cat: 'legumbre', per100: 0.300, kc: 340, prot: 22,  fat: 1.4, fib: 8.7, brand: 'Dunya Harvest Black Turtle Beans', store: 'FreshCo',     pack: '2 kg · $6.00',    per: '80g seco → $0.24' },
+  'alubias-blancas': { name: 'Alubias blancas',   cat: 'legumbre', per100: 0.299, kc: 330, prot: 22,  fat: 1,   fib: 6.3, brand: 'Dunya Harvest Great Northern Beans', store: 'FreshCo',   pack: '900 g · $2.69',   per: '80g seco → $0.24' },
+  'alubias-rojas':   { name: 'Alubias rojas',     cat: 'legumbre', per100: 0.333, kc: 333, prot: 22,  fat: 1.2, fib: 7.4, brand: 'Divya Red Kidney Beans',           store: 'Food Basics', pack: '1.8 kg · $5.99',  per: '80g seco → $0.27' },
+  cranberry:         { name: 'Romano beans',      cat: 'legumbre', per100: 0.399, kc: 335, prot: 22,  fat: 1,   fib: 7.0, brand: 'Cedar Romano Beans',               store: 'Food Basics', pack: '1 kg · $3.99',    per: '80g seco → $0.32' },
 
   // FRESCOS
   leche:             { name: 'Leche entera',      cat: 'fresco',   per100: 0.29,  kc: 61,  prot: 3.2, fat: 3.3, fib: 0,    pack: '4L · $12.00',          per: '200ml → $0.58 · 122 kcal' },
@@ -32,17 +33,18 @@ export const ING = {
   beet:              { name: 'Beet',              cat: 'fresco',   per100: 0.30,  kc: 43,  prot: 1.6, fat: 0.2, fib: 2.0, pack: '5 lb · $6.89',          per: 'med. ~$0.24' },
   lechuga:           { name: 'Lechuga',           cat: 'fresco',   perServing: 0.40, kcs: 10, pack: 'ud · $4.00',         per: '~$0.40/plato' },
   rucula:            { name: 'Rúcula',            cat: 'fresco',   per100: 2.11,  kc: 25,  prot: 2.6, fat: 0.7, fib: 1.6, pack: '900 g · $19.00',        per: 'solo batch' },
-  zanahoria:         { name: 'Zanahoria',         cat: 'fresco',   per100: 0.33,  kc: 41,  prot: 0.9, fat: 0.2, fib: 2.8, pack: '5 lb · $7.49',          per: 'med. ~$0.20' },
+  zanahoria:         { name: 'Zanahoria (No Name Naturally Imperfect)', cat: 'fresco', per100: 0.220, kc: 41, prot: 0.9, fat: 0.2, fib: 2.8, pack: '2270 g · $5.00 (No Frills)',  per: '100g → $0.22' },
   espinaca:          { name: 'Espinaca congelada',cat: 'fresco',   per100: 1.11,  kc: 23,  prot: 2.9, fat: 0.4, fib: 2.2, pack: '450 g · $4.99',         per: '80g → $0.89' },
   puerro:            { name: 'Puerro',            cat: 'fresco',   perUnit: 2.00, kcu: 55,  protu: 1.4, fatu: 0.3, fibu: 1.8, pack: '3 ud · $5.99',       per: '½ → $1.00 · 27 kcal' },
-  'tomate-fresco':   { name: 'Tomate fresco (vine)', cat: 'fresco', per100: 0.88, kc: 18,  prot: 0.9, fat: 0.2, fib: 1.2, pack: '~0.14kg · $1.23',       per: '80g → $0.70 · 14 kcal' },
+  'tomate-fresco':   { name: 'Tomate fresco (vine)', cat: 'fresco', per100: 0.660, kc: 18, prot: 0.9, fat: 0.2, fib: 1.2, pack: 'Organic Vine ~0.35 lb · $1.05 (~159g)', per: '120g → $0.79 · 22 kcal' },
+  'pepino-ingles':   { name: 'Pepino inglés',        cat: 'fresco', per100: 0.286, kc: 15, prot: 0.6, fat: 0.1, fib: 0.5, pack: 'English cucumber · $1.00 (~350g)',     per: '100g → $0.29 · 15 kcal' },
   'calabacin-a1':    { name: 'Calabacín A1',      cat: 'fresco',   per100: 0.45,  kc: 17,  fib: 1.2, pack: '5 lb · $10.29 (~2.27kg)', per: '100g → $0.45', note: 'solo si hay batch grande esa semana' },
   'calabacin-org':   { name: 'Calabacín orgánico',cat: 'fresco',   per100: 0.66,  kc: 17,  fib: 1.2, pack: '~0.23kg · $1.50',       per: '100g → $0.66', note: 'más manejable para semanas normales' },
   calabacin:         { name: 'Calabacín',         cat: 'fresco',   per100: 0.45,  kc: 17,  fib: 1.2, pack: 'A1 ref.',                per: '100g → $0.45', hideInTable: true },
   esparragos:        { name: 'Espárragos',        cat: 'fresco',   per100: 0.44,  kc: 20,  fib: 2.1, pack: '~0.68 kg · $2.97',      per: '120g → $0.53', jessica: true },
   brocoli:           { name: 'Brócoli',           cat: 'fresco',   per100: 0.55,  kc: 34,  fib: 2.6, pack: 'estimado · Jessica',    per: '—', est: true, jessica: true },
-  'pimiento-verde': { name: 'Pimiento verde',   cat: 'fresco',   per100: 0.86,  kc: 30,  fib: 2.6, pack: '~0.28kg · $2.42',        per: '100g → $0.86 · 30 kcal' },
-  jalapeno:          { name: 'Jalapeno',          cat: 'fresco',   per100: 0.95,  kc: 29,  fib: 1.9, pack: 'ud ~40g · $0.38',       per: 'ud → $0.38 · 12 kcal' },
+  'pimiento-verde': { name: 'Pimiento verde',    cat: 'fresco',   per100: 0.88,  kc: 30,  fib: 2.6, pack: '~0.28kg · $2.42 (CA$8.80/kg)', per: '100g → $0.88 · 30 kcal' },
+  jalapeno:          { name: 'Jalapeño',           cat: 'fresco',   per100: 1.10,  kc: 29,  fib: 1.9, pack: 'ud ~40g · CA$11.00/kg', per: 'ud → $0.44 · 12 kcal' },
   'green-beans':     { name: 'Ejotes / Green beans', cat: 'fresco', per100: 0.60,  kc: 31,  fib: 3.4, pack: 'bunch ~0.08kg · $0.48', per: '80g → $0.48 · 25 kcal' },
   arandanos:         { name: 'Arándanos congelados (Farm Boy)', cat: 'fresco', per100: 0.977, kc: 57, prot: 0.7, fat: 0.3, fib: 2.4, pack: '2.25 kg · $21.99', per: '40g → $0.39 · 23 kcal' },
   banana:            { name: 'Banana',            cat: 'fresco',   per100: 0.25,  kc: 89,  prot: 1.1, fat: 0.3, fib: 2.6, pack: 'estimado ~$0.30/ud',    per: '120g → $0.30 · 107 kcal' },
@@ -73,11 +75,18 @@ export const ING = {
   pan:              { name: 'Pan sourdough',    cat: 'otro', perUnit: 6.50, kcu: 0, pack: 'pieza · $6–7',   per: '~260 kcal/100g' },
   setas:            { name: 'Setas frescas',    cat: 'otro', per100: 1.54, kc: 22, prot: 3,  fat: 0.3, fib: 1.0, pack: '227 g · $3.49',   per: '100g → $1.54' },
   mejillones:       { name: 'Mejillones (Canadian Cove Organic)', cat: 'otro', per100: 0.771, kc: 172, pack: '907 g · $6.99', per: '150g → $1.16 · 258 kcal' },
+  'pulpo-congelado': { name: 'Pulpo congelado (Ferma)', cat: 'otro', per100: 1.73,  kc: 82,  prot: 25, pack: '750 g · $12.99',    per: '150g cocido → $2.60 · 37g prot' },
+  salchichas:        { name: 'Salchichas (English Bangers)', cat: 'otro', per100: 0.599, kc: 300, prot: 14, fat: 24, pack: '~0.91 kg · $5.45 est (CA$5.99/kg)', per: '150g → $0.90 · 450 kcal' },
+  bacon:             { name: 'Bacon (Lifesmart Uncured)',    cat: 'otro', per100: 2.131, kc: 540, prot: 37, fat: 42, pack: '375 g · $7.99',       per: '40g → $0.85 · 216 kcal' },
   'cerdo-picado':   { name: 'Cerdo picado (Heritage, Linton)', cat: 'otro', per100: 1.899, kc: 260, pack: 'kg · $18.99', per: '100g → $1.90 · 260 kcal' },
-  mostaza:          { name: 'Mostaza (Koops)',  cat: 'otro', per100: 0.98, kc: 66, pack: '340 g · $3.33',   per: 'uso mínimo' },
+  'hot-dog-buns':   { name: 'Hot dog buns',               cat: 'otro', perUnit: 0.625, kcu: 140, pack: '8 ud · $5.00', per: '1 ud → $0.63 · 140 kcal', est: true },
+  mostaza:          { name: 'Mostaza Irresistibles Dijon Traditional (500ml)', cat: 'otro', per100: 0.767, kc: 70, pack: '500 ml · $3.99', per: '10g → $0.08' },
+  mayonesa:         { name: 'Mayonesa Maison Orphée con AOVE (440g)',        cat: 'otro', per100: 1.816, kc: 720, prot: 1.5, fat: 80, pack: '440 g · $7.99', per: '20g → $0.36 · 144 kcal' },
+  ketchup:          { name: 'Ketchup Heinz Organic Biologique (750ml)',      cat: 'otro', per100: 0.927, kc: 110, prot: 1.5, pack: '750 ml · $7.99', per: '15g → $0.14 · 17 kcal' },
   'taco-seasoning': { name: 'Taco seasoning',  cat: 'otro', flat: 0.10,   kcf: 15, pack: 'estimado',        per: '—', est: true },
   parsley:          { name: 'Perejil',          cat: 'otro', flat: 0.10,   kcf: 2,  pack: 'estimado',        per: '—', est: true },
-  huevo:            { name: 'Huevo',            cat: 'otro', perUnit: 0.488, kcu: 72, protu: 6, fatu: 5, pack: 'docena · $5.85', per: 'ud → $0.49 · 72 kcal' },
+  'pimienta-negra': { name: 'Pimienta negra',   cat: 'otro', flat: 0.05,   kcf: 2,  pack: 'especia',         per: 'uso → $0.05', est: true },
+  huevo:            { name: 'Huevo',            cat: 'otro', perUnit: 0.751, kcu: 72, protu: 6, fatu: 5, pack: 'docena · $9.01', per: 'ud → $0.75 · 72 kcal' },
   tahini:           { name: 'Tahini',           cat: 'otro', per100: 5.95, kc: 595, prot: 17, fat: 54, fib: 9.3, pack: '500g · ~$29.75', per: '15g → $0.89 · 89 kcal' },
   'tomate-conserva':{ name: 'Tomate cherry/conserva', cat: 'otro', per100: 0.30, kc: 33, prot: 1.6, fat: 0.2, fib: 1.9, pack: 'lata · ~$1.50', per: '100g → $0.30 · 33 kcal' },
   vinagre:          { name: 'Vinagre',          cat: 'otro', perML: 0.003, kcml: 0.18, pack: 'botella · ~$3.00', per: '15ml → $0.045 · 3 kcal' },
@@ -89,6 +98,7 @@ export const ING = {
 }
 
 export const CAT_LABELS = {
+  proteina:'Proteína',
   base:    'Bases',
   legumbre:'Legumbres',
   fresco:  'Frescos y toppings',
@@ -96,4 +106,4 @@ export const CAT_LABELS = {
   otro:    'Otros',
 }
 
-export const CAT_ORDER = ['base', 'legumbre', 'fresco', 'lacteo', 'otro']
+export const CAT_ORDER = ['proteina', 'base', 'legumbre', 'fresco', 'lacteo', 'otro']

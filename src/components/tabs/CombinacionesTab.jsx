@@ -589,7 +589,14 @@ export default function CombinacionesTab() {
       {/* Deleted combos */}
       {deletedCombos.length > 0 && (
         <div style={{ marginTop: '1.5rem', padding: '1rem', background: '#f9f6f0', border: '1px solid var(--line-soft)', borderRadius: 10 }}>
-          <div className="section-label" style={{ marginBottom: '0.5rem' }}>Combos ocultos ({deletedCombos.length})</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+            <div className="section-label">Combos ocultos ({deletedCombos.length})</div>
+            <button
+              className="btn-primary"
+              style={{ fontSize: '0.76rem', padding: '4px 12px' }}
+              onClick={() => [...deletedCombos].forEach(k => restoreCombo(k))}
+            >↺ Restaurar todos</button>
+          </div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {deletedCombos.map(k => (
               <button key={k} className="btn-ghost" style={{ fontSize: '0.76rem' }} onClick={() => restoreCombo(k)}>

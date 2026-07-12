@@ -28,6 +28,8 @@ const useStore = create(
       // ── NAVIGATION (not persisted) ────────────────────────────────────────
       activeView: 'home',
       activeMeal: null,
+      weekOffset: 0,
+      setWeekOffset(offset) { set({ weekOffset: offset }) },
 
       setView(view, meal = null) { set({ activeView: view, activeMeal: meal }) },
 
@@ -35,7 +37,7 @@ const useStore = create(
       profiles: [
         { id: 'julio',   name: 'Julio', initial: 'J', kcalTarget: 2900, proteinTarget: 100 },
         { id: 'maria',   name: 'María', initial: 'M', kcalTarget: 2300, proteinTarget: 100 },
-        { id: 'carla',   name: 'Carla', initial: 'C', kcalTarget: 2000, proteinTarget: 90, validoHasta: '2026-07-08T17:00:00' },
+        { id: 'carla',   name: 'Carla', initial: 'C', kcalTarget: 2000, proteinTarget: 90, validoDesde: '2026-06-26', validoHasta: '2026-07-08T17:00:00' },
       ],
       activeProfileId: 'all',
 
@@ -43,7 +45,10 @@ const useStore = create(
         const s = get()
         if (s.activeProfileId === 'all') {
           const today = new Date()
-          const valid = s.profiles.filter(p => !p.validoHasta || new Date(p.validoHasta) > today)
+          const valid = s.profiles.filter(p =>
+            (!p.validoDesde  || new Date(p.validoDesde)  <= today) &&
+            (!p.validoHasta  || new Date(p.validoHasta)  >  today)
+          )
           return { id: 'all', name: 'Todos', initial: 'T', kcalTarget: valid.reduce((sum, p) => sum + p.kcalTarget, 0), proteinTarget: valid.reduce((sum, p) => sum + (p.proteinTarget || 0), 0) }
         }
         return s.profiles.find(p => p.id === s.activeProfileId) || s.profiles[0]
@@ -360,7 +365,7 @@ export function selectAllCombos(s) {
   }
   for (const c of s.customCombos) {
     const key = 'custom-' + c.id
-    if (!deleted.has(key)) result[key] = { name: c.name, items: c.items, isCustom: true, customId: c.id }
+    if (!deleted.has(key)) result[key] = { name: c.name, items: c.items, isCustom: true, customId: c.id, desayuno: c.desayuno ?? false }
   }
   return result
 }

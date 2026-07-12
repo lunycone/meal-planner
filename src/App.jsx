@@ -8,7 +8,7 @@ import IngredientesTab     from './components/tabs/IngredientesTab'
 import CombinacionesTab    from './components/tabs/CombinacionesTab'
 import WeeklyMealPlannerTab from './components/tabs/WeeklyMealPlannerTab'
 import ShoppingListTab     from './components/tabs/ShoppingListTab'
-import MenuTab             from './components/tabs/MenuTab'
+import BatchPrepTab        from './components/tabs/BatchPrepTab'
 import AuthGate            from './components/AuthGate'
 import ProfileSelector     from './components/ProfileSelector'
 import SyncStatus          from './components/SyncStatus'
@@ -21,7 +21,7 @@ const CONFIG_TABS = [
   { id: 'ingredientes',  label: 'Ingredientes',   Component: IngredientesTab },
   { id: 'planificador',  label: 'Planificador',   Component: WeeklyMealPlannerTab },
   { id: 'compra',        label: 'Compra',         Component: ShoppingListTab },
-  { id: 'menu',          label: 'Menú mensual',   Component: MenuTab },
+  { id: 'batch',         label: 'Batch',          Component: BatchPrepTab },
 ]
 
 function AppShell() {
@@ -53,7 +53,7 @@ function AppShell() {
             </button>
           ))}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div className="tab-bar-right" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <SyncStatus />
           <ProfileSelector />
         </div>

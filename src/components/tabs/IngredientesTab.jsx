@@ -183,6 +183,12 @@ function IngCard({ ingKey, ing, isModified, editingKey, setEditingKey }) {
             </button>
           </div>
           <div className="ipack">{ing.pack}</div>
+          {ing.brand && (
+            <div style={{ fontSize: '0.68rem', marginBottom: '0.2rem' }}>
+              <span style={{ color: 'var(--brown)', fontWeight: 600 }}>{ing.brand}</span>
+              <span style={{ color: 'var(--muted)' }}> · {ing.store}</span>
+            </div>
+          )}
           <div className="irow">
             <span className="iprice">{priceLabel(ing)}</span>
             <span className="ikcal">{kcalLabel(ing)}</span>

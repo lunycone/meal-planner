@@ -2,8 +2,11 @@ import { useState, useMemo } from 'react'
 import useStore, { selectAllIng, selectAllCombos } from '../store/useStore'
 import { PROTEIN } from '../data/proteins'
 import { PREP } from '../data/combos'
-import { comboAgg, fmt, proteinCost, proteinKcal, proteinProt, ingKcal, ingFat, ingFib, fmtPortion } from '../engine/calc'
+import { comboAgg, fmt, proteinCost, proteinKcal, proteinProt, ingKcal, ingFat, ingFib, fmtPortion, personLunchScale } from '../engine/calc'
 import DailyProgress from '../components/DailyProgress'
+import PersonalizedDay from '../components/PersonalizedDay'
+import ProfileSelector from '../components/ProfileSelector'
+import SyncStatus from '../components/SyncStatus'
 
 // ─── Utility functions ────────────────────────────────────────────────────────
 
@@ -54,6 +57,51 @@ function getTodayDayKey() {
   return null
 }
 
+// ─── Combo detail modal (preview: coste · kcal · proteína · ingredientes) ─────
+function ComboDetailModal({ combo, allIng, onConfirm, onClose }) {
+  const agg = comboAgg(combo, allIng)
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-dialog" onClick={e => e.stopPropagation()} style={{ maxWidth: '420px' }}>
+        <div className="modal-header">
+          <h3>{combo.name}</h3>
+          <button className="modal-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="modal-body">
+          <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
+            <div>
+              <div style={{ fontSize: '0.65rem', color: 'var(--t-text-faint)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Costo</div>
+              <div style={{ fontFamily: 'var(--t-font-display)', fontSize: '1.25rem', fontWeight: 300 }}>{fmt(agg.cost)}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.65rem', color: 'var(--t-text-faint)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>kcal</div>
+              <div style={{ fontFamily: 'var(--t-font-display)', fontSize: '1.25rem', fontWeight: 300 }}>{Math.round(agg.kcal)}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.65rem', color: 'var(--t-text-faint)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>proteína</div>
+              <div style={{ fontFamily: 'var(--t-font-display)', fontSize: '1.25rem', fontWeight: 300 }}>{Math.round(agg.prot)}g</div>
+            </div>
+          </div>
+          <div style={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--t-text-faint)', marginBottom: '0.75rem' }}>Ingredientes</div>
+          {(combo.items ?? []).map((it, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '0.5rem 0', borderBottom: '1px solid var(--t-border)' }}>
+              <span style={{ fontSize: '0.8rem', color: 'var(--t-text)' }}>{allIng[it.k]?.name ?? it.k}</span>
+              <div style={{ display: 'flex', gap: '0.75rem', flexShrink: 0, marginLeft: '1rem', fontSize: '0.72rem', color: 'var(--t-text-faint)' }}>
+                <span>{fmtPortion(it.p)}</span>
+                {ingKcal(it.k, it.p, allIng) > 0 && <span style={{ minWidth: '42px', textAlign: 'right' }}>{Math.round(ingKcal(it.k, it.p, allIng))} kcal</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="modal-footer">
+          <button className="btn-ghost" onClick={onClose}>Cancelar</button>
+          <button className="btn-primary" onClick={() => onConfirm(combo.key)}>Seleccionar</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Meal selector modal ──────────────────────────────────────────────────────
 
 function MealSelectorModal({ allIng, allCombos, onSelect, onClose, mealType }) {
@@ -61,7 +109,10 @@ function MealSelectorModal({ allIng, allCombos, onSelect, onClose, mealType }) {
   const [selectedProtein, setSelectedProtein] = useState(null)
   const [selectedPrep, setSelectedPrep] = useState(null)
   const [selectedCombo, setSelectedCombo] = useState(null)
+  const [selectedVariants, setSelectedVariants] = useState({})
+  const [selectedProteinUnits, setSelectedProteinUnits] = useState(null)
   const [search, setSearch] = useState('')
+  const [comboDetail, setComboDetail] = useState(null)
 
   const desayunoRecipes = useMemo(() => {
     return Object.entries(allCombos)
@@ -71,7 +122,10 @@ function MealSelectorModal({ allIng, allCombos, onSelect, onClose, mealType }) {
 
   const proteinList = useMemo(() => {
     const list = Object.entries(PROTEIN)
-      .filter(([, p]) => (p.meals ?? ['comida']).includes(mealType))
+      .filter(([, p]) => {
+        const meals = p.meals ?? ['comida']
+        return meals.includes('comida') || meals.includes('cena')
+      })
       .map(([k, p]) => ({ key: k, ...p }))
     if (!search) return list
     const q = search.toLowerCase()
@@ -85,17 +139,38 @@ function MealSelectorModal({ allIng, allCombos, onSelect, onClose, mealType }) {
     const protein = PROTEIN[selectedProtein]
     const comboSetKey = protein?.combos
     if (!comboSetKey) return []
-    const baseComboSet = comboSetKey === 'shared' ? ['shared', mealType] : [comboSetKey]
     return Object.entries(allCombos)
-      .filter(([k, c]) => !k.startsWith('desayuno-') && baseComboSet.includes(comboSetKey))
+      .filter(([k, c]) => {
+        if (k.startsWith('desayuno-')) return false
+        if (comboSetKey === 'shared') return true
+        return c.base === comboSetKey
+      })
       .map(([k, c]) => ({ key: k, ...c }))
   }, [selectedProtein, allCombos, mealType])
 
-  function confirmMeal() {
+  // Does the current selection have any adjustable quantities?
+  // (variable eggs inside the combo, or a protein with a variable ration like eggs)
+  const proteinHasVariableRation = selectedProtein
+    ? Array.isArray(PROTEIN[selectedProtein]?.variableRation)
+    : false
+  const comboHasVariants = (() => {
+    const combo = availableCombos.find(c => c.key === selectedCombo)
+    return !!(combo?.variableIngredients && Object.keys(combo.variableIngredients).length > 0)
+  })()
+  const hasAnyVariants = proteinHasVariableRation || comboHasVariants
+
+  function confirmMeal(comboKeyOverride = null) {
     if (mealType === 'desayuno') {
       onSelect({ type: 'desayuno', recipeKey: selectedPrep })
     } else {
-      onSelect({ type: 'plato', proteinKey: selectedProtein, prepKey: selectedPrep || null, comboKey: selectedCombo })
+      const meal = { type: 'plato', proteinKey: selectedProtein, prepKey: selectedPrep || null, comboKey: comboKeyOverride ?? selectedCombo }
+      if (Object.keys(selectedVariants).length > 0) {
+        meal.comboVariants = selectedVariants
+      }
+      if (proteinHasVariableRation && selectedProteinUnits != null) {
+        meal.proteinUnits = selectedProteinUnits
+      }
+      onSelect(meal)
     }
     onClose()
   }
@@ -158,6 +233,7 @@ function MealSelectorModal({ allIng, allCombos, onSelect, onClose, mealType }) {
             {step === 'protein' && 'Selecciona proteína'}
             {step === 'prep' && 'Selecciona preparación'}
             {step === 'combo' && 'Selecciona combinación'}
+            {step === 'variants' && 'Ajusta ingredientes'}
           </h3>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
@@ -171,16 +247,41 @@ function MealSelectorModal({ allIng, allCombos, onSelect, onClose, mealType }) {
                 onChange={e => setSearch(e.target.value)}
               />
               <div className="protein-list">
-                {proteinList.map(protein => (
-                  <div
-                    key={protein.key}
-                    className={`protein-option${selectedProtein === protein.key ? ' selected' : ''}`}
-                    onClick={() => setSelectedProtein(protein.key)}
-                  >
-                    <div className="po-name">{protein.name}</div>
-                    <div className="po-detail">{fmt(protein.ration?.price ?? (protein.per100 ?? 0) * (protein.ration?.grams ?? 150) / 100)}</div>
-                  </div>
-                ))}
+                {(() => {
+                  const renderOption = protein => (
+                    <div
+                      key={protein.key}
+                      className={`protein-option${selectedProtein === protein.key ? ' selected' : ''}`}
+                      onClick={() => setSelectedProtein(protein.key)}
+                    >
+                      <div className="po-name">{protein.name}</div>
+                      <div className="po-detail">{fmt(protein.ration?.price ?? (protein.per100 ?? 0) * (protein.ration?.grams ?? 150) / 100)}</div>
+                    </div>
+                  )
+                  const groupHeader = (label, first) => (
+                    <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--t-text-faint)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem', marginTop: first ? 0 : '1rem', paddingLeft: '0.5rem' }}>
+                      {label}
+                    </div>
+                  )
+                  const comidas = proteinList.filter(p => (p.meals ?? ['comida']).includes('comida'))
+                  const cenas   = proteinList.filter(p => (p.meals ?? ['comida']).includes('cena'))
+                  return (
+                    <>
+                      {comidas.length > 0 && (
+                        <div>
+                          {groupHeader('🍽️ Comidas', true)}
+                          {comidas.map(renderOption)}
+                        </div>
+                      )}
+                      {cenas.length > 0 && (
+                        <div>
+                          {groupHeader('🌙 Cenas', comidas.length === 0)}
+                          {cenas.map(renderOption)}
+                        </div>
+                      )}
+                    </>
+                  )
+                })()}
               </div>
             </>
           )}
@@ -211,18 +312,123 @@ function MealSelectorModal({ allIng, allCombos, onSelect, onClose, mealType }) {
           {step === 'combo' && (
             <>
               <div className="combo-list">
-                {availableCombos.map(combo => (
-                  <div
-                    key={combo.key}
-                    className={`combo-option${selectedCombo === combo.key ? ' selected' : ''}`}
-                    onClick={() => setSelectedCombo(combo.key)}
-                  >
-                    <div className="co-name">{combo.name}</div>
-                  </div>
-                ))}
+                {/* Group combos by base category */}
+                {(() => {
+                  const baseOrder = ['patata', 'arroz', 'pasta', 'legumbre', 'otros']
+                  const grouped = {}
+                  availableCombos.forEach(c => {
+                    const base = c.base || 'otros'
+                    if (!grouped[base]) grouped[base] = []
+                    grouped[base].push(c)
+                  })
+
+                  const categoryLabels = {
+                    patata: '🥔 Patatas',
+                    arroz: '🍚 Arroz',
+                    pasta: '🍝 Pasta',
+                    legumbre: '🫘 Legumbres',
+                    otros: '🥗 Otros',
+                  }
+
+                  return baseOrder.map(base => (
+                    (grouped[base]?.length > 0) && (
+                      <div key={base}>
+                        <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--t-text-faint)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem', marginTop: base === 'patata' ? 0 : '1rem', paddingLeft: '0.5rem' }}>
+                          {categoryLabels[base] || base}
+                        </div>
+                        {grouped[base].map(combo => (
+                          <div
+                            key={combo.key}
+                            className={`combo-option${selectedCombo === combo.key ? ' selected' : ''}`}
+                            onClick={() => setComboDetail(combo)}
+                          >
+                            <div className="co-name">{combo.name}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  ))
+                })()}
               </div>
             </>
           )}
+
+          {step === 'variants' && (() => {
+            const combo = availableCombos.find(c => c.key === selectedCombo)
+            const varIng = combo?.variableIngredients
+            const proteinObj = PROTEIN[selectedProtein]
+            const proteinUnitOptions = Array.isArray(proteinObj?.variableRation) ? proteinObj.variableRation : null
+            const defaultUnits = proteinObj?.ration?.units
+            const ingredientLabels = {
+              huevo: 'Cantidad de huevos',
+            }
+            return (
+              <>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  {/* Protein ration (e.g. eggs as the main protein) */}
+                  {proteinUnitOptions && (
+                    <div>
+                      <div style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.75rem', color: 'var(--t-text)' }}>
+                        Cantidad de {proteinObj.name.toLowerCase()}
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(60px, 1fr))', gap: '0.5rem' }}>
+                        {proteinUnitOptions.map(opt => {
+                          const active = (selectedProteinUnits ?? defaultUnits) === opt
+                          return (
+                            <button
+                              key={opt}
+                              onClick={() => setSelectedProteinUnits(opt)}
+                              style={{
+                                padding: '0.625rem',
+                                border: active ? '2px solid var(--t-accent)' : '1px solid var(--t-border)',
+                                borderRadius: '0.375rem',
+                                backgroundColor: active ? 'var(--t-accent-bg)' : 'transparent',
+                                color: 'var(--t-text)',
+                                cursor: 'pointer',
+                                fontWeight: active ? 600 : 400,
+                                fontSize: '0.875rem',
+                              }}
+                            >
+                              {opt}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Variable ingredients inside the combo (e.g. eggs in a tortilla) */}
+                  {varIng && Object.entries(varIng).map(([ingKey, options]) => (
+                    <div key={ingKey}>
+                      <div style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.75rem', color: 'var(--t-text)' }}>
+                        {ingredientLabels[ingKey] || ingKey} ({combo?.name})
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(60px, 1fr))', gap: '0.5rem' }}>
+                        {options.map(opt => (
+                          <button
+                            key={opt}
+                            onClick={() => setSelectedVariants(prev => ({ ...prev, [ingKey]: opt }))}
+                            style={{
+                              padding: '0.625rem',
+                              border: selectedVariants[ingKey] === opt ? '2px solid var(--t-accent)' : '1px solid var(--t-border)',
+                              borderRadius: '0.375rem',
+                              backgroundColor: selectedVariants[ingKey] === opt ? 'var(--t-accent-bg)' : 'transparent',
+                              color: 'var(--t-text)',
+                              cursor: 'pointer',
+                              fontWeight: selectedVariants[ingKey] === opt ? 600 : 400,
+                              fontSize: '0.875rem',
+                            }}
+                          >
+                            {opt}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )
+          })()}
         </div>
         <div className="modal-footer">
           <button
@@ -230,7 +436,8 @@ function MealSelectorModal({ allIng, allCombos, onSelect, onClose, mealType }) {
             onClick={() => {
               if (step === 'protein') onClose()
               else if (step === 'prep') setStep('protein')
-              else setStep('prep')
+              else if (step === 'combo') setStep('prep')
+              else if (step === 'variants') setStep('combo')
             }}
           >
             ← Atrás
@@ -240,7 +447,13 @@ function MealSelectorModal({ allIng, allCombos, onSelect, onClose, mealType }) {
             disabled={
               (step === 'protein' && !selectedProtein) ||
               (step === 'prep' && !selectedPrep && prepList.length > 0) ||
-              (step === 'combo' && !selectedCombo)
+              (step === 'combo' && !selectedCombo) ||
+              (step === 'variants' && (() => {
+                const combo = availableCombos.find(c => c.key === selectedCombo)
+                const varIng = combo?.variableIngredients
+                if (!varIng) return false
+                return Object.keys(varIng).some(key => selectedVariants[key] == null)
+              })())
             }
             onClick={() => {
               if (step === 'protein') {
@@ -248,15 +461,41 @@ function MealSelectorModal({ allIng, allCombos, onSelect, onClose, mealType }) {
                 setStep(prepLen > 0 ? 'prep' : 'combo')
               } else if (step === 'prep') {
                 setStep('combo')
-              } else {
+              } else if (step === 'combo') {
+                if (hasAnyVariants) {
+                  setStep('variants')
+                } else {
+                  confirmMeal()
+                }
+              } else if (step === 'variants') {
                 confirmMeal()
               }
             }}
           >
-            {step === 'combo' ? 'Confirmar' : 'Siguiente →'}
+            {step === 'variants'
+              ? 'Confirmar'
+              : (step === 'combo' && !hasAnyVariants ? 'Confirmar' : 'Siguiente →')}
           </button>
         </div>
       </div>
+      {comboDetail && (
+        <ComboDetailModal
+          combo={comboDetail}
+          allIng={allIng}
+          onConfirm={(comboKey) => {
+            setSelectedCombo(comboKey)
+            setComboDetail(null)
+            const combo = availableCombos.find(c => c.key === comboKey)
+            const comboVariants = !!(combo?.variableIngredients && Object.keys(combo.variableIngredients).length > 0)
+            if (comboVariants || proteinHasVariableRation) {
+              setStep('variants')
+            } else {
+              confirmMeal(comboKey)
+            }
+          }}
+          onClose={() => setComboDetail(null)}
+        />
+      )}
     </div>
   )
 }
@@ -345,27 +584,36 @@ function MealDetailModal({ mealType, meal, allIng, allCombos, onEdit, onClear, o
     const combo = allCombos[meal.comboKey]
     if (proteinObj && combo) {
       title = `${proteinObj.name} + ${combo.name}`
-      const protCost = proteinCost(proteinObj)
-      const protKcal = proteinKcal(proteinObj)
-      const protProt = proteinProt(proteinObj)
-      const combAgg  = comboAgg(combo, allIng)
+      const protCost = proteinCost(proteinObj, false, meal.proteinUnits)
+      const protKcal = proteinKcal(proteinObj, false, meal.proteinUnits)
+      const protProt = proteinProt(proteinObj, false, meal.proteinUnits)
+      const combAgg  = comboAgg(combo, allIng, meal.comboVariants || {})
       cost    = protCost + combAgg.cost
       kcal    = protKcal + combAgg.kcal + 235
       protein = protProt + (combAgg.prot ?? 0)
       fat     = combAgg.fat ?? 0
       fiber   = combAgg.fib ?? 0
       proteinKey  = meal.proteinKey
+      const rationUnits = meal.proteinUnits ?? proteinObj.ration?.units
       const rationLabel = proteinObj.ration?.grams
         ? `${proteinObj.ration.grams}g`
-        : (proteinObj.ration?.label ?? '1 ración')
+        : (proteinObj.ration?.units != null
+            ? `${rationUnits} ud`
+            : (proteinObj.ration?.label ?? '1 ración'))
       ingredients = [
         { name: proteinObj.name, portion: rationLabel, kcal: protKcal, fib: 0 },
-        ...(combo.items ?? []).map(it => ({
-          name: allIng[it.k]?.name ?? it.k,
-          portion: fmtPortion(it.p),
-          kcal: ingKcal(it.k, it.p, allIng),
-          fib: ingFib(it.k, it.p, allIng),
-        })),
+        ...(combo.items ?? []).map(it => {
+          let portion = it.p
+          if (meal.comboVariants?.[it.k] != null && it.p.units != null) {
+            portion = { ...it.p, units: meal.comboVariants[it.k] }
+          }
+          return {
+            name: allIng[it.k]?.name ?? it.k,
+            portion: fmtPortion(portion),
+            kcal: ingKcal(it.k, portion, allIng),
+            fib: ingFib(it.k, portion, allIng),
+          }
+        }),
       ]
     }
   }
@@ -518,7 +766,7 @@ function MealDetailModal({ mealType, meal, allIng, allCombos, onEdit, onClear, o
 
 // ─── Meal block ──────────────────────────────────────────────────────────────
 
-function MealBlock({ time, mealType, meal, allIng, allCombos, onEdit, onClear, onDetail }) {
+function MealBlock({ time, mealType, meal, allIng, allCombos, onEdit, onClear, onDetail, gramsOverride }) {
   const mealLabels = { desayuno: 'Desayuno', comida: 'Comida', cena: 'Cena' }
 
   if (!meal) {
@@ -557,10 +805,10 @@ function MealBlock({ time, mealType, meal, allIng, allCombos, onEdit, onClear, o
     const combo = allCombos[meal.comboKey]
     if (proteinObj && combo) {
       title = `${proteinObj.name} + ${combo.name}`
-      const protCost = proteinCost(proteinObj)
-      const protKcal = proteinKcal(proteinObj)
-      const protProt = proteinProt(proteinObj)
-      const combAgg = comboAgg(combo, allIng)
+      const protCost = proteinCost(proteinObj, false, meal.proteinUnits)
+      const protKcal = proteinKcal(proteinObj, false, meal.proteinUnits)
+      const protProt = proteinProt(proteinObj, false, meal.proteinUnits)
+      const combAgg = comboAgg(combo, allIng, meal.comboVariants || {}, gramsOverride || {})
       cost = protCost + combAgg.cost
       kcal = protKcal + combAgg.kcal + 235
       protein = protProt + (combAgg.prot ?? 0)
@@ -603,11 +851,11 @@ function MealBlock({ time, mealType, meal, allIng, allCombos, onEdit, onClear, o
 
 // ─── Daily summary ───────────────────────────────────────────────────────────
 
-function DailySummary({ todayMeals, allIng, allCombos }) {
+function DailySummary({ todayMeals, allIng, allCombos, comidaOverride }) {
   const { cost, kcal, protein } = useMemo(() => {
     let totalCost = 0, totalKcal = 0, totalProtein = 0, count = 0
 
-    Object.values(todayMeals).forEach(meal => {
+    Object.entries(todayMeals).forEach(([mealType, meal]) => {
       if (!meal) return
       count++
 
@@ -623,10 +871,11 @@ function DailySummary({ todayMeals, allIng, allCombos }) {
         const proteinObj = PROTEIN[meal.proteinKey]
         const combo = allCombos[meal.comboKey]
         if (proteinObj && combo) {
-          const protCost = proteinCost(proteinObj)
-          const protKcal = proteinKcal(proteinObj)
-          const protProt = proteinProt(proteinObj)
-          const combAgg = comboAgg(combo, allIng)
+          const ov = mealType === 'comida' ? (comidaOverride || {}) : {}
+          const protCost = proteinCost(proteinObj, false, meal.proteinUnits)
+          const protKcal = proteinKcal(proteinObj, false, meal.proteinUnits)
+          const protProt = proteinProt(proteinObj, false, meal.proteinUnits)
+          const combAgg = comboAgg(combo, allIng, meal.comboVariants || {}, ov)
           totalCost += protCost + combAgg.cost
           totalKcal += protKcal + combAgg.kcal + 235
           totalProtein += protProt + (combAgg.prot ?? 0)
@@ -635,7 +884,7 @@ function DailySummary({ todayMeals, allIng, allCombos }) {
     })
 
     return { cost: totalCost, kcal: totalKcal, protein: totalProtein, count }
-  }, [todayMeals, allCombos, allIng])
+  }, [todayMeals, allCombos, allIng, comidaOverride])
 
   const plannedCount = Object.values(todayMeals).filter(m => m).length
 
@@ -691,6 +940,19 @@ export default function HomeView() {
     cena: currentWeek[slotKey('cena')] ?? null,
   }), [currentWeek, dayKey])
 
+  // Per-person lunch scaling: when a single person is selected (not "Todos"),
+  // their comida shows the scaled base portion (more rice/potato → more kcal).
+  const profiles        = useStore(s => s.profiles)
+  const activeProfileId = useStore(s => s.activeProfileId)
+  const activeProfile   = activeProfileId === 'all'
+    ? null
+    : profiles.find(p => p.id === activeProfileId)
+  const comidaScale = useMemo(
+    () => (activeProfile ? personLunchScale(todayMeals, activeProfile, allIng, allCombos) : null),
+    [activeProfile, todayMeals, allIng, allCombos]
+  )
+  const comidaOverride = comidaScale ? { [comidaScale.ingKey]: comidaScale.grams } : null
+
   function handleMealSelect(mealType, mealData) {
     setMealSlot(weekKey, slotKey(mealType), mealData)
     setModalOpen(null)
@@ -716,10 +978,15 @@ export default function HomeView() {
           <div className="home-date-rest">{fullDate}</div>
         </div>
       </header>
+      {/* Profile + Sync — only visible on mobile (hidden from tab bar there) */}
+      <div className="home-mobile-controls">
+        <SyncStatus />
+        <ProfileSelector />
+      </div>
 
       <div className="home-meals">
         <MealBlock
-          time="7:00"
+          time="8:00"
           mealType="desayuno"
           meal={todayMeals.desayuno}
           allIng={allIng}
@@ -735,6 +1002,7 @@ export default function HomeView() {
           meal={todayMeals.comida}
           allIng={allIng}
           allCombos={allCombos}
+          gramsOverride={comidaOverride}
           onEdit={() => setModalOpen('select-comida')}
           onDetail={() => setModalOpen('detail-comida')}
           onClear={() => handleMealClear('comida')}
@@ -752,9 +1020,10 @@ export default function HomeView() {
         />
       </div>
 
-      <DailySummary todayMeals={todayMeals} allIng={allIng} allCombos={allCombos} />
+      <DailySummary todayMeals={todayMeals} allIng={allIng} allCombos={allCombos} comidaOverride={comidaOverride} />
 
-      <div style={{ padding: '0 1.5rem', marginTop: '1.5rem' }}>
+      <div style={{ padding: '0 1.5rem', marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <PersonalizedDay todayMeals={todayMeals} allIng={allIng} allCombos={allCombos} />
         <DailyProgress todayMeals={todayMeals} allIng={allIng} allCombos={allCombos} />
       </div>
 
