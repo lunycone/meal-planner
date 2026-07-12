@@ -692,7 +692,7 @@ function getMealDetails(meal, allIng, allCombos) {
     return {
       title: `${protein.name} + ${combo.name}`,
       cost: protCost + combAgg.cost,
-      kcal: protKcal + combAgg.kcal + 235,
+      kcal: protKcal + combAgg.kcal + (combo.noAove ? 0 : 235),
       protein: protProt + (combAgg.prot ?? 0),
     }
   }
@@ -982,7 +982,7 @@ export default function WeeklyMealPlannerTab() {
   const dayTotals = useMemo(() => {
     const totals = {}
     DAY_KEYS.forEach(dayKey => {
-      let dayC = 0, dayK = 0
+      let dayC = 0, dayK = 0, dayP = 0
       MEALS.forEach(meal => {
         const m = currentWeek[`${dayKey}-${meal}`]
         if (!m) return
@@ -992,6 +992,7 @@ export default function WeeklyMealPlannerTab() {
             const agg = comboAgg(recipe, allIng)
             dayC += agg.cost
             dayK += agg.kcal
+            dayP += agg.prot ?? 0
           }
         } else if (m.type === 'plato') {
           const protein = PROTEIN[m.proteinKey]
@@ -1001,11 +1002,12 @@ export default function WeeklyMealPlannerTab() {
             const protKcal = proteinKcal(protein)
             const combAgg = comboAgg(combo, allIng, m.comboVariants || {}, {}, m.comboOptionals || [])
             dayC += protCost + combAgg.cost
-            dayK += protKcal + combAgg.kcal + 235
+            dayK += protKcal + combAgg.kcal + (combo.noAove ? 0 : 235)
+            dayP += proteinProt(protein) + (combAgg.prot ?? 0)
           }
         }
       })
-      totals[dayKey] = { cost: dayC, kcal: dayK }
+      totals[dayKey] = { cost: dayC, kcal: dayK, prot: dayP }
     })
     return totals
   }, [currentWeek, allCombos, allIng])
@@ -1310,6 +1312,7 @@ export default function WeeklyMealPlannerTab() {
                     <div className="day-totals">
                       <span>{fmt(dayTotals[dayKey]?.cost ?? 0)}</span>
                       <span>{Math.round(personalizedDayKcal ? (personalizedDayKcal[dayKey] ?? 0) : (dayTotals[dayKey]?.kcal ?? 0))} kcal</span>
+                      {(dayTotals[dayKey]?.prot ?? 0) > 0 && <span style={{ color: 'var(--t-accent)', fontWeight: 600 }}>{Math.round(dayTotals[dayKey].prot)}g prot</span>}
                     </div>
                   </div>
                 )
