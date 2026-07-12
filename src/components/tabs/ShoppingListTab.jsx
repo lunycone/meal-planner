@@ -3,7 +3,7 @@ import useStore, { selectAllIng } from '../../store/useStore'
 import { CAT_ORDER, CAT_LABELS } from '../../data/ingredients'
 import { PROTEIN } from '../../data/proteins'
 import { PREP, COMBO } from '../../data/combos'
-import { ingCost, ingKcal, ingProt, ingFat, comboAgg, fmt, proteinCost, proteinKcal, personLunchScale, comboScalableKey } from '../../engine/calc'
+import { ingCost, ingKcal, ingProt, ingFat, comboAgg, fmt, proteinCost, proteinKcal, personLunchScale, comboScalableKey, dayKcal } from '../../engine/calc'
 
 function getISOWeek(date) {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
@@ -305,6 +305,60 @@ export default function ShoppingListTab() {
     return agg
   }, [weekPlan, batchWindow, allCombos, allIng, profiles])
 
+  // ── Batido merienda suggestions aggregate ─────────────────────────────────
+  const batidoAgg = useMemo(() => {
+    const validProfiles = profiles.filter(p => {
+      const now = new Date()
+      if (p.validoDesde && new Date(p.validoDesde) > now) return false
+      if (p.validoHasta && new Date(p.validoHasta) <= now) return false
+      return true
+    })
+    if (validProfiles.length === 0) return []
+
+    const batidos = Object.entries(allCombos)
+      .filter(([, r]) => r.tag === 'batido')
+      .map(([key, r]) => { const a = comboAgg(r, allIng); return { key, recipe: r, name: r.name.replace('Batido: ', '').replace('Batido económico: ', ''), kcal: a.kcal, cost: a.cost } })
+
+    if (batidos.length === 0) return []
+
+    // Per ingredient accumulator: { [ingKey]: { name, grams, ml, units, cost } }
+    const acc = {}
+    const addToAcc = (k, p) => {
+      const ing = allIng[k]
+      if (!ing) return
+      if (!acc[k]) acc[k] = { name: ing.name, grams: 0, ml: 0, units: 0, cost: 0 }
+      acc[k].grams += p.grams ?? 0
+      acc[k].ml    += p.ml    ?? 0
+      acc[k].units += p.units ?? 0
+      acc[k].cost  += ingCost(k, p, allIng)
+    }
+
+    batchWindow.windowDates.forEach(({ date, wk, dayKey }) => {
+      const weekData = weekPlan[wk] ?? {}
+      const dayProfiles = profilesActiveOn(profiles, new Date(date))
+      if (dayProfiles.length === 0) return
+      const day = Object.fromEntries(['desayuno','comida','cena'].map(m => [m, weekData[`${dayKey}-${m}`] ?? null]))
+      if (!['desayuno','comida','cena'].some(m => day[m])) return
+
+      dayProfiles.forEach(person => {
+        const scale = personLunchScale(day, person, allIng, allCombos)
+        const achieved = scale ? scale.dayKcalAchieved : dayKcal(day, allIng, allCombos)
+        const deficit = Math.round(person.kcalTarget - achieved)
+        if (deficit < 150) return
+        const best = batidos.reduce((a, b) => Math.abs(a.kcal - deficit) <= Math.abs(b.kcal - deficit) ? a : b)
+        best.recipe.items.forEach(it => addToAcc(it.k, it.p))
+      })
+    })
+
+    return Object.entries(acc).map(([k, v]) => {
+      const parts = []
+      if (v.grams > 0) parts.push(`${Math.round(v.grams)}g`)
+      if (v.ml    > 0) parts.push(`${Math.round(v.ml)}ml`)
+      if (v.units > 0) parts.push(`${+v.units.toFixed(1)} ud`)
+      return { key: k, name: v.name, qty: parts.join(' + '), cost: v.cost }
+    })
+  }, [weekPlan, batchWindow, profiles, allCombos, allIng])
+
   // Group by category and filter
   const grouped = useMemo(() => {
     const categories = {}
@@ -515,6 +569,27 @@ export default function ShoppingListTab() {
           Total: <span style={{ color: '#4a7a3a' }}>${totalCost.toFixed(2)}</span>
         </div>
       </div>
+
+      {batidoAgg.length > 0 && (
+        <div style={{ marginTop: '2rem', borderTop: '2px dashed var(--t-border)', paddingTop: '1.5rem' }}>
+          <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--t-accent)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            🥤 Batidos merienda
+          </h3>
+          <p style={{ fontSize: '0.72rem', color: 'var(--t-text-faint)', marginBottom: '1rem' }}>
+            Ingredientes para las sugerencias de batido del período · no incluidos arriba
+          </p>
+          {batidoAgg.map(item => (
+            <div key={item.key} className="sl-row">
+              <div className="sl-row-name" style={{ fontWeight: 500 }}>{item.name}</div>
+              <div className="sl-row-qty">{item.qty}</div>
+              <div className="sl-row-cost">${item.cost.toFixed(2)}</div>
+            </div>
+          ))}
+          <div style={{ marginTop: '0.75rem', textAlign: 'right', fontSize: '0.85rem', color: 'var(--t-text-faint)' }}>
+            Total batidos: <strong style={{ color: 'var(--t-accent)' }}>${batidoAgg.reduce((s, i) => s + i.cost, 0).toFixed(2)}</strong>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
