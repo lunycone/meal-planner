@@ -474,6 +474,7 @@ function buildSchedule(mealDataList) {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 const MEAL_LABELS = { desayuno: 'Desayuno', comida: 'Comida', cena: 'Cena' }
+const MEAL_TIMES  = { desayuno: '9:00 am', comida: '12–1 pm', cena: '7:30 pm' }
 
 function MealSection({ mealType, batchData, status }) {
   const border  = { paddingBottom: '1rem', marginBottom: '1rem', borderBottom: '1px solid var(--t-border)' }
@@ -485,7 +486,7 @@ function MealSection({ mealType, batchData, status }) {
 
   return (
     <div style={border}>
-      <div style={catLbl}>{MEAL_LABELS[mealType]}</div>
+      <div style={catLbl}>{MEAL_LABELS[mealType]} <span style={{ fontWeight: 400, opacity: 0.7 }}>· {MEAL_TIMES[mealType]}</span></div>
 
       {!batchData ? (
         <div style={{ fontSize: '0.8rem', color: 'var(--t-text-faint)', fontStyle: 'italic' }}>

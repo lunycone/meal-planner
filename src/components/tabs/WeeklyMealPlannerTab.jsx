@@ -51,6 +51,7 @@ const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', '
 const DAY_KEYS = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom']
 const MEALS = ['desayuno', 'comida', 'cena']
 const MEAL_LABELS = { desayuno: 'Desayuno', comida: 'Comida', cena: 'Cena' }
+const MEAL_TIMES  = { desayuno: '9:00 am', comida: '12–1 pm', cena: '7:30 pm' }
 const MONTH_INITIALS = ['E', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D']
 
 // ─── Batch windows (partición limpia de la semana, misma ISO week) ────────────
@@ -1340,7 +1341,7 @@ export default function WeeklyMealPlannerTab() {
                     </div>
                     {(batidoSuggestions[dayKey] ?? []).map(({ person, deficit, batido }) => (
                       <div key={person.id} style={{ fontSize: '0.6rem', color: 'var(--t-text-faint)', marginTop: '0.2rem', lineHeight: 1.3 }}>
-                        🥤 {person.initial} +{deficit} kcal<br/>
+                        🥤 {person.initial} ~4pm · +{deficit} kcal<br/>
                         <span style={{ color: 'var(--t-accent)' }}>{batido.name}</span> {fmt(batido.cost)}
                       </div>
                     ))}
@@ -1353,6 +1354,7 @@ export default function WeeklyMealPlannerTab() {
               <div key={mealType} className="planner-row">
                 <div className={`planner-meal-label meal-${mealType}`}>
                   <span>{MEAL_LABELS[mealType]}</span>
+                  <span style={{ fontSize: '0.62rem', color: 'var(--t-text-faint)', fontWeight: 400, marginTop: '0.1rem', display: 'block' }}>{MEAL_TIMES[mealType]}</span>
                 </div>
                 {DAY_KEYS.map(dayKey => {
                   const key = slotKey(dayKey, mealType)
