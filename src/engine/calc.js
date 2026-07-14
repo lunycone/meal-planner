@@ -132,7 +132,7 @@ export function prepAgg(prep, allIng) {
 // Energy bases that may be scaled up/down per person (cheap carbs/starch).
 // Anything not in this set is treated as fixed/shared.
 const ENERGY_BASES = new Set([
-  'arroz', 'pasta', 'patata', 'avena', 'pan-masa-madre', 'harina',
+  'arroz', 'pasta', 'patata', 'avena', 'pan-masa-madre', 'harina', 'buckwheat',
   'lentejas-rojas', 'lentejas-verdes', 'garbanzos', 'black-beans',
   'alubias-blancas', 'cranberry-beans', 'maiz',
 ])
@@ -197,7 +197,7 @@ const MAX_COOKED_BASE_GRAMS = 300
 const DRY_TO_COOKED = {
   'garbanzos': 2.5, 'black-beans': 2.5, 'lentejas-rojas': 2.5, 'lentejas-verdes': 2.0,
   'alubias-blancas': 2.5, 'cranberry-beans': 2.5, 'alubias-rojas': 2.5,
-  'arroz': 2.8, 'pasta': 2.5,
+  'arroz': 2.8, 'pasta': 2.5, 'buckwheat': 2.6,
 }
 
 // Given a full day plan + a person, returns how many grams of the LUNCH's
