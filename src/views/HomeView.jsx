@@ -986,7 +986,7 @@ export default function HomeView() {
 
       <div className="home-meals">
         <MealBlock
-          time="8:00"
+          time="9:00"
           mealType="desayuno"
           meal={todayMeals.desayuno}
           allIng={allIng}
@@ -997,7 +997,7 @@ export default function HomeView() {
         />
 
         <MealBlock
-          time="12:30"
+          time="12:00"
           mealType="comida"
           meal={todayMeals.comida}
           allIng={allIng}
