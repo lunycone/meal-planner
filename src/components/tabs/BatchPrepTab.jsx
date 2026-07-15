@@ -38,6 +38,7 @@ const COOK_RATIO = {
   'alubias-rojas':   2.5,
   'arroz':           2.8,
   'pasta':           2.5,
+  'buckwheat':       2.6,
 }
 
 // ─── Peso aprox. en gramos para ingredientes que vienen "por unidad" ─────────
