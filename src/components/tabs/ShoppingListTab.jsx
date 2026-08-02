@@ -22,40 +22,40 @@ function fmtShortDate(d) {
 
 // ─── Batch-window navigation ─────────────────────────────────────────────────
 // Two windows per week:
-//   "Batch Dom" → covers Lun · Mar · Mié · Jue (4 days, cooked Sunday)
-//   "Batch Jue" → covers Vie · Sáb · Dom        (3 days, cooked Thursday)
+//   "Batch Lun" → covers Lun · Mar · Mié          (3 days, cooked Monday)
+//   "Batch Jue" → covers Jue · Vie · Sáb · Dom    (4 days, cooked Thursday)
 function getBatchWindow(offset) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const dow = today.getDay() // 0=Sun … 6=Sat
 
-  // Is today in the Fri-Sun window?
-  const inFriSun = dow === 0 || dow >= 5
+  // Is today in the Thu-Sun window? (Thu=4, Fri=5, Sat=6, Sun=0)
+  const inThuSun = dow === 0 || dow >= 4
 
-  // Start date of the current batch window (a Monday or a Friday)
+  // Start date of the current batch window (a Monday or a Thursday)
   const curStart = new Date(today)
-  if (inFriSun) {
-    const backToFri = dow === 0 ? 2 : dow - 5
-    curStart.setDate(today.getDate() - backToFri)
+  if (inThuSun) {
+    const backToThu = dow === 0 ? 3 : dow - 4
+    curStart.setDate(today.getDate() - backToThu)
   } else {
     curStart.setDate(today.getDate() - (dow - 1)) // back to Monday
   }
 
   // Walk forward or backward by `offset` windows
   let start = new Date(curStart)
-  let isFriWin = inFriSun
+  let isThurWin = inThuSun
   const step = offset >= 0 ? 1 : -1
   for (let i = 0; i < Math.abs(offset); i++) {
     if (step > 0) {
-      start.setDate(start.getDate() + (isFriWin ? 3 : 4))
-      isFriWin = !isFriWin
+      start.setDate(start.getDate() + (isThurWin ? 4 : 3))
+      isThurWin = !isThurWin
     } else {
-      start.setDate(start.getDate() - (isFriWin ? 4 : 3))
-      isFriWin = !isFriWin
+      start.setDate(start.getDate() - (isThurWin ? 3 : 4))
+      isThurWin = !isThurWin
     }
   }
 
-  const days = isFriWin ? 3 : 4
+  const days = isThurWin ? 4 : 3
   const end = new Date(start)
   end.setDate(start.getDate() + days - 1)
 
@@ -67,10 +67,10 @@ function getBatchWindow(offset) {
     windowDates.push({ date: d, wk: getISOWeek(d), dayKey: DOW_TO_DAYKEY[d.getDay()] })
   }
 
-  const label = isFriWin ? '☀️ Batch Jue' : '🌙 Batch Dom'
+  const label = isThurWin ? '☀️ Batch Jue' : '🌙 Batch Lun'
   const rangeLabel = `${fmtShortDate(start)} – ${fmtShortDate(end)}`
 
-  return { start, end, days, isFriWin, windowDates, label, rangeLabel }
+  return { start, end, days, isThurWin, windowDates, label, rangeLabel }
 }
 
 // Which profiles are active on a specific Date

@@ -940,10 +940,10 @@ function BatchCard({ title, cookLabel, coverDays, mealSections, schedule, kcalSu
 // ─── Main component ────────────────────────────────────────────────────────────
 const MEALS    = ['desayuno', 'comida', 'cena']
 // ── Ventanas de batch (partición limpia de la semana) ──────────────────────────
-// Batch Domingo: cocinas el dom anterior, comes lun→mar→mié→jue (4 días).
-// Batch Jueves:  cocinas el jue, comes vie→sáb→dom (3 días).
-const SUN_DAYS = ['lun', 'mar', 'mié', 'jue']
-const THU_DAYS = ['vie', 'sáb', 'dom']
+// Batch Lunes:  cocinas el lun, comes lun→mar→mié (3 días).
+// Batch Jueves: cocinas el jue, comes jue→vie→sáb→dom (4 días).
+const MON_DAYS = ['lun', 'mar', 'mié']
+const THU_DAYS = ['jue', 'vie', 'sáb', 'dom']
 
 export default function BatchPrepTab() {
   const allIng        = useStore(selectAllIng)
@@ -953,24 +953,24 @@ export default function BatchPrepTab() {
   const weekOffset    = useStore(s => s.weekOffset)
   const setWeekOffset = useStore(s => s.setWeekOffset)
 
-  const [playBatch, setPlayBatch] = useState(null) // 'sun' | 'thu' | null
+  const [playBatch, setPlayBatch] = useState(null) // 'mon' | 'thu' | null
 
   const weekMonday  = useMemo(() => getWeekMonday(weekOffset), [weekOffset])
   const weekKey     = useMemo(() => getISOWeek(new Date(weekMonday.getTime() + 3 * 86400000)), [weekMonday])
   const weekSunday  = useMemo(() => new Date(weekMonday.getTime() + 6 * 86400000), [weekMonday])
 
   // Cook days (no se comen de su propio batch, sólo cocinan).
-  const sunCookDate = useMemo(() => new Date(weekMonday.getTime() - 86400000),     [weekMonday]) // dom anterior
+  const monCookDate = useMemo(() => weekMonday,                                    [weekMonday]) // lunes
   const thuCookDate = useMemo(() => new Date(weekMonday.getTime() + 3 * 86400000), [weekMonday]) // jue
 
-  const sunBatchDays = useMemo(() => SUN_DAYS.map((dk, i) => ({
+  const monBatchDays = useMemo(() => MON_DAYS.map((dk, i) => ({
     dayKey: dk, wk: weekKey,
-    date: new Date(weekMonday.getTime() + i * 86400000),       // lun(0)→jue(3)
+    date: new Date(weekMonday.getTime() + i * 86400000),       // lun(0)→mié(2)
   })), [weekMonday, weekKey])
 
   const thuBatchDays = useMemo(() => THU_DAYS.map((dk, i) => ({
     dayKey: dk, wk: weekKey,
-    date: new Date(weekMonday.getTime() + (4 + i) * 86400000), // vie(4)→dom(6)
+    date: new Date(weekMonday.getTime() + (3 + i) * 86400000), // jue(3)→dom(6)
   })), [weekMonday, weekKey])
 
   const batchDetect = useMemo(() => {
@@ -985,15 +985,15 @@ export default function BatchPrepTab() {
       }
       return result
     }
-    return { sun: detect(sunBatchDays), thu: detect(thuBatchDays) }
-  }, [weekPlan, sunBatchDays, thuBatchDays])
+    return { mon: detect(monBatchDays), thu: detect(thuBatchDays) }
+  }, [weekPlan, monBatchDays, thuBatchDays])
 
-  const sunData = useMemo(() => Object.fromEntries(
-    MEALS.map(mt => [mt, batchDetect.sun[mt].meal
-      ? computeBatchMeal(batchDetect.sun[mt].meal, mt, sunBatchDays, profiles, allIng, allCombos, weekPlan)
+  const monData = useMemo(() => Object.fromEntries(
+    MEALS.map(mt => [mt, batchDetect.mon[mt].meal
+      ? computeBatchMeal(batchDetect.mon[mt].meal, mt, monBatchDays, profiles, allIng, allCombos, weekPlan)
       : null
     ])
-  ), [batchDetect, sunBatchDays, profiles, allIng, allCombos, weekPlan])
+  ), [batchDetect, monBatchDays, profiles, allIng, allCombos, weekPlan])
 
   const thuData = useMemo(() => Object.fromEntries(
     MEALS.map(mt => [mt, batchDetect.thu[mt].meal
@@ -1002,19 +1002,19 @@ export default function BatchPrepTab() {
     ])
   ), [batchDetect, thuBatchDays, profiles, allIng, allCombos, weekPlan])
 
-  const sunKcalSummary = useMemo(() => {
-    const rep = { desayuno: batchDetect.sun.desayuno.meal, comida: batchDetect.sun.comida.meal, cena: batchDetect.sun.cena.meal }
-    return computeDailyKcalPerPerson(rep, profilesActiveOn(profiles, sunBatchDays[0].date), allIng, allCombos)
-  }, [batchDetect.sun, sunBatchDays, profiles, allIng, allCombos])
+  const monKcalSummary = useMemo(() => {
+    const rep = { desayuno: batchDetect.mon.desayuno.meal, comida: batchDetect.mon.comida.meal, cena: batchDetect.mon.cena.meal }
+    return computeDailyKcalPerPerson(rep, profilesActiveOn(profiles, monBatchDays[0].date), allIng, allCombos)
+  }, [batchDetect.mon, monBatchDays, profiles, allIng, allCombos])
 
   const thuKcalSummary = useMemo(() => {
     const rep = { desayuno: batchDetect.thu.desayuno.meal, comida: batchDetect.thu.comida.meal, cena: batchDetect.thu.cena.meal }
     return computeDailyKcalPerPerson(rep, profilesActiveOn(profiles, thuBatchDays[0].date), allIng, allCombos)
   }, [batchDetect.thu, thuBatchDays, profiles, allIng, allCombos])
 
-  const sunSchedule = useMemo(() =>
-    buildSchedule(MEALS.map(mt => ({ meal: batchDetect.sun[mt].meal, batchData: sunData[mt] })))
-  , [batchDetect, sunData])
+  const monSchedule = useMemo(() =>
+    buildSchedule(MEALS.map(mt => ({ meal: batchDetect.mon[mt].meal, batchData: monData[mt] })))
+  , [batchDetect, monData])
 
   const thuSchedule = useMemo(() =>
     buildSchedule(MEALS.map(mt => ({ meal: batchDetect.thu[mt].meal, batchData: thuData[mt] })))
@@ -1022,8 +1022,8 @@ export default function BatchPrepTab() {
 
   // ── COOK MODE ───────────────────────────────────────────────────────────────
   if (playBatch) {
-    const schedule = playBatch === 'sun' ? sunSchedule : thuSchedule
-    const title    = playBatch === 'sun' ? '🌙 Batch Domingo' : '☀️ Batch Jueves'
+    const schedule = playBatch === 'mon' ? monSchedule : thuSchedule
+    const title    = playBatch === 'mon' ? '🌙 Batch Lunes' : '☀️ Batch Jueves'
     return <CookMode schedule={schedule} title={title} onExit={() => setPlayBatch(null)} />
   }
 
@@ -1047,20 +1047,20 @@ export default function BatchPrepTab() {
 
       <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start' }}>
         <BatchCard
-          title="🌙 Batch Domingo"
-          cookLabel={`dom ${formatDateShort(sunCookDate)}`}
-          coverDays={['Lun', 'Mar', 'Mié', 'Jue']}
-          schedule={sunSchedule}
-          kcalSummary={sunKcalSummary}
-          onPlay={() => setPlayBatch('sun')}
+          title="🌙 Batch Lunes"
+          cookLabel={`lun ${formatDateShort(monCookDate)}`}
+          coverDays={['Lun', 'Mar', 'Mié']}
+          schedule={monSchedule}
+          kcalSummary={monKcalSummary}
+          onPlay={() => setPlayBatch('mon')}
           mealSections={MEALS.map(mt => (
-            <MealSection key={mt} mealType={mt} batchData={sunData[mt]} status={batchDetect.sun[mt].status} />
+            <MealSection key={mt} mealType={mt} batchData={monData[mt]} status={batchDetect.mon[mt].status} />
           ))}
         />
         <BatchCard
           title="☀️ Batch Jueves"
           cookLabel={`jue ${formatDateShort(thuCookDate)}`}
-          coverDays={['Vie', 'Sáb', 'Dom']}
+          coverDays={['Jue', 'Vie', 'Sáb', 'Dom']}
           schedule={thuSchedule}
           kcalSummary={thuKcalSummary}
           onPlay={() => setPlayBatch('thu')}
