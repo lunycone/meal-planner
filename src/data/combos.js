@@ -475,9 +475,60 @@ export const COMBO = {
   'desayuno-magdalenas-chocolate': { tag: 'ocasional', flags: ['ocasional'], name: 'Magdalenas chocolate (ocasional)', variableIngredients: { huevo: [1, 2] }, items: [{ k: 'huevo', p: { units: 1 } },{ k: 'yogur-cabra', p: { grams: 80 } },{ k: 'harina', p: { grams: 60 } },{ k: 'azucar', p: { grams: 15 } },{ k: 'mantequilla', p: { grams: 25 } },{ k: 'chocolate-negro', p: { grams: 20 } },] },
   'desayuno-yogur-huevo-avena': { tag: 'yogur', flags: ['rapido'], name: 'Yogur cabra + huevo + avena', variableIngredients: { huevo: [1, 2] }, items: [{ k: 'yogur-cabra', p: { grams: 150 } },{ k: 'huevo', p: { units: 1 } },{ k: 'avena', p: { grams: 50 } },] },
   'desayuno-tortitas-mantequilla-arandanos': { tag: 'tortita', flags: ['ocasional'], name: 'Tortitas · Mantequilla · Arándanos', variableIngredients: { huevo: [1, 2] }, items: [{ k: 'harina', p: { grams: 80 } },{ k: 'huevo', p: { units: 1 } },{ k: 'leche', p: { ml: 100 } },{ k: 'mantequilla', p: { grams: 15 } },{ k: 'arandanos', p: { grams: 60 } },] },
+
+  // ─── Pucheros / Estofados ─────────────────────────────────────────────────
+  'fabada-base': {
+    name: 'Fabada asturiana', tag: 'puchero', noAove: true, scalable: 'alubias-blancas',
+    items: [
+      { k: 'alubias-blancas', p: { grams: 80 } },
+      { k: 'ham-hock',        p: { grams: 40 } },
+      { k: 'pimenton',        p: { grams: 2  } },
+      { k: 'ajo',             p: { grams: 5  } },
+    ],
+  },
+  'puchero-andaluz': {
+    name: 'Puchero andaluz', tag: 'puchero', noAove: true, scalable: 'garbanzos',
+    items: [
+      { k: 'garbanzos',       p: { grams: 70 } },
+      { k: 'ham-hock',        p: { grams: 40 } },
+      { k: 'costillas-cerdo', p: { grams: 30 } },
+      { k: 'zanahoria',       p: { grams: 50 } },
+      { k: 'patata',          p: { grams: 60 } },
+      { k: 'puerro',          p: { units: 0.25 } },
+      { k: 'apio',            p: { serv: 1 } },
+    ],
+  },
+  'cocido-madrileno': {
+    name: 'Cocido madrileño', tag: 'puchero', noAove: true, scalable: 'garbanzos',
+    items: [
+      { k: 'garbanzos',       p: { grams: 70 } },
+      { k: 'ham-hock',        p: { grams: 40 } },
+      { k: 'costillas-cerdo', p: { grams: 30 } },
+      { k: 'col',             p: { grams: 60 } },
+      { k: 'patata',          p: { grams: 60 } },
+      { k: 'zanahoria',       p: { grams: 50 } },
+      { k: 'puerro',          p: { units: 0.25 } },
+    ],
+  },
+  'pochas-almejas': {
+    name: 'Pochas con almejas', tag: 'puchero', noAove: true, scalable: 'alubias-blancas',
+    items: [
+      { k: 'alubias-blancas', p: { grams: 100 } },
+      { k: 'puerro',          p: { units: 0.25 } },
+      { k: 'ajo',             p: { grams: 5 } },
+    ],
+  },
+  'pote-gallego': {
+    name: 'Pote gallego', tag: 'puchero', noAove: true, scalable: 'alubias-blancas',
+    items: [
+      { k: 'alubias-blancas', p: { grams: 60 } },
+      { k: 'ham-hock',        p: { grams: 50 } },
+      { k: 'col-rizada',      p: { grams: 60 } },
+      { k: 'patata',          p: { grams: 90 } },
+    ],
+  },
 }
 
-// Which combos each protein group gets
 export const COMBO_SETS = {
   shared: [
     'ens-garbanzos','ens-mediterranea','burger-bowl','taco-bell',
@@ -490,6 +541,13 @@ export const COMBO_SETS = {
     'pasta-salsa-tomate-batch','arroz-tomado-comino','ensalada-eataly','bocadillo','bocadillo-tortilla-patata',
     'pure-patata-zanahoria','pure-patata-leche-mantequilla','pure-patata-calabacin','arroz-tomate-cebolla','patata-setas-zanahoria','patata-puerro-asada','patata-setas-cebolla','patata-setas-esparragos','arroz-sofrito','bandeja-asada-patata-zanahoria',
     'huevos-turcos','tortilla-esparragos-beet-rabanos','buckwheat-pesto',
+    'puchero-andaluz','cocido-madrileno',
+  ],
+  pucheros: [
+    'fabada-base','pote-gallego',
+  ],
+  pochas: [
+    'pochas-almejas',
   ],
   salchichas: [
     'hot-dog',

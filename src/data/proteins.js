@@ -25,4 +25,6 @@ export const PROTEIN = {
   'langosta':      { name: 'Lobster Meat',        ration: { grams: 150 },                          per100: 1.56,  kc: 125, prot: 20,  cookFat: 235, preps: [],                                             combos: 'langosta',      meals: ['cena'] },
   'ostras':        { name: 'Ostras (Malpeques)', ration: { units: 6 }, perUnit: 0.758, kcu: 50,  protu: 1.5, cookFat: 120, preps: [],                                            combos: 'shared',        meals: ['cena'] },
   'salchichas':    { name: 'Salchichas (English Bangers)', ration: { grams: 150 },             per100: 0.599, kc: 300, prot: 14,  cookFat: 235, preps: [],                                            combos: 'salchichas',    meals: ['comida','cena'] },
+  'costillas-cerdo':{ name: 'Costillas de cerdo',          ration: { grams: 200 },             per100: 0.60,  kc: 250, prot: 17,  cookFat: 235, preps: [],                                            combos: 'pucheros',      meals: ['comida','cena'] },
+  'almeja':         { name: 'Almejas (Littleneck)',         ration: { grams: 125 },             per100: 0.90,  kc: 28,  prot: 4.9, cookFat: 120, preps: [],                                            combos: 'pochas',        meals: ['comida','cena'] },
 }
