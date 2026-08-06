@@ -195,6 +195,16 @@ export const COMBO = {
       { k: 'zanahoria',      p: { grams: 100 } },
     ],
   },
+  'lentejas-espinacas': {
+    name: 'Lentejas con espinacas', tag: 'legumbre', noAove: true, scalable: 'lentejas-verdes',
+    items: [
+      { k: 'lentejas-verdes', p: { grams: 75 } },
+      { k: 'espinaca',        p: { grams: 100 } },
+      { k: 'zanahoria',       p: { grams: 50 } },
+      { k: 'ajo',             p: { grams: 5 } },
+      { k: 'pimenton',        p: { grams: 2 } },
+    ],
+  },
   'patata-setas-puerro': {
     base: 'patata',
     name: 'Patata asada + setas',
@@ -542,6 +552,7 @@ export const COMBO_SETS = {
     'pure-patata-zanahoria','pure-patata-leche-mantequilla','pure-patata-calabacin','arroz-tomate-cebolla','patata-setas-zanahoria','patata-puerro-asada','patata-setas-cebolla','patata-setas-esparragos','arroz-sofrito','bandeja-asada-patata-zanahoria',
     'huevos-turcos','tortilla-esparragos-beet-rabanos','buckwheat-pesto',
     'puchero-andaluz','cocido-madrileno',
+    'lentejas-espinacas',
   ],
   pucheros: [
     'fabada-base','pote-gallego',

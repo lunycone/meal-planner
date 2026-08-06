@@ -940,10 +940,10 @@ function BatchCard({ title, cookLabel, coverDays, mealSections, schedule, kcalSu
 // ─── Main component ────────────────────────────────────────────────────────────
 const MEALS    = ['desayuno', 'comida', 'cena']
 // ── Ventanas de batch (partición limpia de la semana) ──────────────────────────
-// Batch Lunes:  cocinas el lun, comes lun→mar→mié (3 días).
-// Batch Jueves: cocinas el jue, comes jue→vie→sáb→dom (4 días).
-const MON_DAYS = ['lun', 'mar', 'mié']
-const THU_DAYS = ['jue', 'vie', 'sáb', 'dom']
+// Batch Lunes:  cocinas el lun, comes lun→mar→mié→jue (4 días).
+// Batch Jueves: cocinas el jue, comes vie→sáb→dom    (3 días, + lun siguiente).
+const MON_DAYS = ['lun', 'mar', 'mié', 'jue']
+const THU_DAYS = ['vie', 'sáb', 'dom']
 
 export default function BatchPrepTab() {
   const allIng        = useStore(selectAllIng)
@@ -970,7 +970,7 @@ export default function BatchPrepTab() {
 
   const thuBatchDays = useMemo(() => THU_DAYS.map((dk, i) => ({
     dayKey: dk, wk: weekKey,
-    date: new Date(weekMonday.getTime() + (3 + i) * 86400000), // jue(3)→dom(6)
+    date: new Date(weekMonday.getTime() + (4 + i) * 86400000), // vie(4)→dom(6)
   })), [weekMonday, weekKey])
 
   const batchDetect = useMemo(() => {
@@ -1049,7 +1049,7 @@ export default function BatchPrepTab() {
         <BatchCard
           title="🌙 Batch Lunes"
           cookLabel={`lun ${formatDateShort(monCookDate)}`}
-          coverDays={['Lun', 'Mar', 'Mié']}
+          coverDays={['Lun', 'Mar', 'Mié', 'Jue']}
           schedule={monSchedule}
           kcalSummary={monKcalSummary}
           onPlay={() => setPlayBatch('mon')}
@@ -1060,7 +1060,7 @@ export default function BatchPrepTab() {
         <BatchCard
           title="☀️ Batch Jueves"
           cookLabel={`jue ${formatDateShort(thuCookDate)}`}
-          coverDays={['Jue', 'Vie', 'Sáb', 'Dom']}
+          coverDays={['Vie', 'Sáb', 'Dom', 'Lun →']}
           schedule={thuSchedule}
           kcalSummary={thuKcalSummary}
           onPlay={() => setPlayBatch('thu')}
