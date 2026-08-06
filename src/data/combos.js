@@ -196,7 +196,7 @@ export const COMBO = {
     ],
   },
   'lentejas-espinacas': {
-    name: 'Lentejas con espinacas', tag: 'legumbre', noAove: true, scalable: 'lentejas-verdes',
+    name: 'Lentejas con espinacas', base: 'legumbres', tag: 'legumbre', noAove: true, scalable: 'lentejas-verdes',
     items: [
       { k: 'lentejas-verdes', p: { grams: 75 } },
       { k: 'espinaca',        p: { grams: 100 } },
