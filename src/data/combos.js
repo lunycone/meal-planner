@@ -200,9 +200,6 @@ export const COMBO = {
     items: [
       { k: 'lentejas-verdes', p: { grams: 75 } },
       { k: 'espinaca',        p: { grams: 100 } },
-      { k: 'zanahoria',       p: { grams: 50 } },
-      { k: 'ajo',             p: { grams: 5 } },
-      { k: 'pimenton',        p: { grams: 2 } },
     ],
   },
   'patata-setas-puerro': {
