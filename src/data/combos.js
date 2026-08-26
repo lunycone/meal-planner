@@ -444,6 +444,63 @@ export const COMBO = {
     ],
   },
 
+  // ── BURRITOS CENA ─────────────────────────────────────────────────────────────
+  'burrito-cena-black-beans': {
+    base: 'legumbres', noAove: true,
+    name: 'Burrito cena · black beans · cebolla · comino',
+    items: [
+      { k: 'harina',           p: { grams: 55 } },
+      { k: 'black-beans',      p: { grams: 80 } },
+      { k: 'cebolla-amarilla', p: { grams: 60 } },
+      { k: 'comino',           p: {} },
+    ],
+  },
+  'burrito-cena-black-beans-cheddar': {
+    base: 'legumbres', noAove: true,
+    name: 'Burrito cena · black beans · cheddar · jalapeño · comino',
+    items: [
+      { k: 'harina',           p: { grams: 55 } },
+      { k: 'black-beans',      p: { grams: 80 } },
+      { k: 'cheddar',          p: { grams: 20 } },
+      { k: 'cebolla-amarilla', p: { grams: 50 } },
+      { k: 'jalapeno',         p: { units: 1 } },
+      { k: 'comino',           p: {} },
+    ],
+  },
+  'burrito-cena-arroz-beans': {
+    base: 'arroz', noAove: true,
+    name: 'Burrito cena · arroz · black beans · pimiento · comino',
+    items: [
+      { k: 'harina',         p: { grams: 55 } },
+      { k: 'arroz',          p: { grams: 60 } },
+      { k: 'black-beans',    p: { grams: 60 } },
+      { k: 'pimiento-verde', p: { grams: 60 } },
+      { k: 'comino',         p: {} },
+    ],
+  },
+  'burrito-cena-lentejas-aguacate': {
+    base: 'legumbres', noAove: true,
+    name: 'Burrito cena · lentejas · aguacate · comino',
+    items: [
+      { k: 'harina',          p: { grams: 55 } },
+      { k: 'lentejas-verdes', p: { grams: 80 } },
+      { k: 'aguacate',        p: { units: 0.5 } },
+      { k: 'tomate-fresco',   p: { grams: 60 } },
+      { k: 'comino',          p: {} },
+    ],
+  },
+  'burrito-cena-black-beans-aguacate': {
+    base: 'legumbres', noAove: true,
+    name: 'Burrito cena · black beans · aguacate · jalapeño',
+    items: [
+      { k: 'harina',         p: { grams: 55 } },
+      { k: 'black-beans',    p: { grams: 80 } },
+      { k: 'aguacate',       p: { units: 0.5 } },
+      { k: 'cebolla-morada', p: { grams: 40 } },
+      { k: 'jalapeno',       p: { units: 1 } },
+    ],
+  },
+
   // ── DESAYUNOS ────────────────────────────────────────────────────────────────
   'desayuno-cheesecake-yogur': { tag: 'yogur', flags: ['rapido'], name: 'Cheesecake yogur cabra', variableIngredients: { huevo: [1, 2] }, items: [{ k: 'yogur-cabra', p: { grams: 170 } },{ k: 'huevo', p: { units: 1 } },{ k: 'arandanos', p: { grams: 10 } },{ k: 'canela', p: {} },] },
   'desayuno-tortilla-aguacate': { tag: 'huevo', flags: ['rapido'], name: 'Tortilla francesa + aguacate + setas', variableIngredients: { huevo: [1, 2, 3] }, items: [{ k: 'huevo', p: { units: 2 } },{ k: 'aguacate', p: { units: 0.5 } },{ k: 'setas', p: { grams: 80 } },{ k: 'espinaca', p: { grams: 60 } },] },
@@ -482,6 +539,9 @@ export const COMBO = {
   'desayuno-magdalenas-chocolate': { tag: 'ocasional', flags: ['ocasional'], name: 'Magdalenas chocolate (ocasional)', variableIngredients: { huevo: [1, 2] }, items: [{ k: 'huevo', p: { units: 1 } },{ k: 'yogur-cabra', p: { grams: 80 } },{ k: 'harina', p: { grams: 60 } },{ k: 'azucar', p: { grams: 15 } },{ k: 'mantequilla', p: { grams: 25 } },{ k: 'chocolate-negro', p: { grams: 20 } },] },
   'desayuno-yogur-huevo-avena': { tag: 'yogur', flags: ['rapido'], name: 'Yogur cabra + huevo + avena', variableIngredients: { huevo: [1, 2] }, items: [{ k: 'yogur-cabra', p: { grams: 150 } },{ k: 'huevo', p: { units: 1 } },{ k: 'avena', p: { grams: 50 } },] },
   'desayuno-tortitas-mantequilla-arandanos': { tag: 'tortita', flags: ['ocasional'], name: 'Tortitas · Mantequilla · Arándanos', variableIngredients: { huevo: [1, 2] }, items: [{ k: 'harina', p: { grams: 80 } },{ k: 'huevo', p: { units: 1 } },{ k: 'leche', p: { ml: 100 } },{ k: 'mantequilla', p: { grams: 15 } },{ k: 'arandanos', p: { grams: 60 } },] },
+  'burrito-3-huevos':             { tag: 'huevo', flags: ['rapido'], noAove: true, name: 'Burrito garbanzo · 3 huevos', variableIngredients: { huevo: [1, 2, 3] }, items: [{ k: 'harina-garbanzo', p: { grams: 60 } },{ k: 'huevo', p: { units: 3 } },] },
+  'burrito-3-huevos-cheddar':     { tag: 'huevo', flags: ['rapido'], noAove: true, name: 'Burrito garbanzo · 3 huevos · cheddar', variableIngredients: { huevo: [1, 2, 3] }, items: [{ k: 'harina-garbanzo', p: { grams: 60 } },{ k: 'huevo', p: { units: 3 } },{ k: 'cheddar', p: { grams: 20 } },] },
+  'burrito-2-huevos-cheddar-avo': { tag: 'huevo', flags: ['rapido'], noAove: true, name: 'Burrito garbanzo · 2 huevos · cheddar · aguacate', variableIngredients: { huevo: [1, 2, 3] }, items: [{ k: 'harina-garbanzo', p: { grams: 60 } },{ k: 'huevo', p: { units: 2 } },{ k: 'cheddar', p: { grams: 10 } },{ k: 'aguacate', p: { units: 0.5 } },] },
 
   // ─── Pucheros / Estofados ─────────────────────────────────────────────────
   'fabada-base': {
@@ -550,6 +610,8 @@ export const COMBO_SETS = {
     'huevos-turcos','tortilla-esparragos-beet-rabanos','buckwheat-pesto',
     'puchero-andaluz','cocido-madrileno',
     'lentejas-espinacas',
+    'burrito-cena-black-beans','burrito-cena-black-beans-cheddar','burrito-cena-arroz-beans',
+    'burrito-cena-lentejas-aguacate','burrito-cena-black-beans-aguacate',
   ],
   pucheros: [
     'fabada-base','pote-gallego',
@@ -596,5 +658,6 @@ export const COMBO_SETS = {
     'desayuno-yogur-sunflower-arandanos','desayuno-huevo-queso',
     'desayuno-brownie-chocolate','desayuno-magdalenas','desayuno-magdalenas-chocolate',
     'desayuno-tortitas-mantequilla-arandanos',
+    'burrito-3-huevos','burrito-3-huevos-cheddar','burrito-2-huevos-cheddar-avo',
   ],
 }

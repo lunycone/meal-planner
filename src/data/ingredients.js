@@ -15,6 +15,8 @@ export const ING = {
   buckwheat:       { name: 'Trigo sarraceno (Ambrosia Organic Toasted)', cat: 'base', per100: 1.033, kc: 343, prot: 13, fat: 3.4, fib: 10, pack: '454g · $4.69', per: '70g → $0.72 · 240 kcal' },
   pesto:           { name: 'Pesto',               cat: 'otro',     per100: 1.579, kc: 430, prot: 5,   fat: 42,  fib: 1,   pack: '190g · $3.00',           per: '30g → $0.47 · 129 kcal', est: true },
   harina:          { name: 'Harina Ambrosia Unbleached All Purpose', cat: 'base', per100: 0.277, kc: 364, prot: 10, fat: 1.4, fib: 2.7, pack: '2270g · $6.29', per: '80g → $0.22' },
+  'harina-garbanzo': { name: 'Harina de garbanzo (Ambrosia)', cat: 'base', per100: 0.428, kc: 387, prot: 22, fat: 7, fib: 11, pack: '908g · $3.89', per: '60g → $0.26 · 232 kcal · GI~35' },
+  'masa-harina':   { name: 'Masa harina nixtamalizada (Maseca)', cat: 'base', per100: 0.500, kc: 363, prot: 10, fat: 4, fib: 7, pack: '2kg · $9.99', per: '55g → $0.28 · 200 kcal · GI~52' },
   azucar:          { name: 'Azúcar',              cat: 'base',     per100: 0.15,  kc: 400, prot: 0,   fat: 0,   fib: 0,   pack: 'estimado',                per: '15g → $0.02', est: true },
 
   // LEGUMBRES (peso seco) — precios actualizados jun 2026
@@ -59,7 +61,7 @@ export const ING = {
   'feta-vaca':    { name: 'Feta (Krinos)',    cat: 'lacteo', per100: 1.59, kc: 265, prot: 14, fat: 21, pack: '3 kg · $47.59',   per: '30g → $0.48 · 80 kcal', tag: 'vaca' },
   'feta-oveja':   { name: 'Feta',            cat: 'lacteo', per100: 3.50, kc: 265, prot: 14, fat: 21, pack: '400 g · $13.99',  per: '30g → $1.05', tag: 'oveja' },
   'queso-cabra':  { name: 'Queso de cabra',  cat: 'lacteo', per100: 2.90, kc: 290, prot: 19, fat: 23, pack: '1 kg · $28.99',   per: '30g → $0.87' },
-  cheddar:        { name: 'Cheddar',         cat: 'lacteo', per100: 4.90, kc: 400, prot: 25, fat: 33, pack: '300 g · $14.69',  per: '30g → $1.47 · 120 kcal' },
+  cheddar:        { name: 'Cheddar (Agropur Grand Aged 2yr)', cat: 'lacteo', per100: 2.50, kc: 400, prot: 25, fat: 33, pack: '400g · $10.00', per: '20g → $0.50 · 80 kcal' },
   'yogur-cabra':  { name: 'Yogur de cabra',  cat: 'lacteo', per100: 0.57,  kc: 81, prot: 5.1, fat: 3.4, pack: '750 g · $4.29',             per: '120g → $0.68 · 6.1g prot' },
   'yogur-vaca':   { name: 'Yogur de vaca (Saugeen Organic)', cat: 'lacteo', per100: 0.539, kc: 69, prot: 3.4, fat: 4, pack: '908 g · $4.89', per: '120g → $0.65 · 4.1g prot' },
   'sour-cream':   { name: 'Sour cream',      cat: 'lacteo', per100: 0.70, kc: 190, prot: 2,  fat: 19, pack: '500 ml · $3.49',  per: '40g → $0.28 · 76 kcal' },
@@ -94,6 +96,7 @@ export const ING = {
   parsley:          { name: 'Perejil',          cat: 'otro', flat: 0.10,   kcf: 2,  pack: 'estimado',        per: '—', est: true },
   'pimienta-negra': { name: 'Pimienta negra',   cat: 'otro', flat: 0.05,   kcf: 2,  pack: 'especia',         per: 'uso → $0.05', est: true },
   pimenton:         { name: 'Pimentón',         cat: 'otro', flat: 0.05,   kcf: 3,  pack: 'especia',         per: 'uso → $0.05', est: true },
+  comino:           { name: 'Comino',            cat: 'otro', flat: 0.05,   kcf: 5,  pack: 'especia',         per: 'uso → $0.05', est: true },
   cacao:            { name: 'Cacao puro en polvo', cat: 'otro', per100: 4.00, kc: 350, prot: 20, fat: 12, fib: 30, pack: '225g · $9.00', per: '15g → $0.60 · 53 kcal' },
   ajo:              { name: 'Ajo',              cat: 'otro', flat: 0.10,   kcf: 5,  pack: 'estimado',        per: 'uso → $0.10', est: true },
   rabanos:          { name: 'Rábanos',          cat: 'fresco', per100: 0.664, kc: 16, prot: 0.7, fat: 0.1, fib: 1.6, pack: '450g · $2.99', per: '60g → $0.40 · 10 kcal' },
