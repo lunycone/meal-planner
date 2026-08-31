@@ -594,6 +594,54 @@ export const COMBO = {
       { k: 'patata',          p: { grams: 90 } },
     ],
   },
+
+  // ─── Guisos económicos (tramo $1-2, proteína + base + salsa) ──────────────
+  'lomo-mostaza-cebolla-miel': {
+    base: 'arroz', tag: 'guiso',
+    name: 'Lomo cerdo · mostaza, cebolla y miel (toque de vino blanco)',
+    items: [
+      { k: 'lomo-cerdo',      p: { grams: 150 } },
+      { k: 'arroz',           p: { grams: 75 } },
+      { k: 'cebolla-amarilla',p: { grams: 100 } },
+      { k: 'mostaza',         p: { grams: 15 } },
+      { k: 'miel',            p: { grams: 15 } },
+      { k: 'vino-blanco',     p: { ml: 8 } },
+    ],
+  },
+  'pollo-pierna-ajo-mostaza-miel': {
+    base: 'arroz', tag: 'guiso',
+    name: 'Pollo pierna · ajo confitado, mostaza y miel',
+    items: [
+      { k: 'pollo-pierna-generic', p: { grams: 150 } },
+      { k: 'arroz',                p: { grams: 75 } },
+      { k: 'ajo',                  p: { grams: 15 } },
+      { k: 'mostaza',              p: { grams: 10 } },
+      { k: 'miel',                 p: { grams: 10 } },
+    ],
+  },
+  'rib-rack-tomate-comino': {
+    base: 'arroz', tag: 'guiso',
+    name: 'Rib rack cerdo · tomate y comino tostado',
+    items: [
+      { k: 'rib-rack-cerdo',   p: { grams: 150 } },
+      { k: 'arroz',            p: { grams: 75 } },
+      { k: 'zanahoria',        p: { grams: 80 } },
+      { k: 'tomate-conserva',  p: { grams: 50 } },
+      { k: 'comino',           p: { grams: 2 } },
+    ],
+  },
+  'turkey-glaseado-agridulce': {
+    base: 'arroz', tag: 'guiso',
+    name: 'Turkey drumstick · glaseado agridulce (miel, pimentón, vinagre)',
+    items: [
+      { k: 'turkey-drumstick', p: { grams: 150 } },
+      { k: 'arroz',            p: { grams: 75 } },
+      { k: 'zanahoria',        p: { grams: 80 } },
+      { k: 'miel',             p: { grams: 10 } },
+      { k: 'pimenton',         p: { grams: 2 } },
+      { k: 'vinagre',          p: { ml: 10 } },
+    ],
+  },
 }
 
 export const COMBO_SETS = {
@@ -612,6 +660,7 @@ export const COMBO_SETS = {
     'lentejas-espinacas',
     'burrito-cena-black-beans','burrito-cena-black-beans-cheddar','burrito-cena-arroz-beans',
     'burrito-cena-lentejas-aguacate','burrito-cena-black-beans-aguacate',
+    'lomo-mostaza-cebolla-miel','pollo-pierna-ajo-mostaza-miel','rib-rack-tomate-comino','turkey-glaseado-agridulce',
   ],
   pucheros: [
     'fabada-base','pote-gallego',
