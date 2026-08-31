@@ -98,6 +98,7 @@ export const ING = {
   'lomo-cerdo':             { name: 'Cerdo · Lomo (Conestoga, Foodland)',          cat: 'carne', per100: 0.65,  kc: 143, prot: 22, fat: 5,  pack: '~$6.50/kg est.',         per: '150g → $0.98 · 215 kcal · 33g prot', est: true },
   'solomillo-cerdo':        { name: 'Cerdo · Solomillo (Foodland)',                cat: 'carne', per100: 0.88,  kc: 143, prot: 22, fat: 3,  pack: '$8.80/kg',               per: '150g → $1.32 · 215 kcal · 33g prot' },
   'rib-rack-cerdo':         { name: 'Cerdo · Rib Rack Roast / Lomo (Conestoga)',   cat: 'carne', per100: 0.88,  kc: 220, prot: 19, fat: 15, pack: '$8.80/kg',               per: '150g → $1.32 · 330 kcal · 29g prot' },
+  'higado-vaca':            { name: 'Hígado de vaca (Enright Cattle Co.)',         cat: 'carne', per100: 1.651, kc: 135, prot: 26, fat: 3.6, pack: '0.6–1.4 lb · $7.49/lb', per: '150g → $2.48 · 202 kcal · 39g prot' },
   'carne-picada':           { name: 'Carne picada de res (premium)',               cat: 'carne', per100: 2.423, kc: 254, prot: 17, fat: 20, pack: '$10.99/lb ($24.23/kg)',  per: '150g → $3.63 · 381 kcal · 26g prot' },
   'pollo-pierna-generic':   { name: 'Pollo · Pierna (genérico)',                   cat: 'carne', per100: 0.88,  kc: 172, prot: 18, fat: 11, pack: '$8.80/kg',               per: '250g → $2.20 · 430 kcal · 45g prot' },
   'turkey-drumstick':       { name: 'Pavo · Muslito (Turkey Drumstick, genérico)', cat: 'carne', per100: 0.88,  kc: 159, prot: 20, fat: 8,  pack: '$8.80/kg',               per: '200g → $1.76 · 318 kcal · 40g prot' },
