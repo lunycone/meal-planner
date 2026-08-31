@@ -103,7 +103,7 @@ export const ING = {
   'pollo-pierna-generic':  { name: 'Pollo · Pierna (genérico)',                   cat: 'carne', per100: 0.88,  kc: 172, prot: 18, fat: 11, pack: '$8.80/kg',  per: '250g → $2.20 · 430 kcal' },
   'turkey-drumstick':      { name: 'Pavo · Muslito (Turkey Drumstick)',            cat: 'carne', per100: 0.88,  kc: 159, prot: 20, fat: 8,  pack: '$8.80/kg',  per: '200g → $1.76 · 318 kcal' },
   'lomo-cerdo':            { name: 'Lomo de cerdo',                               cat: 'carne', per100: 0.65,  kc: 143, prot: 22, fat: 5,  pack: '~$6.50/kg', per: '150g → $0.98 · 215 kcal' },
-  'carne-picada':          { name: 'Carne picada (ternera, medium)',               cat: 'carne', per100: 2.423, kc: 254, prot: 17, fat: 20, pack: '$10.99/lb ($24.23/kg)', per: '150g → $3.63 · 381 kcal' },
+  'carne-picada':          { name: 'Carne picada de res (premium)',               cat: 'carne', per100: 2.423, kc: 254, prot: 17, fat: 20, pack: '$10.99/lb ($24.23/kg)', per: '150g → $3.63 · 381 kcal' },
   'col':            { name: 'Col / Repollo',                   cat: 'fresco', per100: 0.21, kc: 25, prot: 1.3, fat: 0.1, fib: 2.5, pack: '~700g cabeza · $1.49', per: '100g → $0.21 · 25 kcal' },
   'col-rizada':     { name: 'Col rizada / Kale',              cat: 'fresco', per100: 1.50, kc: 49, prot: 4.3, fat: 0.9, fib: 3.6, pack: 'bunch ~200g · $2.99', per: '60g → $0.90 · 29 kcal' },
   'hot-dog-buns':   { name: 'Hot dog buns',               cat: 'otro', perUnit: 0.625, kcu: 140, pack: '8 ud · $5.00', per: '1 ud → $0.63 · 140 kcal', est: true },
