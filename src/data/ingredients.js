@@ -86,7 +86,7 @@ export const ING = {
   limon:            { name: 'Limón',            cat: 'otro', perUnit: 1.00, kcu: 17, protu: 0.5, fatu: 0.1, pack: 'ud · $1.00',    per: '½ → $0.50' },
   apio:             { name: 'Apio',             cat: 'otro', perServing: 0.45, kcs: 8, pack: 'ud · $4.49',  per: '~$0.45/plato' },
   pan:              { name: 'Pan sourdough',    cat: 'otro', perUnit: 6.50, kcu: 0, pack: 'pieza · $6–7',   per: '~260 kcal/100g' },
-  setas:            { name: 'Setas frescas',    cat: 'otro', per100: 1.54, kc: 22, prot: 3,  fat: 0.3, fib: 1.0, pack: '227 g · $3.49',   per: '100g → $1.54' },
+  setas:            { name: 'Setas frescas (sin pesticidas)', cat: 'otro', per100: 1.322, kc: 22, prot: 3,  fat: 0.3, fib: 1.0, pack: '227 g · $3.00',   per: '100g → $1.32 · 22 kcal' },
   mejillones:       { name: 'Mejillones (Canadian Cove Organic)', cat: 'carne', per100: 0.771, kc: 172, prot: 24, pack: '907 g · $6.99', per: '150g → $1.16 · 258 kcal · 36g prot' },
   'pulpo-congelado': { name: 'Pulpo congelado (Ferma)', cat: 'carne', per100: 1.73,  kc: 82,  prot: 25, pack: '750 g · $12.99',    per: '150g → $2.60 · 123 kcal · 37g prot' },
   salchichas:        { name: 'Salchichas (English Bangers)', cat: 'carne', per100: 0.599, kc: 300, prot: 14, fat: 24, pack: '~0.91 kg · $5.45 est (CA$5.99/kg)', per: '150g → $0.90 · 450 kcal · 21g prot' },
