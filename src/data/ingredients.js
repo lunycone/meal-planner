@@ -28,6 +28,7 @@ export const ING = {
   'black-beans':     { name: 'Black beans',       cat: 'legumbre', per100: 0.300, kc: 340, prot: 22,  fat: 1.4, fib: 8.7, brand: 'Dunya Harvest Black Turtle Beans', store: 'FreshCo',     pack: '2 kg · $6.00',    per: '80g seco → $0.24' },
   'alubias-blancas': { name: 'Alubias blancas',   cat: 'legumbre', per100: 0.299, kc: 330, prot: 22,  fat: 1,   fib: 6.3, brand: 'Dunya Harvest Great Northern Beans', store: 'FreshCo',   pack: '900 g · $2.69',   per: '80g seco → $0.24' },
   'alubias-rojas':   { name: 'Alubias rojas',     cat: 'legumbre', per100: 0.333, kc: 333, prot: 22,  fat: 1.2, fib: 7.4, brand: 'Divya Red Kidney Beans',           store: 'Food Basics', pack: '1.8 kg · $5.99',  per: '80g seco → $0.27' },
+  'romano-beans':    { name: 'Judías romano (pintas)', cat: 'legumbre', per100: 0.399, kc: 335, prot: 21,  fat: 1.2, fib: 7.0, brand: 'Cedar Romano Beans',              store: 'Food Basics', pack: '1 kg · $3.99',    per: '80g seco → $0.32' },
   cranberry:         { name: 'Romano beans',      cat: 'legumbre', per100: 0.399, kc: 335, prot: 22,  fat: 1,   fib: 7.0, brand: 'Cedar Romano Beans',               store: 'Food Basics', pack: '1 kg · $3.99',    per: '80g seco → $0.32' },
 
   // FRESCOS
@@ -49,7 +50,7 @@ export const ING = {
   calabacin:         { name: 'Calabacín',         cat: 'fresco',   per100: 0.45,  kc: 17,  fib: 1.2, pack: 'A1 ref.',                per: '100g → $0.45', hideInTable: true },
   esparragos:        { name: 'Espárragos',        cat: 'fresco',   per100: 0.44,  kc: 20,  fib: 2.1, pack: '~0.68 kg · $2.97',      per: '120g → $0.53', jessica: true },
   brocoli:           { name: 'Brócoli',           cat: 'fresco',   per100: 0.55,  kc: 34,  fib: 2.6, pack: 'estimado · Jessica',    per: '—', est: true, jessica: true },
-  'pimiento-verde': { name: 'Pimiento verde',    cat: 'fresco',   per100: 0.88,  kc: 30,  fib: 2.6, pack: '~0.28kg · $2.42 (CA$8.80/kg)', per: '100g → $0.88 · 30 kcal' },
+  'pimiento-verde': { name: 'Pimiento verde',    cat: 'fresco',   per100: 0.45,  kc: 30,  fib: 2.6, pack: '~$4.50/kg est.', per: '100g → $0.45 · 30 kcal', est: true },
   jalapeno:          { name: 'Jalapeño',           cat: 'fresco',   per100: 1.10,  kc: 29,  fib: 1.9, pack: 'ud ~40g · CA$11.00/kg', per: 'ud → $0.44 · 12 kcal' },
   'green-beans':     { name: 'Ejotes / Green beans', cat: 'fresco', per100: 0.60,  kc: 31,  fib: 3.4, pack: 'bunch ~0.08kg · $0.48', per: '80g → $0.48 · 25 kcal' },
   arandanos:         { name: 'Arándanos congelados (Farm Boy)', cat: 'fresco', per100: 0.977, kc: 57, prot: 0.7, fat: 0.3, fib: 2.4, pack: '2.25 kg · $21.99', per: '40g → $0.39 · 23 kcal' },
