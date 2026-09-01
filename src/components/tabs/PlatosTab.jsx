@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import useStore, { selectAllIng, selectAllCombos } from '../../store/useStore'
-import { ingCost, ingKcal, ingProt, ingFat, comboAgg, fmt } from '../../engine/calc'
+import { ingCost, ingKcal, ingProt, ingFat, comboAgg, fmt, isPcosFriendly, proteinLevel, kcalLevel, LEVEL_COLOR } from '../../engine/calc'
+import PcosBadge from '../PcosBadge'
 
 function portionLabel(p) {
   if (p.grams != null) return `${p.grams}g`
@@ -78,21 +79,24 @@ function RecipeDetail({ combo, allIng, onClose }) {
   )
 }
 
-function RecipeCard({ combo, isSelected, onClick }) {
+function RecipeCard({ combo, mealType, isSelected, onClick }) {
   const allIng = useStore(selectAllIng)
   const agg = comboAgg(combo, allIng)
+  const pLevel = proteinLevel(agg.prot, mealType)
+  const kLevel = kcalLevel(agg.kcal, mealType)
   return (
     <div className={`dz-card${isSelected ? ' is-open' : ''}`} onClick={onClick}>
       <div className="dz-card-name">
         {combo.name}
         {combo.jessica && <span className="badge badge-jessica" style={{ marginLeft: 6 }}>María</span>}
+        {isPcosFriendly(combo, allIng) && <PcosBadge />}
       </div>
       <div className="dz-card-stats">
         <span className="dz-stat-cost">{fmt(agg.cost)}</span>
         <span className="dz-stat-dot">·</span>
-        <span className="dz-stat-kcal">{Math.round(agg.kcal)} kcal</span>
+        <span className="dz-stat-kcal" style={{ color: LEVEL_COLOR[kLevel], fontWeight: 600 }}>{Math.round(agg.kcal)} kcal</span>
         <span className="dz-stat-dot">·</span>
-        <span className="dz-stat-prot">{Math.round(agg.prot)}g prot</span>
+        <span className="dz-stat-prot" style={{ color: LEVEL_COLOR[pLevel], fontWeight: 600 }}>{Math.round(agg.prot)}g prot</span>
         <span className="dz-stat-dot">·</span>
         <span className="dz-stat-fat">{Math.round(agg.fat)}g grasa</span>
       </div>
@@ -204,7 +208,7 @@ export default function PlatosTab() {
               const isSelected = selectedKey === key
               return (
                 <div key={key}>
-                  <RecipeCard combo={combo} isSelected={isSelected} onClick={() => toggle(key)} />
+                  <RecipeCard combo={combo} mealType={meal} isSelected={isSelected} onClick={() => toggle(key)} />
                   {isSelected && (
                     <RecipeDetail combo={combo} allIng={allIng} onClose={() => setSelectedKey(null)} />
                   )}

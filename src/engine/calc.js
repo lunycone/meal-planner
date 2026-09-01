@@ -264,3 +264,43 @@ export function fmtPortion(p) {
   if (p.serv  != null) return 'porción'
   return '—'
 }
+
+// ─── Macro % (carb by difference, Atwater 4/4/9) + PCOS badge + traffic lights ──
+// carbPct threshold and the red/yellow/green bands were set from this
+// session's own analysis of the catalog (§ desayuno carb sweep, 1 sep 2026):
+// eggs/cheese/yogur+nuts dishes land ~21-23% carb, burritos ~35-42%, the
+// harina-garbanzo family 65-78% — 30% is the real gap between "flat" and
+// "carb-heavy", not an arbitrary round number.
+const PCOS_CARB_PCT_MAX = 30
+const PCOS_MEALS = new Set(['desayuno', 'cena']) // per María: comida is fine, only these two
+
+export function dishMacroPct(combo, allIng) {
+  const agg = comboAgg(combo, allIng)
+  const carbKcal = Math.max(0, agg.kcal - agg.prot * 4 - agg.fat * 9)
+  return { ...agg, carbG: carbKcal / 4, carbPct: agg.kcal > 0 ? (carbKcal / agg.kcal) * 100 : 0 }
+}
+
+export function isPcosFriendly(combo, allIng) {
+  if (!combo?.meals?.some(m => PCOS_MEALS.has(m))) return false
+  return dishMacroPct(combo, allIng).carbPct <= PCOS_CARB_PCT_MAX
+}
+
+// Two tiers, per session decision: comida/cena (the main event, higher bar)
+// vs desayuno/merienda (secondary, lower bar — their own targets are smaller).
+const MAIN_MEALS = new Set(['comida', 'cena'])
+
+export function proteinLevel(prot, mealType) {
+  const t = MAIN_MEALS.has(mealType)
+    ? { green: 40, yellow: 25 }
+    : { green: 25, yellow: 15 }
+  return prot >= t.green ? 'green' : prot >= t.yellow ? 'yellow' : 'red'
+}
+
+export function kcalLevel(kcal, mealType) {
+  const t = MAIN_MEALS.has(mealType)
+    ? { green: 800, yellow: 500 }
+    : { green: 400, yellow: 250 }
+  return kcal >= t.green ? 'green' : kcal >= t.yellow ? 'yellow' : 'red'
+}
+
+export const LEVEL_COLOR = { green: '#4a7a3a', yellow: '#b0871f', red: '#b8453a' }

@@ -2,7 +2,8 @@ import { useState, useMemo, useEffect, Fragment } from 'react'
 import useStore, { selectAllIng, selectAllCombos } from '../../store/useStore'
 import { PROTEIN } from '../../data/proteins'
 import { PREP, COMBO_SETS } from '../../data/combos'
-import { comboAgg, fmt, proteinCost, proteinKcal, proteinProt, ingKcal, ingCost, fmtPortion, personLunchScale, dayKcal } from '../../engine/calc'
+import { comboAgg, fmt, proteinCost, proteinKcal, proteinProt, ingKcal, ingCost, fmtPortion, personLunchScale, dayKcal, isPcosFriendly, proteinLevel, kcalLevel, LEVEL_COLOR } from '../../engine/calc'
+import PcosBadge from '../PcosBadge'
 
 // Utility to get ISO week key from date
 function getISOWeek(date) {
@@ -251,7 +252,10 @@ function MealSelectorModal({ allIng, allCombos, onSelect, onClose, dayKey, mealT
               {dishes.length === 0 ? (
                 <div className="combo-empty">No hay platos para {MEAL_LABELS[mealType]?.toLowerCase()}</div>
               ) : (
-                dishes.map(recipe => (
+                dishes.map(recipe => {
+                  const pLevel = proteinLevel(recipe._agg.prot, mealType)
+                  const kLevel = kcalLevel(recipe._agg.kcal, mealType)
+                  return (
                   <div
                     key={recipe.key}
                     className="recipe-option"
@@ -260,12 +264,13 @@ function MealSelectorModal({ allIng, allCombos, onSelect, onClose, dayKey, mealT
                     <div className="ro-name">
                       {recipe.name}
                       {recipe.jessica && <span className="badge badge-jessica" style={{ marginLeft: 6 }}>María</span>}
+                      {isPcosFriendly(recipe, allIng) && <PcosBadge />}
                     </div>
                     <div className="ro-stats">
-                      {fmt(recipe._agg.cost)} · {Math.round(recipe._agg.kcal)} kcal · {Math.round(recipe._agg.prot)}g prot
+                      {fmt(recipe._agg.cost)} · <span style={{ color: LEVEL_COLOR[kLevel], fontWeight: 600 }}>{Math.round(recipe._agg.kcal)} kcal</span> · <span style={{ color: LEVEL_COLOR[pLevel], fontWeight: 600 }}>{Math.round(recipe._agg.prot)}g prot</span>
                     </div>
                   </div>
-                ))
+                )})
               )}
             </div>
           </div>
