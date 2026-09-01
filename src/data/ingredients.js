@@ -51,6 +51,7 @@ export const ING = {
   esparragos:        { name: 'Espárragos',        cat: 'fresco',   per100: 0.44,  kc: 20,  fib: 2.1, pack: '~0.68 kg · $2.97',      per: '120g → $0.53', jessica: true },
   brocoli:           { name: 'Brócoli',           cat: 'fresco',   per100: 0.55,  kc: 34,  fib: 2.6, pack: 'estimado · Jessica',    per: '—', est: true, jessica: true },
   'pimiento-verde': { name: 'Pimiento verde',    cat: 'fresco',   per100: 0.45,  kc: 30,  fib: 2.6, pack: '~$4.50/kg est.', per: '100g → $0.45 · 30 kcal', est: true },
+  'pimiento-amarillo': { name: 'Pimiento amarillo', cat: 'fresco', per100: 0.55, kc: 27,  fib: 0.9, pack: '~$5.50/kg est.', per: '100g → $0.55 · 27 kcal', est: true },
   jalapeno:          { name: 'Jalapeño',           cat: 'fresco',   per100: 1.10,  kc: 29,  fib: 1.9, pack: 'ud ~40g · CA$11.00/kg', per: 'ud → $0.44 · 12 kcal' },
   'green-beans':     { name: 'Ejotes / Green beans', cat: 'fresco', per100: 0.60,  kc: 31,  fib: 3.4, pack: 'bunch ~0.08kg · $0.48', per: '80g → $0.48 · 25 kcal' },
   arandanos:         { name: 'Arándanos congelados (Farm Boy)', cat: 'fresco', per100: 0.977, kc: 57, prot: 0.7, fat: 0.3, fib: 2.4, pack: '2.25 kg · $21.99', per: '40g → $0.39 · 23 kcal' },
