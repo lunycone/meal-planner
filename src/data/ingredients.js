@@ -102,7 +102,7 @@ export const ING = {
   'solomillo-cerdo':        { name: 'Cerdo · Solomillo (Foodland)',                cat: 'carne', per100: 0.88,  kc: 143, prot: 22, fat: 3,  pack: '$8.80/kg',               per: '150g → $1.32 · 215 kcal · 33g prot' },
   'rib-rack-cerdo':         { name: 'Cerdo · Rib Rack Roast / Lomo (Conestoga)',   cat: 'carne', per100: 0.88,  kc: 220, prot: 19, fat: 15, pack: '$8.80/kg',               per: '150g → $1.32 · 330 kcal · 29g prot' },
   'higado-vaca':            { name: 'Hígado de vaca (Enright Cattle Co.)',         cat: 'carne', per100: 1.651, kc: 135, prot: 26, fat: 3.6, pack: '0.6–1.4 lb · $7.49/lb', per: '150g → $2.48 · 202 kcal · 39g prot' },
-  bacalao:                  { name: 'Bacalao',                                     cat: 'carne', per100: 1.06,  kc: 82,  prot: 17, fat: 0.7, pack: '~$10.60/kg est.',        per: '200g → $2.12 · 164 kcal · 34g prot', est: true },
+  bacalao:                  { name: 'Bacalao',                                     cat: 'carne', per100: 1.06,  kc: 82,  prot: 17, fat: 0.7, pack: '$10.60/kg',              per: '200g → $2.12 · 164 kcal · 34g prot' },
   lamb:                     { name: 'Cordero',                                     cat: 'carne', per100: 1.982, kc: 209, prot: 25, fat: 12, pack: '$19.82/kg',            per: '150g → $2.97 · 314 kcal · 38g prot' },
   'carne-picada':           { name: 'Carne picada de res (premium)',               cat: 'carne', per100: 2.423, kc: 254, prot: 17, fat: 20, pack: '$10.99/lb ($24.23/kg)',  per: '150g → $3.63 · 381 kcal · 26g prot' },
   'pollo-pierna-generic':   { name: 'Pollo · Pierna (genérico)',                   cat: 'carne', per100: 0.88,  kc: 172, prot: 18, fat: 11, pack: '$8.80/kg',               per: '250g → $2.20 · 430 kcal · 45g prot' },
