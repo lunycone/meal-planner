@@ -434,9 +434,17 @@ export const DISHES = {
     name: 'Fajitas de pollo sin tortilla', meals: ['cena'],
     items: [{ k: 'pollo-pierna-generic', p: { grams: 180 } }, { k: 'pimiento-verde', p: { grams: 80 } }, { k: 'pimiento-amarillo', p: { grams: 80 } }, { k: 'cebolla-amarilla', p: { grams: 60 } }, { k: 'limon', p: { units: 0.5 } }, { k: 'comino', p: {} }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 25 } }],
   },
+  'b-arandanos': {
+    name: 'Batido de arándanos', meals: ['merienda'],
+    items: [{ k: 'avena', p: { grams: 100 } }, { k: 'leche', p: { ml: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'arandanos', p: { grams: 80 } }, { k: 'mantequilla', p: { grams: 25 } }],
+  },
   'b-clasico': {
     name: 'Batido clásico', meals: ['merienda'],
-    items: [{ k: 'avena', p: { grams: 100 } }, { k: 'leche', p: { ml: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'arandanos', p: { grams: 80 } }, { k: 'mantequilla', p: { grams: 25 } }],
+    items: [{ k: 'avena', p: { grams: 100 } }, { k: 'leche', p: { ml: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'mantequilla', p: { grams: 20 } }, { k: 'pumpkin-seeds', p: { grams: 20 } }],
+  },
+  'b-clasico-2': {
+    name: 'Batido clásico 2', meals: ['merienda'],
+    items: [{ k: 'avena', p: { grams: 100 } }, { k: 'leche', p: { ml: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'almendras', p: { grams: 20 } }],
   },
   'b-citrico': {
     name: 'Batido cítrico', meals: ['merienda'],
