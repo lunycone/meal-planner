@@ -123,6 +123,7 @@ export const ING = {
   ketchup:          { name: 'Ketchup Heinz Organic Biologique (750ml)',      cat: 'otro', per100: 0.927, kc: 110, prot: 1.5, pack: '750 ml · $7.99', per: '15g → $0.14 · 17 kcal' },
   'taco-seasoning': { name: 'Taco seasoning',  cat: 'otro', flat: 0.10,   kcf: 15, pack: 'estimado',        per: '—', est: true },
   parsley:          { name: 'Perejil',          cat: 'otro', flat: 0.10,   kcf: 2,  pack: 'estimado',        per: '—', est: true },
+  'perejil-fresco': { name: 'Perejil fresco (ramo, para vitamina K1)', cat: 'fresco', per100: 3.333, kc: 36, prot: 3, fib: 3.3, pack: 'ramo ~60g · $2.00', per: '10g → $0.33 · 4 kcal — ración diaria orientativa para K1', est: true },
   'pimienta-negra': { name: 'Pimienta negra',   cat: 'otro', flat: 0.05,   kcf: 2,  pack: 'especia',         per: 'uso → $0.05', est: true },
   pimenton:         { name: 'Pimentón',         cat: 'otro', flat: 0.05,   kcf: 3,  pack: 'especia',         per: 'uso → $0.05', est: true },
   comino:           { name: 'Comino',            cat: 'otro', flat: 0.05,   kcf: 5,  pack: 'especia',         per: 'uso → $0.05', est: true },
