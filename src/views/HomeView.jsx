@@ -104,403 +104,99 @@ function ComboDetailModal({ combo, allIng, onConfirm, onClose }) {
 
 // ─── Meal selector modal ──────────────────────────────────────────────────────
 
+const MEAL_LABELS_PICKER = { desayuno: 'desayuno', comida: 'comida', merienda: 'merienda', cena: 'cena' }
+
 function MealSelectorModal({ allIng, allCombos, onSelect, onClose, mealType }) {
-  const [step, setStep] = useState(mealType === 'desayuno' ? 'recipe' : 'protein')
-  const [selectedProtein, setSelectedProtein] = useState(null)
-  const [selectedPrep, setSelectedPrep] = useState(null)
-  const [selectedCombo, setSelectedCombo] = useState(null)
-  const [selectedVariants, setSelectedVariants] = useState({})
-  const [selectedProteinUnits, setSelectedProteinUnits] = useState(null)
   const [search, setSearch] = useState('')
-  const [comboDetail, setComboDetail] = useState(null)
+  const [recipeDetail, setRecipeDetail] = useState(null)
+  const [sortBy, setSortBy] = useState('name') // 'name' | 'price'
 
-  const desayunoRecipes = useMemo(() => {
-    return Object.entries(allCombos)
-      .filter(([k]) => k.startsWith('desayuno-'))
-      .map(([k, c]) => ({ key: k, ...c }))
-  }, [allCombos])
-
-  const proteinList = useMemo(() => {
-    const list = Object.entries(PROTEIN)
-      .filter(([, p]) => {
-        const meals = p.meals ?? ['comida']
-        return meals.includes('comida') || meals.includes('cena')
-      })
-      .map(([k, p]) => ({ key: k, ...p }))
-    if (!search) return list
+  // Every dish for this meal slot — one flat, searchable, sortable list.
+  // No protein→combo step: each entry in allCombos is already a complete dish.
+  const dishes = useMemo(() => {
     const q = search.toLowerCase()
-    return list.filter(p => p.name.toLowerCase().includes(q))
-  }, [mealType, search])
+    let list = Object.entries(allCombos)
+      .filter(([, c]) => (c.meals ?? []).includes(mealType))
+      .map(([k, c]) => ({ key: k, ...c, _agg: comboAgg(c, allIng) }))
+    if (q) list = list.filter(d => d.name.toLowerCase().includes(q))
+    if (sortBy === 'price') list = [...list].sort((a, b) => a._agg.cost - b._agg.cost)
+    else list = [...list].sort((a, b) => a.name.localeCompare(b.name))
+    return list
+  }, [allCombos, allIng, search, sortBy, mealType])
 
-  const prepList = selectedProtein ? (PROTEIN[selectedProtein]?.preps ?? []) : []
-
-  const availableCombos = useMemo(() => {
-    if (!selectedProtein) return []
-    const protein = PROTEIN[selectedProtein]
-    const comboSetKey = protein?.combos
-    if (!comboSetKey) return []
-    return Object.entries(allCombos)
-      .filter(([k, c]) => {
-        if (k.startsWith('desayuno-')) return false
-        if (comboSetKey === 'shared') return true
-        return c.base === comboSetKey
-      })
-      .map(([k, c]) => ({ key: k, ...c }))
-  }, [selectedProtein, allCombos, mealType])
-
-  // Does the current selection have any adjustable quantities?
-  // (variable eggs inside the combo, or a protein with a variable ration like eggs)
-  const proteinHasVariableRation = selectedProtein
-    ? Array.isArray(PROTEIN[selectedProtein]?.variableRation)
-    : false
-  const comboHasVariants = (() => {
-    const combo = availableCombos.find(c => c.key === selectedCombo)
-    return !!(combo?.variableIngredients && Object.keys(combo.variableIngredients).length > 0)
-  })()
-  const hasAnyVariants = proteinHasVariableRation || comboHasVariants
-
-  function confirmMeal(comboKeyOverride = null) {
-    if (mealType === 'desayuno') {
-      onSelect({ type: 'desayuno', recipeKey: selectedPrep })
-    } else {
-      const meal = { type: 'plato', proteinKey: selectedProtein, prepKey: selectedPrep || null, comboKey: comboKeyOverride ?? selectedCombo }
-      if (Object.keys(selectedVariants).length > 0) {
-        meal.comboVariants = selectedVariants
-      }
-      if (proteinHasVariableRation && selectedProteinUnits != null) {
-        meal.proteinUnits = selectedProteinUnits
-      }
-      onSelect(meal)
-    }
+  function confirmMeal(recipeKey) {
+    onSelect({ type: 'desayuno', recipeKey })
     onClose()
-  }
-
-  if (mealType === 'desayuno') {
-    return (
-      <div className="modal-overlay" onClick={onClose}>
-        <div className="modal-dialog" onClick={e => e.stopPropagation()}>
-          <div className="modal-header">
-            <h3>Selecciona desayuno</h3>
-            <button className="modal-close" onClick={onClose}>✕</button>
-          </div>
-          <div className="modal-body">
-            <input
-              className="picker-search"
-              placeholder="Buscar receta…"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
-            <div className="recipe-list">
-              {desayunoRecipes
-                .filter(r => r.name.toLowerCase().includes(search.toLowerCase()))
-                .map(recipe => {
-                  const agg = comboAgg(recipe, allIng)
-                  return (
-                    <div
-                      key={recipe.key}
-                      className={`recipe-option${selectedPrep === recipe.key ? ' selected' : ''}`}
-                      onClick={() => setSelectedPrep(recipe.key)}
-                    >
-                      <div className="ro-name">{recipe.name}</div>
-                      <div className="ro-stats">
-                        {fmt(agg.cost)} · {Math.round(agg.kcal)} kcal · {Math.round(agg.prot)}g prot
-                      </div>
-                    </div>
-                  )
-                })}
-            </div>
-          </div>
-          <div className="modal-footer">
-            <button className="btn-ghost" onClick={onClose}>Cancelar</button>
-            <button
-              className="btn-primary"
-              disabled={!selectedPrep}
-              onClick={confirmMeal}
-            >
-              Confirmar
-            </button>
-          </div>
-        </div>
-      </div>
-    )
   }
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-dialog" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h3>
-            {step === 'protein' && 'Selecciona proteína'}
-            {step === 'prep' && 'Selecciona preparación'}
-            {step === 'combo' && 'Selecciona combinación'}
-            {step === 'variants' && 'Ajusta ingredientes'}
-          </h3>
+          <h3>Selecciona {MEAL_LABELS_PICKER[mealType] ?? 'plato'}</h3>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
         <div className="modal-body">
-          {step === 'protein' && (
-            <>
-              <input
-                className="picker-search"
-                placeholder="Buscar proteína…"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
-              <div className="protein-list">
-                {(() => {
-                  const renderOption = protein => (
-                    <div
-                      key={protein.key}
-                      className={`protein-option${selectedProtein === protein.key ? ' selected' : ''}`}
-                      onClick={() => setSelectedProtein(protein.key)}
-                    >
-                      <div className="po-name">{protein.name}</div>
-                      <div className="po-detail">{fmt(protein.ration?.price ?? (protein.per100 ?? 0) * (protein.ration?.grams ?? 150) / 100)}</div>
-                    </div>
-                  )
-                  const groupHeader = (label, first) => (
-                    <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--t-text-faint)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem', marginTop: first ? 0 : '1rem', paddingLeft: '0.5rem' }}>
-                      {label}
-                    </div>
-                  )
-                  const comidas = proteinList.filter(p => (p.meals ?? ['comida']).includes('comida'))
-                  const cenas   = proteinList.filter(p => (p.meals ?? ['comida']).includes('cena'))
-                  return (
-                    <>
-                      {comidas.length > 0 && (
-                        <div>
-                          {groupHeader('🍽️ Comidas', true)}
-                          {comidas.map(renderOption)}
-                        </div>
-                      )}
-                      {cenas.length > 0 && (
-                        <div>
-                          {groupHeader('🌙 Cenas', comidas.length === 0)}
-                          {cenas.map(renderOption)}
-                        </div>
-                      )}
-                    </>
-                  )
-                })()}
-              </div>
-            </>
-          )}
-
-          {step === 'prep' && (
-            <>
-              <div className="prep-list">
-                {prepList.length === 0 ? (
-                  <div className="combo-empty">Sin preparaciones especiales</div>
-                ) : (
-                  prepList.map(prepKey => {
-                    const prep = PREP[prepKey]
-                    return (
-                      <div
-                        key={prepKey}
-                        className={`prep-option${selectedPrep === prepKey ? ' selected' : ''}`}
-                        onClick={() => setSelectedPrep(prepKey)}
-                      >
-                        <div className="po-name">{prep?.name ?? prepKey}</div>
-                      </div>
-                    )
-                  })
-                )}
-              </div>
-            </>
-          )}
-
-          {step === 'combo' && (
-            <>
-              <div className="combo-list">
-                {/* Group combos by base category */}
-                {(() => {
-                  const baseOrder = ['patata', 'arroz', 'pasta', 'legumbre', 'otros']
-                  const grouped = {}
-                  availableCombos.forEach(c => {
-                    const base = c.base || 'otros'
-                    if (!grouped[base]) grouped[base] = []
-                    grouped[base].push(c)
-                  })
-
-                  const categoryLabels = {
-                    patata: '🥔 Patatas',
-                    arroz: '🍚 Arroz',
-                    pasta: '🍝 Pasta',
-                    legumbre: '🫘 Legumbres',
-                    otros: '🥗 Otros',
-                  }
-
-                  return baseOrder.map(base => (
-                    (grouped[base]?.length > 0) && (
-                      <div key={base}>
-                        <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--t-text-faint)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem', marginTop: base === 'patata' ? 0 : '1rem', paddingLeft: '0.5rem' }}>
-                          {categoryLabels[base] || base}
-                        </div>
-                        {grouped[base].map(combo => (
-                          <div
-                            key={combo.key}
-                            className={`combo-option${selectedCombo === combo.key ? ' selected' : ''}`}
-                            onClick={() => setComboDetail(combo)}
-                          >
-                            <div className="co-name">{combo.name}</div>
-                          </div>
-                        ))}
-                      </div>
-                    )
-                  ))
-                })()}
-              </div>
-            </>
-          )}
-
-          {step === 'variants' && (() => {
-            const combo = availableCombos.find(c => c.key === selectedCombo)
-            const varIng = combo?.variableIngredients
-            const proteinObj = PROTEIN[selectedProtein]
-            const proteinUnitOptions = Array.isArray(proteinObj?.variableRation) ? proteinObj.variableRation : null
-            const defaultUnits = proteinObj?.ration?.units
-            const ingredientLabels = {
-              huevo: 'Cantidad de huevos',
-            }
-            return (
-              <>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                  {/* Protein ration (e.g. eggs as the main protein) */}
-                  {proteinUnitOptions && (
-                    <div>
-                      <div style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.75rem', color: 'var(--t-text)' }}>
-                        Cantidad de {proteinObj.name.toLowerCase()}
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(60px, 1fr))', gap: '0.5rem' }}>
-                        {proteinUnitOptions.map(opt => {
-                          const active = (selectedProteinUnits ?? defaultUnits) === opt
-                          return (
-                            <button
-                              key={opt}
-                              onClick={() => setSelectedProteinUnits(opt)}
-                              style={{
-                                padding: '0.625rem',
-                                border: active ? '2px solid var(--t-accent)' : '1px solid var(--t-border)',
-                                borderRadius: '0.375rem',
-                                backgroundColor: active ? 'var(--t-accent-bg)' : 'transparent',
-                                color: 'var(--t-text)',
-                                cursor: 'pointer',
-                                fontWeight: active ? 600 : 400,
-                                fontSize: '0.875rem',
-                              }}
-                            >
-                              {opt}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Variable ingredients inside the combo (e.g. eggs in a tortilla) */}
-                  {varIng && Object.entries(varIng).map(([ingKey, options]) => (
-                    <div key={ingKey}>
-                      <div style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.75rem', color: 'var(--t-text)' }}>
-                        {ingredientLabels[ingKey] || ingKey} ({combo?.name})
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(60px, 1fr))', gap: '0.5rem' }}>
-                        {options.map(opt => (
-                          <button
-                            key={opt}
-                            onClick={() => setSelectedVariants(prev => ({ ...prev, [ingKey]: opt }))}
-                            style={{
-                              padding: '0.625rem',
-                              border: selectedVariants[ingKey] === opt ? '2px solid var(--t-accent)' : '1px solid var(--t-border)',
-                              borderRadius: '0.375rem',
-                              backgroundColor: selectedVariants[ingKey] === opt ? 'var(--t-accent-bg)' : 'transparent',
-                              color: 'var(--t-text)',
-                              cursor: 'pointer',
-                              fontWeight: selectedVariants[ingKey] === opt ? 600 : 400,
-                              fontSize: '0.875rem',
-                            }}
-                          >
-                            {opt}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+          <input
+            className="picker-search"
+            placeholder="Buscar plato…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          <div style={{ display: 'flex', gap: 6, margin: '0.5rem 0 0.6rem' }}>
+            {[['name', 'A-Z'], ['price', 'Precio ↑']].map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setSortBy(key)}
+                style={{
+                  fontSize: '0.68rem', padding: '3px 10px', borderRadius: '99px',
+                  border: sortBy === key ? '1px solid var(--t-accent)' : '1px solid var(--t-border)',
+                  background: sortBy === key ? 'rgba(154,123,67,0.12)' : 'var(--t-surface)',
+                  color: sortBy === key ? 'var(--t-text)' : 'var(--t-text-soft)',
+                  fontWeight: sortBy === key ? 600 : 400, cursor: 'pointer',
+                }}
+              >{label}</button>
+            ))}
+          </div>
+          <div className="recipe-list">
+            {dishes.length === 0 ? (
+              <div className="combo-empty">No hay platos para {MEAL_LABELS_PICKER[mealType]}</div>
+            ) : (
+              dishes.map(recipe => (
+                <div
+                  key={recipe.key}
+                  className="recipe-option"
+                  onClick={() => setRecipeDetail(recipe)}
+                >
+                  <div className="ro-name">
+                    {recipe.name}
+                    {recipe.jessica && <span className="badge badge-jessica" style={{ marginLeft: 6 }}>María</span>}
+                  </div>
+                  <div className="ro-stats">
+                    {fmt(recipe._agg.cost)} · {Math.round(recipe._agg.kcal)} kcal · {Math.round(recipe._agg.prot)}g prot
+                  </div>
                 </div>
-              </>
-            )
-          })()}
+              ))
+            )}
+          </div>
         </div>
         <div className="modal-footer">
-          <button
-            className="btn-ghost"
-            onClick={() => {
-              if (step === 'protein') onClose()
-              else if (step === 'prep') setStep('protein')
-              else if (step === 'combo') setStep('prep')
-              else if (step === 'variants') setStep('combo')
-            }}
-          >
-            ← Atrás
-          </button>
-          <button
-            className="btn-primary"
-            disabled={
-              (step === 'protein' && !selectedProtein) ||
-              (step === 'prep' && !selectedPrep && prepList.length > 0) ||
-              (step === 'combo' && !selectedCombo) ||
-              (step === 'variants' && (() => {
-                const combo = availableCombos.find(c => c.key === selectedCombo)
-                const varIng = combo?.variableIngredients
-                if (!varIng) return false
-                return Object.keys(varIng).some(key => selectedVariants[key] == null)
-              })())
-            }
-            onClick={() => {
-              if (step === 'protein') {
-                const prepLen = PROTEIN[selectedProtein]?.preps?.length ?? 0
-                setStep(prepLen > 0 ? 'prep' : 'combo')
-              } else if (step === 'prep') {
-                setStep('combo')
-              } else if (step === 'combo') {
-                if (hasAnyVariants) {
-                  setStep('variants')
-                } else {
-                  confirmMeal()
-                }
-              } else if (step === 'variants') {
-                confirmMeal()
-              }
-            }}
-          >
-            {step === 'variants'
-              ? 'Confirmar'
-              : (step === 'combo' && !hasAnyVariants ? 'Confirmar' : 'Siguiente →')}
-          </button>
+          <button className="btn-ghost" onClick={onClose}>Cancelar</button>
         </div>
       </div>
-      {comboDetail && (
+      {recipeDetail && (
         <ComboDetailModal
-          combo={comboDetail}
+          combo={recipeDetail}
           allIng={allIng}
-          onConfirm={(comboKey) => {
-            setSelectedCombo(comboKey)
-            setComboDetail(null)
-            const combo = availableCombos.find(c => c.key === comboKey)
-            const comboVariants = !!(combo?.variableIngredients && Object.keys(combo.variableIngredients).length > 0)
-            if (comboVariants || proteinHasVariableRation) {
-              setStep('variants')
-            } else {
-              confirmMeal(comboKey)
-            }
-          }}
-          onClose={() => setComboDetail(null)}
+          onConfirm={(key) => confirmMeal(key)}
+          onClose={() => setRecipeDetail(null)}
         />
       )}
     </div>
   )
 }
 
-// ─── Cycle phase data ────────────────────────────────────────────────────────
 
 const CYCLE_PHASES = [
   { id: 'menstrual',  name: 'Menstrual',  days: 'Días 1–5',   color: '#b85a5a', bg: 'rgba(184,90,90,0.07)',  border: 'rgba(184,90,90,0.18)' },
@@ -558,7 +254,7 @@ function getPhaseScore(proteinKey) {
 
 function MealDetailModal({ mealType, meal, allIng, allCombos, onEdit, onClear, onClose }) {
   const [tab, setTab] = useState('nutricion')
-  const mealLabels = { desayuno: 'Desayuno', comida: 'Comida', cena: 'Cena' }
+  const mealLabels = { desayuno: 'Desayuno', comida: 'Comida', merienda: 'Merienda', cena: 'Cena' }
 
   if (!meal) return null
 
@@ -767,7 +463,7 @@ function MealDetailModal({ mealType, meal, allIng, allCombos, onEdit, onClear, o
 // ─── Meal block ──────────────────────────────────────────────────────────────
 
 function MealBlock({ time, mealType, meal, allIng, allCombos, onEdit, onClear, onDetail, gramsOverride }) {
-  const mealLabels = { desayuno: 'Desayuno', comida: 'Comida', cena: 'Cena' }
+  const mealLabels = { desayuno: 'Desayuno', comida: 'Comida', merienda: 'Merienda', cena: 'Cena' }
 
   if (!meal) {
     return (
@@ -905,7 +601,7 @@ function DailySummary({ todayMeals, allIng, allCombos, comidaOverride }) {
           <div className="hds-unit">Proteína</div>
         </div>
         <div className={`hds-cell${plannedCount === 3 ? ' hds-cell--complete' : ''}`}>
-          <div className="hds-value">{plannedCount}/3</div>
+          <div className="hds-value">{plannedCount}/4</div>
           <div className="hds-unit">Comidas</div>
         </div>
       </div>
@@ -937,6 +633,7 @@ export default function HomeView() {
   const todayMeals = useMemo(() => ({
     desayuno: currentWeek[slotKey('desayuno')] ?? null,
     comida: currentWeek[slotKey('comida')] ?? null,
+    merienda: currentWeek[slotKey('merienda')] ?? null,
     cena: currentWeek[slotKey('cena')] ?? null,
   }), [currentWeek, dayKey])
 
@@ -1006,6 +703,17 @@ export default function HomeView() {
           onEdit={() => setModalOpen('select-comida')}
           onDetail={() => setModalOpen('detail-comida')}
           onClear={() => handleMealClear('comida')}
+        />
+
+        <MealBlock
+          time="16:30"
+          mealType="merienda"
+          meal={todayMeals.merienda}
+          allIng={allIng}
+          allCombos={allCombos}
+          onEdit={() => setModalOpen('select-merienda')}
+          onDetail={() => setModalOpen('detail-merienda')}
+          onClear={() => handleMealClear('merienda')}
         />
 
         <MealBlock

@@ -62,6 +62,7 @@ export const ING = {
   avellana:          { name: 'Avellana',          cat: 'fresco',   per100: 3.40,  kc: 628, prot: 15,  fat: 61,  fib: 9.7, pack: '1kg · $34.00',          per: '20g → $0.68 · 126 kcal' },
   macadamia:         { name: 'Macadamia',         cat: 'fresco',   per100: 2.40,  kc: 718, prot: 7.9, fat: 76,  fib: 8.6, pack: '1kg · $24.00',          per: '20g → $0.48 · 144 kcal' },
   'pumpkin-seeds':   { name: 'Pumpkin Seeds (Ambrosia)', cat: 'fresco', per100: 1.143, kc: 559, prot: 30.2, fat: 49.1, fib: 6.0, pack: '1 lb · $5.19', per: '30g → $0.34 · 168 kcal' },
+  chia:              { name: 'Semillas de chía',    cat: 'fresco', per100: 1.50,  kc: 486, prot: 17,  fat: 31, fib: 34, pack: 'estimado',              per: '12g → $0.18 · 58 kcal', est: true },
   'sunflower-seeds': { name: 'Sunflower Seeds (Ambrosia)', cat: 'fresco', per100: 1.076, kc: 584, prot: 20.8, fat: 51.5, fib: 8.6, pack: '454g · $4.89', per: '30g → $0.32 · 175 kcal' },
   almendras:         { name: 'Almendras (Whole Natural)', cat: 'fresco', per100: 1.781, kc: 579, prot: 21.2, fat: 49.9, fib: 12.5, pack: '1 lb · $8.09', per: '20g → $0.36 · 116 kcal' },
   'coco-rallado':    { name: 'Coco rallado (Ambrosia Organic)', cat: 'fresco', per100: 2.154, kc: 660, prot: 6.9, fat: 65, fib: 15.1, pack: '227g · CA$4.89', per: '20g → $0.43 · 132 kcal' },
@@ -81,6 +82,7 @@ export const ING = {
 
   // OTROS
   aceite:           { name: 'Aceite de oliva',  cat: 'otro', flat: 0,    kcf: 0,  pack: 'ya tienes',        per: '~120 kcal/cda · NO contado' },
+  aove:             { name: 'AOVE',              cat: 'otro', perML: 0,    kcml: 9, pack: 'ya comprado — $0, kcal sí cuenta', per: '20ml → $0 · 180 kcal' },
   'aceite-coco':    { name: 'Aceite coco refinado (Nutiva)', cat: 'otro', per100: 2.02, kc: 892, prot: 0, fat: 99.5, pack: '1.6L · CA$29.69', per: '15g → $0.30' },
   suet:             { name: 'Beef Suet',        cat: 'otro', per100: 1.768, kc: 895, prot: 0, fat: 99.5, pack: '2.2lb · $17.64',  per: '15g → $0.27' },
   canela:           { name: 'Canela',           cat: 'otro', flat: 0.05, kcf: 5,  pack: 'especia',          per: 'uso → $0.05', est: true },

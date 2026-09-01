@@ -3,7 +3,6 @@ import useStore            from './store/useStore'
 import HomeView            from './views/HomeView'
 import MealPlannerView     from './views/MealPlannerView'
 import PlatosTab           from './components/tabs/PlatosTab'
-import DesayunosTab        from './components/tabs/DesayunosTab'
 import IngredientesTab     from './components/tabs/IngredientesTab'
 import CombinacionesTab    from './components/tabs/CombinacionesTab'
 import WeeklyMealPlannerTab from './components/tabs/WeeklyMealPlannerTab'
@@ -16,7 +15,6 @@ import { MEALS }           from './config/meals'
 
 const CONFIG_TABS = [
   { id: 'platos',        label: 'Platos',         Component: PlatosTab },
-  { id: 'desayunos',     label: 'Desayunos',      Component: DesayunosTab },
   { id: 'combinaciones', label: 'Combinaciones',  Component: CombinacionesTab },
   { id: 'ingredientes',  label: 'Ingredientes',   Component: IngredientesTab },
   { id: 'planificador',  label: 'Planificador',   Component: WeeklyMealPlannerTab },

@@ -208,8 +208,8 @@ const DRY_TO_COOKED = {
 // to close it. Returns null if the lunch has no scalable base.
 export function personLunchScale(day, person, allIng, allCombos, opts = {}) {
   const lunch = day?.comida
-  if (!lunch || lunch.type !== 'plato') return null
-  const combo = allCombos[lunch.comboKey]
+  if (!lunch || lunch.type !== 'desayuno') return null
+  const combo = allCombos[lunch.recipeKey]
   const key = comboScalableKey(combo, allIng)
   if (!key) return null
   const ing = allIng[key]

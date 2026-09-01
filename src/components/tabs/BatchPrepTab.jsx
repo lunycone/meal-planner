@@ -229,7 +229,7 @@ function computeBatchMeal(meal, mealType, batchDays, profiles, allIng, allCombos
     if (dayProfiles.length === 0) continue
 
     const day = Object.fromEntries(
-      ['desayuno', 'comida', 'cena'].map(m => [m, weekData[`${dayKey}-${m}`] ?? null])
+      MEALS.map(m => [m, weekData[`${dayKey}-${m}`] ?? null])
     )
 
     for (const person of dayProfiles) {
@@ -322,7 +322,7 @@ function computeBatchMeal(meal, mealType, batchDays, profiles, allIng, allCombos
 // ─── Daily kcal via personLunchScale (accurate, includes AOVE tip) ────────────
 function computeDailyKcalPerPerson(repMeals, batchProfiles, allIng, allCombos) {
   if (!batchProfiles || batchProfiles.length === 0) return []
-  const day = { desayuno: repMeals.desayuno, comida: repMeals.comida, cena: repMeals.cena }
+  const day = { desayuno: repMeals.desayuno, comida: repMeals.comida, merienda: repMeals.merienda, cena: repMeals.cena }
   return batchProfiles.map(person => {
     const scale = personLunchScale(day, person, allIng, allCombos)
     if (scale) {
@@ -474,8 +474,8 @@ function buildSchedule(mealDataList) {
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
-const MEAL_LABELS = { desayuno: 'Desayuno', comida: 'Comida', cena: 'Cena' }
-const MEAL_TIMES  = { desayuno: '9:00 am', comida: '12–1 pm', cena: '7:30 pm' }
+const MEAL_LABELS = { desayuno: 'Desayuno', comida: 'Comida', merienda: 'Merienda', cena: 'Cena' }
+const MEAL_TIMES  = { desayuno: '9:00 am', comida: '12–1 pm', merienda: '4:30 pm', cena: '7:30 pm' }
 
 function MealSection({ mealType, batchData, status }) {
   const border  = { paddingBottom: '1rem', marginBottom: '1rem', borderBottom: '1px solid var(--t-border)' }
@@ -938,7 +938,7 @@ function BatchCard({ title, cookLabel, coverDays, mealSections, schedule, kcalSu
 }
 
 // ─── Main component ────────────────────────────────────────────────────────────
-const MEALS    = ['desayuno', 'comida', 'cena']
+const MEALS    = ['desayuno', 'comida', 'merienda', 'cena']
 // ── Ventanas de batch (partición limpia de la semana) ──────────────────────────
 // Batch Lunes:  cocinas el lun, comes lun→mar→mié→jue (4 días).
 // Batch Jueves: cocinas el jue, comes vie→sáb→dom    (3 días, + lun siguiente).
@@ -1003,12 +1003,12 @@ export default function BatchPrepTab() {
   ), [batchDetect, thuBatchDays, profiles, allIng, allCombos, weekPlan])
 
   const monKcalSummary = useMemo(() => {
-    const rep = { desayuno: batchDetect.mon.desayuno.meal, comida: batchDetect.mon.comida.meal, cena: batchDetect.mon.cena.meal }
+    const rep = { desayuno: batchDetect.mon.desayuno.meal, comida: batchDetect.mon.comida.meal, merienda: batchDetect.mon.merienda.meal, cena: batchDetect.mon.cena.meal }
     return computeDailyKcalPerPerson(rep, profilesActiveOn(profiles, monBatchDays[0].date), allIng, allCombos)
   }, [batchDetect.mon, monBatchDays, profiles, allIng, allCombos])
 
   const thuKcalSummary = useMemo(() => {
-    const rep = { desayuno: batchDetect.thu.desayuno.meal, comida: batchDetect.thu.comida.meal, cena: batchDetect.thu.cena.meal }
+    const rep = { desayuno: batchDetect.thu.desayuno.meal, comida: batchDetect.thu.comida.meal, merienda: batchDetect.thu.merienda.meal, cena: batchDetect.thu.cena.meal }
     return computeDailyKcalPerPerson(rep, profilesActiveOn(profiles, thuBatchDays[0].date), allIng, allCombos)
   }, [batchDetect.thu, thuBatchDays, profiles, allIng, allCombos])
 
