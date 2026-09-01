@@ -10,7 +10,7 @@ export const ING = {
   pasta:           { name: 'Pasta',               cat: 'base',     per100: 0.66,  kc: 360, prot: 13,  fat: 1.5, fib: 2.5, pack: '1 lb · $3.00',           per: '100g seco → $0.66' },
   maiz:            { name: 'Maíz congelado',      cat: 'base',     per100: 1.11,  kc: 85,  prot: 3.3, fat: 1.2, fib: 2.4, pack: '450 g · $4.99',          per: '60g → $0.67' },
   alcachofa:       { name: 'Alcachofa',           cat: 'base',     perUnit: 1.99, kcu: 67, fibu: 5.4, pack: 'ud · $1.99',             per: 'ud → $1.99 · 67 kcal' },
-  'pan-masa-madre':{ name: 'Pan masa madre',      cat: 'base',     per100: 1.083, kc: 265, prot: 9,  fib: 2.4, pack: '600 g · $6.50',           per: '60g → $0.65 · 159 kcal · 5.4g prot', est: true },
+  'pan-masa-madre':{ name: 'Pan masa madre',      cat: 'base',     per100: 1.00,  kc: 265, prot: 9,  fib: 2.4, pack: '550 g · $5.50',           per: '60g → $0.60 · 159 kcal · 5.4g prot', est: true },
   avena:           { name: 'Avena (oats)',         cat: 'base',     per100: 0.429, kc: 389, prot: 17,  fat: 7,   fib: 10.6, pack: '1 kg · $4.29',           per: '50g → $0.21 · 195 kcal' },
   'cebada-copos':  { name: 'Cebada en copos (Ambrosia Barley Flakes)', cat: 'base', per100: 0.416, kc: 354, prot: 10, fat: 2.2, fib: 15.6, pack: '454g · $1.89', per: '100g → $0.42 · 354 kcal' },
   'kamut-copos':   { name: 'Kamut en copos (Ambrosia Organic Kamut Flakes)', cat: 'base', per100: 0.659, kc: 337, prot: 15, fat: 2.5, fib: 7.2, pack: '454g · $2.99', per: '100g → $0.66 · 337 kcal' },
