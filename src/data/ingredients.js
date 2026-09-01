@@ -126,6 +126,7 @@ export const ING = {
   comino:           { name: 'Comino',            cat: 'otro', flat: 0.05,   kcf: 5,  pack: 'especia',         per: 'uso → $0.05', est: true },
   cacao:            { name: 'Cacao puro en polvo', cat: 'otro', per100: 4.00, kc: 350, prot: 20, fat: 12, fib: 30, pack: '225g · $9.00', per: '15g → $0.60 · 53 kcal' },
   ajo:              { name: 'Ajo',              cat: 'otro', flat: 0.10,   kcf: 5,  pack: 'estimado',        per: 'uso → $0.10', est: true },
+  'squash-butternut': { name: 'Squash butternut', cat: 'fresco', per100: 0.441, kc: 45, prot: 1.0, fat: 0.1, fib: 2.0, pack: '2 lb (907g) · $4.00', per: '150g → $0.66 · 68 kcal' },
   zucchini:         { name: 'Zucchini / Calabacín', cat: 'fresco', per100: 0.661, kc: 17, prot: 1.2, fat: 0.3, fib: 1.0, pack: '~227g · $1.50 (0.5 lbs)', per: '150g → $0.99 · 26 kcal' },
   rabanos:          { name: 'Rábanos',          cat: 'fresco', per100: 0.664, kc: 16, prot: 0.7, fat: 0.1, fib: 1.6, pack: '450g · $2.99', per: '60g → $0.40 · 10 kcal' },
   'vino-blanco':    { name: 'Vino blanco (cocina)', cat: 'otro', perML: 0.012, kcml: 0.83, pack: '1 L · $12.00', per: '100ml → $1.20 · 83 kcal' },
