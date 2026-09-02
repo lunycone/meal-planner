@@ -115,7 +115,6 @@ export default function PlatosTab() {
   const [searchTerm, setSearchTerm]   = useState('')
   const [sortBy, setSortBy]           = useState('name')
   const [mealFilter, setMealFilter]   = useState('all')
-  const [pcosFilter, setPcosFilter]   = useState('all')
 
   const toggle = (key) => setSelectedKey(prev => prev === key ? null : key)
 
@@ -127,26 +126,31 @@ export default function PlatosTab() {
       entries = entries.filter(r => r.combo.name.toLowerCase().includes(q))
     }
 
-    const sorter = (a, b) => {
+    const meals = mealFilter === 'all' ? MEAL_ORDER : [mealFilter]
+    const PCOS_RANK = { green: 0, yellow: 1, red: 2 }
+
+    const sorter = (meal) => (a, b) => {
       const aggA = comboAgg(a.combo, allIng)
       const aggB = comboAgg(b.combo, allIng)
+      if (sortBy === 'pcos') {
+        const rA = PCOS_RANK[pcosCarbLevel(a.combo, allIng, meal)] ?? 3
+        const rB = PCOS_RANK[pcosCarbLevel(b.combo, allIng, meal)] ?? 3
+        if (rA !== rB) return rA - rB
+        return a.combo.name.localeCompare(b.combo.name)
+      }
       if (sortBy === 'price') return aggA.cost - aggB.cost
       if (sortBy === 'kcal')  return aggA.kcal - aggB.kcal
       if (sortBy === 'prot')  return aggB.prot - aggA.prot
       return a.combo.name.localeCompare(b.combo.name)
     }
 
-    const meals = mealFilter === 'all' ? MEAL_ORDER : [mealFilter]
     return meals
       .map(meal => ({
         meal,
-        items: entries
-          .filter(r => (r.combo.meals ?? []).includes(meal))
-          .filter(r => pcosFilter === 'all' || pcosCarbLevel(r.combo, allIng, meal) === pcosFilter)
-          .sort(sorter),
+        items: entries.filter(r => (r.combo.meals ?? []).includes(meal)).sort(sorter(meal)),
       }))
       .filter(g => g.items.length > 0)
-  }, [allCombos, allIng, searchTerm, sortBy, mealFilter, pcosFilter])
+  }, [allCombos, allIng, searchTerm, sortBy, mealFilter])
 
   const total = grouped.reduce((s, g) => s + g.items.length, 0)
 
@@ -178,6 +182,7 @@ export default function PlatosTab() {
           <option value="price">Precio (menor a mayor)</option>
           <option value="kcal">Kcal (menor a mayor)</option>
           <option value="prot">Proteína (mayor a menor)</option>
+          <option value="pcos">PCOS (mejor a peor)</option>
         </select>
       </div>
 
@@ -195,33 +200,6 @@ export default function PlatosTab() {
             }}
           >
             {icon} {label}
-          </button>
-        ))}
-      </div>
-
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-        <span style={{ fontSize: '0.78rem', color: 'var(--muted)', marginRight: '0.25rem' }}>PCOS (solo desayuno/cena):</span>
-        {[
-          ['all', 'Todo', null],
-          ['green', 'Verde', 'green'],
-          ['yellow', 'Amarillo', 'yellow'],
-          ['red', 'Rojo', 'red'],
-        ].map(([key, label, level]) => (
-          <button
-            key={key}
-            onClick={() => setPcosFilter(key)}
-            style={{
-              padding: '0.4rem 0.85rem',
-              border: `2px solid ${pcosFilter === key ? (level ? LEVEL_COLOR[level] : 'var(--text)') : 'var(--border)'}`,
-              background: pcosFilter === key ? (level ? LEVEL_COLOR[level] + '22' : 'var(--card)') : 'transparent',
-              color: pcosFilter === key && level ? LEVEL_COLOR[level] : 'var(--text)',
-              borderRadius: '9999px', cursor: 'pointer',
-              fontSize: '0.8rem', fontWeight: pcosFilter === key ? 600 : 400, transition: 'all 0.2s',
-              display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
-            }}
-          >
-            {level && <span style={{ width: 8, height: 8, borderRadius: '50%', background: LEVEL_COLOR[level], display: 'inline-block' }} />}
-            {label}
           </button>
         ))}
       </div>
