@@ -36,7 +36,7 @@ const useStore = create(
       // ── PROFILES ──────────────────────────────────────────────────────────
       profiles: [
         { id: 'julio',   name: 'Julio', initial: 'J', kcalTarget: 3100, proteinTarget: 100 },
-        { id: 'maria',   name: 'María', initial: 'M', kcalTarget: 2300, proteinTarget: 100 },
+        { id: 'maria',   name: 'María', initial: 'M', kcalTarget: 2600, proteinTarget: 100 },
         { id: 'carla',   name: 'Carla', initial: 'C', kcalTarget: 2000, proteinTarget: 90, validoDesde: '2026-06-26', validoHasta: '2026-07-08T17:00:00' },
       ],
       activeProfileId: 'all',
