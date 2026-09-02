@@ -13,7 +13,7 @@ const PETAL_ANGLES = [0, 72, 144, 216, 288]
 
 let uid = 0
 
-export default function PcosBadge({ title = 'PCOS-friendly (bajo en carbo)', size = 16 }) {
+export default function PcosBadge({ title = 'PCOS-friendly (bajo en carbo)', size = 20 }) {
   const id = uid++
   const petalGrad = `pcos-petal-${id}`
   const coreGrad  = `pcos-core-${id}`
@@ -25,13 +25,14 @@ export default function PcosBadge({ title = 'PCOS-friendly (bajo en carbo)', siz
     >
       <svg width={size} height={size} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
         <defs>
+          {/* "Orquídea audaz" — magenta a vino oscuro, más saturado que el rosa pastel original */}
           <linearGradient id={petalGrad} x1="8" y1="4" x2="16" y2="16" gradientUnits="userSpaceOnUse">
-            <stop offset="0"   stopColor="#ff86b8" />
-            <stop offset="1"   stopColor="#c72868" />
+            <stop offset="0"   stopColor="#ff2e88" />
+            <stop offset="1"   stopColor="#6d0e38" />
           </linearGradient>
           <radialGradient id={coreGrad} cx="0.35" cy="0.3" r="0.85">
-            <stop offset="0" stopColor="#fff6da" />
-            <stop offset="1" stopColor="#e8b23d" />
+            <stop offset="0" stopColor="#ffe8b8" />
+            <stop offset="1" stopColor="#c9861a" />
           </radialGradient>
         </defs>
 
