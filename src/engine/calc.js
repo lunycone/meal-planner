@@ -295,6 +295,30 @@ export function isPcosFriendly(combo, allIng, mealType) {
   return dishMacroPct(combo, allIng).carbPct <= max
 }
 
+// 3-tier version of the same idea: instead of hiding the badge on anything
+// above PCOS_CARB_PCT_MAX, always show it on desayuno/cena and color it by
+// how far the dish sits from that ceiling. Bands are each meal's own real
+// gap in the catalog's distribution (1 sep 2026 sweep), same method as the
+// green threshold above, not a generic split of the same number.
+// Desayuno: green ≤30 (eggs/cheese cluster), yellow 30-45 (burritos/sardinas
+// cluster), red >45 (pan/socca/oats/torta-garbanzo). Cena: green ≤45 (egg+
+// cheese/burrito cluster), yellow 45-60 (bacalao-puré/turkey-patata cluster),
+// red >60 (legumbre+bacalao/rancho cluster).
+const PCOS_CARB_BANDS = {
+  desayuno: { yellow: 45 }, // ≤30 green (PCOS_CARB_PCT_MAX), 30-45 yellow, >45 red
+  cena:     { yellow: 60 }, // ≤45 green (PCOS_CARB_PCT_MAX), 45-60 yellow, >60 red
+}
+
+export function pcosCarbLevel(combo, allIng, mealType) {
+  const green = PCOS_CARB_PCT_MAX[mealType]
+  const bands = PCOS_CARB_BANDS[mealType]
+  if (green == null || !bands) return null // comida/merienda: not tracked
+  const pct = dishMacroPct(combo, allIng).carbPct
+  if (pct <= green) return 'green'
+  if (pct <= bands.yellow) return 'yellow'
+  return 'red'
+}
+
 // Two tiers, per session decision: comida/cena (the main event, higher bar)
 // vs desayuno/merienda (secondary, lower bar — their own targets are smaller).
 const MAIN_MEALS = new Set(['comida', 'cena'])

@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import useStore, { selectAllIng, selectAllCombos } from '../store/useStore'
 import { PROTEIN } from '../data/proteins'
 import { PREP } from '../data/combos'
-import { comboAgg, fmt, proteinCost, proteinKcal, proteinProt, ingKcal, ingFat, ingFib, fmtPortion, personLunchScale, isPcosFriendly, proteinLevel, kcalLevel, LEVEL_COLOR } from '../engine/calc'
+import { comboAgg, fmt, proteinCost, proteinKcal, proteinProt, ingKcal, ingFat, ingFib, fmtPortion, personLunchScale, pcosCarbLevel, proteinLevel, kcalLevel, LEVEL_COLOR } from '../engine/calc'
 import PcosBadge from '../components/PcosBadge'
 import DailyProgress from '../components/DailyProgress'
 import PersonalizedDay from '../components/PersonalizedDay'
@@ -176,7 +176,7 @@ function MealSelectorModal({ allIng, allCombos, onSelect, onClose, mealType }) {
                   <div className="ro-name">
                     {recipe.name}
                     {recipe.jessica && <span className="badge badge-jessica" style={{ marginLeft: 6 }}>María</span>}
-                    {isPcosFriendly(recipe, allIng, mealType) && <PcosBadge />}
+                    {pcosCarbLevel(recipe, allIng, mealType) && <PcosBadge level={pcosCarbLevel(recipe, allIng, mealType)} />}
                   </div>
                   <div className="ro-stats">
                     {fmt(recipe._agg.cost)} · <span style={{ color: LEVEL_COLOR[kLevel], fontWeight: 600 }}>{Math.round(recipe._agg.kcal)} kcal</span> · <span style={{ color: LEVEL_COLOR[pLevel], fontWeight: 600 }}>{Math.round(recipe._agg.prot)}g prot</span>

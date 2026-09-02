@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import useStore, { selectAllIng, selectAllCombos } from '../../store/useStore'
-import { ingCost, ingKcal, ingProt, ingFat, comboAgg, fmt, isPcosFriendly, proteinLevel, kcalLevel, LEVEL_COLOR } from '../../engine/calc'
+import { ingCost, ingKcal, ingProt, ingFat, comboAgg, fmt, pcosCarbLevel, proteinLevel, kcalLevel, LEVEL_COLOR } from '../../engine/calc'
 import PcosBadge from '../PcosBadge'
 
 function portionLabel(p) {
@@ -84,12 +84,13 @@ function RecipeCard({ combo, mealType, isSelected, onClick }) {
   const agg = comboAgg(combo, allIng)
   const pLevel = proteinLevel(agg.prot, mealType)
   const kLevel = kcalLevel(agg.kcal, mealType)
+  const pcosLevel = pcosCarbLevel(combo, allIng, mealType)
   return (
     <div className={`dz-card${isSelected ? ' is-open' : ''}`} onClick={onClick}>
       <div className="dz-card-name">
         {combo.name}
         {combo.jessica && <span className="badge badge-jessica" style={{ marginLeft: 6 }}>María</span>}
-        {isPcosFriendly(combo, allIng, mealType) && <PcosBadge />}
+        {pcosLevel && <PcosBadge level={pcosLevel} />}
       </div>
       <div className="dz-card-stats">
         <span className="dz-stat-cost">{fmt(agg.cost)}</span>
