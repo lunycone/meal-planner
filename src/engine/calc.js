@@ -266,56 +266,81 @@ export function fmtPortion(p) {
 }
 
 // ─── Macro % (carb by difference, Atwater 4/4/9) + PCOS badge + traffic lights ──
-// carbPct thresholds are meal-specific, each set from this session's own
-// analysis of that meal's own catalog — not one borrowed number applied
-// everywhere. Desayuno (1 sep 2026): eggs/cheese/yogur+nuts land ~21-23%
-// carb, burritos ~35-42%, harina-garbanzo family 65-78% — 30% is the real
-// gap between "flat" and "carb-heavy" there. Cena has a different backbone
-// (bacalao/legumbre/patata instead of huevo/torta-garbanzo) so its own gap
-// sits higher: egg+cheese/burrito-style cenas cluster ≤42%, everything else
-// jumps to ≥48% — 45% is the real gap for cena specifically. A fixed 30%
-// would flag ~1 of 45 cenas: technically consistent, functionally useless
-// as a signal.
-const PCOS_CARB_PCT_MAX = { desayuno: 30, cena: 45 }
-
 export function dishMacroPct(combo, allIng) {
   const agg = comboAgg(combo, allIng)
   const carbKcal = Math.max(0, agg.kcal - agg.prot * 4 - agg.fat * 9)
   return { ...agg, carbG: carbKcal / 4, carbPct: agg.kcal > 0 ? (carbKcal / agg.kcal) * 100 : 0 }
 }
 
-// mealType must be passed explicitly, not inferred from combo.meals — several
-// dishes (the burrito/sardinas family) are tagged for BOTH desayuno and cena,
-// and desayuno/cena use different thresholds. Inferring from combo.meals picks
-// whichever meal happens to be listed first regardless of which section the
-// dish is actually being shown in, silently applying the wrong cutoff.
-export function isPcosFriendly(combo, allIng, mealType) {
-  const max = PCOS_CARB_PCT_MAX[mealType]
-  if (max == null) return false // per María: comida is fine, only desayuno/cena tracked
-  return dishMacroPct(combo, allIng).carbPct <= max
+// ─── Glycemic load — replaces the old carb%-of-kcal PCOS metric ───────────────
+// CORRECTED 2 sep 2026: the original PCOS badge banded dishes by raw carb% of
+// kcal. That's wrong for PCOS specifically — what matters for insulin/glucose
+// response is glycemic LOAD (how much carb, weighted by how fast each carb
+// digests), not carb quantity alone. Carb% blind to type flagged the whole
+// torta-de-garbanzo family as the worst offenders in the catalog, when
+// chickpea (GI~28-35) is one of the lowest-GI staples we use — meanwhile
+// patata (GI~80) and arroz (GI~73) sat in "green" desayuno/cena dishes
+// undetected because their carb% happened to be modest. Both ingredients.js
+// entries for harina-garbanzo and masa-harina already had "GI~35"/"GI~52"
+// noted in their own `per` field before this fix — the data was sitting
+// there and simply wasn't used. That's the root of the error, not missing
+// information: convenience (carb% falls out of kcal/prot/fat, already
+// computed) beat correctness (GL needs a `gi` per ingredient, which meant
+// actually going and sourcing it).
+//
+// GL per item = ingredient GI × that item's carb grams (Atwater) / 100,
+// summed across the dish. `gi` values are added on the real carb-bearing
+// ingredients (patata 80, arroz 73, harina-trigo 70, avena 55, masa-harina
+// 52, pan-masa-madre 53, harina-garbanzo 35, garbanzos 28, lentejas 30,
+// black-beans 30, romano-beans 38, banana 51, manzana 36, arandanos 53,
+// miel 61, chocolate-negro 23, cacao 20, chia 1 — standard published GI
+// tables, order-of-magnitude accuracy, not lab-measured). Ingredients
+// without an explicit `gi` default to 20 (low-impact) rather than being
+// silently skipped, so nothing carb-bearing gets missed by omission again.
+const GI_DEFAULT = 20
+
+export function dishGlycemicLoad(combo, allIng) {
+  let gl = 0
+  for (const it of combo.items) {
+    if (it.k === 'aove') continue
+    const ing = allIng[it.k]
+    if (!ing) continue
+    let kc, prot, fat
+    if (it.p.grams != null) { kc = (ing.kc || 0) * it.p.grams / 100; prot = (ing.prot || 0) * it.p.grams / 100; fat = (ing.fat || 0) * it.p.grams / 100 }
+    else if (it.p.units != null) { kc = (ing.kcu || 0) * it.p.units; prot = (ing.protu || 0) * it.p.units; fat = (ing.fatu || 0) * it.p.units }
+    else if (it.p.ml != null) { kc = (ing.kcml || 0) * it.p.ml; prot = 0; fat = 0 }
+    else { kc = (ing.kcf || 0); prot = (ing.protf || 0); fat = (ing.fatf || 0) }
+    const carbG = Math.max(0, kc - prot * 4 - fat * 9) / 4
+    gl += (ing.gi ?? GI_DEFAULT) * carbG / 100
+  }
+  return gl
 }
 
-// 3-tier version of the same idea: instead of hiding the badge on anything
-// above PCOS_CARB_PCT_MAX, always show it on desayuno/cena and color it by
-// how far the dish sits from that ceiling. Bands are each meal's own real
-// gap in the catalog's distribution (1 sep 2026 sweep), same method as the
-// green threshold above, not a generic split of the same number.
-// Desayuno: green ≤30 (eggs/cheese cluster), yellow 30-45 (burritos/sardinas
-// cluster), red >45 (pan/socca/oats/torta-garbanzo). Cena: green ≤45 (egg+
-// cheese/burrito cluster), yellow 45-60 (bacalao-puré/turkey-patata cluster),
-// red >60 (legumbre+bacalao/rancho cluster).
-const PCOS_CARB_BANDS = {
-  desayuno: { yellow: 45 }, // ≤30 green (PCOS_CARB_PCT_MAX), 30-45 yellow, >45 red
-  cena:     { yellow: 60 }, // ≤45 green (PCOS_CARB_PCT_MAX), 45-60 yellow, >60 red
+// mealType must be passed explicitly, not inferred from combo.meals — several
+// dishes (the burrito/sardinas family) are tagged for BOTH desayuno and cena.
+// Bands are each meal's own real gap in the catalog's GL distribution (2 sep
+// 2026 sweep) — desayuno tops out lower (single-serving, fewer starch
+// layers) so its own gaps sit lower than cena's. These land close to the
+// published single-food GL bands (low ≤10, medium 11-19, high ≥20) — a sign
+// the metric itself is sound, not just fitted to our data.
+// Desayuno: green ≤10 (egg/yogurt cluster), yellow 10-20 (torta-garbanzo/
+// burrito cluster — now correctly mid-tier, not worst), red >20 (burrito con
+// bacon, torta extrema). Cena: green ≤10 (egg/bacalao/frittata cluster),
+// yellow 10-25 (lentejas/garbanzo-without-patata cluster), red >25 (anything
+// pairing legumbre+patata, or arroz/patata-heavy rancho/burrito dishes).
+const PCOS_GL_MAX = { desayuno: 10, cena: 10 }
+const PCOS_GL_BANDS = {
+  desayuno: { yellow: 20 }, // ≤10 green, 10-20 yellow, >20 red
+  cena:     { yellow: 25 }, // ≤10 green, 10-25 yellow, >25 red
 }
 
 export function pcosCarbLevel(combo, allIng, mealType) {
-  const green = PCOS_CARB_PCT_MAX[mealType]
-  const bands = PCOS_CARB_BANDS[mealType]
+  const green = PCOS_GL_MAX[mealType]
+  const bands = PCOS_GL_BANDS[mealType]
   if (green == null || !bands) return null // comida/merienda: not tracked
-  const pct = dishMacroPct(combo, allIng).carbPct
-  if (pct <= green) return 'green'
-  if (pct <= bands.yellow) return 'yellow'
+  const gl = dishGlycemicLoad(combo, allIng)
+  if (gl <= green) return 'green'
+  if (gl <= bands.yellow) return 'yellow'
   return 'red'
 }
 
