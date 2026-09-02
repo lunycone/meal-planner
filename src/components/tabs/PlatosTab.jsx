@@ -89,7 +89,7 @@ function RecipeCard({ combo, mealType, isSelected, onClick }) {
       <div className="dz-card-name">
         {combo.name}
         {combo.jessica && <span className="badge badge-jessica" style={{ marginLeft: 6 }}>María</span>}
-        {isPcosFriendly(combo, allIng) && <PcosBadge />}
+        {isPcosFriendly(combo, allIng, mealType) && <PcosBadge />}
       </div>
       <div className="dz-card-stats">
         <span className="dz-stat-cost">{fmt(agg.cost)}</span>

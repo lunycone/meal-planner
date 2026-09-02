@@ -266,13 +266,17 @@ export function fmtPortion(p) {
 }
 
 // ─── Macro % (carb by difference, Atwater 4/4/9) + PCOS badge + traffic lights ──
-// carbPct threshold and the red/yellow/green bands were set from this
-// session's own analysis of the catalog (§ desayuno carb sweep, 1 sep 2026):
-// eggs/cheese/yogur+nuts dishes land ~21-23% carb, burritos ~35-42%, the
-// harina-garbanzo family 65-78% — 30% is the real gap between "flat" and
-// "carb-heavy", not an arbitrary round number.
-const PCOS_CARB_PCT_MAX = 30
-const PCOS_MEALS = new Set(['desayuno', 'cena']) // per María: comida is fine, only these two
+// carbPct thresholds are meal-specific, each set from this session's own
+// analysis of that meal's own catalog — not one borrowed number applied
+// everywhere. Desayuno (1 sep 2026): eggs/cheese/yogur+nuts land ~21-23%
+// carb, burritos ~35-42%, harina-garbanzo family 65-78% — 30% is the real
+// gap between "flat" and "carb-heavy" there. Cena has a different backbone
+// (bacalao/legumbre/patata instead of huevo/torta-garbanzo) so its own gap
+// sits higher: egg+cheese/burrito-style cenas cluster ≤42%, everything else
+// jumps to ≥48% — 45% is the real gap for cena specifically. A fixed 30%
+// would flag ~1 of 45 cenas: technically consistent, functionally useless
+// as a signal.
+const PCOS_CARB_PCT_MAX = { desayuno: 30, cena: 45 }
 
 export function dishMacroPct(combo, allIng) {
   const agg = comboAgg(combo, allIng)
@@ -280,9 +284,15 @@ export function dishMacroPct(combo, allIng) {
   return { ...agg, carbG: carbKcal / 4, carbPct: agg.kcal > 0 ? (carbKcal / agg.kcal) * 100 : 0 }
 }
 
-export function isPcosFriendly(combo, allIng) {
-  if (!combo?.meals?.some(m => PCOS_MEALS.has(m))) return false
-  return dishMacroPct(combo, allIng).carbPct <= PCOS_CARB_PCT_MAX
+// mealType must be passed explicitly, not inferred from combo.meals — several
+// dishes (the burrito/sardinas family) are tagged for BOTH desayuno and cena,
+// and desayuno/cena use different thresholds. Inferring from combo.meals picks
+// whichever meal happens to be listed first regardless of which section the
+// dish is actually being shown in, silently applying the wrong cutoff.
+export function isPcosFriendly(combo, allIng, mealType) {
+  const max = PCOS_CARB_PCT_MAX[mealType]
+  if (max == null) return false // per María: comida is fine, only desayuno/cena tracked
+  return dishMacroPct(combo, allIng).carbPct <= max
 }
 
 // Two tiers, per session decision: comida/cena (the main event, higher bar)

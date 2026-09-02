@@ -264,7 +264,7 @@ function MealSelectorModal({ allIng, allCombos, onSelect, onClose, dayKey, mealT
                     <div className="ro-name">
                       {recipe.name}
                       {recipe.jessica && <span className="badge badge-jessica" style={{ marginLeft: 6 }}>María</span>}
-                      {isPcosFriendly(recipe, allIng) && <PcosBadge />}
+                      {isPcosFriendly(recipe, allIng, mealType) && <PcosBadge />}
                     </div>
                     <div className="ro-stats">
                       {fmt(recipe._agg.cost)} · <span style={{ color: LEVEL_COLOR[kLevel], fontWeight: 600 }}>{Math.round(recipe._agg.kcal)} kcal</span> · <span style={{ color: LEVEL_COLOR[pLevel], fontWeight: 600 }}>{Math.round(recipe._agg.prot)}g prot</span>
