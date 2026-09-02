@@ -115,6 +115,7 @@ export default function PlatosTab() {
   const [searchTerm, setSearchTerm]   = useState('')
   const [sortBy, setSortBy]           = useState('name')
   const [mealFilter, setMealFilter]   = useState('all')
+  const [pcosFilter, setPcosFilter]   = useState('all')
 
   const toggle = (key) => setSelectedKey(prev => prev === key ? null : key)
 
@@ -139,10 +140,13 @@ export default function PlatosTab() {
     return meals
       .map(meal => ({
         meal,
-        items: entries.filter(r => (r.combo.meals ?? []).includes(meal)).sort(sorter),
+        items: entries
+          .filter(r => (r.combo.meals ?? []).includes(meal))
+          .filter(r => pcosFilter === 'all' || pcosCarbLevel(r.combo, allIng, meal) === pcosFilter)
+          .sort(sorter),
       }))
       .filter(g => g.items.length > 0)
-  }, [allCombos, allIng, searchTerm, sortBy, mealFilter])
+  }, [allCombos, allIng, searchTerm, sortBy, mealFilter, pcosFilter])
 
   const total = grouped.reduce((s, g) => s + g.items.length, 0)
 
@@ -191,6 +195,33 @@ export default function PlatosTab() {
             }}
           >
             {icon} {label}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+        <span style={{ fontSize: '0.78rem', color: 'var(--muted)', marginRight: '0.25rem' }}>PCOS (solo desayuno/cena):</span>
+        {[
+          ['all', 'Todo', null],
+          ['green', 'Verde', 'green'],
+          ['yellow', 'Amarillo', 'yellow'],
+          ['red', 'Rojo', 'red'],
+        ].map(([key, label, level]) => (
+          <button
+            key={key}
+            onClick={() => setPcosFilter(key)}
+            style={{
+              padding: '0.4rem 0.85rem',
+              border: `2px solid ${pcosFilter === key ? (level ? LEVEL_COLOR[level] : 'var(--text)') : 'var(--border)'}`,
+              background: pcosFilter === key ? (level ? LEVEL_COLOR[level] + '22' : 'var(--card)') : 'transparent',
+              color: pcosFilter === key && level ? LEVEL_COLOR[level] : 'var(--text)',
+              borderRadius: '9999px', cursor: 'pointer',
+              fontSize: '0.8rem', fontWeight: pcosFilter === key ? 600 : 400, transition: 'all 0.2s',
+              display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+            }}
+          >
+            {level && <span style={{ width: 8, height: 8, borderRadius: '50%', background: LEVEL_COLOR[level], display: 'inline-block' }} />}
+            {label}
           </button>
         ))}
       </div>
