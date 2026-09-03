@@ -135,7 +135,10 @@ export function prepAgg(prep, allIng) {
 const ENERGY_BASES = new Set([
   'arroz', 'pasta', 'patata', 'avena', 'pan-masa-madre', 'harina', 'buckwheat',
   'lentejas-rojas', 'lentejas-verdes', 'garbanzos', 'black-beans',
-  'alubias-blancas', 'cranberry-beans', 'maiz',
+  // FIX 3 sep 2026: la clave real en ingredients.js es 'cranberry', no
+  // 'cranberry-beans' — nunca coincidia, asi que las judias romano jamas se
+  // trataron como base escalable. Anadida tambien 'alubias-rojas', que faltaba.
+  'alubias-blancas', 'alubias-rojas', 'cranberry', 'romano-beans', 'maiz',
 ])
 
 // The single ingredient in a combo that scales per person. Either an explicit
@@ -356,10 +359,30 @@ export function pcosCarbLevel(combo, allIng, mealType) {
 //     coconut): irritates by bulk/roughage, not fermentation. Separate rule,
 //     separate foods — a legume-flour dish can be GOS-risky and insoluble-safe
 //     at the same time, so these must not be collapsed into one flag.
-const GOS_KEYS = /garbanzo|lenteja|black-beans|romano-beans/
-const INSOLUBLE_KEYS = /brocoli|coco-rallado|almendras|avellana|pumpkin-seeds|sunflower-seeds/
-const ALLIUM_KEYS = /^cebolla|^ajo$|^puerro$/
-const DESAYUNO_FAT_MAX = 15 // g — Regla 2
+// BUG CORREGIDO 3 sep 2026 — el regex de GOS se escribio a mano y dejaba fuera
+// tres legumbres del propio catalogo: 'alubias-blancas', 'alubias-rojas' y
+// 'cranberry' (cuyo NOMBRE es "Romano beans" pero cuya CLAVE no contiene
+// "romano-beans", asi que /romano-beans/ nunca la tocaba). Resultado: tres
+// legumbres pasaban el filtro digestivo sin marcar. Ahora se comprueba contra
+// la categoria del ingrediente, no contra el nombre de la clave — asi cualquier
+// legumbre futura queda cubierta por construccion y no por acordarse.
+const GOS_KEYS = /garbanzo|lenteja|black-beans|romano-beans|alubias|cranberry|guisante/
+
+// AMPLIADO 3 sep 2026. Faltaban las cruciferas del catalogo ('col' = repollo,
+// 'col-rizada' = kale) y 'macadamia'. Anclado con ^...$ a proposito: un /col/
+// sin anclar tambien casaria con "choColate-negro".
+const INSOLUBLE_KEYS = /^brocoli$|^col$|^col-rizada$|^coco-rallado$|^almendras$|^avellana$|^macadamia$|^pumpkin-seeds$|^sunflower-seeds$|^chia$/
+
+// RENOMBRADO: no son solo alliums. La alcachofa no es un allium y es de los
+// alimentos con mayor carga de fructanos que existe — estaba sin marcar.
+const FRUCTAN_KEYS = /^cebolla|^ajo$|^puerro$|^alcachofa$/
+const DESAYUNO_FAT_MAX = 15    // g — Regla 2
+
+// NUEVO 3 sep 2026 — Regla 1-bis. El suelo existe porque Regla 1 ("desayuno =
+// comida mas pequena") y Regla 6 ("ningun hueco >5 h") entraban en conflicto:
+// un desayuno de 277 kcal a las 8:00 con comida a las 14:00 reproduce
+// exactamente el escenario del dolor epigastrico del 3 sep. Pequeno, no ausente.
+const DESAYUNO_KCAL_MIN = 400
 
 export function dishHasGOS(combo) {
   return combo.items.some(it => GOS_KEYS.test(it.k))
@@ -368,7 +391,32 @@ export function dishHasInsolubleFiber(combo) {
   return combo.items.some(it => INSOLUBLE_KEYS.test(it.k))
 }
 export function dishHasAllium(combo) {
-  return combo.items.some(it => ALLIUM_KEYS.test(it.k))
+  return combo.items.some(it => FRUCTAN_KEYS.test(it.k))
+}
+
+// ─── Fibra soluble — el mismo error que el de carb% vs GL, un campo mas alla ──
+// `fib` es un unico numero y no distingue mecanismo. Para SII-M eso no vale:
+// la fibra INSOLUBLE es el desencadenante y la SOLUBLE es el tratamiento, y
+// ahora mismo el motor las suma en la misma columna. La cebada en copos tiene
+// la fibra mas alta del catalogo (15,6 g/100g) y es mayoritariamente
+// beta-glucano — es de lo mejor que puede comer, y el numero crudo la hace
+// parecer lo peor. Igual que carb% marcaba en rojo la torta de garbanzo.
+// `fibSol` (g solubles/100g) se anade en ingredients.js sobre los que aportan
+// de verdad; los que no lo declaren asumen 25% del total, que es la proporcion
+// media aproximada en alimentos vegetales mixtos.
+const SOLUBLE_FALLBACK_SHARE = 0.25
+const SOLUBLE_FIBER_DAILY_MIN = 8   // g/dia — suelo terapeutico en SII-M
+
+export function ingFibSol(key, p, allIng) {
+  const i = allIng[key]
+  if (!i) return 0
+  if (i.fibSol != null && p.grams != null) return i.fibSol * p.grams / 100
+  if (i.fibSolu != null && p.units != null) return i.fibSolu * p.units
+  return ingFib(key, p, allIng) * SOLUBLE_FALLBACK_SHARE
+}
+
+export function comboFibSol(combo, allIng) {
+  return combo.items.reduce((s, it) => s + ingFibSol(it.k, it.p, allIng), 0)
 }
 
 // Single check for a dish in a given meal slot — only desayuno carries the
@@ -377,9 +425,15 @@ export function dishHasAllium(combo) {
 // a per-dish property, since the same dish can be fine at comida and wrong
 // at desayuno.
 export function digestiveFlags(combo, allIng, mealType) {
-  const flags = { gos: dishHasGOS(combo), insolubleFiber: dishHasInsolubleFiber(combo) }
+  const agg = comboAgg(combo, allIng)
+  const flags = {
+    gos: dishHasGOS(combo),
+    insolubleFiber: dishHasInsolubleFiber(combo),
+    fibSol: comboFibSol(combo, allIng),
+  }
   if (mealType === 'desayuno') {
-    flags.fatOverLimit = comboAgg(combo, allIng).fat > DESAYUNO_FAT_MAX
+    flags.fatOverLimit = agg.fat > DESAYUNO_FAT_MAX
+    flags.kcalUnderFloor = agg.kcal < DESAYUNO_KCAL_MIN   // Regla 1-bis
     flags.hasAllium = dishHasAllium(combo)
   }
   return flags
