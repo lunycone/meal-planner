@@ -39,6 +39,7 @@ export function ingFat(key, p, allIng) {
   if (!i) return 0
   if (i.fat   != null && p.grams != null) return i.fat * p.grams / 100
   if (i.fatu  != null && p.units != null) return i.fatu * p.units
+  if (i.fatml != null && p.ml    != null) return i.fatml * p.ml
   if (i.fatf  != null) return i.fatf
   return 0
 }
@@ -342,6 +343,46 @@ export function pcosCarbLevel(combo, allIng, mealType) {
   if (gl <= green) return 'green'
   if (gl <= bands.yellow) return 'yellow'
   return 'red'
+}
+
+// ─── Digestive safety (Julio, IBS-M + functional dyspepsia, 3 sep 2026) ───────
+// Two DIFFERENT mechanisms that both got called "fibra" until this was split:
+//   - GOS (galacto-oligosaccharides): legumes ferment in colon regardless of
+//     form — whole bean or milled flour, the sugars survive intact. Timing
+//     matters (2-6h to ferment), not grinding. Whole legume AND legume flour
+//     belong in the same bucket, and both belong at comida (fermentation peak
+//     lands in Julio's safe window), never desayuno.
+//   - Mechanical insoluble fiber (bran, whole grain, crucifers, whole nuts,
+//     coconut): irritates by bulk/roughage, not fermentation. Separate rule,
+//     separate foods — a legume-flour dish can be GOS-risky and insoluble-safe
+//     at the same time, so these must not be collapsed into one flag.
+const GOS_KEYS = /garbanzo|lenteja|black-beans|romano-beans/
+const INSOLUBLE_KEYS = /brocoli|coco-rallado|almendras|avellana|pumpkin-seeds|sunflower-seeds/
+const ALLIUM_KEYS = /^cebolla|^ajo$|^puerro$/
+const DESAYUNO_FAT_MAX = 15 // g — Regla 2
+
+export function dishHasGOS(combo) {
+  return combo.items.some(it => GOS_KEYS.test(it.k))
+}
+export function dishHasInsolubleFiber(combo) {
+  return combo.items.some(it => INSOLUBLE_KEYS.test(it.k))
+}
+export function dishHasAllium(combo) {
+  return combo.items.some(it => ALLIUM_KEYS.test(it.k))
+}
+
+// Single check for a dish in a given meal slot — only desayuno carries the
+// fat ceiling and the allium exclusion (Reglas 2 and 5); GOS is a placement
+// rule (never desayuno) checked separately per day when building a week, not
+// a per-dish property, since the same dish can be fine at comida and wrong
+// at desayuno.
+export function digestiveFlags(combo, allIng, mealType) {
+  const flags = { gos: dishHasGOS(combo), insolubleFiber: dishHasInsolubleFiber(combo) }
+  if (mealType === 'desayuno') {
+    flags.fatOverLimit = comboAgg(combo, allIng).fat > DESAYUNO_FAT_MAX
+    flags.hasAllium = dishHasAllium(combo)
+  }
+  return flags
 }
 
 // Two tiers, per session decision: comida/cena (the main event, higher bar)

@@ -82,7 +82,7 @@ export const ING = {
 
   // OTROS
   aceite:           { name: 'Aceite de oliva',  cat: 'otro', flat: 0,    kcf: 0,  pack: 'ya tienes',        per: '~120 kcal/cda · NO contado' },
-  aove:             { name: 'AOVE',              cat: 'otro', perML: 0,    kcml: 9, pack: 'ya comprado — $0, kcal sí cuenta', per: '20ml → $0 · 180 kcal' },
+  aove:             { name: 'AOVE',              cat: 'otro', perML: 0,    kcml: 9, fatml: 1, pack: 'ya comprado — $0, kcal sí cuenta', per: '20ml → $0 · 180 kcal · 20g grasa' },
   'aceite-coco':    { name: 'Aceite coco refinado (Nutiva)', cat: 'otro', per100: 2.02, kc: 892, prot: 0, fat: 99.5, pack: '1.6L · CA$29.69', per: '15g → $0.30' },
   suet:             { name: 'Beef Suet',        cat: 'otro', per100: 1.768, kc: 895, prot: 0, fat: 99.5, pack: '2.2lb · $17.64',  per: '15g → $0.27' },
   canela:           { name: 'Canela',           cat: 'otro', flat: 0.05, kcf: 5,  pack: 'especia',          per: 'uso → $0.05', est: true },
