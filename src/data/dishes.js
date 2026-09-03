@@ -52,7 +52,7 @@ export const DISHES = {
   },
   'd-overnight-oats-chocolate': {
     name: 'Overnight oats de chocolate', meals: ['desayuno'],
-    items: [{ k: 'avena', p: { grams: 45 } }, { k: 'yogur-cabra', p: { grams: 120 } }, { k: 'leche', p: { ml: 120 } }, { k: 'chia', p: { grams: 12 } }, { k: 'cacao', p: { grams: 8 } }, { k: 'miel', p: { grams: 10 } }],
+    items: [{ k: 'avena', p: { grams: 45 } }, { k: 'yogur-cabra', p: { grams: 120 } }, { k: 'leche', p: { grams: 120 } }, { k: 'chia', p: { grams: 12 } }, { k: 'cacao', p: { grams: 8 } }, { k: 'miel', p: { grams: 10 } }],
   },
   'd-torta-garbanzo-60': {
     name: 'Torta de garbanzo (60g) + AOVE', meals: ['desayuno'],
@@ -128,7 +128,7 @@ export const DISHES = {
   },
   'c-codillo-pure-garbanzos-horno': {
     name: 'Codillo sobre puré con garbanzos tostados al horno', meals: ['comida'],
-    items: [{ k: 'ham-hock', p: { grams: 120 } }, { k: 'patata', p: { grams: 200 } }, { k: 'leche', p: { ml: 60 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'garbanzos', p: { grams: 70 } }, { k: 'pimenton', p: {} }, { k: 'comino', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'patata',
+    items: [{ k: 'ham-hock', p: { grams: 120 } }, { k: 'patata', p: { grams: 200 } }, { k: 'leche', p: { grams: 60 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'garbanzos', p: { grams: 70 } }, { k: 'pimenton', p: {} }, { k: 'comino', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'patata',
   },
   'c-turkey-setas-vino': {
     name: 'Turkey + setas + vino (otoñal)', meals: ['comida'],
@@ -136,11 +136,11 @@ export const DISHES = {
   },
   'c-bangers-mash': {
     name: 'Bangers and mash', meals: ['comida'],
-    items: [{ k: 'salchichas', p: { grams: 150 } }, { k: 'patata', p: { grams: 250 } }, { k: 'leche', p: { ml: 60 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'cebolla-amarilla', p: { grams: 80 } }, { k: 'aove', p: { ml: 15 } }], scalable: 'patata',
+    items: [{ k: 'salchichas', p: { grams: 150 } }, { k: 'patata', p: { grams: 250 } }, { k: 'leche', p: { grams: 60 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'cebolla-amarilla', p: { grams: 80 } }, { k: 'aove', p: { ml: 15 } }], scalable: 'patata',
   },
   'c-higado-cebolla-pure': {
     name: 'Hígado de vaca + cebolla caramelizada + puré de patata', meals: ['comida'],
-    items: [{ k: 'higado-vaca', p: { grams: 150 } }, { k: 'patata', p: { grams: 250 } }, { k: 'leche', p: { ml: 60 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'cebolla-amarilla', p: { grams: 100 } }, { k: 'vinagre', p: { ml: 10 } }, { k: 'aove', p: { ml: 20 } }], scalable: 'patata',
+    items: [{ k: 'higado-vaca', p: { grams: 150 } }, { k: 'patata', p: { grams: 250 } }, { k: 'leche', p: { grams: 60 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'cebolla-amarilla', p: { grams: 100 } }, { k: 'vinagre', p: { ml: 10 } }, { k: 'aove', p: { ml: 20 } }], scalable: 'patata',
   },
   'c-higado-patatitas-especias': {
     name: 'Hígado + patatitas en dados con especias + cebolla', meals: ['comida'],
@@ -152,11 +152,11 @@ export const DISHES = {
   },
   'c-albondigas-cerdo-picado': {
     name: 'Albóndigas de cerdo picado (Eataly) + tomate + puré', meals: ['comida'],
-    items: [{ k: 'cerdo-picado', p: { grams: 120 } }, { k: 'huevo', p: { units: 0.5 } }, { k: 'tomate-conserva', p: { grams: 100 } }, { k: 'patata', p: { grams: 250 } }, { k: 'leche', p: { ml: 60 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'cebolla-amarilla', p: { grams: 60 } }, { k: 'aove', p: { ml: 20 } }], scalable: 'patata',
+    items: [{ k: 'cerdo-picado', p: { grams: 120 } }, { k: 'huevo', p: { units: 0.5 } }, { k: 'tomate-conserva', p: { grams: 100 } }, { k: 'patata', p: { grams: 250 } }, { k: 'leche', p: { grams: 60 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'cebolla-amarilla', p: { grams: 60 } }, { k: 'aove', p: { ml: 20 } }], scalable: 'patata',
   },
   'c-contramuslo-ac-pure-setas': {
     name: 'Contramuslo (Foodland AC) + puré con mantequilla y leche + setas al vino', meals: ['comida'],
-    items: [{ k: 'pollo-muslo-air', p: { grams: 150 } }, { k: 'patata', p: { grams: 300 } }, { k: 'leche', p: { ml: 80 } }, { k: 'mantequilla', p: { grams: 20 } }, { k: 'setas', p: { grams: 60 } }, { k: 'vino-blanco', p: { ml: 25 } }, { k: 'aove', p: { ml: 25 } }], scalable: 'patata',
+    items: [{ k: 'pollo-muslo-air', p: { grams: 150 } }, { k: 'patata', p: { grams: 300 } }, { k: 'leche', p: { grams: 80 } }, { k: 'mantequilla', p: { grams: 20 } }, { k: 'setas', p: { grams: 60 } }, { k: 'vino-blanco', p: { ml: 25 } }, { k: 'aove', p: { ml: 25 } }], scalable: 'patata',
   },
   'c-carne-picada-patata-tomate-ajo': {
     name: 'Carne picada de res + patata + tomate-ajo', meals: ['comida'],
@@ -168,15 +168,15 @@ export const DISHES = {
   },
   'c-cordero-pure-cebolla-laurel': {
     name: 'Cordero + puré de patata + cebolla + laurel', meals: ['comida'],
-    items: [{ k: 'lamb', p: { grams: 150 } }, { k: 'patata', p: { grams: 250 } }, { k: 'leche', p: { ml: 60 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'cebolla-amarilla', p: { grams: 80 } }, { k: 'laurel', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'patata',
+    items: [{ k: 'lamb', p: { grams: 150 } }, { k: 'patata', p: { grams: 250 } }, { k: 'leche', p: { grams: 60 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'cebolla-amarilla', p: { grams: 80 } }, { k: 'laurel', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'patata',
   },
   'c-pollo-pure-patata-zanahoria': {
     name: 'Pollo pierna + puré patata-zanahoria + pimentón', meals: ['comida'],
-    items: [{ k: 'pollo-pierna-generic', p: { grams: 180 } }, { k: 'patata', p: { grams: 250 } }, { k: 'zanahoria', p: { grams: 100 } }, { k: 'leche', p: { ml: 60 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'patata',
+    items: [{ k: 'pollo-pierna-generic', p: { grams: 180 } }, { k: 'patata', p: { grams: 250 } }, { k: 'zanahoria', p: { grams: 100 } }, { k: 'leche', p: { grams: 60 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'patata',
   },
   'c-solomillo-pure-manzana-batida': {
     name: 'Solomillo + puré de patata + manzana batida', meals: ['comida'],
-    items: [{ k: 'solomillo-cerdo', p: { grams: 180 } }, { k: 'patata', p: { grams: 250 } }, { k: 'leche', p: { ml: 60 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'manzana', p: { units: 0.5 } }, { k: 'aove', p: { ml: 20 } }], scalable: 'patata',
+    items: [{ k: 'solomillo-cerdo', p: { grams: 180 } }, { k: 'patata', p: { grams: 250 } }, { k: 'leche', p: { grams: 60 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'manzana', p: { units: 0.5 } }, { k: 'aove', p: { ml: 20 } }], scalable: 'patata',
   },
   'c-pollo-beretta-garbanzos-tomillo-limon': {
     name: 'Pollo pierna (Beretta) + garbanzos + tomillo y limón', meals: ['comida'],
@@ -188,7 +188,7 @@ export const DISHES = {
   },
   'c-pastel-carne-ricotta': {
     name: 'Pastel de carne (cottage pie) con ricotta gratinada', meals: ['comida'],
-    items: [{ k: 'carne-picada', p: { grams: 100 } }, { k: 'patata', p: { grams: 250 } }, { k: 'leche', p: { ml: 60 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'ricotta', p: { grams: 60 } }, { k: 'zanahoria', p: { grams: 80 } }, { k: 'tomate-conserva', p: { grams: 80 } }, { k: 'cebolla-amarilla', p: { grams: 60 } }, { k: 'aove', p: { ml: 15 } }], scalable: 'patata',
+    items: [{ k: 'carne-picada', p: { grams: 100 } }, { k: 'patata', p: { grams: 250 } }, { k: 'leche', p: { grams: 60 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'ricotta', p: { grams: 60 } }, { k: 'zanahoria', p: { grams: 80 } }, { k: 'tomate-conserva', p: { grams: 80 } }, { k: 'cebolla-amarilla', p: { grams: 60 } }, { k: 'aove', p: { ml: 15 } }], scalable: 'patata',
   },
   'c-solomillo-blackbeans-comino': {
     name: 'Solomillo cerdo + black beans + comino-pimentón-tomate', meals: ['comida'],
@@ -220,7 +220,7 @@ export const DISHES = {
   },
   'c-pollo-pure-rustico-pipas': {
     name: 'Pollo pierna asada + puré rústico + pipas de girasol', meals: ['comida'],
-    items: [{ k: 'pollo-pierna-generic', p: { grams: 200 } }, { k: 'patata', p: { grams: 350 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'sunflower-seeds', p: { grams: 25 } }, { k: 'leche', p: { ml: 100 } }, { k: 'aove', p: { ml: 15 } }], scalable: 'patata',
+    items: [{ k: 'pollo-pierna-generic', p: { grams: 200 } }, { k: 'patata', p: { grams: 350 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'sunflower-seeds', p: { grams: 25 } }, { k: 'leche', p: { grams: 100 } }, { k: 'aove', p: { ml: 15 } }], scalable: 'patata',
   },
   'c-solomillo-blackbeans-huevo-tomate': {
     name: 'Solomillo + black beans + huevo + tomate', meals: ['comida'],
@@ -392,7 +392,7 @@ export const DISHES = {
   },
   'n-bacalao-pure-simple': {
     name: 'Bacalao + puré de patata simple', meals: ['cena'],
-    items: [{ k: 'bacalao', p: { grams: 150 } }, { k: 'patata', p: { grams: 300 } }, { k: 'leche', p: { ml: 40 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'aove', p: { ml: 25 } }],
+    items: [{ k: 'bacalao', p: { grams: 150 } }, { k: 'patata', p: { grams: 300 } }, { k: 'leche', p: { grams: 40 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'aove', p: { ml: 25 } }],
   },
   'n-bacalao-pure-squash': {
     name: 'Bacalao + puré de patata-squash', meals: ['cena'],
@@ -400,11 +400,11 @@ export const DISHES = {
   },
   'n-bacalao-pure-zucchini': {
     name: 'Bacalao + puré de patata-zucchini', meals: ['cena'],
-    items: [{ k: 'bacalao', p: { grams: 150 } }, { k: 'patata', p: { grams: 200 } }, { k: 'zucchini', p: { grams: 120 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'leche', p: { ml: 30 } }, { k: 'aove', p: { ml: 25 } }],
+    items: [{ k: 'bacalao', p: { grams: 150 } }, { k: 'patata', p: { grams: 200 } }, { k: 'zucchini', p: { grams: 120 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'leche', p: { grams: 30 } }, { k: 'aove', p: { ml: 25 } }],
   },
   'n-bacalao-pure-puerro': {
     name: 'Bacalao + puré de patata-puerro', meals: ['cena'],
-    items: [{ k: 'bacalao', p: { grams: 150 } }, { k: 'patata', p: { grams: 250 } }, { k: 'puerro', p: { units: 0.25 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'leche', p: { ml: 40 } }, { k: 'aove', p: { ml: 25 } }],
+    items: [{ k: 'bacalao', p: { grams: 150 } }, { k: 'patata', p: { grams: 250 } }, { k: 'puerro', p: { units: 0.25 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'leche', p: { grams: 40 } }, { k: 'aove', p: { ml: 25 } }],
   },
   'n-turkey-mejillones-cazuela': {
     name: 'Turkey y mejillones en cazuela', meals: ['cena'],
@@ -436,15 +436,15 @@ export const DISHES = {
   },
   'b-arandanos': {
     name: 'Batido de arándanos', meals: ['merienda'],
-    items: [{ k: 'avena', p: { grams: 100 } }, { k: 'leche', p: { ml: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'arandanos', p: { grams: 80 } }, { k: 'mantequilla', p: { grams: 25 } }],
+    items: [{ k: 'avena', p: { grams: 100 } }, { k: 'leche', p: { grams: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'arandanos', p: { grams: 80 } }, { k: 'mantequilla', p: { grams: 25 } }],
   },
   'b-clasico': {
     name: 'Batido clásico', meals: ['merienda'],
-    items: [{ k: 'avena', p: { grams: 100 } }, { k: 'leche', p: { ml: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'mantequilla', p: { grams: 20 } }, { k: 'pumpkin-seeds', p: { grams: 20 } }],
+    items: [{ k: 'avena', p: { grams: 100 } }, { k: 'leche', p: { grams: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'mantequilla', p: { grams: 20 } }, { k: 'pumpkin-seeds', p: { grams: 20 } }],
   },
   'b-clasico-2': {
     name: 'Batido clásico 2', meals: ['merienda'],
-    items: [{ k: 'avena', p: { grams: 100 } }, { k: 'leche', p: { ml: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'almendras', p: { grams: 20 } }],
+    items: [{ k: 'avena', p: { grams: 100 } }, { k: 'leche', p: { grams: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'almendras', p: { grams: 20 } }],
   },
   'b-citrico': {
     name: 'Batido cítrico', meals: ['merienda'],
@@ -452,11 +452,11 @@ export const DISHES = {
   },
   'b-melon': {
     name: 'Batido de melón', meals: ['merienda'],
-    items: [{ k: 'avena', p: { grams: 100 } }, { k: 'leche', p: { ml: 300 } }, { k: 'melon-cantalupo', p: { grams: 200 } }, { k: 'mantequilla', p: { grams: 20 } }],
+    items: [{ k: 'avena', p: { grams: 100 } }, { k: 'leche', p: { grams: 300 } }, { k: 'melon-cantalupo', p: { grams: 200 } }, { k: 'mantequilla', p: { grams: 20 } }],
   },
   'b-aguacate-cacao': {
     name: 'Batido aguacate y cacao', meals: ['merienda'],
-    items: [{ k: 'avena', p: { grams: 100 } }, { k: 'leche', p: { ml: 300 } }, { k: 'aguacate', p: { units: 0.5 } }, { k: 'cacao', p: { grams: 5 } }, { k: 'banana', p: { grams: 120 } }],
+    items: [{ k: 'avena', p: { grams: 100 } }, { k: 'leche', p: { grams: 300 } }, { k: 'aguacate', p: { units: 0.5 } }, { k: 'cacao', p: { grams: 5 } }, { k: 'banana', p: { grams: 120 } }],
   },
   'b-fruto-seco': {
     name: 'Batido fruto seco', meals: ['merienda'],
@@ -464,6 +464,6 @@ export const DISHES = {
   },
   'b-blando': {
     name: 'Batido blando (día malo de estómago)', meals: ['merienda'],
-    items: [{ k: 'avena', p: { grams: 100 } }, { k: 'leche', p: { ml: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'mantequilla', p: { grams: 25 } }],
+    items: [{ k: 'avena', p: { grams: 100 } }, { k: 'leche', p: { grams: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'mantequilla', p: { grams: 25 } }],
   },
 }
