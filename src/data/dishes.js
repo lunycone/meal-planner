@@ -2,6 +2,31 @@
 // Regenerate by editing that script and re-running it.
 
 export const DISHES = {
+  // 5 PLATOS NUEVOS (4 sep 2026): existian solo como nombre + cifra suelta
+  // en el HTML original (Downloads/semanas-modelo.html), nunca como receta
+  // real con ingredientes. Construidos fieles al nombre, a peticion expresa
+  // del usuario ("que sean fieles al nombre aunque no cumplan las reglas").
+  // No se han forzado a cumplir grasa<=15g ni ningun otro techo digestivo.
+  'd-huevos-tostada-madre-miel': {
+    name: 'Huevos + tostada masa madre + miel', meals: ['desayuno'],
+    items: [{ k: 'huevo', p: { units: 2 } }, { k: 'pan-masa-madre', p: { grams: 40 } }, { k: 'miel', p: { grams: 15 } }],
+  },
+  'd-huevos-tostada-miel': {
+    name: 'Huevos + tostada + miel', meals: ['desayuno'],
+    items: [{ k: 'huevo', p: { units: 2 } }, { k: 'pan-masa-madre', p: { grams: 35 } }, { k: 'miel', p: { grams: 10 } }],
+  },
+  'd-tostada-2huevos': {
+    name: 'Tostada + 2 huevos', meals: ['desayuno'],
+    items: [{ k: 'huevo', p: { units: 2 } }, { k: 'pan-masa-madre', p: { grams: 35 } }],
+  },
+  'd-yogur-platano-avena': {
+    name: 'Yogur + plátano + avena', meals: ['desayuno'],
+    items: [{ k: 'yogur-vaca', p: { grams: 150 } }, { k: 'banana', p: { grams: 80 } }, { k: 'avena', p: { grams: 30 } }],
+  },
+  'd-arroz-leche-simple': {
+    name: 'Arroz con leche simple', meals: ['desayuno'],
+    items: [{ k: 'arroz', p: { grams: 40 } }, { k: 'leche', p: { grams: 250 } }],
+  },
   'd-tortilla-cheddar-aguacate': {
     name: 'Tortilla + cheddar + aguacate', meals: ['desayuno', 'cena'],
     items: [{ k: 'huevo', p: { units: 3 } }, { k: 'cheddar', p: { grams: 20 } }, { k: 'aguacate', p: { units: 0.5 } }, { k: 'aove', p: { ml: 10 } }],
