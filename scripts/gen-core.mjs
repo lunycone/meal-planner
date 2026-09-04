@@ -8,9 +8,15 @@ import { comboAgg, comboFibSol, dishGlycemicLoad, dishHasGOS,
 
 export const DAYS = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo']
 
+// Kcal por dia. Confirmadas identicas en las 11 semanas del documento
+// original del usuario -> derivadas de su calendario real de entrenamiento:
+// Martes = Voley de Maria (su sesion mas larga) -> pico de Maria (2900).
+// Jueves y Sabado = Natacion de Julio -> pico de Julio (3300).
+// Se dejan como constante documentada, no adivinadas.
 export const JULIO = { name:'Julio', weightKg:64, protCapGkg:2.23,
   kcal:[3150,3150,3100,3300,3000,3300,3000] }
-export const MARIA = { name:'María', kcal:[2500,2900,2500,2750,2500,2750,2500] }
+export const MARIA = { name:'María',
+  kcal:[2500,2900,2500,2750,2500,2750,2500] }
 
 const SCALABLE = ['patata','arroz','pasta','maiz','avena','harina','buckwheat',
   'garbanzos','black-beans','lentejas-verdes','lentejas-rojas','alubias-blancas',

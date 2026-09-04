@@ -1,5 +1,4 @@
 import { DAYS, JULIO, MARIA, agg } from './gen-core.mjs'
-import { WEEKS } from './weeks.mjs'
 import { day, warns, CAP, SOL_MIN, e, r } from './html-core.mjs'
 import { writeFileSync } from 'fs'
 
@@ -45,7 +44,7 @@ function tags(x){
   return t
 }
 
-function sheet(w){
+function sheet(w, total=11){
   const j=DAYS.map((_,i)=>day(w,i,JULIO)), m=DAYS.map((_,i)=>day(w,i,MARIA))
   const jc=j.reduce((s,d)=>s+d.cost,0), mc=m.reduce((s,d)=>s+d.cost,0)
   const ws=warns(w,j)
@@ -73,7 +72,7 @@ function sheet(w){
     : `<div class="flags"><span class="ok">✓ Sin avisos: cadencia, proteína, fibra soluble y desayuno dentro de límites.</span></div>`
 
   return `<section class="sheet">
-    <div class="eyebrow">Semana modelo ${w.n} de ${WEEKS.length}${w.extrema?' · ⚠ SOLO REFERENCIA':''}</div>
+    <div class="eyebrow">Semana modelo ${w.n} de ${total}${w.extrema?' · ⚠ SOLO REFERENCIA':''}</div>
     <div class="title">${e(w.title)}</div>
     <div class="note">${e(w.note)}</div>
     <table><thead><tr><th class="rowlab">&nbsp;</th>${DAYS.map(d=>`<th>${d}</th>`).join('')}</tr></thead>

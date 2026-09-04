@@ -1,5 +1,7 @@
 import { agg, scaleLunch, DAYS, JULIO, MARIA } from './gen-core.mjs'
 import { WEEKS } from './weeks.mjs'
+import { validateBlocks } from './blocks.mjs'
+import { DISHES } from '../src/data/dishes.js'
 import { writeFileSync } from 'fs'
 
 const CAP = Math.round(JULIO.weightKg * JULIO.protCapGkg)
@@ -22,6 +24,10 @@ function slotCount(w,k,f){ return w[k].filter(x=>agg(x)[f]).length }
 
 function warns(w,j){
   const o=[]
+  // NUEVO 4 sep 2026: validacion de la regla de bloques. w aqui ya trae los
+  // campos originales *A/*B (no expandidos), asi que validateBlocks puede
+  // comprobar directamente que el bloque B cambia de especie respecto al A.
+  o.push(...validateBlocks(w, DISHES))
   for(const k of ['D','DM','C','M','N']){
     const g=slotCount(w,k,'gos'), f=slotCount(w,k,'fruct')
     const nm={D:'desayuno Julio',DM:'desayuno María',C:'comida',M:'merienda',N:'cena'}[k]

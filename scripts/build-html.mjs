@@ -1,26 +1,35 @@
-import { WEEKS } from './weeks.mjs'
+import { WEEKS as WEEKS_RAW } from './weeks.mjs'
+import { expandWeek } from './expand.mjs'
 import { sheet, CSS } from './html-sheet.mjs'
 import { DAYS, JULIO } from './gen-core.mjs'
-import { day, CAP, SOL_MIN } from './html-core.mjs'
+import { day, warns, CAP, SOL_MIN } from './html-core.mjs'
 import { writeFileSync } from 'fs'
+
+// expandWeek hace spread de w, asi que el objeto resultante ya trae los
+// campos originales *A/*B (para validateBlocks) Y los arrays D/DM/C/M/N de 7
+// dias (para day/warns/sheet) en el MISMO objeto. No hace falta _raw.
+const WEEKS = WEEKS_RAW.map(expandWeek)
 
 const costs = WEEKS.map(w=>{
   const j=DAYS.map((_,i)=>day(w,i,JULIO))
+  const ws=warns(w,j)
   return { n:w.n, title:w.title, extrema:!!w.extrema,
     cost:j.reduce((s,d)=>s+d.cost,0),
     prot:Math.max(...j.map(d=>d.prot)),
-    sol:Math.min(...j.map(d=>d.fibSol)) }
+    sol:Math.min(...j.map(d=>d.fibSol)),
+    blockWarn: ws.some(x=>x.includes('bloque A y B')) }
 })
 const rank=[...costs].filter(c=>!c.extrema).sort((a,b)=>a.cost-b.cost)
 
 const idx = `<section class="sheet">
 <div class="eyebrow">Índice</div><div class="title">Las once, ordenadas por coste (solo Julio)</div>
 <div class="note">Todos los números salen del motor de <code>dishes.js</code>. El HTML anterior los tenía escritos a mano y no coincidían: decía 751 kcal para el Batido clásico cuando la receta real da 934.</div>
-<table><thead><tr><th>#</th><th>Semana</th><th>Coste/sem</th><th>Proteína máx</th><th>Fibra soluble mín</th></tr></thead><tbody>
+<table><thead><tr><th>#</th><th>Semana</th><th>Coste/sem</th><th>Proteína máx</th><th>Fibra soluble mín</th><th>Bloques</th></tr></thead><tbody>
 ${rank.map(c=>`<tr><td>${c.n}</td><td class="dish">${c.title}</td><td class="kpi">$${c.cost.toFixed(2)}</td>
 <td class="kpi"${c.prot>CAP?' style="color:var(--bad);font-weight:700"':''}>${Math.round(c.prot)} g</td>
-<td class="kpi"${c.sol<SOL_MIN?' style="color:var(--warn);font-weight:700"':''}>${c.sol.toFixed(1)} g</td></tr>`).join('')}
-<tr><td>11</td><td class="dish">⚠ Extrema — solo referencia</td><td class="kpi">$${costs.find(c=>c.extrema).cost.toFixed(2)}</td><td>—</td><td>—</td></tr>
+<td class="kpi"${c.sol<SOL_MIN?' style="color:var(--warn);font-weight:700"':''}>${c.sol.toFixed(1)} g</td>
+<td${c.blockWarn?' style="color:var(--bad);font-weight:700"':''}>${c.blockWarn?'⚠ repite especie':'✓'}</td></tr>`).join('')}
+<tr><td>11</td><td class="dish">⚠ Extrema — solo referencia</td><td class="kpi">$${costs.find(c=>c.extrema).cost.toFixed(2)}</td><td>—</td><td>—</td><td>—</td></tr>
 </tbody></table>
 <div class="foot">Techo de proteína ${CAP} g = 2,23 g/kg a 64 kg. Suelo de fibra soluble ${SOL_MIN} g/día.
 Rojo y ámbar son avisos reales, no adornos: la semana sigue siendo utilizable, pero sabes qué estás aceptando.</div>
@@ -37,7 +46,7 @@ Las etiquetas <span class="tag gos">GOS</span> <span class="tag fr">fructanos</s
 del pie marcan la <em>semana</em> — que es donde estaban los fallos que no se veían plato a plato.</p>
 <p class="noprint"><button onclick="window.print()">Imprimir / Guardar PDF</button></p>
 ${idx}
-${WEEKS.map(sheet).join('\n')}
+${WEEKS.map(w=>sheet(w, WEEKS_RAW.length)).join('\n')}
 </div></body></html>`
 
 const out = new URL('../../semanas-modelo-v2.html', import.meta.url)

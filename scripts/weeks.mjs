@@ -1,91 +1,94 @@
-// Definicion de las 11 semanas.
-// D  = tu desayuno (rota, NO Array(7).fill de uno solo)
-// DM = desayuno de Maria (propio, distinto al tuyo — se restauro tras el
-//      error del 3 sep: yo lo habia fusionado con el tuyo sin que lo pidieras)
-// C = comida · M = merienda · N = cena. Cadencia maxima 4/7 por franja.
-
-const ROT7 = [ // tu rotacion real de 7 dias distintos (existia en S6-S7 del
-                // HTML viejo como DES_ROTATION; aqui se generaliza a todas)
-  'd-burrito-maiz', 'd-overnight-oats-chocolate', 'b-blando',
-  'd-pan-huevos-aguacate', 'd-yogur-almendra-pumpkin-choco',
-  'd-tortilla-cheddar-aguacate', 'n-patata-3huevos',
-]
+// Definicion de las 11 semanas en BLOQUES, no dia a dia.
+// A = Lunes-Jueves (4 dias) · B = Jueves-Domingo (3 dias, la cena del jueves
+// ya es de B, siguiendo el patron "Menu B empieza en la cena del jueves").
+// DA/DB = tu desayuno bloque A/B (o 'ROTA' + array de 7 si rota dia a dia).
+// DMA/DMB = desayuno de Maria, bloque A/B (mismo patron, casi siempre fijo).
+// CA/CB = comida bloque A/B. MA/MB = merienda. NA/NB = cena.
+//
+// Expansion a array de 7 se hace en gen-core: A cubre Lun-Jue, B cubre Vie-Dom,
+// salvo el desayuno del bloque B que tambien vale para la cena del jueves si
+// se declarase asi (no aplica aqui: desayuno no cambia a media semana en
+// ningun ejemplo real del documento).
 
 export const WEEKS = [
-{ n:1, title:'La mejor equilibrada', note:'Tu desayuno rota (7 platos distintos, no uno repetido). María mantiene el suyo, propio y separado.',
-  D:ROT7,
-  DM:Array(7).fill('d-burrito-5050'),
-  C:['c-rancho-aragones-xl','c-rancho-aragones-xl','c-rancho-aragones-xl','c-rancho-aragones-xl','c-pollo-pure-rustico-pipas','c-pollo-pure-rustico-pipas','c-pollo-pure-rustico-pipas'],
-  M:['b-clasico','b-clasico','b-clasico','b-clasico','b-citrico','b-citrico','b-citrico'],
-  N:['n-frittata-turkey-cheddar','n-frittata-turkey-cheddar','n-frittata-turkey-cheddar','n-frittata-turkey-cheddar','n-bacalao-pure-simple','n-bacalao-pure-simple','n-bacalao-pure-simple'] },
+{ n:1, title:'La mejor equilibrada', note:'Desayuno fijo toda la semana (A=B). Comida y merienda y cena SI cambian entre bloques.',
+  DA:'d-burrito-maiz', DB:'d-burrito-maiz',
+  DMA:'d-burrito-5050', DMB:'d-burrito-5050',
+  CA:'c-rancho-aragones-xl', CB:'c-pollo-pure-rustico-pipas',       // cerdo -> pollo
+  MA:'b-clasico', MB:'b-citrico',
+  NA:'n-frittata-turkey-cheddar', NB:'n-fajita-bowl-turkey' },      // pavo ambos (documento original asi lo tenia)
 
-{ n:2, title:'Barata — el dinero manda', note:'Cena de sardinas rota 3 dias con bacalao+patata+tomate. Desayuno tuyo fijo (coincide con el HTML viejo); el de María es su torta propia.',
-  D:Array(7).fill('d-burrito-maiz'),
-  DM:Array(7).fill('d-torta-garbanzo-50-huevo'),
-  C:['c-lomo-arroz-afgano','c-lomo-arroz-afgano','c-lomo-arroz-afgano','c-lomo-arroz-afgano','c-lomo-patata-adobo','c-lomo-patata-adobo','c-lomo-patata-adobo'],
-  M:Array(7).fill('b-clasico-2'),
-  N:['n-sardinas-patata-huevo','n-sardinas-patata-huevo','n-sardinas-patata-huevo','n-sardinas-patata-huevo','n-bacalao-patata-tomate','n-bacalao-patata-tomate','n-bacalao-patata-tomate'] },
+{ n:2, title:'Barata — el dinero manda', note:'Todo fijo salvo el acompañamiento de comida (misma proteina, cerdo, como en el original).',
+  DA:'d-burrito-maiz', DB:'d-burrito-maiz',
+  DMA:'d-torta-garbanzo-50-huevo', DMB:'d-torta-garbanzo-50-huevo',
+  CA:'c-lomo-arroz-afgano', CB:'c-lomo-patata-adobo',               // cerdo ambos (documento original)
+  MA:'b-clasico-2', MB:'b-clasico-2',
+  NA:'n-sardinas-patata-huevo', NB:'n-sardinas-patata-huevo' },
 
-{ n:3, title:'La mas barata posible, sin romper nada', note:'Cenas de huevo cambiadas por sopa de lentejas. Desayuno de María: torta de garbanzo sin huevo, como en el original.',
-  D:Array(7).fill('d-burrito-maiz'),
-  DM:Array(7).fill('d-torta-garbanzo-60'),
-  C:['c-lomo-arroz-afgano','c-lomo-arroz-afgano','c-lomo-arroz-afgano','c-lomo-arroz-afgano','c-lomo-patata-adobo','c-lomo-patata-adobo','c-lomo-patata-adobo'],
-  M:Array(7).fill('b-clasico-2'),
-  N:['n-patata-3huevos','n-patata-3huevos','n-patata-3huevos','n-patata-3huevos','n-sopa-lentejas-huevo-escalfado','n-sopa-lentejas-huevo-escalfado','n-sopa-lentejas-huevo-escalfado'] },
+{ n:3, title:'La mas barata posible, sin romper nada', note:'Estructura identica a S2, cena de huevo fija.',
+  DA:'d-burrito-maiz', DB:'d-burrito-maiz',
+  DMA:'d-torta-garbanzo-60', DMB:'d-torta-garbanzo-60',
+  CA:'c-lomo-arroz-afgano', CB:'c-lomo-patata-adobo',
+  MA:'b-clasico-2', MB:'b-clasico-2',
+  NA:'n-patata-3huevos', NB:'n-patata-3huevos' },
 
-{ n:4, title:'GANANCIA DE PESO — sustituye a la de proteina maxima', note:'Densidad calorica en la ventana segura de las 16:00 en vez de proteina bruta (213 g a 64 kg era contraproducente). Desayuno de María sin cambios respecto al original.',
-  D:ROT7,
-  DM:Array(7).fill('d-tortilla-cheddar-aguacate'),
-  C:['c-lomo-arroz-afgano','c-lomo-arroz-afgano','c-lomo-arroz-afgano','c-lomo-arroz-afgano','c-solomillo-pure-manzana-batida','c-solomillo-pure-manzana-batida','c-solomillo-pure-manzana-batida'],
-  M:['b-ganancia','b-ganancia','b-ganancia','b-ganancia','b-ganancia-manzana','b-ganancia-manzana','b-ganancia-manzana'],
-  N:['n-bacalao-pure-squash-huevo','n-bacalao-pure-squash-huevo','n-bacalao-pure-squash-huevo','n-bacalao-pure-squash-huevo','n-turkey-patata-huevo','n-turkey-patata-huevo','n-turkey-patata-huevo'] },
+{ n:4, title:'GANANCIA DE PESO — sustituye a la de proteina maxima', note:'Comida cerdo ambos bloques (igual que S2/S4 original). Cena SI cambia de especie: pavo -> bacalao.',
+  DA:'d-overnight-oats-chocolate', DB:'d-overnight-oats-chocolate',
+  DMA:'d-tortilla-cheddar-aguacate', DMB:'d-tortilla-cheddar-aguacate',
+  CA:'c-lomo-arroz-afgano', CB:'c-solomillo-pure-manzana-batida',   // cerdo ambos, corte distinto
+  MA:'b-ganancia', MB:'b-ganancia-manzana',
+  NA:'n-bacalao-pure-squash-huevo', NB:'n-turkey-patata-huevo' },   // bacalao -> pavo
 
-{ n:5, title:'PCOS maximo (Maria) + margen de fibra', note:'CADENCIA CORREGIDA: cebolla en la comida 7/7 -> 4/7. Desayuno de María: tortilla+cheddar+aguacate, como en el original.',
-  D:Array(7).fill('d-burrito-maiz'),
-  DM:Array(7).fill('d-tortilla-cheddar-aguacate'),
-  C:['c-cordero-pure-cebolla-laurel','c-cordero-pure-cebolla-laurel','c-cordero-pure-cebolla-laurel','c-cordero-pure-cebolla-laurel','c-solomillo-pure-manzana-batida','c-solomillo-pure-manzana-batida','c-solomillo-pure-manzana-batida'],
-  M:['b-clasico','b-clasico','b-clasico','b-clasico','b-citrico','b-citrico','b-citrico'],
-  N:['n-bacalao-mantequilla-limon','n-bacalao-mantequilla-limon','n-bacalao-mantequilla-limon','n-shakshuka-turkey','n-shakshuka-turkey','n-shakshuka-turkey','n-shakshuka-turkey'] },
+{ n:5, title:'PCOS maximo (Maria) + margen de fibra', note:'CADENCIA: cordero A, pavo B en comida. Cena bacalao A, pavo B.',
+  DA:'d-burrito-maiz', DB:'d-burrito-maiz',
+  DMA:'d-tortilla-cheddar-aguacate', DMB:'d-tortilla-cheddar-aguacate',
+  CA:'c-cordero-pure-cebolla-laurel', CB:'c-turkey-cebolla-mostaza', // cordero -> pavo
+  MA:'b-clasico', MB:'b-citrico',
+  NA:'n-bacalao-mantequilla-limon', NB:'n-shakshuka-turkey' },      // bacalao -> pavo
 
-{ n:6, title:'Marisco y pescado como eje', note:'Mercurio bajo. Ceviche exige congelacion previa por anisakis. Tu desayuno rota (ya rotaba en el original); María mantiene tortilla+cheddar+aguacate.',
-  D:ROT7,
-  DM:Array(7).fill('d-tortilla-cheddar-aguacate'),
-  C:Array(7).fill('c-mejillones-paella'),
-  M:['b-clasico','b-clasico','b-clasico','b-clasico','b-citrico','b-citrico','b-citrico'],
-  N:['n-mejillones-marinera-patata','n-mejillones-marinera-patata','n-mejillones-marinera-patata','n-bacalao-pure-squash','n-bacalao-pure-squash','n-bacalao-pure-squash','n-bacalao-pure-squash'] },
+{ n:6, title:'Marisco y pescado como eje', note:'Desayuno ROTA cada dia para ti; Maria fija. Comida fija (mejillon ambos bloques, es el eje de la semana). Cena bacalao -> mejillon.',
+  DA:'ROTA', DB:'ROTA',
+  DrotA:['d-burrito-maiz','d-overnight-oats-chocolate','b-blando','d-pan-huevos-aguacate'],
+  DrotB:['d-yogur-almendra-pumpkin-choco','d-tortilla-cheddar-aguacate','n-patata-3huevos'],
+  DMA:'d-tortilla-cheddar-aguacate', DMB:'d-tortilla-cheddar-aguacate',
+  CA:'c-mejillones-paella', CB:'c-mejillones-paella',
+  MA:'b-clasico', MB:'b-citrico',
+  NA:'n-ceviche-bacalao', NB:'n-mejillones-marinera-patata' },      // bacalao -> mejillon
 
-{ n:7, title:'Ave como eje (pollo y pavo)', note:'CADENCIA CORREGIDA: cebolla en comida 7/7 -> 4/7. Tu desayuno rota (igual que en el original); María mantiene tortilla+cheddar+aguacate.',
-  D:ROT7,
-  DM:Array(7).fill('d-tortilla-cheddar-aguacate'),
-  C:['c-pollo-arroz-afgano-cebolla-limon','c-pollo-arroz-afgano-cebolla-limon','c-pollo-arroz-afgano-cebolla-limon','c-pollo-arroz-afgano-cebolla-limon','c-turkey-setas-vino','c-turkey-setas-vino','c-turkey-setas-vino'],
-  M:['b-clasico','b-clasico','b-clasico','b-clasico','b-citrico','b-citrico','b-citrico'],
-  N:['n-fajitas-pollo-sin-tortilla','n-fajitas-pollo-sin-tortilla','n-fajitas-pollo-sin-tortilla','n-fajitas-pollo-sin-tortilla','n-turkey-patata-huevo','n-turkey-patata-huevo','n-turkey-patata-huevo'] },
+{ n:7, title:'Ave como eje (pollo y pavo)', note:'Desayuno ROTA. Comida pollo -> pavo. Cena pollo -> pavo.',
+  DA:'ROTA', DB:'ROTA',
+  DrotA:['d-burrito-maiz','d-overnight-oats-chocolate','b-blando','d-pan-huevos-aguacate'],
+  DrotB:['d-yogur-almendra-pumpkin-choco','d-tortilla-cheddar-aguacate','n-patata-3huevos'],
+  DMA:'d-tortilla-cheddar-aguacate', DMB:'d-tortilla-cheddar-aguacate',
+  CA:'c-pollo-arroz-afgano-cebolla-limon', CB:'c-turkey-setas-vino', // pollo -> pavo
+  MA:'b-clasico', MB:'b-citrico',
+  NA:'n-fajitas-pollo-sin-tortilla', NB:'n-turkey-patata-huevo' },  // pollo -> pavo
 
-{ n:8, title:'Legumbre en comida, al fin en su sitio', note:'CADENCIA CORREGIDA: black beans en comida 7/7 -> 4/7. Desayuno de María: tortilla+cheddar+aguacate, como en el original.',
-  D:Array(7).fill('b-blando'),
-  DM:Array(7).fill('d-tortilla-cheddar-aguacate'),
-  C:['c-solomillo-blackbeans-huevo-tomate','c-solomillo-blackbeans-huevo-tomate','c-solomillo-blackbeans-huevo-tomate','c-solomillo-blackbeans-huevo-tomate','c-solomillo-patata-mayonesa-limon','c-solomillo-patata-mayonesa-limon','c-solomillo-patata-mayonesa-limon'],
-  M:['b-clasico','b-clasico','b-clasico','b-clasico','b-citrico','b-citrico','b-citrico'],
-  N:['n-bacalao-pure-squash','n-bacalao-pure-squash','n-bacalao-pure-squash','n-burrito-harina-2huevos','n-burrito-harina-2huevos','n-burrito-harina-2huevos','n-burrito-harina-2huevos'] },
+{ n:8, title:'Legumbre en comida, al fin en su sitio', note:'Comida solomillo(cerdo) -> pavo, ambas con black beans. Cena bacalao -> burrito de huevo (sin proteina animal fuerte, aceptable).',
+  DA:'b-blando', DB:'b-blando',
+  DMA:'d-tortilla-cheddar-aguacate', DMB:'d-tortilla-cheddar-aguacate',
+  CA:'c-solomillo-blackbeans-huevo-tomate', CB:'c-turkey-blackbeans-huevo-cheddar', // cerdo -> pavo
+  MA:'b-clasico', MB:'b-citrico',
+  NA:'n-bacalao-pure-squash', NB:'n-burrito-harina-2huevos' },
 
-{ n:9, title:'Res y pavo, sin higado', note:'Higado fuera del batch por acumulacion de vitamina A. Desayuno de María: tostada+2 huevos como en el original.',
-  D:Array(7).fill('d-burrito-maiz'),
-  DM:Array(7).fill('d-tortilla-cheddar-aguacate'),
-  C:['c-carne-picada-patata-tomate-ajo','c-carne-picada-patata-tomate-ajo','c-carne-picada-patata-tomate-ajo','c-carne-picada-patata-tomate-ajo','c-turkey-pintas-huevo','c-turkey-pintas-huevo','c-turkey-pintas-huevo'],
-  M:['b-clasico','b-clasico','b-clasico','b-clasico','b-citrico','b-citrico','b-citrico'],
-  N:['d-sardinas-huevo-cheddar','d-sardinas-huevo-cheddar','d-sardinas-huevo-cheddar','n-bacalao-pure-simple','n-bacalao-pure-simple','n-bacalao-pure-simple','n-bacalao-pure-simple'] },
+{ n:9, title:'Res y pavo, sin higado', note:'Comida res -> pavo. Cena sardina -> bacalao.',
+  DA:'d-pan-huevos-aguacate', DB:'d-pan-huevos-aguacate',
+  DMA:'d-tortilla-cheddar-aguacate', DMB:'d-tortilla-cheddar-aguacate',
+  CA:'c-carne-picada-patata-tomate-ajo', CB:'c-turkey-pintas-huevo', // vaca -> pavo
+  MA:'b-clasico', MB:'b-citrico',
+  NA:'d-sardinas-huevo-cheddar', NB:'n-bacalao-pure-simple' },      // sardina -> bacalao
 
-{ n:10, title:'Lentejas, barata de verdad', note:'Desayuno de María: tortilla+cheddar+aguacate, como en el original.',
-  D:Array(7).fill('d-burrito-maiz'),
-  DM:Array(7).fill('d-tortilla-cheddar-aguacate'),
-  C:['c-costillas-lentejas-laurel-vino','c-costillas-lentejas-laurel-vino','c-costillas-lentejas-laurel-vino','c-costillas-lentejas-laurel-vino','c-solomillo-patata-mayonesa-limon','c-solomillo-patata-mayonesa-limon','c-solomillo-patata-mayonesa-limon'],
-  M:Array(7).fill('b-clasico-2'),
-  N:['n-sardinas-patata-huevo','n-sardinas-patata-huevo','n-sardinas-patata-huevo','n-bacalao-patata-tomate','n-bacalao-patata-tomate','n-bacalao-patata-tomate','n-bacalao-patata-tomate'] },
+{ n:10, title:'Lentejas, barata de verdad', note:'Comida cerdo ambos bloques (costillas -> lomo, igual patron que S2/S4). Cena sardina fija.',
+  DA:'d-burrito-maiz', DB:'d-burrito-maiz',
+  DMA:'d-tortilla-cheddar-aguacate', DMB:'d-tortilla-cheddar-aguacate',
+  CA:'c-costillas-lentejas-laurel-vino', CB:'c-lomo-patata-adobo',
+  MA:'b-clasico-2', MB:'b-clasico-2',
+  NA:'n-sardinas-patata-huevo', NB:'n-sardinas-patata-huevo' },
 
-{ n:11, extrema:true, title:'EXTREMA — suelo absoluto de coste, sin ninguna regla', note:'Rompe a proposito. Los dos comen torta de garbanzo, como en el original: aqui no aplican las reglas de separacion.',
-  D:Array(7).fill('d-torta-garbanzo-60'),
-  DM:Array(7).fill('d-torta-garbanzo-60'),
-  C:['c-lomo-arroz-afgano','c-lomo-arroz-afgano','c-lomo-arroz-afgano','c-lomo-arroz-afgano','c-lomo-patata-adobo','c-lomo-patata-adobo','c-lomo-patata-adobo'],
-  M:Array(7).fill('b-clasico-2'),
-  N:['n-blackbeans-huevo-patata','n-blackbeans-huevo-patata','n-blackbeans-huevo-patata','n-blackbeans-huevo-patata','n-garbanzos-huevo-patata','n-garbanzos-huevo-patata','n-garbanzos-huevo-patata'] },
+{ n:11, extrema:true, title:'EXTREMA — suelo absoluto de coste, sin ninguna regla', note:'Rompe a proposito. Los dos comen torta de garbanzo. Comida cerdo ambos bloques. Cena legumbre ambos bloques (rompe fibra insoluble y PCOS a proposito).',
+  DA:'d-torta-garbanzo-60', DB:'d-torta-garbanzo-60',
+  DMA:'d-torta-garbanzo-60', DMB:'d-torta-garbanzo-60',
+  CA:'c-lomo-arroz-afgano', CB:'c-lomo-patata-adobo',
+  MA:'b-clasico-2', MB:'b-clasico-2',
+  NA:'n-blackbeans-huevo-patata', NB:'n-garbanzos-huevo-patata' },
 ]
