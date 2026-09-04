@@ -160,6 +160,27 @@ export function comboScalableKey(combo, allIng) {
   return best
 }
 
+// BUG CRITICO CORREGIDO 3 sep 2026 — AOVE contado DOS VECES.
+// El sumando plano de 235 kcal viene de cuando el aceite no estaba en `items`.
+// Hoy 103 de 118 platos SI lo llevan como item, `aove` tiene kcml: 9, y NINGUN
+// plato declara `noAove`. Resultado: comboAgg contaba el aceite por ml y encima
+// se le sumaban 235 kcal fijas. Un dia con tres platos con aceite se inflaba
+// +705 kcal; una semana, +4.935 kcal.
+//
+// Y no era solo un numero mal en pantalla. dayKcal alimenta a personLunchScale,
+// que calcula los gramos de arroz o patata a servir como
+// neededKcal = objetivo - fixedKcal. Con fixedKcal inflado, neededKcal salia
+// demasiado bajo y el motor servia MENOS base de la necesaria. A 64 kg, IMC
+// 18,7 y con objetivo de GANAR peso, el motor llevaba tiempo racionando
+// exactamente lo que hacia falta aumentar.
+const AOVE_FLAT_KCAL = 235
+
+function aoveFlatKcal(combo) {
+  if (!combo || combo.noAove) return 0
+  if (combo.items?.some(it => it.k === 'aove')) return 0   // ya contado por ml
+  return AOVE_FLAT_KCAL
+}
+
 // Total kcal of a single planned meal (desayuno recipe or plato).
 export function mealKcal(meal, allIng, allCombos, gramsOverride = {}) {
   if (!meal) return 0
@@ -173,7 +194,7 @@ export function mealKcal(meal, allIng, allCombos, gramsOverride = {}) {
     if (!protein || !combo) return 0
     return proteinKcal(protein, false, meal.proteinUnits)
          + comboAgg(combo, allIng, meal.comboVariants || {}, gramsOverride, meal.comboOptionals || []).kcal
-         + (combo.noAove ? 0 : 235)
+         + aoveFlatKcal(combo)
   }
   return 0
 }

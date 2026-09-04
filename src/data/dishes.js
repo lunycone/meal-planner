@@ -398,6 +398,13 @@ export const DISHES = {
     name: 'Bacalao + puré de patata-squash', meals: ['cena'],
     items: [{ k: 'bacalao', p: { grams: 150 } }, { k: 'patata', p: { grams: 200 } }, { k: 'squash-butternut', p: { grams: 150 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'aove', p: { ml: 25 } }],
   },
+  // NUEVO 3 sep 2026 — variante con huevo, a peticion. El squash aporta pectina
+  // (fibra soluble) en la cena, que es donde encaja: la calabaza en batido
+  // desplaza sabor y el pure la absorbe sin notarse.
+  'n-bacalao-pure-squash-huevo': {
+    name: 'Bacalao + puré de patata-squash + huevo', meals: ['cena'],
+    items: [{ k: 'bacalao', p: { grams: 150 } }, { k: 'patata', p: { grams: 200 } }, { k: 'squash-butternut', p: { grams: 150 } }, { k: 'huevo', p: { units: 1 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'aove', p: { ml: 25 } }],
+  },
   'n-bacalao-pure-zucchini': {
     name: 'Bacalao + puré de patata-zucchini', meals: ['cena'],
     items: [{ k: 'bacalao', p: { grams: 150 } }, { k: 'patata', p: { grams: 200 } }, { k: 'zucchini', p: { grams: 120 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'leche', p: { grams: 30 } }, { k: 'aove', p: { ml: 25 } }],
@@ -465,5 +472,23 @@ export const DISHES = {
   'b-blando': {
     name: 'Batido blando (día malo de estómago)', meals: ['merienda'],
     items: [{ k: 'avena', p: { grams: 100 } }, { k: 'leche', p: { grams: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'mantequilla', p: { grams: 25 } }],
+  },
+  // NUEVO 3 sep 2026 — BATIDO DE GANANCIA.
+  // Hace un trabajo que ninguno de los ocho anteriores hacia: maxima densidad
+  // calorica DENTRO de la ventana segura de las 16:00, con carga alta de fibra
+  // SOLUBLE. Tres decisiones deliberadas:
+  //   · Cebada en vez de avena: mas beta-glucano (6,0 vs 4,5 g/100g). Arrastra
+  //     mas fructanos, pero a las 16:00 el pico de fermentacion cae fuera de la
+  //     ventana vulnerable de la manana y solo queda el beneficio.
+  //   · Membrillo (o manzana) cocido: pectina. HERVIR Y TIRAR EL AGUA — el
+  //     sorbitol es hidrosoluble y se va; la pectina esta unida a la pared
+  //     celular y se queda.
+  //   · Aceite de coco refinado en vez de mantequilla o AOVE: no es mas barato
+  //     ($0,23/100 kcal), es de sabor NEUTRO. A 64 kg y IMC 18,7 el limite no
+  //     es el apetito de comer, es el espacio en el estomago: compra calorias
+  //     sin volumen y sin sabor que estorbe.
+  'b-ganancia': {
+    name: 'Batido de ganancia', meals: ['merienda'],
+    items: [{ k: 'cebada-copos', p: { grams: 100 } }, { k: 'leche', p: { grams: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'membrillo', p: { grams: 150 } }, { k: 'aceite-coco', p: { grams: 15 } }],
   },
 }

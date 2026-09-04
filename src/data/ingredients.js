@@ -137,6 +137,7 @@ export const ING = {
   'vino-blanco':    { name: 'Vino blanco (cocina)', cat: 'otro', perML: 0.012, kcml: 0.83, pack: '1 L · $12.00', per: '100ml → $1.20 · 83 kcal' },
   laurel:           { name: 'Laurel (hojas)',    cat: 'otro', flat: 0.10,   kcf: 1,  pack: 'especia',         per: 'uso → $0.10', est: true },
   manzana:          { name: 'Manzana',           cat: 'fresco', perUnit: 1.20, kcu: 95, protu: 0.5, fatu: 0.3, fibu: 4, fibSolu: 0.9, gi: 36, pack: 'ud · $1.20', per: '1 ud → $1.20 · 95 kcal' },
+  membrillo:        { name: 'Membrillo (fruto, cocido)', cat: 'fresco', per100: 0.55, kc: 57, prot: 0.4, fat: 0.1, fib: 1.9, fibSol: 1.2, gi: 35, pack: '~$5.50/kg · temporada sep-nov', per: '150g → $0.83 · 86 kcal — PECTINA alta, hervir y TIRAR el agua (arrastra sorbitol)', est: true },
   huevo:            { name: 'Huevo',            cat: 'otro', perUnit: 0.624, kcu: 72, protu: 6, fatu: 5, pack: 'docena · $7.49', per: 'ud → $0.62 · 72 kcal' },
   tahini:           { name: 'Tahini',           cat: 'otro', per100: 5.95, kc: 595, prot: 17, fat: 54, fib: 9.3, pack: '500g · ~$29.75', per: '15g → $0.89 · 89 kcal' },
   'tomate-conserva':{ name: 'Tomate cherry/conserva', cat: 'otro', per100: 0.30, kc: 33, prot: 1.6, fat: 0.2, fib: 1.9, pack: 'lata · ~$1.50', per: '100g → $0.30 · 33 kcal' },
