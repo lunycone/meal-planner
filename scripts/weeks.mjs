@@ -47,18 +47,18 @@ export const WEEKS = [
   MA:'b-clasico', MB:'b-citrico',
   NA:'n-bacalao-mantequilla-limon', NB:'n-shakshuka-turkey' },       // bacalao -> pavo
 
-{ n:6, title:'Marisco y pescado como eje', note:'Tu desayuno ROTA cada dia (4 platos A, 4 platos B, ninguno repetido en el mismo bloque). Maria cambia de bloque. Comida fija (mejillon, eje de la semana). Cena bacalao -> mejillon.',
+{ n:6, title:'Marisco y pescado como eje', note:'Tu desayuno ROTA cada dia (3 platos A: Mar-Mie-Jue, 4 platos B: Vie-Sab-Dom-Lun, ninguno repetido en el mismo bloque). Maria cambia de bloque. Comida fija (mejillon, eje de la semana). Cena bacalao -> mejillon.',
   DA:'ROTA', DB:'ROTA',
-  DrotA:['d-burrito-maiz','d-overnight-oats-chocolate','b-blando','d-pan-huevos-aguacate'],
+  DrotA:['d-overnight-oats-chocolate','b-blando','d-pan-huevos-aguacate'],
   DrotB:['d-yogur-almendra-pumpkin-choco','d-torta-garbanzo-50-huevo','n-patata-3huevos','d-burrito-maiz'],
   DMA:'d-tortilla-cheddar-aguacate', DMB:'d-torta-garbanzo-50-huevo',
   CA:'c-mejillones-paella', CB:'c-mejillones-paella',
   MA:'b-clasico', MB:'b-citrico',
   NA:'n-ceviche-bacalao', NB:'n-mejillones-marinera-patata' },       // bacalao -> mejillon
 
-{ n:7, title:'Ave como eje (pollo y pavo)', note:'Tu desayuno ROTA. Maria cambia de bloque. Comida pollo -> pavo. Cena pollo -> pavo.',
+{ n:7, title:'Ave como eje (pollo y pavo)', note:'Tu desayuno ROTA (3 platos A: Mar-Mie-Jue, 4 platos B: Vie-Sab-Dom-Lun). Maria cambia de bloque. Comida pollo -> pavo. Cena pollo -> pavo.',
   DA:'ROTA', DB:'ROTA',
-  DrotA:['d-burrito-maiz','d-overnight-oats-chocolate','b-blando','d-pan-huevos-aguacate'],
+  DrotA:['d-overnight-oats-chocolate','b-blando','d-pan-huevos-aguacate'],
   DrotB:['d-yogur-almendra-pumpkin-choco','d-torta-garbanzo-50-huevo','n-patata-3huevos','d-burrito-maiz'],
   DMA:'d-tortilla-cheddar-aguacate', DMB:'d-torta-garbanzo-50-huevo',
   CA:'c-pollo-arroz-afgano-cebolla-limon', CB:'c-turkey-setas-vino', // pollo -> pavo
