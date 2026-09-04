@@ -12,7 +12,11 @@ export const DISHES = {
   },
   'd-burrito-maiz': {
     name: 'Burrito 100% maíz', meals: ['desayuno', 'cena'],
-    items: [{ k: 'masa-harina', p: { grams: 60 } }, { k: 'huevo', p: { units: 3 } }],
+    // AJUSTADO 3 sep 2026: era 60g masa + 3 huevos = 17,4 g de grasa, por
+    // encima del techo de 15 g del desayuno. Se cambia un huevo por 20 g de
+    // masa: misma kcal, misma funcion, 13 g de grasa y +72 kcal. La regla no
+    // vale nada si el plato mas usado del catalogo la incumple.
+    items: [{ k: 'masa-harina', p: { grams: 80 } }, { k: 'huevo', p: { units: 2 } }],
   },
   'd-burrito-maiz-cheddar': {
     name: 'Burrito maíz + cheddar', meals: ['desayuno', 'cena'],
@@ -488,7 +492,13 @@ export const DISHES = {
   //     es el apetito de comer, es el espacio en el estomago: compra calorias
   //     sin volumen y sin sabor que estorbe.
   'b-ganancia': {
-    name: 'Batido de ganancia', meals: ['merienda'],
+    name: 'Batido de ganancia (membrillo)', meals: ['merienda'],
     items: [{ k: 'cebada-copos', p: { grams: 100 } }, { k: 'leche', p: { grams: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'membrillo', p: { grams: 150 } }, { k: 'aceite-coco', p: { grams: 15 } }],
+  },
+  // Variante con manzana: mas facil de encontrar todo el ano y algo mas barata,
+  // pero menos pectina y mas sorbitol. Misma tecnica: hervir y tirar el agua.
+  'b-ganancia-manzana': {
+    name: 'Batido de ganancia (manzana)', meals: ['merienda'],
+    items: [{ k: 'cebada-copos', p: { grams: 100 } }, { k: 'leche', p: { grams: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'manzana', p: { units: 1 } }, { k: 'aceite-coco', p: { grams: 15 } }],
   },
 }
