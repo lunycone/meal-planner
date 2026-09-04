@@ -52,7 +52,11 @@ function sheet(w){
   const row=(lab,pick)=>`<tr><td class="rowlab">${lab}</td>`+
     DAYS.map((_,i)=>{const c=pick(i);return `<td><div class="dish">${e(c.name)}${tags(c)}</div><div class="macro">${c.macro}</div></td>`}).join('')+'</tr>'
 
-  const D=row('🍳 Desayuno',i=>{const a=agg(w.D[i]);return{...a,macro:`${r(a.kcal)} kcal · ${r(a.prot)} g prot · ${a.fat.toFixed(0)} g grasa`}})
+  // El desayuno vuelve a ser DOS filas separadas, con sus dos platos reales
+  // (D = tuyo, DM = de Maria) — no una sola fila con el mismo plato repetido
+  // para ambos, que fue el error del 3 sep.
+  const D=row('🍳 Desayuno · Julio',i=>{const a=agg(w.D[i]);return{...a,macro:`${r(a.kcal)} kcal · ${r(a.prot)} g prot · ${a.fat.toFixed(0)} g grasa`}})
+  const DM=row('🍳 Desayuno · María',i=>{const a=agg(w.DM[i]);return{...a,macro:`${r(a.kcal)} kcal · ${r(a.prot)} g prot`}})
   const C=row('🍽️ Comida',i=>{const a=j[i].C,b=m[i].C;return{...a,macro:`<span class="sw j"></span>${a.grams??'—'} g ${a.ingName??''} · ${r(a.kcal)} kcal<br><span class="sw m"></span>${b.grams??'—'} g · ${r(b.kcal)} kcal`}})
   const M=row('🥤 Merienda',i=>{const a=agg(w.M[i]);return{...a,macro:`${r(a.kcal)} kcal · ${a.fibSol.toFixed(1)} g fibra soluble`}})
   const N=row('🌙 Cena',i=>{const a=agg(w.N[i]);return{...a,macro:`${r(a.kcal)} kcal · ${r(a.prot)} g prot`}})
@@ -73,9 +77,9 @@ function sheet(w){
     <div class="title">${e(w.title)}</div>
     <div class="note">${e(w.note)}</div>
     <table><thead><tr><th class="rowlab">&nbsp;</th>${DAYS.map(d=>`<th>${d}</th>`).join('')}</tr></thead>
-    <tbody>${D}${C}${M}${N}${T}</tbody></table>
+    <tbody>${D}${DM}${C}${M}${N}${T}</tbody></table>
     ${flags}
-    <div class="foot">Coste semana — <span class="sw j"></span>Julio $${jc.toFixed(2)} · <span class="sw m"></span>María $${mc.toFixed(2)} · <b>Total $${(jc+mc).toFixed(2)}</b>. La comida escala su base por persona; desayuno, merienda y cena son iguales para los dos.</div>
+    <div class="foot">Coste semana — <span class="sw j"></span>Julio $${jc.toFixed(2)} · <span class="sw m"></span>María $${mc.toFixed(2)} · <b>Total $${(jc+mc).toFixed(2)}</b>. Desayuno es propio de cada uno; comida escala su base por persona; merienda y cena son iguales para los dos.</div>
   </section>`
 }
 export { sheet, CSS }
