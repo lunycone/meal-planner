@@ -581,8 +581,10 @@ export const DISHES = {
   // la cocina real, aunque aqui solo exista la manzana cruda como ingrediente)
   // + miel para kcal facil de digerir.
   'm-astringente-platano-manzana': {
-    name: 'Plátano y manzana con miel (astringente)', meals: ['merienda'],
-    items: [{ k: 'banana', p: { grams: 150 } }, { k: 'manzana', p: { units: 1 } }, { k: 'miel', p: { grams: 15 } }],
+    // Compota en vez de manzana cruda (pedido del usuario) -- sin piel, mucha
+    // menos fibra insoluble, mas en linea con el resto de la semana.
+    name: 'Plátano y compota de manzana con miel (astringente)', meals: ['merienda'],
+    items: [{ k: 'banana', p: { grams: 150 } }, { k: 'compota-manzana', p: { grams: 150 } }, { k: 'miel', p: { grams: 15 } }],
   },
   'b-blando': {
     name: 'Batido blando (día malo de estómago)', meals: ['merienda'],
