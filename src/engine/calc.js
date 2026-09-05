@@ -361,7 +361,13 @@ export function personMealScale(day, mealType, person, allIng, allCombos, opts =
   const cookRatio = DRY_TO_COOKED[key] ?? 1
   const cookedCapDry = MAX_COOKED_BASE_GRAMS / cookRatio
   const factorCap = Math.max(defaultGrams * SCALE_CAP_FACTOR, MIN_SCALE_CAP_GRAMS)
-  const max = opts.max ?? Math.max(defaultGrams, Math.min(factorCap, cookedCapDry))
+  // combo.scalableMax (6 sep 2026): tope explicito por plato, para bases sin
+  // ratio seco->cocido donde el 4x generico no es realista -- ej. la harina
+  // de un burrito no es un acompañamiento que "se sirve mas" como el arroz o
+  // la patata; subirla a 200g+ (el 4x de sus 55g por defecto) es demasiada
+  // masa para una sola cena. Solo "n-burrito-harina-2huevos" lo declara por
+  // ahora -- el resto sigue con el tope generico de siempre.
+  const max = opts.max ?? combo.scalableMax ?? Math.max(defaultGrams, Math.min(factorCap, cookedCapDry))
   const rawGrams = neededKcal / kcalPerGram
   const grams = Math.round(Math.max(min, Math.min(max, rawGrams)))
 

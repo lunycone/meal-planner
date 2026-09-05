@@ -497,7 +497,10 @@ export const DISHES = {
     items: [{ k: 'bacalao', p: { grams: 150 } }, { k: 'mejillones', p: { grams: 200 } }, { k: 'tomate-conserva', p: { grams: 80 } }, { k: 'cebolla-amarilla', p: { grams: 60 } }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 25 } }],
   },
   'n-burrito-harina-2huevos': {
-    name: 'Burrito de harina + 2 huevos', meals: ['cena'],
+    // scalableMax (6 sep 2026): sin esto, un dia de mucha kcal podia escalar
+    // la harina hasta ~200g+ (4x el default) -- demasiada masa para una sola
+    // cena. Tope a 150g (~2.7x); si aun asi falta, sale el aviso de snack.
+    name: 'Burrito de harina + 2 huevos', meals: ['cena'], scalableMax: 150,
     items: [{ k: 'harina', p: { grams: 55 } }, { k: 'huevo', p: { units: 2 } }, { k: 'aove', p: { ml: 10 } }],
   },
   'n-burrito-huevo-turkey-queso': {
