@@ -214,6 +214,16 @@ const SCALE_CAP_FACTOR = 4
 const MIN_SCALE_CAP_GRAMS = 150       // floor so tiny defaults still flex
 const KCAL_PER_OIL_TBSP = 120         // olive oil, not counted in combos
 
+// AOVE auto-close (6 sep 2026): el generador de las 11 semanas modelo
+// (scripts/html-core.mjs) cerraba el hueco que dejaba el tope de almidon con
+// un chorro de AOVE ANTES de reportar un deficit -- por eso sus totales
+// llegaban casi exactos al objetivo dia a dia. Esa pasada nunca se porto al
+// motor de la app, asi que el Planificador mostraba kcal muy por debajo del
+// objetivo (hasta -500) en los mismos dias que el HTML daba casi exacto.
+// Mismo tope que alli: 30ml por plato, 9 kcal/ml.
+const AOVE_KCAL_ML = 9
+const AOVE_AUTOCLOSE_CAP_KCAL = 30 * AOVE_KCAL_ML // 270 kcal ~ 30ml
+
 // Physical ceiling: what actually fits in a tupper once cooked. Grains/legumes
 // expand a lot when cooked, so the cap must live in COOKED grams, not dry — a
 // "4× dry" cap let rice balloon to ~840g cooked, which no tupper holds and no
@@ -278,7 +288,17 @@ export function personMealScale(day, mealType, person, allIng, allCombos, opts =
 
   const target = opts.kcalTarget ?? person.kcalTarget
   const mealAgg = comboAgg(combo, allIng)
-  const totalKcal = dayKcal(day, allIng, allCombos)          // dia completo, todo a racion por defecto
+  let totalKcal = dayKcal(day, allIng, allCombos)            // dia completo, todo a racion por defecto
+  // Segunda pasada (opcional): cuando el llamador ya escalo la OTRA comida
+  // (comida<->cena se afectan mutuamente), sustituye su valor por defecto
+  // por el ya escalado -- si no, esta funcion nunca sabe que la otra comida
+  // creció o encogió, y comida+cena pueden acabar sumando de mas o de menos.
+  if (opts.otherMealType && opts.otherMealKcalOverride != null) {
+    const otherMeal  = day?.[opts.otherMealType]
+    const otherCombo = otherMeal?.type === 'desayuno' ? allCombos[otherMeal.recipeKey] : null
+    const otherDefault = otherCombo ? comboAgg(otherCombo, allIng).kcal : 0
+    totalKcal = totalKcal - otherDefault + opts.otherMealKcalOverride
+  }
   const otherFixedKcal = totalKcal - mealAgg.kcal            // todo el dia MENOS este plato
   const neededFromMeal = target - otherFixedKcal             // lo que este plato tiene que aportar
   const key = comboScalableKey(combo, allIng)
@@ -299,16 +319,21 @@ export function personMealScale(day, mealType, person, allIng, allCombos, opts =
     }
   }
 
-  // ── Falta, y el plato no tiene base escalable: reportar hueco + aceite ──
+  // ── Falta, y el plato no tiene base escalable: cerrar con AOVE (hasta el
+  // tope de siempre), y solo si aun asi falta, reportar el hueco real ──
   if (!key) {
-    const dayKcalAchieved = Math.round(otherFixedKcal + mealAgg.kcal)
+    const rawDayKcal = otherFixedKcal + mealAgg.kcal
+    const rawDeficit = target - rawDayKcal
+    const oilKcal = Math.max(0, Math.min(AOVE_AUTOCLOSE_CAP_KCAL, rawDeficit))
+    const dayKcalAchieved = Math.round(rawDayKcal + oilKcal)
     const deficitKcal = Math.max(0, target - dayKcalAchieved)
     return {
       ingKey: null, ingName: null, defaultGrams: null, grams: null, wholeDishFactor: 1,
       dayKcalAchieved, deficitKcal,
       oilTbsp: deficitKcal > 0 ? Math.round(deficitKcal / KCAL_PER_OIL_TBSP) : 0,
-      deltaKcal: 0,
-      mealKcalAchieved: Math.round(mealAgg.kcal),
+      oilMlApplied: Math.round(oilKcal / AOVE_KCAL_ML),
+      deltaKcal: Math.round(oilKcal),
+      mealKcalAchieved: Math.round(mealAgg.kcal + oilKcal),
       mealCostAchieved: mealAgg.cost,
     }
   }
@@ -331,10 +356,16 @@ export function personMealScale(day, mealType, person, allIng, allCombos, opts =
   const rawGrams = neededKcal / kcalPerGram
   const grams = Math.round(Math.max(min, Math.min(max, rawGrams)))
 
-  const dayKcalAchieved = Math.round(fixedKcal + grams * kcalPerGram)
+  const rawDayKcal = fixedKcal + grams * kcalPerGram
+  const rawDeficit = target - rawDayKcal
+  // Si el almidon ya esta al tope (o el objetivo no da ni para eso) y aun
+  // falta, cerrar con un chorro de AOVE -- mismo tope que el generador de
+  // las semanas modelo (30ml/plato), antes de reportar un hueco real.
+  const oilKcal = Math.max(0, Math.min(AOVE_AUTOCLOSE_CAP_KCAL, rawDeficit))
+  const dayKcalAchieved = Math.round(rawDayKcal + oilKcal)
   const deficitKcal = Math.max(0, target - dayKcalAchieved)
   const oilTbsp = deficitKcal > 0 ? Math.round(deficitKcal / KCAL_PER_OIL_TBSP) : 0
-  const deltaKcal = Math.round((grams - defaultGrams) * kcalPerGram)
+  const deltaKcal = Math.round((grams - defaultGrams) * kcalPerGram + oilKcal)
 
   return {
     ingKey: key,
@@ -346,8 +377,9 @@ export function personMealScale(day, mealType, person, allIng, allCombos, opts =
     cappedHigh: rawGrams > max,
     cappedLow: rawGrams < min,
     dayKcalAchieved,
-    deficitKcal,            // >0 only when the cap can't reach the target
-    oilTbsp,                // tbsp of olive oil to close the deficit
+    deficitKcal,            // >0 only when the cap (almidon + AOVE) no basta
+    oilTbsp,                // cucharadas de AOVE que AUN faltarian por encima del tope ya aplicado
+    oilMlApplied: Math.round(oilKcal / AOVE_KCAL_ML),
     deltaKcal,
     mealKcalAchieved: Math.round(mealAgg.kcal + deltaKcal),
     mealCostAchieved: mealAgg.cost + (grams - defaultGrams) * (ing.per100 || 0) / 100,
@@ -364,19 +396,46 @@ export function personLunchScale(day, person, allIng, allCombos, opts = {}) {
 // reduce included) against desayuno+merienda at their own default portion.
 // dayIdx (0=lunes..6=domingo) resolves person.kcalByDay when present — pass
 // it whenever the caller knows which day of the week this is (both tabs do).
+// Dos pasadas alternas comida<->cena (6 sep 2026, corrige el motor de la app
+// para que coincida con el generador de las 11 semanas modelo). Sin esto,
+// comida y cena se calculaban cada una asumiendo que la OTRA se quedaba en
+// su racion por defecto -- y como las dos se mueven a la vez de verdad, la
+// suma podia quedarse corta o pasarse de largo varios cientos de kcal.
+// Pasada 1: comida vs cena@default. Pasada 2: cena vs comida@pasada-1.
+// Pasada 3: recomputar comida vs cena@pasada-2 (el mismo refinamiento que
+// hacia scripts/html-core.mjs). Se exporta porque el Batch tab necesita los
+// MISMOS gramos reales que aqui se usan para el kcal mostrado.
+export function personMealScalesTwoPass(day, person, allIng, allCombos, target) {
+  const comidaMeal = day?.comida, cenaMeal = day?.cena
+  const comidaCombo = comidaMeal?.type === 'desayuno' ? allCombos[comidaMeal.recipeKey] : null
+  const cenaCombo   = cenaMeal?.type   === 'desayuno' ? allCombos[cenaMeal.recipeKey]   : null
+  const comidaDefault = comidaCombo ? comboAgg(comidaCombo, allIng) : null
+  const cenaDefault   = cenaCombo   ? comboAgg(cenaCombo, allIng)   : null
+
+  const c1 = personMealScale(day, 'comida', person, allIng, allCombos, { kcalTarget: target })
+  const c1Kcal = c1?.mealKcalAchieved ?? comidaDefault?.kcal ?? 0
+  const n = personMealScale(day, 'cena', person, allIng, allCombos, {
+    kcalTarget: target, otherMealType: 'comida', otherMealKcalOverride: c1Kcal,
+  })
+  const nKcal = n?.mealKcalAchieved ?? cenaDefault?.kcal ?? 0
+  const c2 = personMealScale(day, 'comida', person, allIng, allCombos, {
+    kcalTarget: target, otherMealType: 'cena', otherMealKcalOverride: nKcal,
+  })
+
+  return {
+    comida: c2 ?? c1, cena: n,
+    comidaDefaultKcal: comidaDefault?.kcal ?? 0, cenaDefaultKcal: cenaDefault?.kcal ?? 0,
+    comidaDefaultCost: comidaDefault?.cost ?? 0, cenaDefaultCost: cenaDefault?.cost ?? 0,
+  }
+}
+
 export function personDayKcal(day, person, allIng, allCombos, dayIdx = null) {
   const target = personTargetForDay(person, dayIdx)
-  let achieved = dayKcal(day, allIng, allCombos) // todo a racion por defecto
-  for (const mealType of ['comida', 'cena']) {
-    const meal = day?.[mealType]
-    if (!meal || meal.type !== 'desayuno') continue
-    const combo = allCombos[meal.recipeKey]
-    if (!combo) continue
-    const defaultMealKcal = comboAgg(combo, allIng).kcal
-    const scale = personMealScale(day, mealType, person, allIng, allCombos, { kcalTarget: target })
-    if (scale) achieved += (scale.mealKcalAchieved - defaultMealKcal)
-  }
-  return Math.round(achieved)
+  const base = dayKcal(day, allIng, allCombos) // todo a racion por defecto
+  const { comida, cena, comidaDefaultKcal, cenaDefaultKcal } = personMealScalesTwoPass(day, person, allIng, allCombos, target)
+  const comidaKcal = comida?.mealKcalAchieved ?? comidaDefaultKcal
+  const cenaKcal   = cena?.mealKcalAchieved   ?? cenaDefaultKcal
+  return Math.round(base - comidaDefaultKcal - cenaDefaultKcal + comidaKcal + cenaKcal)
 }
 
 // Same idea as personDayKcal but for cost — used by the weekly cost card.
@@ -390,17 +449,11 @@ function dayCost(day, allIng, allCombos) {
 
 export function personDayCost(day, person, allIng, allCombos, dayIdx = null) {
   const target = personTargetForDay(person, dayIdx)
-  let total = dayCost(day, allIng, allCombos)
-  for (const mealType of ['comida', 'cena']) {
-    const meal = day?.[mealType]
-    if (!meal || meal.type !== 'desayuno') continue
-    const combo = allCombos[meal.recipeKey]
-    if (!combo) continue
-    const defaultMealCost = comboAgg(combo, allIng).cost
-    const scale = personMealScale(day, mealType, person, allIng, allCombos, { kcalTarget: target })
-    if (scale) total += (scale.mealCostAchieved - defaultMealCost)
-  }
-  return total
+  const base = dayCost(day, allIng, allCombos)
+  const { comida, cena, comidaDefaultCost, cenaDefaultCost } = personMealScalesTwoPass(day, person, allIng, allCombos, target)
+  const comidaCost = comida?.mealCostAchieved ?? comidaDefaultCost
+  const cenaCost   = cena?.mealCostAchieved   ?? cenaDefaultCost
+  return base - comidaDefaultCost - cenaDefaultCost + comidaCost + cenaCost
 }
 
 export function fmt(n)  { return '$' + n.toFixed(2) }

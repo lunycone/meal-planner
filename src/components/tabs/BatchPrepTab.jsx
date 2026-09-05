@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import useStore, { selectAllIng, selectAllCombos } from '../../store/useStore'
 import { PROTEIN } from '../../data/proteins'
 import { PREP } from '../../data/combos'
-import { comboScalableKey, personMealScale, personTargetForDay, personDayKcal, slotForPerson } from '../../engine/calc'
+import { comboScalableKey, personMealScalesTwoPass, personTargetForDay, personDayKcal, slotForPerson } from '../../engine/calc'
 
 // Orden de dias para resolver el indice (0=lun..6=dom) que necesita
 // personTargetForDay/personMealScale — mismo orden que DAY_KEYS en el
@@ -252,14 +252,15 @@ function computeBatchMeal(mealType, batchDays, profiles, allIng, allCombos, week
         // patata): tambien se cuenta como racion fija.
         pt.recipeServings += 1
       } else {
-        // comida/cena: personMealScale ya sabe SUBIR el almidon si falta, o
-        // REDUCIR EL PLATO ENTERO si sobra (el mismo motor de las 11 semanas
-        // modelo). defaultGrams es el suelo cuando no hay dato de escalado.
+        // comida/cena: dos pasadas alternas (personMealScalesTwoPass) -- las
+        // mismas cantidades exactas que ya usa el kcal mostrado en
+        // Planificador, no un calculo aparte que podria no coincidir.
         const target = personTargetForDay(person, dayIdx)
         const dayForPerson = Object.fromEntries(
           MEALS.map(m => [m, slotForPerson(weekData[`${dayKey}-${m}`] ?? null, person.id)])
         )
-        const scale = personMealScale(dayForPerson, mealType, person, allIng, allCombos, { kcalTarget: target })
+        const twoPass = personMealScalesTwoPass(dayForPerson, person, allIng, allCombos, target)
+        const scale = mealType === 'comida' ? twoPass.comida : twoPass.cena
         const defaultGrams = comboRef.items.find(it => it.k === scalableKey)?.p?.grams ?? 0
         if (scale?.grams != null) {
           pt.baseGrams += scale.grams
