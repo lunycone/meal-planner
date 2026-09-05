@@ -47,22 +47,70 @@ let lastSyncError = null
     })
   }
 
+  // 5 sep 2026 -- SEGUNDA CARRERA, entre acciones (no dentro de una): cargar
+  // "semana 1" y, poco despues, cargar "semana 5" dispara DOS peticiones de
+  // red distintas -- agrupar cada carga en una sola escritura (arreglo
+  // anterior) ya evita que se pisen ENTRE SI los 28 huecos de una misma
+  // carga, pero no evita que la escritura de la semana 1 (mas antigua)
+  // TARDE MAS en responder que la de la semana 5 y por tanto gane en la
+  // base de datos -- exactamente "elijo la 5, pero al final se queda la 1".
+  // pendingValue/writing convierten el escritor en una cola de UN solo hueco:
+  // mientras hay una peticion en vuelo, cualquier setItem nuevo solo
+  // actualiza pendingValue (nunca dispara una peticion en paralelo); en
+  // cuanto la peticion en curso termina, se envia el valor MAS RECIENTE
+  // pendiente (nunca uno intermedio ya obsoleto). Nunca hay dos peticiones a
+  // la vez, asi que no hay orden de respuesta que perder.
+  let writing = false
+  let pendingValue = null
+  let hasPending = false
+
+  async function flushLoop() {
+    writing = true
+    while (hasPending) {
+      const value = pendingValue
+      hasPending = false
+      pendingValue = null
+
+      pendingWrites++
+      try {
+        // onConflict explicito: si "id" NO tiene de verdad una restriccion
+        // unica en la tabla, Postgres devuelve aqui un error claro ("no unique
+        // or exclusion constraint matching ON CONFLICT") en vez de insertar en
+        // silencio una fila duplicada mas -- convierte la corrupcion silenciosa
+        // en un error visible la primera vez que pasa.
+        const { error } = await supabase
+          .from('plan_state')
+          .upsert({ id: 1, data: JSON.stringify(value), updated_at: new Date().toISOString() }, { onConflict: 'id' })
+
+        if (error) {
+          console.error('[storage] setItem error', error)
+          lastSyncError = error
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('syncError', { detail: error }))
+          }
+        } else {
+          lastSyncError = null
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('syncSuccess'))
+          }
+        }
+      } finally {
+        pendingWrites--
+      }
+    }
+    writing = false
+  }
+
   return {
-    // 5 sep 2026 -- INVESTIGACION "cargar semana modelo no se guarda":
-    // .eq('id', 1).maybeSingle() exige que exista COMO MUCHO una fila con
-    // id=1 -- si esa columna no tiene una restriccion UNIQUE/PRIMARY KEY de
-    // verdad en la tabla (algo que no puedo comprobar desde aqui, solo desde
-    // el dashboard de Supabase), upsert() de mas abajo no actualiza esa fila,
-    // INSERTA UNA FILA NUEVA cada vez que alguien guarda. La escritura en si
-    // "funciona" (no da error), pero en cuanto hay 2+ filas con id=1,
-    // maybeSingle() empieza a fallar con "multiple rows returned" -- y esta
-    // funcion las trata igual que un error de red: devuelve null, osea
-    // estado vacio, SIEMPRE, desde ese momento en adelante. Encaja con lo
-    // reportado: "cargo una semana... y al recargar esta vacio" -- no solo
-    // esta vez, sino cualquier vez despues de que exista esa duplicidad.
-    // Mientras se confirma/corrige la restriccion en Supabase (ver aviso al
-    // usuario), pedimos la MAS RECIENTE en vez de exigir que sea unica --
-    // asi la lectura se autocura aunque existan duplicados de antes.
+    // 5 sep 2026 -- se investigo si la tabla tenia filas duplicadas con id=1
+    // (que habria hecho fallar un .maybeSingle() con "multiple rows
+    // returned", devolviendo null == estado vacio siempre). El usuario lo
+    // comprobo por SQL: 0 duplicados, esa no era la causa. La causa real
+    // era la carrera entre escrituras (ver flushLoop arriba). Se deja de
+    // todos modos .order + .limit(1) en vez de .maybeSingle() -- pedir la
+    // MAS RECIENTE en vez de exigir que sea unica no cuesta nada y evita que
+    // el dia de mañana una fila duplicada (manual, o de otra fuente) rompa
+    // la lectura por completo.
     async getItem(_name) {
       const { data, error } = await supabase
         .from('plan_state')
@@ -94,34 +142,9 @@ let lastSyncError = null
     async setItem(_name, value) {
       if (!hydrated) return
 
-      pendingWrites++
-      try {
-        // onConflict explicito: si "id" NO tiene de verdad una restriccion
-        // unica en la tabla, Postgres devuelve aqui un error claro ("no unique
-        // or exclusion constraint matching ON CONFLICT") en vez de insertar en
-        // silencio una fila duplicada mas -- convierte la corrupcion silenciosa
-        // de arriba en un error visible la PRIMERA vez que pasa.
-        const { error } = await supabase
-          .from('plan_state')
-          .upsert({ id: 1, data: JSON.stringify(value), updated_at: new Date().toISOString() }, { onConflict: 'id' })
-
-        if (error) {
-          console.error('[storage] setItem error', error)
-          lastSyncError = error
-          // Emit sync error event so UI can notify user
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('syncError', { detail: error }))
-          }
-        } else {
-          lastSyncError = null
-          // Emit sync success event
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('syncSuccess'))
-          }
-        }
-      } finally {
-        pendingWrites--
-      }
+      pendingValue = value
+      hasPending = true
+      if (!writing) flushLoop()  // fire-and-forget: zustand no espera el resultado de setItem
     },
 
     async removeItem(_name) {
