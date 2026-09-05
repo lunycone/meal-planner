@@ -204,6 +204,47 @@ export function dayKcal(day, allIng, allCombos) {
   return Object.values(day || {}).reduce((s, m) => s + mealKcal(m, allIng, allCombos), 0)
 }
 
+// Same idea as mealKcal but for cost/protein — needed so dayCost/personDayProt
+// (abajo) cubran el tipo 'plato' (proteina + combo, el que deja el selector
+// manual de comida/cena) igual que mealKcal ya hacia. dayCost antes solo
+// miraba 'desayuno' y se comia el coste entero de cualquier comida/cena
+// planificada a mano (6 sep 2026, encontrado al arreglar el bug de abajo).
+export function mealCost(meal, allIng, allCombos, gramsOverride = {}) {
+  if (!meal) return 0
+  if (meal.type === 'desayuno') {
+    const recipe = allCombos[meal.recipeKey]
+    return recipe ? comboAgg(recipe, allIng, meal.comboVariants || {}, gramsOverride).cost : 0
+  }
+  if (meal.type === 'plato') {
+    const protein = PROTEIN[meal.proteinKey]
+    const combo   = allCombos[meal.comboKey]
+    if (!protein || !combo) return 0
+    return proteinCost(protein, false, meal.proteinUnits)
+         + comboAgg(combo, allIng, meal.comboVariants || {}, gramsOverride, meal.comboOptionals || []).cost
+  }
+  return 0
+}
+
+export function mealProt(meal, allIng, allCombos, gramsOverride = {}) {
+  if (!meal) return 0
+  if (meal.type === 'desayuno') {
+    const recipe = allCombos[meal.recipeKey]
+    return recipe ? (comboAgg(recipe, allIng, meal.comboVariants || {}, gramsOverride).prot ?? 0) : 0
+  }
+  if (meal.type === 'plato') {
+    const protein = PROTEIN[meal.proteinKey]
+    const combo   = allCombos[meal.comboKey]
+    if (!protein || !combo) return 0
+    return proteinProt(protein, false, meal.proteinUnits)
+         + (comboAgg(combo, allIng, meal.comboVariants || {}, gramsOverride, meal.comboOptionals || []).prot ?? 0)
+  }
+  return 0
+}
+
+export function dayProt(day, allIng, allCombos) {
+  return Object.values(day || {}).reduce((s, m) => s + mealProt(m, allIng, allCombos), 0)
+}
+
 // The "comible" ceiling for a scalable base is derived from the combo's own
 // default portion: a person may grow it up to SCALE_CAP_FACTOR× the default.
 // This scales with what each dish considers a reasonable ration, so dense
@@ -454,12 +495,10 @@ export function personDayKcal(day, person, allIng, allCombos, dayIdx = null) {
 }
 
 // Same idea as personDayKcal but for cost — used by the weekly cost card.
+// 6 sep 2026 -- usaba comboAgg a mano y solo miraba 'desayuno'; ahora usa
+// mealCost (que ya cubre 'plato' tambien), igual que dayKcal usa mealKcal.
 function dayCost(day, allIng, allCombos) {
-  return Object.values(day || {}).reduce((s, m) => {
-    if (!m || m.type !== 'desayuno') return s
-    const combo = allCombos[m.recipeKey]
-    return combo ? s + comboAgg(combo, allIng, m.comboVariants || {}).cost : s
-  }, 0)
+  return Object.values(day || {}).reduce((s, m) => s + mealCost(m, allIng, allCombos), 0)
 }
 
 export function personDayCost(day, person, allIng, allCombos, dayIdx = null) {
@@ -469,6 +508,49 @@ export function personDayCost(day, person, allIng, allCombos, dayIdx = null) {
   const comidaCost = comida?.mealCostAchieved ?? comidaDefaultCost
   const cenaCost   = cena?.mealCostAchieved   ?? cenaDefaultCost
   return base - comidaDefaultCost - cenaDefaultCost + comidaCost + cenaCost
+}
+
+// Misma idea que personDayKcal/personDayCost pero para proteina — el BUG que
+// reporto el usuario (Maria con mas proteina que Julio pese a comer menos)
+// venia de aqui: antes de esto no existia un "personDayProt" de verdad, y el
+// codigo que lo llamaba (WeeklyMealPlannerTab) sumaba la proteina de comida/
+// cena SIEMPRE a racion por defecto (comboAgg sin escalar), la MISMA para
+// las dos personas -- mientras que el kcal SI escala esos mismos platos
+// (mas grande para Julio, mas pequeño para Maria, via personMealScalesTwoPass
+// / wholeDishFactor o grams). Resultado: el desayuno/merienda de Maria son
+// mas proteicos que los de Julio en esta semana modelo, y como comida/cena
+// no compensaban escalando con el tamaño real de racion, su total salia mas
+// alto que el de Julio pese a que sus platos de comida/cena son mas pequeños.
+// Aqui SI se aplica el factor/gramos ya calculados por el motor de kcal a la
+// proteina de comida y cena, para que sea la proteina REAL de la racion que
+// de verdad le toca a cada uno, no la de un plato a tamaño de catalogo.
+export function personDayProt(day, person, allIng, allCombos, dayIdx = null) {
+  const target = personTargetForDay(person, dayIdx)
+  const base = dayProt(day, allIng, allCombos) // todo a racion por defecto/fija
+  const comidaMeal = day?.comida, cenaMeal = day?.cena
+  const comidaDefaultProt = mealProt(comidaMeal, allIng, allCombos)
+  const cenaDefaultProt   = mealProt(cenaMeal, allIng, allCombos)
+  const { comida, cena } = personMealScalesTwoPass(day, person, allIng, allCombos, target)
+
+  // personMealScale (y por tanto comida/cena aqui) solo escala meals de tipo
+  // 'desayuno' (combo directo) -- 'plato' se queda siempre a racion fija, y
+  // ahi defaultProt YA es lo correcto (ver personMealScale linea ~294).
+  const achieved = (meal, scale, defaultProt) => {
+    if (!meal || meal.type !== 'desayuno' || !scale) return defaultProt
+    const combo = allCombos[meal.recipeKey]
+    if (!combo) return defaultProt
+    if (scale.grams != null && scale.ingKey) {
+      return comboAgg(combo, allIng, meal.comboVariants || {}, { [scale.ingKey]: scale.grams }).prot ?? 0
+    }
+    if (scale.wholeDishFactor != null && scale.wholeDishFactor < 1) {
+      return comboAggScaled(combo, allIng, scale.wholeDishFactor).prot ?? 0
+    }
+    return defaultProt
+  }
+
+  const comidaProt = achieved(comidaMeal, comida, comidaDefaultProt)
+  const cenaProt   = achieved(cenaMeal, cena, cenaDefaultProt)
+  return base - comidaDefaultProt - cenaDefaultProt + comidaProt + cenaProt
 }
 
 export function fmt(n)  { return '$' + n.toFixed(2) }

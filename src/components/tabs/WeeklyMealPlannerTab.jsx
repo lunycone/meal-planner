@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, Fragment } from 'react'
 import useStore, { selectAllIng, selectAllCombos } from '../../store/useStore'
 import { PROTEIN } from '../../data/proteins'
 import { PREP, COMBO_SETS } from '../../data/combos'
-import { comboAgg, fmt, proteinCost, proteinKcal, proteinProt, ingKcal, ingCost, fmtPortion, personDayKcal, personDayCost, pcosCarbLevel, proteinLevel, kcalLevel, LEVEL_COLOR, slotForPerson, slotIsUniform, makeByPersonSlot } from '../../engine/calc'
+import { comboAgg, fmt, proteinCost, proteinKcal, proteinProt, ingKcal, ingCost, fmtPortion, personDayKcal, personDayCost, personDayProt, pcosCarbLevel, proteinLevel, kcalLevel, LEVEL_COLOR, slotForPerson, slotIsUniform, makeByPersonSlot } from '../../engine/calc'
 import { MODEL_WEEKS, expandModelWeek, MARIA_NO_BATIDO_CASERO, MARIA_MERIENDA_PORTATIL } from '../../data/modelWeeks'
 import PcosBadge from '../PcosBadge'
 
@@ -726,19 +726,19 @@ export default function WeeklyMealPlannerTab() {
   // coste y proteina se quedaban en dayTotals, que SIEMPRE usa repProfileId
   // (el representante, ej. Julio) sin mirar que perfil esta seleccionado
   // arriba (T/J/M) -- por eso al clicar Maria el kcal cambiaba pero la
-  // proteina (y el coste) se quedaban clavados en los de Julio. Ahora los
-  // tres se recalculan juntos para la persona activa. La proteina no pasa
-  // por las dos pasadas de comida/cena (ese motor no devuelve proteina
-  // lograda, solo kcal/coste) -- se resuelve cada franja por persona
-  // (slotForPerson, via dayForPerson) a racion por defecto, igual que ya
-  // hacia dayTotals; lo que cambia es que ahora es la comida/cena/
-  // desayuno/merienda DE ESA PERSONA, no siempre la del representante.
-  // OJO: un slot puede venir en dos formas (mismo bug que dayTotals de
-  // arriba tiene que cubrir) -- 'desayuno' (referencia directa a un combo,
-  // usado por desayuno/merienda Y por las semanas modelo tambien en comida/
-  // cena) o 'plato' (proteina + combo, lo que deja el selector manual de
-  // comida/cena). La primera version de esto solo miraba 'desayuno' y se
-  // comia entera la proteina de cualquier comida/cena planificada a mano.
+  // proteina (y el coste) se quedaban clavados en los de Julio.
+  //
+  // BUG ENCONTRADO DESPUES (mismo dia): la primera version de este fix sumaba
+  // la proteina de comida/cena SIEMPRE a racion de catalogo (comboAgg sin
+  // escalar) para las dos personas por igual, mientras que el kcal SI escala
+  // esos mismos platos por persona (personDayKcal, mas racion para Julio,
+  // menos para Maria). Resultado real que reporto el usuario: Maria salia con
+  // MAS proteina que Julio pese a comer menos, porque su desayuno/merienda
+  // son mas proteicos en esta semana y comida/cena (identicos de catalogo
+  // para los dos) no compensaban con el tamaño de racion real de cada uno.
+  // personDayProt (engine/calc.js) aplica el mismo factor/gramos que ya usa
+  // personDayKcal a la proteina de comida y cena, asi que ahora los tres
+  // (coste, kcal, proteina) vienen de la racion REAL de la persona activa.
   const personalizedDayTotals = useMemo(() => {
     if (activeProfileId === 'all') return null
     const person = profiles.find(p => p.id === activeProfileId)
@@ -746,26 +746,10 @@ export default function WeeklyMealPlannerTab() {
     const result = {}
     DAY_KEYS.forEach((dk, i) => {
       const day = dayForPerson(dk, person.id)
-      let prot = 0
-      MEALS.forEach(m => {
-        const meal = day[m]
-        if (!meal) return
-        if (meal.type === 'desayuno') {
-          const combo = allCombos[meal.recipeKey]
-          if (combo) prot += comboAgg(combo, allIng).prot ?? 0
-        } else if (meal.type === 'plato') {
-          const protein = PROTEIN[meal.proteinKey]
-          const combo = allCombos[meal.comboKey]
-          if (protein && combo) {
-            const combAgg = comboAgg(combo, allIng, meal.comboVariants || {}, {}, meal.comboOptionals || [])
-            prot += proteinProt(protein) + (combAgg.prot ?? 0)
-          }
-        }
-      })
       result[dk] = {
         kcal: personDayKcal(day, person, allIng, allCombos, i),
         cost: personDayCost(day, person, allIng, allCombos, i),
-        prot,
+        prot: personDayProt(day, person, allIng, allCombos, i),
       }
     })
     return result
