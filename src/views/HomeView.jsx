@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import useStore, { selectAllIng, selectAllCombos } from '../store/useStore'
 import { PROTEIN } from '../data/proteins'
 import { PREP } from '../data/combos'
-import { comboAgg, fmt, proteinCost, proteinKcal, proteinProt, ingKcal, ingFat, ingFib, fmtPortion, personLunchScale, pcosCarbLevel, proteinLevel, kcalLevel, LEVEL_COLOR } from '../engine/calc'
+import { comboAgg, fmt, proteinCost, proteinKcal, proteinProt, ingKcal, ingFat, ingFib, fmtPortion, personLunchScale, pcosCarbLevel, proteinLevel, kcalLevel, LEVEL_COLOR, slotForPerson } from '../engine/calc'
 import PcosBadge from '../components/PcosBadge'
 import DailyProgress from '../components/DailyProgress'
 import PersonalizedDay from '../components/PersonalizedDay'
@@ -635,13 +635,6 @@ export default function HomeView() {
   const currentWeek = weekPlan[weekKey] ?? {}
   const slotKey = (mealType) => `${dayKey}-${mealType}`
 
-  const todayMeals = useMemo(() => ({
-    desayuno: currentWeek[slotKey('desayuno')] ?? null,
-    comida: currentWeek[slotKey('comida')] ?? null,
-    merienda: currentWeek[slotKey('merienda')] ?? null,
-    cena: currentWeek[slotKey('cena')] ?? null,
-  }), [currentWeek, dayKey])
-
   // Per-person lunch scaling: when a single person is selected (not "Todos"),
   // their comida shows the scaled base portion (more rice/potato → more kcal).
   const profiles        = useStore(s => s.profiles)
@@ -649,6 +642,31 @@ export default function HomeView() {
   const activeProfile   = activeProfileId === 'all'
     ? null
     : profiles.find(p => p.id === activeProfileId)
+
+  // 5 sep 2026 -- un slot de weekPlan puede ser la forma plana de siempre o
+  // { byPerson } (Julio y Maria con platos distintos, semana modelo cargada)
+  // -- sin pasar por slotForPerson, meal.type salia undefined para esos
+  // dias y CADA lector de todayMeals (MealBlock, DailySummary,
+  // DailyProgress, PersonalizedDay...) se quedaba en 0/vacio aunque el slot
+  // no fuera null: por eso "Hoy" mostraba las 4 franjas "rellenas" pero a
+  // $0.00 / 0 kcal, y a la vez "Sin comidas planeadas para hoy" mas abajo.
+  // Con un perfil concreto elegido arriba (T/J/M) se resuelve SU plato de
+  // verdad; con "Todos" se usa un representante (el primer perfil valido
+  // hoy), igual que hace el resto de tabs.
+  const today0 = new Date(); today0.setHours(0, 0, 0, 0)
+  const validProfiles = profiles.filter(p => {
+    if (p.validoDesde && new Date(p.validoDesde) > today0) return false
+    if (p.validoHasta && new Date(p.validoHasta) <= today0) return false
+    return true
+  })
+  const repProfileId = activeProfileId !== 'all' ? activeProfileId : (validProfiles[0]?.id ?? null)
+
+  const todayMeals = useMemo(() => ({
+    desayuno: slotForPerson(currentWeek[slotKey('desayuno')], repProfileId),
+    comida: slotForPerson(currentWeek[slotKey('comida')], repProfileId),
+    merienda: slotForPerson(currentWeek[slotKey('merienda')], repProfileId),
+    cena: slotForPerson(currentWeek[slotKey('cena')], repProfileId),
+  }), [currentWeek, dayKey, repProfileId])
   const comidaScale = useMemo(
     () => (activeProfile ? personLunchScale(todayMeals, activeProfile, allIng, allCombos) : null),
     [activeProfile, todayMeals, allIng, allCombos]
