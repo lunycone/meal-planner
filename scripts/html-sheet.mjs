@@ -33,8 +33,17 @@ th{background:#f3f0eb;font-size:11px;letter-spacing:.04em;text-transform:upperca
    iba sola a una pagina nueva, casi en blanco, una por cada semana. */
 @page{size:legal landscape;margin:6mm}
 @media print{
+  /* 6 sep 2026 -- recorte por la izquierda al imprimir: .wrap tenia un
+     max-width:1180px FIJO en pixeles, pensado para pantalla -- si el
+     dialogo de impresion no aplicaba de verdad "Legal horizontal" (varios
+     navegadores, Safari en Mac sobre todo, no obedecen @page size solo y
+     hay que elegirlo a mano en el dialogo) y el papel real quedaba mas
+     estrecho de lo que ese fijo asumia, el contenido se salia por un lado.
+     width:100% (sin max-width) hace que la tabla llene SIEMPRE el 100% del
+     ancho de pagina que de verdad se use, sea cual sea -- no puede
+     desbordar por definicion, pase lo que pase en el dialogo. */
   body{background:#fff;font-size:12px}
-  .wrap{padding:0}
+  .wrap{padding:0;max-width:none;width:100%}
   .sheet{border:0;padding:4px 0;margin:0}
   .noprint{display:none}
   table{font-size:10.5px}
