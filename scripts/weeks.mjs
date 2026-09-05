@@ -155,4 +155,30 @@ export const WEEKS = [
   CA:'c-lomo-arroz-afgano', CB:'c-lomo-patata-adobo',
   MA:'b-clasico-2', MB:'b-clasico-2',
   NA:'n-blackbeans-huevo-patata', NB:'n-garbanzos-huevo-patata' },
+
+{ n:12, title:'ASTRINGENTE — para días de diarrea', note:'Semana especial, no rotativa: para cuando hay diarrea, no para uso habitual. Sin legumbres, sin cebolla/ajo (salvo el ajo del rancho, que el usuario pidio explicitamente mantener), sin frutos secos/semillas, sin lacteos en merienda, verduras siempre muy cocidas.',
+  // A peticion expresa del usuario (6 sep 2026): "lo que mas me quita la
+  // diarrea es el rancho o el estofado de ternera" -- los dos van en comida,
+  // uno por bloque. El resto de la semana (desayuno, merienda, cena) esta
+  // pensado por mi para acompañar sin romper el objetivo astringente: nada
+  // de legumbre/cebolla/ajo/frutos secos/lacteos con lactosa relevante,
+  // verdura siempre muy cocida, arroz blanco y patata (sin piel) como base.
+  // NO participa en las reglas de siempre (no hace falta variar desayuno
+  // dia a dia, no hay techo de grasa que cumplir) -- es una semana de
+  // rescate para pocos dias, no para repetir en bucle como las otras 11.
+  //
+  // Desayuno: huevo+tostada+miel <-> tostada+platano+miel (ya existentes,
+  // sin lacteos, sin fruta acida, sin grasa alta).
+  DA:'d-huevos-tostada-madre-miel-reforzado', DB:'d-tostada-madre-miel-platano',
+  DMA:'d-tostada-madre-miel-platano', DMB:'d-huevos-tostada-madre-miel-reforzado',
+  // Comida: los dos platos pedidos por el usuario. El rancho SI lleva ajo
+  // (cantidad de sabor, no de bulto) -- se deja tal cual porque el propio
+  // usuario dice que este plato en concreto le sienta bien a pesar de eso.
+  CA:'c-estofado-ternera-patata-zanahoria', CB:'c-rancho-aragones-grande',
+  // Merienda: nueva, sin lacteos ni frutos secos (ver dishes.js). Misma para
+  // los dos bloques -- no hace falta variar en una semana de pocos dias.
+  MA:'m-astringente-platano-manzana', MB:'m-astringente-platano-manzana',
+  // Cena: especie distinta a la comida de ese dia (pollo/pavo vs
+  // ternera/cerdo), siempre hervido/al horno simple, sin cebolla/ajo.
+  NA:'n-pollo-hervido-arroz-zanahoria', NB:'n-turkey-patata-huevo' },
 ]

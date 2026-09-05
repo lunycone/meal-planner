@@ -109,6 +109,11 @@ export const ING = {
   bacalao:                  { name: 'Bacalao',                                     cat: 'carne', per100: 1.06,  kc: 82,  prot: 17, fat: 0.7, pack: '$10.60/kg',              per: '200g → $2.12 · 164 kcal · 34g prot' },
   lamb:                     { name: 'Cordero',                                     cat: 'carne', per100: 1.982, kc: 209, prot: 25, fat: 12, pack: '$19.82/kg',            per: '150g → $2.97 · 314 kcal · 38g prot' },
   'carne-picada':           { name: 'Carne picada de res (premium)',               cat: 'carne', per100: 2.423, kc: 254, prot: 17, fat: 20, pack: '$10.99/lb ($24.23/kg)',  per: '150g → $3.63 · 381 kcal · 26g prot' },
+  // Semana 12 (astringente/diarrea) — a peticion del usuario ("el rancho o
+  // el estofado de ternera" son lo que mas le quita la diarrea). $15.29/lb,
+  // valores nutricionales estimados (corte para guisar tipo chuck, sin dato
+  // de paquete concreto).
+  'ternera-guisar':         { name: 'Ternera para guisar (stew beef)',             cat: 'carne', per100: 3.37,  kc: 220, prot: 21, fat: 13, pack: '$15.29/lb ($33.71/kg)',  per: '150g → $5.06 · 330 kcal · 32g prot', est: true },
   'pollo-pierna-generic':   { name: 'Pollo · Pierna (genérico)',                   cat: 'carne', per100: 0.88,  kc: 172, prot: 18, fat: 11, pack: '$8.80/kg',               per: '250g → $2.20 · 430 kcal · 45g prot' },
   'turkey-drumstick':       { name: 'Pavo · Muslito (Turkey Drumstick, genérico)', cat: 'carne', per100: 0.88,  kc: 159, prot: 20, fat: 8,  pack: '$8.80/kg',               per: '200g → $1.76 · 318 kcal · 40g prot' },
   'pollo-pierna':           { name: 'Pollo · Pierna entera (Beretta)',             cat: 'carne', per100: 1.10,  kc: 172, prot: 18, fat: 11, pack: '$11.00/kg',              per: '250g → $2.75 · 430 kcal · 45g prot' },

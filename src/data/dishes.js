@@ -357,6 +357,16 @@ export const DISHES = {
     name: 'Rancho aragonés (XL)', meals: ['comida'],
     items: [{ k: 'lomo-cerdo', p: { grams: 130 } }, { k: 'costillas-cerdo', p: { grams: 110 } }, { k: 'patata', p: { grams: 290 } }, { k: 'zanahoria', p: { grams: 140 } }, { k: 'arroz', p: { grams: 70 } }, { k: 'ajo', p: {} }, { k: 'aove', p: { ml: 25 } }], scalable: 'patata',
   },
+  // Semana 12 (astringente/diarrea) — pedido explicito del usuario: "lo que
+  // mas me quita la diarrea es el rancho o el estofado de ternera". Sin
+  // cebolla/ajo (fructanos) a proposito -- laurel y perejil solo para sabor,
+  // ninguno de los dos dispara ninguna de las banderas digestivas del motor
+  // (GOS/insoluble/fructano). Zanahoria "muy cocida" (no cruda) por lo mismo
+  // que ya hace c-costillas-pintas-zanahoria.
+  'c-estofado-ternera-patata-zanahoria': {
+    name: 'Estofado de ternera + patata + zanahoria (muy cocida)', meals: ['comida'],
+    items: [{ k: 'ternera-guisar', p: { grams: 180 } }, { k: 'patata', p: { grams: 280 } }, { k: 'zanahoria', p: { grams: 150 } }, { k: 'laurel', p: {} }, { k: 'parsley', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'patata',
+  },
   'n-mejillones-marinera-patata': {
     name: 'Mejillones a la marinera + patata pequeña salteada', meals: ['cena'],
     items: [{ k: 'mejillones', p: { grams: 200 } }, { k: 'tomate-conserva', p: { grams: 80 } }, { k: 'cebolla-amarilla', p: { grams: 60 } }, { k: 'patata', p: { grams: 150 } }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 30 } }],
@@ -396,6 +406,14 @@ export const DISHES = {
   'n-patata-3huevos': {
     name: 'Patata + 3 huevos', meals: ['cena'],
     items: [{ k: 'patata', p: { grams: 150 } }, { k: 'huevo', p: { units: 3 } }, { k: 'aove', p: { ml: 20 } }],
+  },
+  // Semana 12 (astringente/diarrea) — especie distinta a la comida de esa
+  // semana (ternera/cerdo), arroz en vez de patata para variar la base sin
+  // salirse de lo blando. Sin cebolla/ajo, pollo hervido (no frito/asado con
+  // piel) -- lo mas suave posible.
+  'n-pollo-hervido-arroz-zanahoria': {
+    name: 'Pollo hervido + arroz + zanahoria (muy cocida)', meals: ['cena'],
+    items: [{ k: 'pollo-pierna-generic', p: { grams: 150 } }, { k: 'arroz', p: { grams: 70 } }, { k: 'zanahoria', p: { grams: 100 } }, { k: 'aove', p: { ml: 15 } }], scalable: 'arroz',
   },
   'n-turkey-patata-huevo': {
     name: 'Turkey + patata + huevo', meals: ['cena'],
@@ -556,6 +574,15 @@ export const DISHES = {
   'b-fruto-seco': {
     name: 'Batido fruto seco', meals: ['merienda'],
     items: [{ k: 'avena', p: { grams: 100 } }, { k: 'kefir', p: { ml: 150 } }, { k: 'banana', p: { grams: 120 } }, { k: 'avellana', p: { grams: 20 } }, { k: 'mantequilla', p: { grams: 15 } }],
+  },
+  // Semana 12 (astringente/diarrea) — sin lacteos (leche/yogur/mantequilla),
+  // sin frutos secos/semillas (INSOLUBLE_KEYS), sin citricos. Platano bien
+  // maduro (mas astringente que verde) + manzana (mejor cocida/en compota en
+  // la cocina real, aunque aqui solo exista la manzana cruda como ingrediente)
+  // + miel para kcal facil de digerir.
+  'm-astringente-platano-manzana': {
+    name: 'Plátano y manzana con miel (astringente)', meals: ['merienda'],
+    items: [{ k: 'banana', p: { grams: 150 } }, { k: 'manzana', p: { units: 1 } }, { k: 'miel', p: { grams: 15 } }],
   },
   'b-blando': {
     name: 'Batido blando (día malo de estómago)', meals: ['merienda'],
