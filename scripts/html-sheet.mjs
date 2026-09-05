@@ -31,7 +31,7 @@ th{background:#f3f0eb;font-size:11px;letter-spacing:.04em;text-transform:upperca
    impresion -- con el tamaño de antes, cada semana se quedaba un pelo mas
    alta que una pagina y la ultima linea (el recordatorio de perejil) se
    iba sola a una pagina nueva, casi en blanco, una por cada semana. */
-@page{size:legal landscape;margin:6mm}
+@page{size:legal landscape;margin:16mm}
 @media print{
   /* 6 sep 2026 -- recorte por la izquierda al imprimir: .wrap tenia un
      max-width:1180px FIJO en pixeles, pensado para pantalla -- si el
