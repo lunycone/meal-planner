@@ -289,8 +289,19 @@ function computeBatchMeal(mealType, batchDays, profiles, allIng, allCombos, week
         g.sharedAcc[k].ml    += (p.ml    ?? 0) * peopleToday
         g.sharedAcc[k].units += (p.units ?? 0) * peopleToday
       }
+      // 6 sep 2026 -- BUG: esto excluia el ingrediente "escalable" (auto-
+      // detectado por comboScalableKey, corre SIEMPRE, no solo en comida/
+      // cena) de sharedItems sin mirar mealType. En desayuno/merienda esa
+      // base nunca se trackea aparte (linea 252: solo se cuenta
+      // recipeServings, nunca baseGrams) -- asi que el ingrediente
+      // desaparecia por completo del batch y de la compra. Le paso a
+      // "Tostada con platano, AOVE y sal": comboScalableKey elegia el pan
+      // masa madre (mas kcal que el platano) y el pan simplemente no
+      // aparecia en ningun lado. Solo excluir aqui cuando de verdad se
+      // trackea aparte (comida/cena).
+      const isPerPersonScaled = mealType === 'comida' || mealType === 'cena'
       for (const it of g.comboRef.items) {
-        if (it.k === g.scalableKey) continue
+        if (isPerPersonScaled && it.k === g.scalableKey) continue
         addShared(it.k, it.p)
       }
     }

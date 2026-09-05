@@ -111,6 +111,18 @@ export const MODEL_WEEKS = [
   CA:'c-lomo-arroz-afgano', CB:'c-lomo-patata-adobo',
   MA:'b-clasico-2', MB:'b-clasico-2',
   NA:'n-blackbeans-huevo-patata', NB:'n-garbanzos-huevo-patata' },
+
+{ n:12, title:'ASTRINGENTE — para días de diarrea', note:'Semana especial, no rotativa: solo para cuando hay diarrea, no para uso habitual. Sin legumbres, sin cebolla/ajo (salvo el ajo del rancho, mantenido a peticion expresa), sin frutos secos/semillas, sin lacteos en merienda ni desayuno (miel sustituida por AOVE+sal), verduras siempre muy cocidas.',
+  // 6 sep 2026 -- pedido explicito del usuario: "lo que mas me quita la
+  // diarrea es el rancho o el estofado de ternera". El resto de la semana
+  // (desayuno/merienda/cena) diseñado para acompañar sin romper el objetivo
+  // astringente. Ya afinada en el HTML standalone (semanas-modelo-v2.html)
+  // antes de traerla aqui -- mismos platos, mismas cantidades.
+  DA:'d-huevos-tostada-aove', DB:'d-tostada-platano-aove-sal',
+  DMA:'d-tostada-platano-aove-sal', DMB:'d-huevos-tostada-aove',
+  CA:'c-estofado-ternera-patata-zanahoria', CB:'c-rancho-aragones-grande',
+  MA:'m-astringente-platano-manzana', MB:'m-astringente-platano-manzana',
+  NA:'n-pollo-hervido-arroz-zanahoria', NB:'n-turkey-patata-huevo' },
 ]
 
 // ─── Expansion de bloques a los 7 dias ───────────────────────────────────────
