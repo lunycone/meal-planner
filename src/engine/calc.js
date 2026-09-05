@@ -229,9 +229,18 @@ const AOVE_AUTOCLOSE_CAP_KCAL = 30 * AOVE_KCAL_ML // 270 kcal ~ 30ml
 // "4× dry" cap let rice balloon to ~840g cooked, which no tupper holds and no
 // one eats. Beyond this, the day's deficit overflows to olive oil instead.
 const MAX_COOKED_BASE_GRAMS = 300
+// 5 sep 2026 -- auditoria de las 11 semanas: romano-beans (judias romano,
+// legumbre SECA -- su propio precio en ingredients.js ya dice "80g seco")
+// faltaba aqui. Es la base escalable de 4 platos de comida (uno de ellos,
+// "Turkey + alubias pintas + huevo", aparece en 3 de las 11 semanas) -- sin
+// su ratio, el tope de arriba la trataba como si no se hinchara al
+// cocerse (ratio 1) y dejaba subir hasta 300g SECOS -- unos ~750g cocidos,
+// muy por encima de lo que cabe en un tupper. Con el ratio (igual que sus
+// hermanas garbanzos/black-beans/alubias, todas 2.5x) el tope real queda en
+// ~120g secos, coherente con el resto de legumbres.
 const DRY_TO_COOKED = {
   'garbanzos': 2.5, 'black-beans': 2.5, 'lentejas-rojas': 2.5, 'lentejas-verdes': 2.0,
-  'alubias-blancas': 2.5, 'cranberry-beans': 2.5, 'alubias-rojas': 2.5,
+  'alubias-blancas': 2.5, 'cranberry-beans': 2.5, 'alubias-rojas': 2.5, 'romano-beans': 2.5,
   'arroz': 2.8, 'pasta': 2.5, 'buckwheat': 2.6,
 }
 

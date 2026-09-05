@@ -33,6 +33,8 @@ const PROTEIN_YIELD = {
 }
 
 // ─── Dry → cooked weight ratios for legumes / grains ─────────────────────────
+// Debe coincidir con DRY_TO_COOKED en engine/calc.js (mismo motor, misma
+// cocina) -- 5 sep 2026: faltaba romano-beans, ver ese archivo para el porque.
 const COOK_RATIO = {
   'garbanzos':       2.5,
   'black-beans':     2.5,
@@ -41,6 +43,7 @@ const COOK_RATIO = {
   'alubias-blancas': 2.5,
   'cranberry-beans': 2.5,
   'alubias-rojas':   2.5,
+  'romano-beans':    2.5,
   'arroz':           2.8,
   'pasta':           2.5,
   'buckwheat':       2.6,
