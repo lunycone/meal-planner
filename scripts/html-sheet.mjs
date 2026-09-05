@@ -31,7 +31,21 @@ th{background:#f3f0eb;font-size:11px;letter-spacing:.04em;text-transform:upperca
 .tag{font-size:10px;padding:1px 5px;border-radius:4px;background:#eee;color:var(--mut);margin-left:4px}
 .tag.gos{background:#efe6f7;color:#6b4a8a}.tag.fr{background:#e6f0f7;color:#3a6b8a}
 .tag.ins{background:#f7ece6;color:#8a5a3a}.tag.k1{background:#e8f5e9;color:#2e7d32}
-@media print{body{background:#fff}.wrap{padding:0}.sheet{border:0;padding:8px 0}.noprint{display:none}}
+/* 6 sep 2026 -- para imprimir: horizontal (el usuario tiene "folio",
+   215x315mm -- A4 horizontal (297x210) le cabe con margen de sobra, sin
+   recortar). Ocultos en impresion: etiquetas GOS/fructanos/insoluble/K1,
+   la nota de cada semana y la frase explicativa del pie -- utiles en
+   pantalla, ruido en papel. */
+@page{size:A4 landscape;margin:10mm}
+@media print{
+  body{background:#fff}
+  .wrap{padding:0}
+  .sheet{border:0;padding:8px 0}
+  .noprint{display:none}
+  .tag{display:none}
+  .note{display:none}
+  .legend{display:none}
+}
 button{font:inherit;padding:8px 16px;border:1px solid var(--line);background:#fff;border-radius:7px;cursor:pointer}
 `
 
@@ -88,8 +102,8 @@ function sheet(w, total=11){
     <table><thead><tr><th class="rowlab">&nbsp;</th>${DAYS.map(d=>`<th>${d}</th>`).join('')}</tr></thead>
     <tbody>${D}${DM}${C}${M}${N}${T}</tbody></table>
     ${flags}
-    <div class="foot">Coste semana — <span class="sw j"></span>Julio $${jc.toFixed(2)} · <span class="sw m"></span>María $${mc.toFixed(2)} · <b>Total $${(jc+mc).toFixed(2)}</b>. Desayuno es propio de cada uno; comida escala su base por persona; merienda y cena son iguales para los dos.</div>
-    <div class="foot" style="font-size:10px;opacity:.75">🌿 Recordatorio: añadir perejil fresco (10g) en alguna comida de la semana — vitamina K1, no está en ningún plato fijo del catálogo.</div>
+    <div class="foot">Coste semana — <span class="sw j"></span>Julio $${jc.toFixed(2)} · <span class="sw m"></span>María $${mc.toFixed(2)} · <b>Total $${(jc+mc).toFixed(2)}</b>. <span class="legend">Desayuno es propio de cada uno; comida escala su base por persona; merienda y cena son iguales para los dos.</span></div>
+    <div class="foot" style="font-size:10px;opacity:.75">🌿 Recordatorio: perejil 10g</div>
   </section>`
 }
 export { sheet, CSS }

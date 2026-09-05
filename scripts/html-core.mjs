@@ -115,9 +115,16 @@ function warns(w,j){
   // campos originales *A/*B (no expandidos), asi que validateBlocks puede
   // comprobar directamente que el bloque B cambia de especie respecto al A.
   o.push(...validateBlocks(w, DISHES))
-  for(const k of ['D','DM','C','M','N']){
+  // 6 sep 2026 -- CORREGIDO: todo este bloque (cadencia GOS/fructano, techo
+  // de grasa/kcal de desayuno, techo de proteina, suelo de fibra soluble) es
+  // el protocolo digestivo de JULIO (motivo intestinal) -- confirmado por el
+  // usuario, NO aplica a Maria (ella tiene lo suyo aparte, PCOS/carga
+  // glicemica). Antes 'DM' (desayuno de Maria) entraba en la cadencia y el
+  // bucle de kcal/grasa comprobaba a los dos -- avisos falsos del tipo
+  // "Desayuno Maria... 43g grasa" que no significan nada para ella.
+  for(const k of ['D','C','M','N']){
     const g=slotCount(w,k,'gos'), f=slotCount(w,k,'fruct')
-    const nm={D:'desayuno Julio',DM:'desayuno María',C:'comida',M:'merienda',N:'cena'}[k]
+    const nm={D:'desayuno Julio',C:'comida',M:'merienda',N:'cena'}[k]
     if(g>CAD) o.push(`Legumbre en ${nm} ${g}/7 (max ${CAD})`)
     if(f>CAD) o.push(`Cebolla/ajo/puerro en ${nm} ${f}/7 (max ${CAD})`)
   }
@@ -125,15 +132,12 @@ function warns(w,j){
   if(mp>CAP) o.push(`Proteína hasta ${r(mp)} g (techo ${CAP} g a 64 kg)`)
   const ms=Math.min(...j.map(d=>d.fibSol))
   if(ms<SOL_MIN) o.push(`Fibra soluble baja a ${ms.toFixed(1)} g (suelo ${SOL_MIN})`)
-  // El desayuno ahora rota (hasta 7 platos distintos) y es propio de cada
-  // persona: hay que auditar CADA dia de D y de DM, no solo D[0] como antes
-  // -- eso escondia infracciones en los 6 dias no muestreados.
-  for(const [who,arr] of [['Julio',w.D],['María',w.DM]]){
-    const days = [...new Set(arr)].map(agg)
-    for(const d of days){
-      if(d.kcal<DES_KCAL_MIN) o.push(`Desayuno ${who} "${d.name}" ${r(d.kcal)} kcal (suelo ${DES_KCAL_MIN})`)
-      if(d.fat>DES_FAT_MAX) o.push(`Desayuno ${who} "${d.name}" ${d.fat.toFixed(0)} g grasa (techo ${DES_FAT_MAX})`)
-    }
+  // Desayuno rota (hasta 7 platos distintos): auditar CADA dia de D (Julio),
+  // no solo D[0] -- eso escondia infracciones en los 6 dias no muestreados.
+  const desDays = [...new Set(w.D)].map(agg)
+  for(const d of desDays){
+    if(d.kcal<DES_KCAL_MIN) o.push(`Desayuno Julio "${d.name}" ${r(d.kcal)} kcal (suelo ${DES_KCAL_MIN})`)
+    if(d.fat>DES_FAT_MAX) o.push(`Desayuno Julio "${d.name}" ${d.fat.toFixed(0)} g grasa (techo ${DES_FAT_MAX})`)
   }
   return o
 }
