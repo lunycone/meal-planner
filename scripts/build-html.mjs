@@ -39,11 +39,8 @@ const html = `<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Semanas modelo — Julio &amp; María</title><style>${CSS}</style></head><body><div class="wrap">
 <h1>Semanas modelo · Julio &amp; María</h1>
-<p class="lede">Once semanas con las reglas digestivas aplicadas y auditadas por el propio motor.
-Cada casilla se calcula desde las recetas reales; no hay ningún número escrito a mano.
-Las etiquetas <span class="tag gos">GOS</span> <span class="tag fr">fructanos</span>
-<span class="tag ins">insoluble</span> <span class="tag k1">K1</span> marcan el plato, y los avisos
-del pie marcan la <em>semana</em> — que es donde estaban los fallos que no se veían plato a plato.</p>
+<p class="lede">Doce semanas con las reglas digestivas aplicadas y auditadas por el propio motor.
+Cada casilla se calcula desde las recetas reales; no hay ningún número escrito a mano.</p>
 <p class="noprint"><button onclick="window.print()">Imprimir / Guardar PDF</button></p>
 ${idx}
 ${WEEKS.map(w=>sheet(w, WEEKS_RAW.length)).join('\n')}

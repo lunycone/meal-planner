@@ -1,5 +1,5 @@
 import { DAYS, JULIO, MARIA, agg } from './gen-core.mjs'
-import { day, warns, CAP, SOL_MIN, e, r } from './html-core.mjs'
+import { day, CAP, SOL_MIN, e, r } from './html-core.mjs'
 import { writeFileSync } from 'fs'
 
 const CSS = `
@@ -22,55 +22,46 @@ th{background:#f3f0eb;font-size:11px;letter-spacing:.04em;text-transform:upperca
 .tot{background:#f8f6f2;font-size:11px}
 .sw{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px}
 .sw.j{background:var(--j)}.sw.m{background:var(--m)}
-.flags{margin-top:12px;font-size:12px}
-.flag{display:inline-block;background:#fdf6e3;border:1px solid #e8d9a8;color:var(--warn);border-radius:5px;padding:2px 8px;margin:0 6px 6px 0}
-.flag.bad{background:#fdeeec;border-color:#efc4bf;color:var(--bad)}
-.ok{color:var(--j);font-weight:600;font-size:12px}
 .foot{margin-top:10px;padding-top:9px;border-top:1px solid var(--line);font-size:12px;color:var(--mut)}
 .kpi{font-variant-numeric:tabular-nums}
-.tag{font-size:10px;padding:1px 5px;border-radius:4px;background:#eee;color:var(--mut);margin-left:4px}
-.tag.gos{background:#efe6f7;color:#6b4a8a}.tag.fr{background:#e6f0f7;color:#3a6b8a}
-.tag.ins{background:#f7ece6;color:#8a5a3a}.tag.k1{background:#e8f5e9;color:#2e7d32}
-/* 6 sep 2026 -- para imprimir: horizontal (el usuario tiene "folio",
-   215x315mm -- A4 horizontal (297x210) le cabe con margen de sobra, sin
-   recortar). Ocultos en impresion: etiquetas GOS/fructanos/insoluble/K1,
-   la nota de cada semana y la frase explicativa del pie -- utiles en
-   pantalla, ruido en papel. */
-@page{size:A4 landscape;margin:10mm}
+/* 6 sep 2026 -- papel real del usuario: Legal (8.5x14in / 216x356mm), no
+   Folio como se penso al principio -- "legal" es una palabra clave de
+   tamaño de pagina estandar en CSS, se puede pedir directamente. */
+@page{size:legal landscape;margin:10mm}
 @media print{
   body{background:#fff}
   .wrap{padding:0}
   .sheet{border:0;padding:8px 0}
   .noprint{display:none}
-  .tag{display:none}
-  .note{display:none}
-  .legend{display:none}
 }
 button{font:inherit;padding:8px 16px;border:1px solid var(--line);background:#fff;border-radius:7px;cursor:pointer}
 `
 
-function tags(x){
-  let t=''
-  if(x.gos) t+='<span class="tag gos">GOS</span>'
-  if(x.fruct) t+='<span class="tag fr">fructanos</span>'
-  if(x.insol) t+='<span class="tag ins">insoluble</span>'
-  if(x.k1) t+='<span class="tag k1">K1</span>'
-  return t
+// 6 sep 2026 -- ${grams}g o ${factor} nunca coinciden los dos: si hay base
+// escalable y falta kcal, grams trae el numero (el caso normal). Si el dia
+// sobra kcal, el motor reduce el PLATO ENTERO en proporcion en vez de solo
+// el almidon (WHOLE_DISH_FLOOR, nunca por debajo del 55%) -- grams se queda
+// null y solo hay factor. Antes esto se imprimia como "— g", que no dice
+// nada; ahora dice "ración al X%". Sin ninguno de los dos (plato sin base
+// escalable, o ya en su punto exacto): "ración normal".
+function macroBase(a){
+  if (a.grams != null) return `${a.grams} g ${a.ingName ?? ''}`
+  if (a.factor != null) return `ración al ${Math.round(a.factor*100)}%`
+  return 'ración normal'
 }
 
 function sheet(w, total=11){
   const j=DAYS.map((_,i)=>day(w,i,JULIO)), m=DAYS.map((_,i)=>day(w,i,MARIA))
   const jc=j.reduce((s,d)=>s+d.cost,0), mc=m.reduce((s,d)=>s+d.cost,0)
-  const ws=warns(w,j)
   const row=(lab,pick)=>`<tr><td class="rowlab">${lab}</td>`+
-    DAYS.map((_,i)=>{const c=pick(i);return `<td><div class="dish">${e(c.name)}${tags(c)}</div><div class="macro">${c.macro}</div></td>`}).join('')+'</tr>'
+    DAYS.map((_,i)=>{const c=pick(i);return `<td><div class="dish">${e(c.name)}</div><div class="macro">${c.macro}</div></td>`}).join('')+'</tr>'
 
   // El desayuno vuelve a ser DOS filas separadas, con sus dos platos reales
   // (D = tuyo, DM = de Maria) — no una sola fila con el mismo plato repetido
   // para ambos, que fue el error del 3 sep.
   const D=row('🍳 Desayuno · Julio',i=>{const a=agg(w.D[i]);return{...a,macro:`${r(a.kcal)} kcal · ${r(a.prot)} g prot · ${a.fat.toFixed(0)} g grasa`}})
   const DM=row('🍳 Desayuno · María',i=>{const a=agg(w.DM[i]);return{...a,macro:`${r(a.kcal)} kcal · ${r(a.prot)} g prot`}})
-  const C=row('🍽️ Comida',i=>{const a=j[i].C,b=m[i].C;return{...a,macro:`<span class="sw j"></span>${a.grams??'—'} g ${a.ingName??''} · ${r(a.kcal)} kcal<br><span class="sw m"></span>${b.grams??'—'} g · ${r(b.kcal)} kcal`}})
+  const C=row('🍽️ Comida',i=>{const a=j[i].C,b=m[i].C;return{...a,macro:`<span class="sw j"></span>${macroBase(a)} · ${r(a.kcal)} kcal<br><span class="sw m"></span>${macroBase(b)} · ${r(b.kcal)} kcal`}})
   // Maria no toma merienda lunes ni miercoles (Paso 4, 5 sep 2026): la fila
   // deja constancia de que ese dia es solo para Julio.
   // Maria lleva un batido proteico para llevar (sin cocinar) lunes/miercoles
@@ -82,7 +73,12 @@ function sheet(w, total=11){
     const b=agg('m-proteina-portatil')
     return{...a, macro:`<span class="sw j"></span>${r(a.kcal)} kcal<br><span class="sw m"></span>${e(b.name)} · ${r(b.kcal)} kcal (para llevar)`}
   })
-  const N=row('🌙 Cena',i=>{const a=agg(w.N[i]);return{...a,macro:`${r(a.kcal)} kcal · ${r(a.prot)} g prot`}})
+  // 6 sep 2026 -- N usaba agg(w.N[i]) (el plato SIN escalar) mientras que el
+  // Total del dia de mas abajo ya sumaba el cena REAL (j[i].N/m[i].N, que se
+  // reduce entero cuando sobra kcal) -- los dos numeros podian no cuadrar.
+  // Ahora N usa el mismo dato real que el total, con el mismo formato que
+  // Comida (grams/factor/normal) por si tambien viene reducida.
+  const N=row('🌙 Cena',i=>{const a=j[i].N,b=m[i].N;return{...a,macro:`<span class="sw j"></span>${macroBase(a)} · ${r(a.kcal)} kcal<br><span class="sw m"></span>${macroBase(b)} · ${r(b.kcal)} kcal`}})
   const T=`<tr class="tot"><td class="rowlab">Total día</td>`+DAYS.map((_,i)=>{
     const a=j[i],b=m[i]
     const pf=a.prot>CAP?` style="color:var(--bad);font-weight:700"`:''
@@ -91,18 +87,12 @@ function sheet(w, total=11){
            `<div><span class="sw m"></span>${r(b.kcal)} kcal · ${r(b.prot)} g · $${b.cost.toFixed(2)}</div></td>`
   }).join('')+'</tr>'
 
-  const flags = ws.length
-    ? `<div class="flags">${ws.map(x=>`<span class="flag${w.extrema?' bad':''}">${e(x)}</span>`).join('')}</div>`
-    : `<div class="flags"><span class="ok">✓ Sin avisos: cadencia, proteína, fibra soluble y desayuno dentro de límites.</span></div>`
-
   return `<section class="sheet">
     <div class="eyebrow">Semana modelo ${w.n} de ${total}${w.extrema?' · ⚠ SOLO REFERENCIA':''}</div>
     <div class="title">${e(w.title)}</div>
-    <div class="note">${e(w.note)}</div>
     <table><thead><tr><th class="rowlab">&nbsp;</th>${DAYS.map(d=>`<th>${d}</th>`).join('')}</tr></thead>
     <tbody>${D}${DM}${C}${M}${N}${T}</tbody></table>
-    ${flags}
-    <div class="foot">Coste semana — <span class="sw j"></span>Julio $${jc.toFixed(2)} · <span class="sw m"></span>María $${mc.toFixed(2)} · <b>Total $${(jc+mc).toFixed(2)}</b>. <span class="legend">Desayuno es propio de cada uno; comida escala su base por persona; merienda y cena son iguales para los dos.</span></div>
+    <div class="foot">Coste semana — <span class="sw j"></span>Julio $${jc.toFixed(2)} · <span class="sw m"></span>María $${mc.toFixed(2)} · <b>Total $${(jc+mc).toFixed(2)}</b></div>
     <div class="foot" style="font-size:10px;opacity:.75">🌿 Recordatorio: perejil 10g</div>
   </section>`
 }
