@@ -21,7 +21,7 @@ const costs = WEEKS.map(w=>{
 })
 const rank=[...costs].filter(c=>!c.extrema).sort((a,b)=>a.cost-b.cost)
 
-const idx = `<section class="sheet">
+const idx = `<section class="sheet noprint">
 <div class="eyebrow">Índice</div><div class="title">Las once, ordenadas por coste (solo Julio)</div>
 <div class="note">Todos los números salen del motor de <code>dishes.js</code>. El HTML anterior los tenía escritos a mano y no coincidían: decía 751 kcal para el Batido clásico cuando la receta real da 934.</div>
 <table><thead><tr><th>#</th><th>Semana</th><th>Coste/sem</th><th>Proteína máx</th><th>Fibra soluble mín</th><th>Bloques</th></tr></thead><tbody>

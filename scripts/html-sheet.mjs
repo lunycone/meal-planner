@@ -26,13 +26,21 @@ th{background:#f3f0eb;font-size:11px;letter-spacing:.04em;text-transform:upperca
 .kpi{font-variant-numeric:tabular-nums}
 /* 6 sep 2026 -- papel real del usuario: Legal (8.5x14in / 216x356mm), no
    Folio como se penso al principio -- "legal" es una palabra clave de
-   tamaño de pagina estandar en CSS, se puede pedir directamente. */
-@page{size:legal landscape;margin:10mm}
+   tamaño de pagina estandar en CSS, se puede pedir directamente.
+   Margen mas justo (6mm) y tipografia/relleno mas compactos SOLO en
+   impresion -- con el tamaño de antes, cada semana se quedaba un pelo mas
+   alta que una pagina y la ultima linea (el recordatorio de perejil) se
+   iba sola a una pagina nueva, casi en blanco, una por cada semana. */
+@page{size:legal landscape;margin:6mm}
 @media print{
-  body{background:#fff}
+  body{background:#fff;font-size:12px}
   .wrap{padding:0}
-  .sheet{border:0;padding:8px 0}
+  .sheet{border:0;padding:4px 0;margin:0}
   .noprint{display:none}
+  table{font-size:10.5px}
+  th,td{padding:4px 5px}
+  .macro{font-size:9.5px}
+  .foot{margin-top:5px;padding-top:5px;font-size:10px}
 }
 button{font:inherit;padding:8px 16px;border:1px solid var(--line);background:#fff;border-radius:7px;cursor:pointer}
 `
@@ -92,8 +100,7 @@ function sheet(w, total=11){
     <div class="title">${e(w.title)}</div>
     <table><thead><tr><th class="rowlab">&nbsp;</th>${DAYS.map(d=>`<th>${d}</th>`).join('')}</tr></thead>
     <tbody>${D}${DM}${C}${M}${N}${T}</tbody></table>
-    <div class="foot">Coste semana — <span class="sw j"></span>Julio $${jc.toFixed(2)} · <span class="sw m"></span>María $${mc.toFixed(2)} · <b>Total $${(jc+mc).toFixed(2)}</b></div>
-    <div class="foot" style="font-size:10px;opacity:.75">🌿 Recordatorio: perejil 10g</div>
+    <div class="foot">Coste semana — <span class="sw j"></span>Julio $${jc.toFixed(2)} · <span class="sw m"></span>María $${mc.toFixed(2)} · <b>Total $${(jc+mc).toFixed(2)}</b> · <span style="opacity:.75">🌿 perejil 10g</span></div>
   </section>`
 }
 export { sheet, CSS }
