@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, Fragment } from 'react'
 import useStore, { selectAllIng, selectAllCombos } from '../../store/useStore'
 import { PROTEIN } from '../../data/proteins'
 import { PREP, COMBO_SETS } from '../../data/combos'
-import { comboAgg, fmt, proteinCost, proteinKcal, proteinProt, ingKcal, ingCost, fmtPortion, personDayKcal, personDayCost, pcosCarbLevel, proteinLevel, kcalLevel, LEVEL_COLOR, slotForPerson, slotIsUniform, makeByPersonSlot } from '../../engine/calc'
+import { comboAgg, fmt, proteinCost, proteinKcal, proteinProt, ingKcal, ingCost, fmtPortion, personDayKcal, personDayCost, pcosCarbLevel, proteinLevel, kcalLevel, LEVEL_COLOR, slotForPerson, slotIsUniform, makeByPersonSlot, dishHasGOS, dishHasAllium, comboFibSol, dishSpecies, DESAYUNO_FAT_MAX, DESAYUNO_KCAL_MIN } from '../../engine/calc'
 import { MODEL_WEEKS, expandModelWeek, MARIA_NO_BATIDO_CASERO, MARIA_MERIENDA_PORTATIL } from '../../data/modelWeeks'
 import PcosBadge from '../PcosBadge'
 
@@ -717,6 +717,105 @@ export default function WeeklyMealPlannerTab() {
     })
   }, [currentWeek, validProfiles, allIng, allCombos])
 
+  // 6 sep 2026 -- avisos de la semana, portados del generador HTML standalone
+  // (scripts/html-core.mjs `warns()`), que hasta ahora era el UNICO sitio
+  // donde se comprobaban las reglas digestivas de verdad -- el Planificador
+  // de la app dejaba editar cualquier dia a mano sin decir si eso rompia la
+  // cadencia de GOS/fructanos, repetia especie toda la semana, se salia del
+  // techo de proteina o se quedaba corto de fibra soluble. Aproximado con
+  // raciones POR DEFECTO para proteina/fibra soluble (no las dos pasadas de
+  // comida/cena que ya usa Hoy/Batch) -- de sobra para avisar de una
+  // infraccion real, no pretende ser el numero exacto del dia.
+  const CADENCE_MAX = 4 // dias/7 permitidos con GOS o fructano en una misma franja
+  const SOL_FIBER_MIN = 8 // g/dia, suelo universal (no depende de la persona)
+  const weekWarnings = useMemo(() => {
+    if (validProfiles.length === 0) return []
+    const warnings = []
+
+    // Cadencia GOS / fructano por franja. Desayuno se mira por persona
+    // (Julio y Maria pueden llevar platos distintos); comida/merienda/cena
+    // sobre el representante (mismo plato para todos, la regla de siempre).
+    const slotChecks = [
+      ...validProfiles.map(p => ({ label: `desayuno ${p.name}`, mealType: 'desayuno', personId: p.id })),
+      { label: 'comida', mealType: 'comida', personId: repProfileId },
+      { label: 'merienda', mealType: 'merienda', personId: repProfileId },
+      { label: 'cena', mealType: 'cena', personId: repProfileId },
+    ]
+    slotChecks.forEach(({ label, mealType, personId }) => {
+      let gosDays = 0, fructDays = 0
+      DAY_KEYS.forEach(dayKey => {
+        const meal = slotForPerson(currentWeek[slotKey(dayKey, mealType)], personId)
+        if (!meal || meal.type !== 'desayuno') return
+        const combo = allCombos[meal.recipeKey]
+        if (!combo) return
+        if (dishHasGOS(combo)) gosDays++
+        if (dishHasAllium(combo)) fructDays++
+      })
+      if (gosDays > CADENCE_MAX) warnings.push(`Legumbre en ${label}: ${gosDays}/7 días (máx ${CADENCE_MAX})`)
+      if (fructDays > CADENCE_MAX) warnings.push(`Cebolla/ajo/puerro en ${label}: ${fructDays}/7 días (máx ${CADENCE_MAX})`)
+    })
+
+    // Desayuno: kcal/grasa por cada plato distinto usado esa semana, por persona.
+    validProfiles.forEach(p => {
+      const seen = new Set()
+      DAY_KEYS.forEach(dayKey => {
+        const meal = slotForPerson(currentWeek[slotKey(dayKey, 'desayuno')], p.id)
+        if (!meal || meal.type !== 'desayuno' || seen.has(meal.recipeKey)) return
+        seen.add(meal.recipeKey)
+        const combo = allCombos[meal.recipeKey]
+        if (!combo) return
+        const agg = comboAgg(combo, allIng)
+        if (agg.kcal < DESAYUNO_KCAL_MIN) warnings.push(`Desayuno ${p.name} "${combo.name}": ${Math.round(agg.kcal)} kcal (mínimo ${DESAYUNO_KCAL_MIN})`)
+        if (agg.fat > DESAYUNO_FAT_MAX) warnings.push(`Desayuno ${p.name} "${combo.name}": ${Math.round(agg.fat)}g grasa (máximo ${DESAYUNO_FAT_MAX}g)`)
+      })
+    })
+
+    // Especie: si comida o cena repiten la MISMA especie los 7 días, poca variedad real.
+    ;[['Comida', 'comida'], ['Cena', 'cena']].forEach(([label, mealType]) => {
+      const species = new Set()
+      let anyDish = false
+      DAY_KEYS.forEach(dayKey => {
+        const meal = slotForPerson(currentWeek[slotKey(dayKey, mealType)], repProfileId)
+        if (!meal || meal.type !== 'desayuno') return
+        const combo = allCombos[meal.recipeKey]
+        if (!combo) return
+        anyDish = true
+        const sp = dishSpecies(combo)
+        if (sp) species.add(sp)
+      })
+      if (anyDish && species.size === 1) {
+        warnings.push(`${label}: la misma especie (${[...species][0]}) los 7 días — considera variar`)
+      }
+    })
+
+    // Techo de proteína (person.proteinTarget) y suelo de fibra soluble.
+    validProfiles.forEach(p => {
+      let maxProt = 0, minFibSol = Infinity
+      DAY_KEYS.forEach(dayKey => {
+        let dayProt = 0, dayFibSol = 0
+        MEALS.forEach(mealType => {
+          const meal = slotForPerson(currentWeek[slotKey(dayKey, mealType)], p.id)
+          if (!meal || meal.type !== 'desayuno') return
+          const combo = allCombos[meal.recipeKey]
+          if (!combo) return
+          const agg = comboAgg(combo, allIng)
+          dayProt += agg.prot ?? 0
+          dayFibSol += comboFibSol(combo, allIng)
+        })
+        if (dayProt > maxProt) maxProt = dayProt
+        if (dayFibSol > 0 && dayFibSol < minFibSol) minFibSol = dayFibSol
+      })
+      if (p.proteinTarget && maxProt > p.proteinTarget) {
+        warnings.push(`${p.name}: proteína hasta ${Math.round(maxProt)}g (techo ${p.proteinTarget}g)`)
+      }
+      if (minFibSol !== Infinity && minFibSol < SOL_FIBER_MIN) {
+        warnings.push(`${p.name}: fibra soluble baja a ${minFibSol.toFixed(1)}g algún día (suelo ${SOL_FIBER_MIN}g)`)
+      }
+    })
+
+    return warnings
+  }, [currentWeek, validProfiles, allCombos, allIng, repProfileId])
+
   // Day-column kcal personalised to the active profile (when one is selected).
   // When 'all' is selected → falls back to default dayTotals.kcal.
   const personalizedDayKcal = useMemo(() => {
@@ -853,6 +952,30 @@ export default function WeeklyMealPlannerTab() {
           <span className="score-label">estado</span>
         </div>
       </div>
+
+      {weekTotals.filledSlots > 0 && (
+        weekWarnings.length === 0 ? (
+          <div style={{
+            margin: '0.75rem 0', padding: '0.6rem 0.9rem', borderRadius: 'var(--t-radius)',
+            background: 'rgba(90,138,58,0.08)', border: '1px solid rgba(90,138,58,0.25)',
+            fontSize: '0.8rem', color: '#3a6a2a',
+          }}>
+            ✓ Sin avisos — cadencia, especie, proteína y fibra soluble dentro de rango.
+          </div>
+        ) : (
+          <div style={{
+            margin: '0.75rem 0', padding: '0.75rem 1rem', borderRadius: 'var(--t-radius)',
+            background: 'rgba(184,90,90,0.06)', border: '1px solid rgba(184,90,90,0.25)',
+          }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#b85a5a', marginBottom: '0.4rem' }}>
+              ⚠ Avisos de la semana ({weekWarnings.length})
+            </div>
+            <ul style={{ margin: 0, paddingLeft: '1.1rem', fontSize: '0.8rem', color: 'var(--t-text-soft)', lineHeight: 1.7 }}>
+              {weekWarnings.map((w, i) => <li key={i}>{w}</li>)}
+            </ul>
+          </div>
+        )
+      )}
 
       <div className="weekly-actions">
         <button className="btn-ghost" disabled={!hasPreviousWeek} onClick={copyPreviousWeek}>Repetir anterior</button>

@@ -238,7 +238,7 @@ const MAX_COOKED_BASE_GRAMS = 300
 // muy por encima de lo que cabe en un tupper. Con el ratio (igual que sus
 // hermanas garbanzos/black-beans/alubias, todas 2.5x) el tope real queda en
 // ~120g secos, coherente con el resto de legumbres.
-const DRY_TO_COOKED = {
+export const DRY_TO_COOKED = {
   'garbanzos': 2.5, 'black-beans': 2.5, 'lentejas-rojas': 2.5, 'lentejas-verdes': 2.0,
   'alubias-blancas': 2.5, 'cranberry-beans': 2.5, 'alubias-rojas': 2.5, 'romano-beans': 2.5,
   'arroz': 2.8, 'pasta': 2.5, 'buckwheat': 2.6,
@@ -592,13 +592,42 @@ const INSOLUBLE_KEYS = /^brocoli$|^col$|^col-rizada$|^coco-rallado$|^almendras$|
 // RENOMBRADO: no son solo alliums. La alcachofa no es un allium y es de los
 // alimentos con mayor carga de fructanos que existe — estaba sin marcar.
 const FRUCTAN_KEYS = /^cebolla|^ajo$|^puerro$|^alcachofa$/
-const DESAYUNO_FAT_MAX = 15    // g — Regla 2
+export const DESAYUNO_FAT_MAX = 15    // g — Regla 2
 
 // NUEVO 3 sep 2026 — Regla 1-bis. El suelo existe porque Regla 1 ("desayuno =
 // comida mas pequena") y Regla 6 ("ningun hueco >5 h") entraban en conflicto:
 // un desayuno de 277 kcal a las 8:00 con comida a las 14:00 reproduce
 // exactamente el escenario del dolor epigastrico del 3 sep. Pequeno, no ausente.
-const DESAYUNO_KCAL_MIN = 400
+export const DESAYUNO_KCAL_MIN = 400
+
+// 6 sep 2026 — antes solo scripts/blocks.mjs (standalone) sabia detectar la
+// especie/proteina principal de un plato, para avisar si comida o cena
+// repiten animal. El Planificador de la app nunca lo comprobaba. Portado
+// aqui (misma tabla) para que el aviso semanal de la app pueda usarlo igual.
+export const SPECIES_KEYS = {
+  'lomo-cerdo': 'cerdo', 'costillas-cerdo': 'cerdo', 'solomillo-cerdo': 'cerdo',
+  'cerdo-picado': 'cerdo', 'ham-hock': 'cerdo', bacon: 'cerdo', salchichas: 'cerdo',
+  'pollo-pierna-generic': 'pollo', 'pollo-pierna': 'pollo', 'pollo-muslito': 'pollo',
+  'pollo-muslo-air': 'pollo', 'pollo-muslo-farmboy': 'pollo',
+  'turkey-drumstick': 'pavo',
+  'carne-picada': 'vaca', 'higado-vaca': 'vaca', 'ternera-guisar': 'vaca',
+  lamb: 'cordero',
+  bacalao: 'bacalao', 'sardina-media': 'sardina', mejillones: 'mejillon',
+  huevo: 'huevo', 'black-beans': 'legumbre', garbanzos: 'legumbre',
+  'lentejas-verdes': 'legumbre', 'romano-beans': 'legumbre',
+}
+
+// Especie dominante de un plato: la primera proteina animal/de peso que
+// aparece en items, en el orden de SPECIES_KEYS (cerdo > pollo > pavo > vaca
+// > cordero > pescado > huevo > legumbre) -- el mismo orden en que el
+// catalogo las usa como ingrediente "titular".
+export function dishSpecies(combo) {
+  if (!combo) return null
+  for (const it of combo.items) {
+    if (SPECIES_KEYS[it.k]) return SPECIES_KEYS[it.k]
+  }
+  return null
+}
 
 export function dishHasGOS(combo) {
   return combo.items.some(it => GOS_KEYS.test(it.k))

@@ -23,7 +23,7 @@ export const SPECIES = {
   // pavo
   'turkey-drumstick':'pavo',
   // vaca
-  'carne-picada':'vaca', 'higado-vaca':'vaca',
+  'carne-picada':'vaca', 'higado-vaca':'vaca', 'ternera-guisar':'vaca',
   // cordero
   'lamb':'cordero',
   // pescado/marisco

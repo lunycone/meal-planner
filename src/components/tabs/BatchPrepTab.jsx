@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import useStore, { selectAllIng, selectAllCombos } from '../../store/useStore'
 import { PROTEIN } from '../../data/proteins'
 import { PREP } from '../../data/combos'
-import { comboScalableKey, personMealScalesTwoPass, personTargetForDay, personDayKcal, slotForPerson } from '../../engine/calc'
+import { comboScalableKey, personMealScalesTwoPass, personTargetForDay, personDayKcal, slotForPerson, DRY_TO_COOKED as COOK_RATIO } from '../../engine/calc'
 
 // Orden de dias para resolver el indice (0=lun..6=dom) que necesita
 // personTargetForDay/personMealScale — mismo orden que DAY_KEYS en el
@@ -33,21 +33,11 @@ const PROTEIN_YIELD = {
 }
 
 // ─── Dry → cooked weight ratios for legumes / grains ─────────────────────────
-// Debe coincidir con DRY_TO_COOKED en engine/calc.js (mismo motor, misma
-// cocina) -- 5 sep 2026: faltaba romano-beans, ver ese archivo para el porque.
-const COOK_RATIO = {
-  'garbanzos':       2.5,
-  'black-beans':     2.5,
-  'lentejas-rojas':  2.5,
-  'lentejas-verdes': 2.0,
-  'alubias-blancas': 2.5,
-  'cranberry-beans': 2.5,
-  'alubias-rojas':   2.5,
-  'romano-beans':    2.5,
-  'arroz':           2.8,
-  'pasta':           2.5,
-  'buckwheat':       2.6,
-}
+// 6 sep 2026 -- ya no es una copia local: era la misma tabla que
+// DRY_TO_COOKED en engine/calc.js, mantenida a mano por separado, y por eso
+// se desincronizo una vez (faltaba romano-beans aqui pero no alli, o al
+// reves -- el bug real fue justo ese). Importada directamente para que no
+// pueda volver a pasar.
 
 // ─── Peso aprox. en gramos para ingredientes que vienen "por unidad" ─────────
 // Solo se usa para estimar el peso total de un puré ya batido (donde no se
