@@ -44,7 +44,7 @@ th{background:#f3f0eb;font-size:11px;letter-spacing:.04em;text-transform:upperca
      desbordar por definicion, pase lo que pase en el dialogo. */
   body{background:#fff;font-size:12px}
   .wrap{padding:0;max-width:none;width:100%}
-  .sheet{border:0;padding:4px 0;margin:0}
+  .sheet{border:0;padding:4px 7px;margin:0}
   .noprint{display:none}
   table{font-size:10.5px}
   th,td{padding:4px 5px}
