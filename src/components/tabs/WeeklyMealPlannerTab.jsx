@@ -2,7 +2,8 @@ import { useState, useMemo, useEffect, Fragment } from 'react'
 import useStore, { selectAllIng, selectAllCombos } from '../../store/useStore'
 import { PROTEIN } from '../../data/proteins'
 import { PREP, COMBO_SETS } from '../../data/combos'
-import { comboAgg, fmt, proteinCost, proteinKcal, proteinProt, ingKcal, ingCost, fmtPortion, personLunchScale, dayKcal, pcosCarbLevel, proteinLevel, kcalLevel, LEVEL_COLOR } from '../../engine/calc'
+import { comboAgg, fmt, proteinCost, proteinKcal, proteinProt, ingKcal, ingCost, fmtPortion, personDayKcal, personDayCost, pcosCarbLevel, proteinLevel, kcalLevel, LEVEL_COLOR, slotForPerson, slotIsUniform, makeByPersonSlot } from '../../engine/calc'
+import { MODEL_WEEKS, expandModelWeek, MARIA_NO_BATIDO_CASERO, MARIA_MERIENDA_PORTATIL } from '../../data/modelWeeks'
 import PcosBadge from '../PcosBadge'
 
 // Utility to get ISO week key from date
@@ -463,8 +464,11 @@ function MealDetailModal({ meal, allIng, allCombos, onEdit, onClose }) {
   return null
 }
 
-function MealSlot({ mealType, meal, allIng, allCombos, onEdit, onDetail, onClear }) {
-  const isEmpty = !meal
+function MealSlot({ mealType, slot, profiles, allIng, allCombos, onEdit, onDetail, onClear }) {
+  const profileIds = profiles.map(p => p.id)
+  const uniform = slotIsUniform(slot, profileIds)
+  const primaryMeal = slotForPerson(slot, profileIds[0] ?? null)
+  const isEmpty = uniform ? !primaryMeal : profileIds.every(id => !slotForPerson(slot, id))
 
   if (isEmpty) {
     return (
@@ -475,7 +479,25 @@ function MealSlot({ mealType, meal, allIng, allCombos, onEdit, onDetail, onClear
     )
   }
 
-  const { title, cost, kcal, protein } = getMealDetails(meal, allIng, allCombos)
+  // ── Plato distinto por persona (semana modelo cargada) — una linea cada uno ──
+  if (!uniform) {
+    const rows = profiles.map(p => ({ person: p, ...getMealDetails(slotForPerson(slot, p.id), allIng, allCombos) }))
+    return (
+      <div className={`meal-slot filled meal-${mealType}`}>
+        <button className="slot-main" onClick={onDetail ?? onEdit}>
+          <span className="slot-type">{MEAL_LABELS[mealType]}</span>
+          {rows.map(r => (
+            <span key={r.person.id} className="slot-title" style={{ display: 'block', fontSize: '0.82em' }}>
+              <strong>{r.person.initial}:</strong> {r.title || 'sin plato'}
+            </span>
+          ))}
+        </button>
+        <button className="slot-clear" title="Quitar comida" onClick={e => { e.stopPropagation(); onClear() }}>✕</button>
+      </div>
+    )
+  }
+
+  const { title, cost, kcal, protein } = getMealDetails(primaryMeal, allIng, allCombos)
 
   return (
     <div className={`meal-slot filled meal-${mealType}`}>
@@ -517,6 +539,18 @@ export default function WeeklyMealPlannerTab() {
   const clearMealSlot = useStore(s => s.clearMealSlot)
   const weekOffset    = useStore(s => s.weekOffset)
   const setWeekOffset = useStore(s => s.setWeekOffset)
+
+  // ── Perfiles activos — subido arriba (6 sep 2026) porque dayTotals y el
+  // cargador de semanas modelo ya lo necesitan, no solo el bloque de kcal
+  // personalizado de mas abajo.
+  const profiles        = useStore(s => s.profiles)
+  const activeProfileId = useStore(s => s.activeProfileId)
+  const todayForProfiles = new Date()
+  const validProfiles = profiles.filter(p => {
+    if (p.validoDesde && new Date(p.validoDesde) > todayForProfiles) return false
+    if (p.validoHasta && new Date(p.validoHasta) <= todayForProfiles) return false
+    return true
+  })
 
   const [modalOpen, setModalOpen] = useState(null)   // { dayKey, mealType }
   const [detailOpen, setDetailOpen] = useState(null) // { dayKey, mealType }
@@ -586,12 +620,18 @@ export default function WeeklyMealPlannerTab() {
   }
 
   // Calculate day and week totals
+  // Representante para la vista generica ('all' / celda de dia): el primer
+  // perfil activo. Cuando el slot difiere por persona (semana modelo
+  // cargada), esta es solo la cifra "de portada" — personWeeklyAvg de abajo
+  // ya muestra el desglose real por persona.
+  const repProfileId = validProfiles[0]?.id ?? null
+
   const dayTotals = useMemo(() => {
     const totals = {}
     DAY_KEYS.forEach(dayKey => {
       let dayC = 0, dayK = 0, dayP = 0
       MEALS.forEach(meal => {
-        const m = currentWeek[`${dayKey}-${meal}`]
+        const m = slotForPerson(currentWeek[`${dayKey}-${meal}`], repProfileId)
         if (!m) return
         if (m.type === 'desayuno') {
           const recipe = allCombos[m.recipeKey]
@@ -617,7 +657,7 @@ export default function WeeklyMealPlannerTab() {
       totals[dayKey] = { cost: dayC, kcal: dayK, prot: dayP }
     })
     return totals
-  }, [currentWeek, allCombos, allIng])
+  }, [currentWeek, allCombos, allIng, repProfileId])
 
   const weekTotals = useMemo(() => {
     let totalCost = 0, totalKcal = 0, filledSlots = 0
@@ -648,14 +688,11 @@ export default function WeeklyMealPlannerTab() {
       : 'Parcial'
 
   // ── Per-person personalized kcal ──────────────────────────────────────────
-  const profiles        = useStore(s => s.profiles)
-  const activeProfileId = useStore(s => s.activeProfileId)
-  const todayDate = new Date()
-  const validProfiles = profiles.filter(p => {
-    if (p.validoDesde && new Date(p.validoDesde) > todayDate) return false
-    if (p.validoHasta && new Date(p.validoHasta) <= todayDate) return false
-    return true
-  })
+  // day para UNA persona concreta: cada slot resuelto via slotForPerson, no
+  // asumido compartido. Con esto un dia de una semana modelo cargada (Julio
+  // burrito, Maria torta de garbanzo) da kcal/coste correctos por separado.
+  const dayForPerson = (dk, personId) =>
+    Object.fromEntries(MEALS.map(m => [m, slotForPerson(currentWeek[slotKey(dk, m)], personId)]))
 
   const personWeeklyAvg = useMemo(() => {
     if (validProfiles.length === 0) return []
@@ -663,16 +700,15 @@ export default function WeeklyMealPlannerTab() {
     if (filledDays.length === 0) return []
     return validProfiles.map(person => {
       let total = 0
-      filledDays.forEach(dk => {
-        const day = Object.fromEntries(MEALS.map(m => [m, currentWeek[slotKey(dk, m)] ?? null]))
-        const scale = personLunchScale(day, person, allIng, allCombos)
-        total += scale ? scale.dayKcalAchieved : dayKcal(day, allIng, allCombos)
+      filledDays.forEach((dk, i) => {
+        const day = dayForPerson(dk, person.id)
+        total += personDayKcal(day, person, allIng, allCombos, DAY_KEYS.indexOf(dk))
       })
       return { person, avg: Math.round(total / filledDays.length) }
     })
   }, [currentWeek, validProfiles, allIng, allCombos])
 
-  // ── Per-person weekly cost (accounts for personalized base grams via personLunchScale) ──
+  // ── Per-person weekly cost (comida/cena escalados, igual que el kcal) ──
   const personWeeklyCost = useMemo(() => {
     if (validProfiles.length === 0) return []
     const filledDays = DAY_KEYS.filter(dk => MEALS.some(m => currentWeek[slotKey(dk, m)]))
@@ -680,28 +716,8 @@ export default function WeeklyMealPlannerTab() {
     return validProfiles.map(person => {
       let total = 0
       filledDays.forEach(dk => {
-        const day = Object.fromEntries(MEALS.map(m => [m, currentWeek[slotKey(dk, m)] ?? null]))
-        MEALS.forEach(mealType => {
-          const meal = day[mealType]
-          if (!meal) return
-          if (meal.type === 'desayuno') {
-            const recipe = allCombos[meal.recipeKey]
-            if (recipe) total += comboAgg(recipe, allIng).cost
-          } else if (meal.type === 'plato') {
-            const protein = PROTEIN[meal.proteinKey]
-            const combo   = allCombos[meal.comboKey]
-            if (!protein || !combo) return
-            total += proteinCost(protein, false, meal.proteinUnits)
-            if (mealType === 'comida') {
-              // Use personalized base grams (e.g. Julio gets more rice than María)
-              const scale    = personLunchScale(day, person, allIng, allCombos)
-              const overrides = scale ? { [scale.ingKey]: scale.grams } : {}
-              total += comboAgg(combo, allIng, meal.comboVariants || {}, overrides, meal.comboOptionals || []).cost
-            } else {
-              total += comboAgg(combo, allIng, meal.comboVariants || {}, {}, meal.comboOptionals || []).cost
-            }
-          }
-        })
+        const day = dayForPerson(dk, person.id)
+        total += personDayCost(day, person, allIng, allCombos, DAY_KEYS.indexOf(dk))
       })
       return { person, cost: total }
     })
@@ -714,10 +730,9 @@ export default function WeeklyMealPlannerTab() {
     const person = profiles.find(p => p.id === activeProfileId)
     if (!person) return null
     const result = {}
-    DAY_KEYS.forEach(dk => {
-      const day = Object.fromEntries(MEALS.map(m => [m, currentWeek[slotKey(dk, m)] ?? null]))
-      const scale = personLunchScale(day, person, allIng, allCombos)
-      result[dk] = scale ? scale.dayKcalAchieved : dayKcal(day, allIng, allCombos)
+    DAY_KEYS.forEach((dk, i) => {
+      const day = dayForPerson(dk, person.id)
+      result[dk] = personDayKcal(day, person, allIng, allCombos, i)
     })
     return result
   }, [activeProfileId, profiles, currentWeek, allIng, allCombos])
@@ -735,6 +750,45 @@ export default function WeeklyMealPlannerTab() {
         const key = slotKey(dayKey, mealType)
         if (previousWeek[key]) setMealSlot(weekKey, key, previousWeek[key])
       })
+    })
+  }
+
+  // ── Cargar semana modelo (6 sep 2026) ──────────────────────────────────────
+  // Rellena la semana que se esta viendo con una de las 11 semanas modelo
+  // (dishes.js + engine/calc.js, la misma fuente que ya usan el resto de
+  // reglas digestivas). Desayuno y merienda quedan "por persona" cuando
+  // Julio y Maria difieren de verdad; comida y cena quedan como el MISMO
+  // plato para los dos -- la racion de cada uno se sigue calculando en vivo
+  // (personMealScale), igual que cualquier semana planificada a mano.
+  const [modelWeekChoice, setModelWeekChoice] = useState(MODEL_WEEKS[0]?.n ?? 1)
+
+  function loadModelWeek(n) {
+    const week = MODEL_WEEKS.find(w => w.n === n)
+    if (!week) return
+    const expanded = expandModelWeek(week)
+
+    clearCurrentWeek()
+    DAY_KEYS.forEach((dayKey, i) => {
+      const mariaMerienda = MARIA_NO_BATIDO_CASERO.includes(i)
+        ? { type: 'desayuno', recipeKey: MARIA_MERIENDA_PORTATIL }
+        : { type: 'desayuno', recipeKey: expanded.M[i] }
+
+      setMealSlot(weekKey, slotKey(dayKey, 'desayuno'), makeByPersonSlot({
+        julio: { type: 'desayuno', recipeKey: expanded.D[i] },
+        maria: { type: 'desayuno', recipeKey: expanded.DM[i] },
+      }))
+      setMealSlot(weekKey, slotKey(dayKey, 'comida'), makeByPersonSlot({
+        julio: { type: 'desayuno', recipeKey: expanded.C[i] },
+        maria: { type: 'desayuno', recipeKey: expanded.C[i] },
+      }))
+      setMealSlot(weekKey, slotKey(dayKey, 'merienda'), makeByPersonSlot({
+        julio: { type: 'desayuno', recipeKey: expanded.M[i] },
+        maria: mariaMerienda,
+      }))
+      setMealSlot(weekKey, slotKey(dayKey, 'cena'), makeByPersonSlot({
+        julio: { type: 'desayuno', recipeKey: expanded.N[i] },
+        maria: { type: 'desayuno', recipeKey: expanded.N[i] },
+      }))
     })
   }
 
@@ -819,6 +873,30 @@ export default function WeeklyMealPlannerTab() {
         <button className="btn-primary" onClick={generateCheapDraft}>Generar barato</button>
         <button className="btn-ghost" disabled={!hasPreviousWeek} onClick={copyPreviousWeek}>Repetir anterior</button>
         <button className="btn-ghost" onClick={clearCurrentWeek}>Limpiar</button>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto' }}>
+          <select
+            value={modelWeekChoice}
+            onChange={e => setModelWeekChoice(Number(e.target.value))}
+            style={{
+              fontSize: '0.8rem', padding: '0.4rem 0.6rem', borderRadius: '0.5rem',
+              border: '1px solid var(--t-border)', background: 'var(--t-surface)', color: 'var(--t-text)',
+            }}
+          >
+            {MODEL_WEEKS.map(w => (
+              <option key={w.n} value={w.n}>
+                {w.n}. {w.title}{w.extrema ? ' ⚠' : ''}
+              </option>
+            ))}
+          </select>
+          <button
+            className="btn-primary"
+            title="Rellena esta semana con el plato de Julio y de María, día a día, de la semana modelo elegida"
+            onClick={() => loadModelWeek(modelWeekChoice)}
+          >
+            📋 Cargar semana modelo
+          </button>
+        </div>
       </div>
 
       {isMobile ? (
@@ -867,7 +945,8 @@ export default function WeeklyMealPlannerTab() {
                 <div key={mealType} className="mobile-meal-row">
                   <MealSlot
                     mealType={mealType}
-                    meal={meal}
+                    slot={meal}
+                    profiles={validProfiles}
                     allIng={allIng}
                     allCombos={allCombos}
                     onEdit={() => setModalOpen({ dayKey: selectedDayMobile, mealType })}
@@ -924,7 +1003,8 @@ export default function WeeklyMealPlannerTab() {
                     <div key={key} className="planner-cell">
                       <MealSlot
                         mealType={mealType}
-                        meal={meal}
+                        slot={meal}
+                        profiles={validProfiles}
                         allIng={allIng}
                         allCombos={allCombos}
                         onEdit={() => setModalOpen({ dayKey, mealType })}
@@ -941,7 +1021,11 @@ export default function WeeklyMealPlannerTab() {
       )}
 
       {detailOpen && (() => {
-        const detailMeal = currentWeek[slotKey(detailOpen.dayKey, detailOpen.mealType)]
+        // Vista de detalle: si el plato difiere por persona, se muestra el
+        // del primer perfil activo (la vista rapida de la celda ya deja ver
+        // el desglose completo, esto es solo el "ver receta").
+        const rawSlot = currentWeek[slotKey(detailOpen.dayKey, detailOpen.mealType)]
+        const detailMeal = slotForPerson(rawSlot, repProfileId)
         return (
           <MealDetailModal
             meal={detailMeal}

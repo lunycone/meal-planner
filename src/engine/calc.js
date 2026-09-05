@@ -1,7 +1,7 @@
 // Pure calculation engine — all functions accept the merged ingredient map
 // so price overrides propagate automatically everywhere.
 
-import { PROTEIN } from '../data/proteins'
+import { PROTEIN } from '../data/proteins.js'
 
 export function ingCost(key, p, allIng) {
   const i = allIng[key]
@@ -231,25 +231,99 @@ const DRY_TO_COOKED = {
 // flexes per person — capped at a realistic "comible" amount. When the cap
 // can't reach the target, reports the deficit and the olive-oil it would take
 // to close it. Returns null if the lunch has no scalable base.
-export function personLunchScale(day, person, allIng, allCombos, opts = {}) {
-  const lunch = day?.comida
-  if (!lunch || lunch.type !== 'desayuno') return null
-  const combo = allCombos[lunch.recipeKey]
+// Same shape as comboAgg's result, but with EVERY item (grams/ml/units) scaled
+// by `factor` first — not just the one scalable base. Used when a meal needs
+// to shrink as a WHOLE (6 sep 2026): the fixed protein/cheese/butter is often
+// what's oversized for a low-kcal target, not the rice/potato side. Never
+// applied below WHOLE_DISH_FLOOR — it must stay recognizably the same dish.
+const WHOLE_DISH_FLOOR = 0.55
+export function comboAggScaled(combo, allIng, factor) {
+  const items = combo.items.map(it => {
+    const p = { ...it.p }
+    if (p.grams != null) p.grams = Math.round(p.grams * factor)
+    if (p.ml    != null) p.ml    = Math.round(p.ml    * factor)
+    if (p.units != null) p.units = Math.round(p.units * factor * 2) / 2
+    return { ...it, p }
+  })
+  return comboAgg({ ...combo, items }, allIng)
+}
+
+// Given a full day plan + a person, returns how to size ONE meal (comida or
+// cena) so the whole day approaches person.kcalTarget. Desayuno, merienda and
+// the OTHER of {comida,cena} are treated as fixed, at their own default
+// portion. Two regimes:
+//   - Falta kcal: escala solo el ingrediente base (arroz/patata/legumbre),
+//     tope realista de lo que cabe en un tupper (como siempre).
+//   - Sobra kcal: reduce el plato ENTERO en proporcion (no solo la base) --
+//     el problema suele ser la carne/queso fijos, no el almidon. Nunca por
+//     debajo de WHOLE_DISH_FLOOR (55%): sigue siendo el mismo plato.
+// Returns null if the slot is empty or not a single-dish meal.
+// Resuelve el objetivo de kcal de un dia concreto: kcalByDay[dayIdx] si el
+// perfil lo tiene (Julio/Maria, derivado de su calendario real), si no el
+// kcalTarget plano de siempre. dayIdx es 0=lunes..6=domingo (mismo orden que
+// DAY_KEYS en los tabs).
+export function personTargetForDay(person, dayIdx) {
+  if (person?.kcalByDay && dayIdx != null) {
+    const t = person.kcalByDay[dayIdx]
+    if (t != null) return t
+  }
+  return person?.kcalTarget ?? 0
+}
+
+export function personMealScale(day, mealType, person, allIng, allCombos, opts = {}) {
+  const meal = day?.[mealType]
+  if (!meal || meal.type !== 'desayuno') return null
+  const combo = allCombos[meal.recipeKey]
+  if (!combo) return null
+
+  const target = opts.kcalTarget ?? person.kcalTarget
+  const mealAgg = comboAgg(combo, allIng)
+  const totalKcal = dayKcal(day, allIng, allCombos)          // dia completo, todo a racion por defecto
+  const otherFixedKcal = totalKcal - mealAgg.kcal            // todo el dia MENOS este plato
+  const neededFromMeal = target - otherFixedKcal             // lo que este plato tiene que aportar
   const key = comboScalableKey(combo, allIng)
-  if (!key) return null
+
+  // ── Sobra: el plato a racion normal ya cubre (o se pasa de) lo que hace falta ──
+  if (neededFromMeal <= mealAgg.kcal) {
+    let factor = mealAgg.kcal > 0 ? neededFromMeal / mealAgg.kcal : 1
+    factor = Math.max(WHOLE_DISH_FLOOR, Math.min(1, factor))
+    const scaled = factor < 1 ? comboAggScaled(combo, allIng, factor) : mealAgg
+    return {
+      ingKey: key, ingName: key ? (allIng[key]?.name ?? null) : null,
+      defaultGrams: null, grams: null, wholeDishFactor: factor,
+      dayKcalAchieved: Math.round(otherFixedKcal + scaled.kcal),
+      deficitKcal: 0, oilTbsp: 0,
+      deltaKcal: Math.round(scaled.kcal - mealAgg.kcal),
+      mealKcalAchieved: Math.round(scaled.kcal),
+      mealCostAchieved: scaled.cost,
+    }
+  }
+
+  // ── Falta, y el plato no tiene base escalable: reportar hueco + aceite ──
+  if (!key) {
+    const dayKcalAchieved = Math.round(otherFixedKcal + mealAgg.kcal)
+    const deficitKcal = Math.max(0, target - dayKcalAchieved)
+    return {
+      ingKey: null, ingName: null, defaultGrams: null, grams: null, wholeDishFactor: 1,
+      dayKcalAchieved, deficitKcal,
+      oilTbsp: deficitKcal > 0 ? Math.round(deficitKcal / KCAL_PER_OIL_TBSP) : 0,
+      deltaKcal: 0,
+      mealKcalAchieved: Math.round(mealAgg.kcal),
+      mealCostAchieved: mealAgg.cost,
+    }
+  }
+
+  // ── Falta, y hay base escalable: subirla, con el mismo tope de siempre ──
   const ing = allIng[key]
   const kcalPerGram = ing.kc / 100
-  if (!kcalPerGram) return null
-
   const item = combo.items.find(it => it.k === key)
   const defaultGrams = item?.p?.grams ?? 0
+  if (!kcalPerGram) return null
 
-  const totalKcal = dayKcal(day, allIng, allCombos)        // at default grams
-  const fixedKcal = totalKcal - defaultGrams * kcalPerGram   // remove scalable share
-  const neededKcal = person.kcalTarget - fixedKcal
+  const fixedKcal  = otherFixedKcal + (mealAgg.kcal - defaultGrams * kcalPerGram)
+  const neededKcal = target - fixedKcal
 
   const min = opts.min ?? 0
-  // Cap on what fits the tupper, expressed in dry grams that yield MAX_COOKED_BASE_GRAMS cooked.
   const cookRatio = DRY_TO_COOKED[key] ?? 1
   const cookedCapDry = MAX_COOKED_BASE_GRAMS / cookRatio
   const factorCap = Math.max(defaultGrams * SCALE_CAP_FACTOR, MIN_SCALE_CAP_GRAMS)
@@ -258,22 +332,75 @@ export function personLunchScale(day, person, allIng, allCombos, opts = {}) {
   const grams = Math.round(Math.max(min, Math.min(max, rawGrams)))
 
   const dayKcalAchieved = Math.round(fixedKcal + grams * kcalPerGram)
-  const deficitKcal = Math.max(0, person.kcalTarget - dayKcalAchieved)
+  const deficitKcal = Math.max(0, target - dayKcalAchieved)
   const oilTbsp = deficitKcal > 0 ? Math.round(deficitKcal / KCAL_PER_OIL_TBSP) : 0
+  const deltaKcal = Math.round((grams - defaultGrams) * kcalPerGram)
 
   return {
     ingKey: key,
     ingName: ing.name,
     defaultGrams,
     grams,
+    wholeDishFactor: 1,
     rawGrams: Math.round(rawGrams),
     cappedHigh: rawGrams > max,
     cappedLow: rawGrams < min,
     dayKcalAchieved,
     deficitKcal,            // >0 only when the cap can't reach the target
     oilTbsp,                // tbsp of olive oil to close the deficit
-    deltaKcal: Math.round((grams - defaultGrams) * kcalPerGram),
+    deltaKcal,
+    mealKcalAchieved: Math.round(mealAgg.kcal + deltaKcal),
+    mealCostAchieved: mealAgg.cost + (grams - defaultGrams) * (ing.per100 || 0) / 100,
   }
+}
+
+// Kept for existing callers — comida only. New code should call
+// personMealScale directly so cena gets the same treatment.
+export function personLunchScale(day, person, allIng, allCombos, opts = {}) {
+  return personMealScale(day, 'comida', person, allIng, allCombos, opts)
+}
+
+// Full day kcal for one person, scaling BOTH comida and cena (whole-dish
+// reduce included) against desayuno+merienda at their own default portion.
+// dayIdx (0=lunes..6=domingo) resolves person.kcalByDay when present — pass
+// it whenever the caller knows which day of the week this is (both tabs do).
+export function personDayKcal(day, person, allIng, allCombos, dayIdx = null) {
+  const target = personTargetForDay(person, dayIdx)
+  let achieved = dayKcal(day, allIng, allCombos) // todo a racion por defecto
+  for (const mealType of ['comida', 'cena']) {
+    const meal = day?.[mealType]
+    if (!meal || meal.type !== 'desayuno') continue
+    const combo = allCombos[meal.recipeKey]
+    if (!combo) continue
+    const defaultMealKcal = comboAgg(combo, allIng).kcal
+    const scale = personMealScale(day, mealType, person, allIng, allCombos, { kcalTarget: target })
+    if (scale) achieved += (scale.mealKcalAchieved - defaultMealKcal)
+  }
+  return Math.round(achieved)
+}
+
+// Same idea as personDayKcal but for cost — used by the weekly cost card.
+function dayCost(day, allIng, allCombos) {
+  return Object.values(day || {}).reduce((s, m) => {
+    if (!m || m.type !== 'desayuno') return s
+    const combo = allCombos[m.recipeKey]
+    return combo ? s + comboAgg(combo, allIng, m.comboVariants || {}).cost : s
+  }, 0)
+}
+
+export function personDayCost(day, person, allIng, allCombos, dayIdx = null) {
+  const target = personTargetForDay(person, dayIdx)
+  let total = dayCost(day, allIng, allCombos)
+  for (const mealType of ['comida', 'cena']) {
+    const meal = day?.[mealType]
+    if (!meal || meal.type !== 'desayuno') continue
+    const combo = allCombos[meal.recipeKey]
+    if (!combo) continue
+    const defaultMealCost = comboAgg(combo, allIng).cost
+    const scale = personMealScale(day, mealType, person, allIng, allCombos, { kcalTarget: target })
+    if (scale) total += (scale.mealCostAchieved - defaultMealCost)
+  }
+  return total
 }
 
 export function fmt(n)  { return '$' + n.toFixed(2) }
@@ -479,3 +606,34 @@ export function kcalLevel(kcal, mealType) {
 }
 
 export const LEVEL_COLOR = { green: '#4a7a3a', yellow: '#b0871f', red: '#b8453a' }
+
+// ─── Per-person slot shape (weekPlan) ────────────────────────────────────────
+// 6 sep 2026: hasta ahora cada slot de weekPlan (`{lun-desayuno: meal}`) era
+// UN plato compartido por todos los perfiles activos ese dia — no se podia
+// representar "Julio come burrito, Maria come torta de garbanzo" el mismo
+// dia. Los dos formatos coexisten a proposito:
+//   - Forma plana  { type, recipeKey, ... }        → igual para todos (como
+//     siempre; lo que escribe el picker manual, sin tocar).
+//   - Forma nueva  { byPerson: { [personId]: meal|null } } → cuando difieren
+//     de verdad (cargado desde una semana modelo). null = esa persona no
+//     come esa franja ese dia (p.ej. Maria sin merienda lunes/miercoles).
+// Todo el codigo que lee un slot debe pasar por slotForPerson en vez de
+// asumir la forma plana directamente.
+export function slotForPerson(slot, personId) {
+  if (!slot) return null
+  if (slot.byPerson) return slot.byPerson[personId] ?? null
+  return slot
+}
+
+// true si el slot es la forma plana, o si byPerson tiene el mismo plato (o
+// ausencia) para todos los perfiles dados — para decidir si una celda del
+// planificador puede mostrarse en una sola linea o necesita desglose.
+export function slotIsUniform(slot, profileIds) {
+  if (!slot || !slot.byPerson) return true
+  const metas = profileIds.map(id => JSON.stringify(slot.byPerson[id] ?? null))
+  return metas.every(m => m === metas[0])
+}
+
+export function makeByPersonSlot(map) {
+  return { byPerson: map }
+}

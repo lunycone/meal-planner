@@ -57,7 +57,17 @@ function sheet(w, total=11){
   const D=row('🍳 Desayuno · Julio',i=>{const a=agg(w.D[i]);return{...a,macro:`${r(a.kcal)} kcal · ${r(a.prot)} g prot · ${a.fat.toFixed(0)} g grasa`}})
   const DM=row('🍳 Desayuno · María',i=>{const a=agg(w.DM[i]);return{...a,macro:`${r(a.kcal)} kcal · ${r(a.prot)} g prot`}})
   const C=row('🍽️ Comida',i=>{const a=j[i].C,b=m[i].C;return{...a,macro:`<span class="sw j"></span>${a.grams??'—'} g ${a.ingName??''} · ${r(a.kcal)} kcal<br><span class="sw m"></span>${b.grams??'—'} g · ${r(b.kcal)} kcal`}})
-  const M=row('🥤 Merienda',i=>{const a=agg(w.M[i]);return{...a,macro:`${r(a.kcal)} kcal · ${a.fibSol.toFixed(1)} g fibra soluble`}})
+  // Maria no toma merienda lunes ni miercoles (Paso 4, 5 sep 2026): la fila
+  // deja constancia de que ese dia es solo para Julio.
+  // Maria lleva un batido proteico para llevar (sin cocinar) lunes/miercoles
+  // en vez del batido casero de Julio -- ver m-proteina-portatil, 6 sep 2026.
+  const NO_MERIENDA_MARIA = [0,2]
+  const M=row('🥤 Merienda',i=>{
+    const a=agg(w.M[i])
+    if (!NO_MERIENDA_MARIA.includes(i)) return {...a, macro:`${r(a.kcal)} kcal · igual los dos`}
+    const b=agg('m-proteina-portatil')
+    return{...a, macro:`<span class="sw j"></span>${r(a.kcal)} kcal<br><span class="sw m"></span>${e(b.name)} · ${r(b.kcal)} kcal (para llevar)`}
+  })
   const N=row('🌙 Cena',i=>{const a=agg(w.N[i]);return{...a,macro:`${r(a.kcal)} kcal · ${r(a.prot)} g prot`}})
   const T=`<tr class="tot"><td class="rowlab">Total día</td>`+DAYS.map((_,i)=>{
     const a=j[i],b=m[i]
@@ -79,6 +89,7 @@ function sheet(w, total=11){
     <tbody>${D}${DM}${C}${M}${N}${T}</tbody></table>
     ${flags}
     <div class="foot">Coste semana — <span class="sw j"></span>Julio $${jc.toFixed(2)} · <span class="sw m"></span>María $${mc.toFixed(2)} · <b>Total $${(jc+mc).toFixed(2)}</b>. Desayuno es propio de cada uno; comida escala su base por persona; merienda y cena son iguales para los dos.</div>
+    <div class="foot" style="font-size:10px;opacity:.75">🌿 Recordatorio: añadir perejil fresco (10g) en alguna comida de la semana — vitamina K1, no está en ningún plato fijo del catálogo.</div>
   </section>`
 }
 export { sheet, CSS }

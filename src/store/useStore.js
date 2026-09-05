@@ -35,8 +35,15 @@ const useStore = create(
 
       // ── PROFILES ──────────────────────────────────────────────────────────
       profiles: [
-        { id: 'julio',   name: 'Julio', initial: 'J', kcalTarget: 3100, proteinTarget: 100 },
-        { id: 'maria',   name: 'María', initial: 'M', kcalTarget: 2600, proteinTarget: 100 },
+        // kcalByDay (lun..dom): objetivo real, derivado del calendario de
+        // entrenamiento (martes = voley de Maria, jueves/sabado = natacion de
+        // Julio) — usado por personMealScale/personLunchScale en vez del
+        // kcalTarget plano cuando esta presente. kcalTarget se queda como
+        // media/fallback para el scoreboard y para perfiles sin variacion.
+        { id: 'julio',   name: 'Julio', initial: 'J', kcalTarget: 3100, proteinTarget: 100,
+          kcalByDay: [3150, 3150, 3100, 3300, 3000, 3300, 3000] },
+        { id: 'maria',   name: 'María', initial: 'M', kcalTarget: 2600, proteinTarget: 100,
+          kcalByDay: [2500, 2900, 2500, 2750, 2500, 2750, 2500] },
         { id: 'carla',   name: 'Carla', initial: 'C', kcalTarget: 2000, proteinTarget: 90, validoDesde: '2026-06-26', validoHasta: '2026-07-08T17:00:00' },
       ],
       activeProfileId: 'all',

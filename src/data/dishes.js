@@ -19,6 +19,49 @@ export const DISHES = {
     name: 'Tostada + 2 huevos', meals: ['desayuno'],
     items: [{ k: 'huevo', p: { units: 2 } }, { k: 'pan-masa-madre', p: { grams: 35 } }],
   },
+  'd-avena-leche-desnatada-miel': {
+    // 6 sep 2026: disenado para cumplir las DOS reglas del desayuno a la vez
+    // (>=400 kcal, <=15g grasa) -- antes solo el burrito de maiz lo lograba.
+    name: 'Avena con leche desnatada y miel', meals: ['desayuno'],
+    items: [{ k: 'avena', p: { grams: 70 } }, { k: 'leche-desnatada', p: { grams: 300 } }, { k: 'miel', p: { grams: 15 } }], scalable: 'avena',
+  },
+  'd-tostada-madre-miel-platano': {
+    // Mismo objetivo que el de arriba, con otra base (pan en vez de avena)
+    // para dar variedad real sin repetir ingrediente principal.
+    name: 'Tostada de masa madre con miel y plátano', meals: ['desayuno'],
+    items: [{ k: 'pan-masa-madre', p: { grams: 100 } }, { k: 'banana', p: { grams: 120 } }, { k: 'miel', p: { grams: 15 } }],
+  },
+  'd-huevos-tostada-madre-miel-reforzado': {
+    // 6 sep 2026: version con huevo de los dos platos de arriba -- llevaban
+    // proteina (avena+leche desnatada ya daba 22g) pero sin huevo la sensacion
+    // era de "no hay proteina real". Este la deja explicita: 20g, con huevo.
+    name: 'Huevos revueltos con tostada de masa madre y miel', meals: ['desayuno'],
+    items: [{ k: 'huevo', p: { units: 2 } }, { k: 'pan-masa-madre', p: { grams: 90 } }, { k: 'miel', p: { grams: 10 } }], scalable: 'pan-masa-madre',
+  },
+  // d-avena-huevo-platano RETIRADO (6 sep 2026): "vomitina", descartado por
+  // el usuario. No usar esta combinacion en ningun plato futuro.
+  //
+  // 6 sep 2026 — grupo "bajo en IG, sin aceptar mas grasa" (tope 18-19g).
+  // Antes de esto, el catalogo tenia una correlacion casi perfecta: bajo en
+  // grasa = alto en IG (avena, pan, burrito) o bajo en IG = alto en grasa
+  // (bacon, cheddar, aguacate). La salida es proteina en polvo + base lactea:
+  // no es almidon (no sube IG) y aporta kcal sin apenas grasa.
+  'd-batido-proteico-desayuno': {
+    name: 'Batido proteico de desayuno', meals: ['desayuno'],
+    items: [{ k: 'proteina-polvo', p: { grams: 60 } }, { k: 'leche-desnatada', p: { grams: 400 } }, { k: 'banana', p: { grams: 40 } }],
+  },
+  'd-batido-proteico-cacao': {
+    name: 'Batido proteico de cacao', meals: ['desayuno'],
+    items: [{ k: 'proteina-polvo', p: { grams: 65 } }, { k: 'leche-desnatada', p: { grams: 400 } }, { k: 'cacao', p: { grams: 10 } }],
+  },
+  'd-yogur-vaca-proteico-melon': {
+    name: 'Yogur de vaca proteico con melón', meals: ['desayuno'],
+    items: [{ k: 'yogur-vaca', p: { grams: 350 } }, { k: 'proteina-polvo', p: { grams: 35 } }, { k: 'melon-cantalupo', p: { grams: 150 } }],
+  },
+  'd-yogur-cabra-proteico-mandarina': {
+    name: 'Yogur de cabra proteico con mandarina', meals: ['desayuno'],
+    items: [{ k: 'yogur-cabra', p: { grams: 350 } }, { k: 'proteina-polvo', p: { grams: 35 } }, { k: 'mandarina', p: { units: 1 } }],
+  },
   'd-yogur-platano-avena': {
     name: 'Yogur + plátano + avena', meals: ['desayuno'],
     items: [{ k: 'yogur-vaca', p: { grams: 150 } }, { k: 'banana', p: { grams: 80 } }, { k: 'avena', p: { grams: 30 } }],
@@ -148,8 +191,11 @@ export const DISHES = {
     items: [{ k: 'pollo-pierna-generic', p: { grams: 200 } }, { k: 'arroz', p: { grams: 75 } }, { k: 'cebolla-amarilla', p: { grams: 80 } }, { k: 'manzana', p: { units: 0.5 } }, { k: 'vinagre', p: { ml: 10 } }, { k: 'aove', p: { ml: 20 } }], scalable: 'arroz',
   },
   'c-solomillo-patata-mayonesa-limon': {
+    // 6 sep 2026: no hay mayonesa en casa -- se quita del todo, no se
+    // sustituye por otro ingrediente graso. Yogur da la acidez sin el aporte
+    // de grasa de la mayonesa (144kcal/20g grasa por 25g -> practicamente 0).
     name: 'Solomillo + patata + crema de limón', meals: ['comida'],
-    items: [{ k: 'solomillo-cerdo', p: { grams: 180 } }, { k: 'patata', p: { grams: 250 } }, { k: 'mayonesa', p: { grams: 25 } }, { k: 'limon', p: { units: 0.5 } }, { k: 'aove', p: { ml: 25 } }], scalable: 'patata',
+    items: [{ k: 'solomillo-cerdo', p: { grams: 180 } }, { k: 'patata', p: { grams: 250 } }, { k: 'yogur-vaca', p: { grams: 40 } }, { k: 'limon', p: { units: 0.5 } }, { k: 'aove', p: { ml: 25 } }], scalable: 'patata',
   },
   'c-codillo-garbanzos-patata-laurel': {
     name: 'Codillo español + garbanzos + patata + laurel', meals: ['comida'],
@@ -197,15 +243,15 @@ export const DISHES = {
   },
   'c-cordero-pure-cebolla-laurel': {
     name: 'Cordero + puré de patata + cebolla + laurel', meals: ['comida'],
-    items: [{ k: 'lamb', p: { grams: 150 } }, { k: 'patata', p: { grams: 250 } }, { k: 'leche', p: { grams: 60 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'cebolla-amarilla', p: { grams: 80 } }, { k: 'laurel', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'patata',
+    items: [{ k: 'lamb', p: { grams: 150 } }, { k: 'patata', p: { grams: 250 } }, { k: 'leche', p: { grams: 60 } }, { k: 'mantequilla', p: { grams: 8 } }, { k: 'cebolla-amarilla', p: { grams: 80 } }, { k: 'laurel', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'patata', // mantequilla recortada 15->8g (6 sep 2026, pasada de grasa)
   },
   'c-pollo-pure-patata-zanahoria': {
     name: 'Pollo pierna + puré patata-zanahoria + pimentón', meals: ['comida'],
-    items: [{ k: 'pollo-pierna-generic', p: { grams: 180 } }, { k: 'patata', p: { grams: 250 } }, { k: 'zanahoria', p: { grams: 100 } }, { k: 'leche', p: { grams: 60 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'patata',
+    items: [{ k: 'pollo-pierna-generic', p: { grams: 180 } }, { k: 'patata', p: { grams: 250 } }, { k: 'zanahoria', p: { grams: 100 } }, { k: 'leche', p: { grams: 60 } }, { k: 'mantequilla', p: { grams: 8 } }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'patata', // mantequilla recortada 15->8g
   },
   'c-solomillo-pure-manzana-batida': {
     name: 'Solomillo + puré de patata + manzana batida', meals: ['comida'],
-    items: [{ k: 'solomillo-cerdo', p: { grams: 180 } }, { k: 'patata', p: { grams: 250 } }, { k: 'leche', p: { grams: 60 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'manzana', p: { units: 0.5 } }, { k: 'aove', p: { ml: 20 } }], scalable: 'patata',
+    items: [{ k: 'solomillo-cerdo', p: { grams: 180 } }, { k: 'patata', p: { grams: 250 } }, { k: 'leche', p: { grams: 60 } }, { k: 'mantequilla', p: { grams: 8 } }, { k: 'manzana', p: { units: 0.5 } }, { k: 'aove', p: { ml: 20 } }], scalable: 'patata', // mantequilla recortada 15->8g
   },
   'c-pollo-beretta-garbanzos-tomillo-limon': {
     name: 'Pollo pierna (Beretta) + garbanzos + tomillo y limón', meals: ['comida'],
@@ -245,7 +291,7 @@ export const DISHES = {
   },
   'c-turkey-pintas-huevo': {
     name: 'Turkey + alubias pintas + huevo', meals: ['comida'],
-    items: [{ k: 'turkey-drumstick', p: { grams: 180 } }, { k: 'romano-beans', p: { grams: 100 } }, { k: 'huevo', p: { units: 1 } }, { k: 'tomate-conserva', p: { grams: 60 } }, { k: 'comino', p: {} }, { k: 'aove', p: { ml: 25 } }], scalable: 'romano-beans',
+    items: [{ k: 'turkey-drumstick', p: { grams: 130 } }, { k: 'romano-beans', p: { grams: 100 } }, { k: 'huevo', p: { units: 1 } }, { k: 'tomate-conserva', p: { grams: 60 } }, { k: 'comino', p: {} }, { k: 'aove', p: { ml: 25 } }], scalable: 'romano-beans', // pavo recortado 180->130g (6 sep 2026, techo de proteina)
   },
   'c-pollo-pure-rustico-pipas': {
     name: 'Pollo pierna asada + puré rústico + pipas de girasol', meals: ['comida'],
@@ -265,11 +311,11 @@ export const DISHES = {
   },
   'c-turkey-garbanzos-huevo-sofrito': {
     name: 'Turkey + garbanzos + huevo + sofrito de tomate y cebolla', meals: ['comida'],
-    items: [{ k: 'turkey-drumstick', p: { grams: 200 } }, { k: 'garbanzos', p: { grams: 100 } }, { k: 'huevo', p: { units: 1 } }, { k: 'tomate-conserva', p: { grams: 100 } }, { k: 'cebolla-amarilla', p: { grams: 60 } }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 25 } }], scalable: 'garbanzos',
+    items: [{ k: 'turkey-drumstick', p: { grams: 140 } }, { k: 'garbanzos', p: { grams: 100 } }, { k: 'huevo', p: { units: 1 } }, { k: 'tomate-conserva', p: { grams: 100 } }, { k: 'cebolla-amarilla', p: { grams: 60 } }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 25 } }], scalable: 'garbanzos', // pavo recortado 200->140g
   },
   'c-turkey-blackbeans-huevo-cheddar': {
     name: 'Turkey + black beans + huevo + cheddar', meals: ['comida'],
-    items: [{ k: 'turkey-drumstick', p: { grams: 200 } }, { k: 'black-beans', p: { grams: 100 } }, { k: 'huevo', p: { units: 1 } }, { k: 'cheddar', p: { grams: 30 } }, { k: 'comino', p: {} }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'black-beans',
+    items: [{ k: 'turkey-drumstick', p: { grams: 140 } }, { k: 'black-beans', p: { grams: 100 } }, { k: 'huevo', p: { units: 1 } }, { k: 'cheddar', p: { grams: 18 } }, { k: 'comino', p: {} }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'black-beans', // cheddar recortado 30->18g; pavo recortado 200->140g (techo de proteina)
   },
   'c-pollo-2huevos-garbanzos-crema': {
     name: 'Pollo pierna + 2 huevos + garbanzos + crema de garbanzo', meals: ['comida'],
@@ -421,18 +467,18 @@ export const DISHES = {
   },
   'n-bacalao-pure-simple': {
     name: 'Bacalao + puré de patata simple', meals: ['cena'],
-    items: [{ k: 'bacalao', p: { grams: 150 } }, { k: 'patata', p: { grams: 300 } }, { k: 'leche', p: { grams: 40 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'aove', p: { ml: 25 } }],
+    items: [{ k: 'bacalao', p: { grams: 150 } }, { k: 'patata', p: { grams: 300 } }, { k: 'leche', p: { grams: 40 } }, { k: 'mantequilla', p: { grams: 8 } }, { k: 'aove', p: { ml: 25 } }], // mantequilla recortada 15->8g
   },
   'n-bacalao-pure-squash': {
     name: 'Bacalao + puré de patata-squash', meals: ['cena'],
-    items: [{ k: 'bacalao', p: { grams: 150 } }, { k: 'patata', p: { grams: 200 } }, { k: 'squash-butternut', p: { grams: 150 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'aove', p: { ml: 25 } }],
+    items: [{ k: 'bacalao', p: { grams: 150 } }, { k: 'patata', p: { grams: 200 } }, { k: 'squash-butternut', p: { grams: 150 } }, { k: 'mantequilla', p: { grams: 8 } }, { k: 'aove', p: { ml: 25 } }], // mantequilla recortada 15->8g
   },
   // NUEVO 3 sep 2026 — variante con huevo, a peticion. El squash aporta pectina
   // (fibra soluble) en la cena, que es donde encaja: la calabaza en batido
   // desplaza sabor y el pure la absorbe sin notarse.
   'n-bacalao-pure-squash-huevo': {
     name: 'Bacalao + puré de patata-squash + huevo', meals: ['cena'],
-    items: [{ k: 'bacalao', p: { grams: 150 } }, { k: 'patata', p: { grams: 200 } }, { k: 'squash-butternut', p: { grams: 150 } }, { k: 'huevo', p: { units: 1 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'aove', p: { ml: 25 } }],
+    items: [{ k: 'bacalao', p: { grams: 150 } }, { k: 'patata', p: { grams: 200 } }, { k: 'squash-butternut', p: { grams: 150 } }, { k: 'huevo', p: { units: 1 } }, { k: 'mantequilla', p: { grams: 8 } }, { k: 'aove', p: { ml: 25 } }], // mantequilla recortada 15->8g
   },
   'n-bacalao-pure-zucchini': {
     name: 'Bacalao + puré de patata-zucchini', meals: ['cena'],
@@ -476,7 +522,7 @@ export const DISHES = {
   },
   'b-clasico': {
     name: 'Batido clásico', meals: ['merienda'],
-    items: [{ k: 'avena', p: { grams: 100 } }, { k: 'leche', p: { grams: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'mantequilla', p: { grams: 20 } }, { k: 'pumpkin-seeds', p: { grams: 20 } }],
+    items: [{ k: 'avena', p: { grams: 100 } }, { k: 'leche', p: { grams: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'mantequilla', p: { grams: 10 } }, { k: 'pumpkin-seeds', p: { grams: 20 } }], // mantequilla recortada 20->10g
   },
   'b-clasico-2': {
     name: 'Batido clásico 2', meals: ['merienda'],
@@ -484,7 +530,17 @@ export const DISHES = {
   },
   'b-citrico': {
     name: 'Batido cítrico', meals: ['merienda'],
-    items: [{ k: 'avena', p: { grams: 100 } }, { k: 'yogur-cabra', p: { grams: 150 } }, { k: 'mandarina', p: { units: 1 } }, { k: 'arandanos', p: { grams: 80 } }, { k: 'mantequilla', p: { grams: 25 } }],
+    items: [{ k: 'avena', p: { grams: 100 } }, { k: 'yogur-cabra', p: { grams: 150 } }, { k: 'mandarina', p: { units: 1 } }, { k: 'arandanos', p: { grams: 80 } }, { k: 'mantequilla', p: { grams: 12 } }], // mantequilla recortada 25->12g
+  },
+  'm-proteina-portatil': {
+    // 6 sep 2026: merienda de Maria para lunes/miercoles (trabaja, sin
+    // batidora). Se agita en un shaker, no se cocina. Reemplaza el "cero
+    // merienda" del Paso 4 -- sin esto, comida+cena tenian que compensar
+    // ~800 kcal solas y eso disparaba la grasa del dia muy por encima de lo
+    // razonable. Proteina en polvo + leche desnatada + banana: ~29g grasa
+    // menos que el batido clasico, con mas proteina.
+    name: 'Batido proteico para llevar', meals: ['merienda'],
+    items: [{ k: 'proteina-polvo', p: { grams: 35 } }, { k: 'leche-desnatada', p: { grams: 350 } }, { k: 'banana', p: { grams: 120 } }],
   },
   'b-melon': {
     name: 'Batido de melón', meals: ['merienda'],
@@ -500,7 +556,7 @@ export const DISHES = {
   },
   'b-blando': {
     name: 'Batido blando (día malo de estómago)', meals: ['merienda'],
-    items: [{ k: 'avena', p: { grams: 100 } }, { k: 'leche', p: { grams: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'mantequilla', p: { grams: 25 } }],
+    items: [{ k: 'avena', p: { grams: 100 } }, { k: 'leche', p: { grams: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'mantequilla', p: { grams: 12 } }], // mantequilla recortada 25->12g
   },
   // NUEVO 3 sep 2026 — BATIDO DE GANANCIA.
   // Hace un trabajo que ninguno de los ocho anteriores hacia: maxima densidad
@@ -518,12 +574,12 @@ export const DISHES = {
   //     sin volumen y sin sabor que estorbe.
   'b-ganancia': {
     name: 'Batido de ganancia (membrillo)', meals: ['merienda'],
-    items: [{ k: 'cebada-copos', p: { grams: 100 } }, { k: 'leche', p: { grams: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'membrillo', p: { grams: 150 } }, { k: 'aceite-coco', p: { grams: 15 } }],
+    items: [{ k: 'cebada-copos', p: { grams: 100 } }, { k: 'leche', p: { grams: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'membrillo', p: { grams: 150 } }, { k: 'aove', p: { ml: 15 } }], // aceite-coco (87% sat) -> AOVE (14% sat), misma densidad calorica
   },
   // Variante con manzana: mas facil de encontrar todo el ano y algo mas barata,
   // pero menos pectina y mas sorbitol. Misma tecnica: hervir y tirar el agua.
   'b-ganancia-manzana': {
     name: 'Batido de ganancia (manzana)', meals: ['merienda'],
-    items: [{ k: 'cebada-copos', p: { grams: 100 } }, { k: 'leche', p: { grams: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'manzana', p: { units: 1 } }, { k: 'aceite-coco', p: { grams: 15 } }],
+    items: [{ k: 'cebada-copos', p: { grams: 100 } }, { k: 'leche', p: { grams: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'manzana', p: { units: 1 } }, { k: 'aove', p: { ml: 15 } }], // aceite-coco (87% sat) -> AOVE (14% sat), misma densidad calorica
   },
 }

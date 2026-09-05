@@ -33,6 +33,8 @@ export const ING = {
 
   // FRESCOS
   leche:             { name: 'Leche entera',      cat: 'fresco',   per100: 0.188, kc: 61,  prot: 3.2, fat: 3.3, fib: 0,    pack: '4L · $7.50',           per: '300ml → $0.56 · 183 kcal' },
+  'leche-desnatada': { name: 'Leche desnatada',   cat: 'fresco',   per100: 0.188, kc: 35,  prot: 3.4, fat: 0.1, fib: 0,    pack: '4L · $7.50 (est.)',     per: '350ml → $0.66 · 123 kcal — para la merienda ligera de Maria (6 sep 2026): mismo prot que la entera, casi sin grasa', est: true },
+  'proteina-polvo':  { name: 'Proteína en polvo (whey)', cat: 'proteina', per100: 3.500, kc: 375, prot: 80, fat: 4, fib: 0, pack: '1 kg · $35 est.',       per: '35g → $1.23 · 131 kcal · 28g prot — para llevar al trabajo, sin cocinar (6 sep 2026)', est: true },
   aguacate:          { name: 'Aguacate',          cat: 'fresco',   perUnit: 1.00, kcu: 250, protu: 3,  fatu: 23, fibu: 13,  pack: '1 ud · $1.00',          per: '½ → $0.50 · 125 kcal' },
   passata:           { name: 'Tomate passata',    cat: 'fresco',   perML: 0.004861, kcml: 0.33, pack: '720 ml · $3.50',   per: '½ bote → $1.75' },
   'cebolla-amarilla':{ name: 'Cebolla amarilla',  cat: 'fresco',   per100: 0.185, kc: 40,  prot: 1.1, fat: 0.1, fib: 1.7, pack: '10 lb · $8.39',         per: 'media ~$0.17' },
@@ -121,7 +123,8 @@ export const ING = {
   'col-rizada':     { name: 'Col rizada / Kale',              cat: 'fresco', per100: 1.50, kc: 49, prot: 4.3, fat: 0.9, fib: 3.6, fibSol: 0.7, pack: 'bunch ~200g · $2.99', per: '60g → $0.90 · 29 kcal' },
   'hot-dog-buns':   { name: 'Hot dog buns',               cat: 'otro', perUnit: 0.625, kcu: 140, pack: '8 ud · $5.00', per: '1 ud → $0.63 · 140 kcal', est: true },
   mostaza:          { name: 'Mostaza Irresistibles Dijon Traditional (500ml)', cat: 'otro', per100: 0.767, kc: 70, pack: '500 ml · $3.99', per: '10g → $0.08' },
-  mayonesa:         { name: 'Mayonesa Maison Orphée con AOVE (440g)',        cat: 'otro', per100: 1.816, kc: 720, prot: 1.5, fat: 80, pack: '440 g · $7.99', per: '20g → $0.36 · 144 kcal' },
+  // mayonesa retirada (6 sep 2026): no hay en casa. Unico plato que la usaba
+  // (c-solomillo-patata-mayonesa-limon) ya la cambio por yogur.
   ketchup:          { name: 'Ketchup Heinz Organic Biologique (750ml)',      cat: 'otro', per100: 0.927, kc: 110, prot: 1.5, pack: '750 ml · $7.99', per: '15g → $0.14 · 17 kcal' },
   'taco-seasoning': { name: 'Taco seasoning',  cat: 'otro', flat: 0.10,   kcf: 15, pack: 'estimado',        per: '—', est: true },
   parsley:          { name: 'Perejil',          cat: 'otro', flat: 0.10,   kcf: 2,  pack: 'estimado',        per: '—', est: true },

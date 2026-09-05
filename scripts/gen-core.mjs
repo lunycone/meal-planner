@@ -32,6 +32,31 @@ export function agg(key){
     k1: d.items.some(i=>i.k==='perejil-fresco') }
 }
 
+// Reduce (nunca amplia) el plato ENTERO en la misma proporcion -- mismo
+// plato, menos cantidad de todo (proteina, verdura, aceite), no solo el
+// almidon. Se usa cuando el dia sobra kcal aunque el almidon ya este al
+// minimo: el problema no es el arroz, es que el resto del plato (carne,
+// queso) ya pesa mas de lo que ese dia necesita. Las especias de cantidad
+// fija (comino, laurel...) no se reducen -- no pesan nada en el total.
+export function scaleWholeDish(dishKey, factor){
+  const d = DISHES[dishKey]
+  if(!d) throw new Error('plato inexistente: '+dishKey)
+  const items = d.items.map(it=>{
+    const p = {...it.p}
+    if(p.grams!=null) p.grams = Math.round(p.grams*factor)
+    if(p.ml!=null)    p.ml    = Math.round(p.ml*factor)
+    if(p.units!=null) p.units = Math.round(p.units*factor*2)/2
+    return {...it, p}
+  })
+  const scaled = {...d, items}
+  const a = comboAgg(scaled, ING)
+  return { key:dishKey, name:d.name, factor, grams:null, ingName:null,
+    cost:a.cost, kcal:a.kcal, prot:a.prot, fat:a.fat,
+    fibSol:comboFibSol(scaled,ING), gos:dishHasGOS(scaled),
+    insol:dishHasInsolubleFiber(scaled), fruct:dishHasAllium(scaled),
+    k1: scaled.items.some(i=>i.k==='perejil-fresco') }
+}
+
 export function scaleLunch(lunchKey, fixedKcal, targetKcal){
   const d = DISHES[lunchKey]
   const base = agg(lunchKey)

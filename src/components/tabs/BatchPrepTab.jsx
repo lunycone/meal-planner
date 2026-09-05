@@ -2,7 +2,12 @@ import { useState, useEffect, useMemo } from 'react'
 import useStore, { selectAllIng, selectAllCombos } from '../../store/useStore'
 import { PROTEIN } from '../../data/proteins'
 import { PREP } from '../../data/combos'
-import { comboScalableKey, personLunchScale, dayKcal } from '../../engine/calc'
+import { comboScalableKey, personMealScale, personTargetForDay, personDayKcal, slotForPerson } from '../../engine/calc'
+
+// Orden de dias para resolver el indice (0=lun..6=dom) que necesita
+// personTargetForDay/personMealScale — mismo orden que DAY_KEYS en el
+// planificador semanal.
+const ALL_DAY_KEYS = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom']
 
 // ─── Ingredients that go on fresh each day — only for platos (comida/cena) ───
 const FRESH_KEYS = new Set([
@@ -175,13 +180,6 @@ function profilesActiveOn(profiles, date) {
   })
 }
 
-function mealsMatch(a, b) {
-  if (!a || !b) return false
-  if (a.type !== b.type) return false
-  if (a.type === 'desayuno') return a.recipeKey === b.recipeKey
-  return a.proteinKey === b.proteinKey && a.comboKey === b.comboKey
-}
-
 function fmtBaseDry(key, dryGrams) {
   const ratio = COOK_RATIO[key]
   if (!ratio || dryGrams <= 0) return `${Math.round(dryGrams)}g`
@@ -203,132 +201,132 @@ function fmtMMSS(sec) {
 }
 
 // ─── Core: compute quantities for one meal across all batch days ───────────────
-function computeBatchMeal(meal, mealType, batchDays, profiles, allIng, allCombos, weekPlan) {
-  if (!meal) return null
-
-  const personMap  = {}
-  const sharedAcc  = {}
-  const freshSeen  = new Set()
-  const freshItems = []
-
-  let comboRef    = null
-  let scalableKey = null
-  let prepRef     = null
-
-  if (meal.type === 'plato') {
-    comboRef    = allCombos[meal.comboKey]
-    scalableKey = comboRef ? comboScalableKey(comboRef, allIng) : null
-    prepRef     = meal.prepKey ? PREP[meal.prepKey] : null
-  } else if (meal.type === 'desayuno') {
-    comboRef = allCombos[meal.recipeKey]
-  }
+// 6 sep 2026 — reescrito para ser CONSCIENTE DE LA PERSONA: cada dia y cada
+// perfil resuelve su propio plato via slotForPerson (antes se asumia un unico
+// `meal` compartido por todos). Cuando dos personas tienen el MISMO plato ese
+// dia, siguen agrupadas en un solo lote (una sola olla); cuando difieren
+// (semana modelo cargada: Julio burrito, Maria torta de garbanzo), salen como
+// grupos separados -- cada uno es un lote de cocina distinto de verdad.
+// Devuelve un ARRAY de grupos (antes devolvia un unico objeto o null).
+// El tipo legacy 'plato' (proteina+combo por separado) ya no se soporta aqui
+// -- el planificador lo auto-limpia en cuanto lo ve, ver WeeklyMealPlannerTab.
+function computeBatchMeal(mealType, batchDays, profiles, allIng, allCombos, weekPlan) {
+  const groups = {} // recipeKey -> { comboRef, scalableKey, meal, personMap, sharedAcc, freshSeen, freshItems }
 
   for (const { dayKey, date, wk } of batchDays) {
     const weekData    = weekPlan[wk] ?? {}
     const dayProfiles = profilesActiveOn(profiles, date)
     if (dayProfiles.length === 0) continue
-
-    const day = Object.fromEntries(
-      MEALS.map(m => [m, weekData[`${dayKey}-${m}`] ?? null])
-    )
+    const dayIdx  = ALL_DAY_KEYS.indexOf(dayKey)
+    const rawSlot = weekData[`${dayKey}-${mealType}`] ?? null
 
     for (const person of dayProfiles) {
-      if (!personMap[person.id]) {
-        personMap[person.id] = {
+      const meal = slotForPerson(rawSlot, person.id)
+      if (!meal || meal.type !== 'desayuno') continue
+      const comboRef = allCombos[meal.recipeKey]
+      if (!comboRef) continue
+      const scalableKey = comboScalableKey(comboRef, allIng)
+
+      if (!groups[meal.recipeKey]) {
+        groups[meal.recipeKey] = {
+          comboRef, scalableKey, meal,
+          personMap: {}, sharedAcc: {}, freshSeen: new Set(), freshItems: [],
+        }
+      }
+      const g = groups[meal.recipeKey]
+      if (!g.personMap[person.id]) {
+        g.personMap[person.id] = {
           person, activeDays: 0,
-          proteinGrams: 0, proteinUnits: 0, proteinServings: 0,
           baseGrams: 0, baseKey: scalableKey,
           baseName: scalableKey ? (allIng[scalableKey]?.name ?? scalableKey) : null,
           recipeServings: 0,
+          proteinGrams: 0, proteinUnits: 0, proteinServings: 0, // legacy 'plato' fields — se quedan a 0
         }
       }
-      const pt = personMap[person.id]
+      const pt = g.personMap[person.id]
       pt.activeDays++
 
-      if (meal.type === 'plato') {
-        const protein = PROTEIN[meal.proteinKey]
-        if (protein) {
-          const r = protein.ration
-          if      (r.grams != null) pt.proteinGrams    += r.grams
-          else if (r.units != null) pt.proteinUnits    += meal.proteinUnits ?? r.units
-          else                      pt.proteinServings += 1
-        }
-        if (scalableKey && comboRef) {
-          const scale        = mealType === 'comida' ? personLunchScale(day, person, allIng, allCombos) : null
-          const defaultGrams = comboRef.items.find(it => it.k === scalableKey)?.p?.grams ?? 0
-          pt.baseGrams += scale ? scale.grams : defaultGrams
-        }
-      } else if (meal.type === 'desayuno') {
+      if (mealType === 'desayuno' || mealType === 'merienda' || !scalableKey) {
+        // desayuno/merienda: una racion del plato, sin escalado por persona
+        // (mismo criterio de siempre). Sin base escalable (p.ej. pescado sin
+        // patata): tambien se cuenta como racion fija.
         pt.recipeServings += 1
+      } else {
+        // comida/cena: personMealScale ya sabe SUBIR el almidon si falta, o
+        // REDUCIR EL PLATO ENTERO si sobra (el mismo motor de las 11 semanas
+        // modelo). defaultGrams es el suelo cuando no hay dato de escalado.
+        const target = personTargetForDay(person, dayIdx)
+        const dayForPerson = Object.fromEntries(
+          MEALS.map(m => [m, slotForPerson(weekData[`${dayKey}-${m}`] ?? null, person.id)])
+        )
+        const scale = personMealScale(dayForPerson, mealType, person, allIng, allCombos, { kcalTarget: target })
+        const defaultGrams = comboRef.items.find(it => it.k === scalableKey)?.p?.grams ?? 0
+        if (scale?.grams != null) {
+          pt.baseGrams += scale.grams
+        } else if (scale?.wholeDishFactor != null && scale.wholeDishFactor < 1) {
+          // El plato entero se reduce (sobra kcal) -- aqui solo se refleja en
+          // la base; carne/queso/aceite del lote compartido no bajan por
+          // persona (se sirve algo menos de todo al emplatar, a ojo).
+          pt.baseGrams += Math.round(defaultGrams * scale.wholeDishFactor)
+        } else {
+          pt.baseGrams += defaultGrams
+        }
       }
     }
 
-    const dayN = dayProfiles.length
-    const addShared = (k, p) => {
-      if (!sharedAcc[k]) sharedAcc[k] = { name: allIng[k]?.name ?? k, grams: 0, ml: 0, units: 0 }
-      sharedAcc[k].grams += (p.grams ?? 0) * dayN
-      sharedAcc[k].ml    += (p.ml    ?? 0) * dayN
-      sharedAcc[k].units += (p.units ?? 0) * dayN
-    }
-    const markFresh = (k, p) => {
-      if (freshSeen.has(k)) return
-      freshSeen.add(k)
-      freshItems.push({ ingKey: k, name: allIng[k]?.name ?? k, portion: p })
-    }
-
-    if (comboRef) {
-      for (const it of comboRef.items) {
-        if (it.k === scalableKey) continue
-        const isFresh = meal.type === 'plato' && (
-          FRESH_KEYS.has(it.k) || YOGUR_FRESH_IN_PLATO.has(it.k)
-        )
-        if (isFresh) { markFresh(it.k, it.p); continue }
+    // Items compartidos del dia, multiplicados por cuantas personas de CADA
+    // grupo comen ese dia concreto (no por todos los perfiles del dia).
+    for (const g of Object.values(groups)) {
+      const peopleToday = dayProfiles.filter(p => slotForPerson(rawSlot, p.id)?.recipeKey === g.meal.recipeKey).length
+      if (peopleToday === 0) continue
+      const addShared = (k, p) => {
+        if (!g.sharedAcc[k]) g.sharedAcc[k] = { name: allIng[k]?.name ?? k, grams: 0, ml: 0, units: 0 }
+        g.sharedAcc[k].grams += (p.grams ?? 0) * peopleToday
+        g.sharedAcc[k].ml    += (p.ml    ?? 0) * peopleToday
+        g.sharedAcc[k].units += (p.units ?? 0) * peopleToday
+      }
+      for (const it of g.comboRef.items) {
+        if (it.k === g.scalableKey) continue
         addShared(it.k, it.p)
       }
     }
-    if (prepRef) {
-      for (const it of prepRef.items) addShared(it.k, it.p)
+  }
+
+  return Object.values(groups).map(g => {
+    const personTotals = Object.values(g.personMap)
+    if (personTotals.length === 0) return null
+
+    let recipePortionGrams = 0
+    if (mealType === 'desayuno' || mealType === 'merienda') {
+      for (const it of g.comboRef.items) recipePortionGrams += (it.p?.grams ?? 0) + (it.p?.ml ?? 0)
     }
-  }
 
-  const personTotals = Object.values(personMap)
-  if (personTotals.length === 0) return null
-
-  // Weight of ONE recipe serving (for desayuno per-person portioning in grams)
-  let recipePortionGrams = 0
-  if (meal.type === 'desayuno' && comboRef) {
-    for (const it of comboRef.items) recipePortionGrams += (it.p?.grams ?? 0) + (it.p?.ml ?? 0)
-  }
-
-  const proteinName = meal.type === 'plato' ? (PROTEIN[meal.proteinKey]?.name ?? null) : null
-  const comboName   = meal.type === 'plato'
-    ? (allCombos[meal.comboKey]?.name ?? null)
-    : (allCombos[meal.recipeKey]?.name ?? null)
-  const prepName    = meal.prepKey ? (PREP[meal.prepKey]?.name ?? null) : null
-  const mealName    = proteinName ? `${proteinName} + ${comboName}` : (comboName ?? '—')
-
-  return {
-    meal, mealType, mealName, proteinName, comboName, prepName,
-    personTotals, recipePortionGrams,
-    sharedItems: Object.entries(sharedAcc)
-      .map(([k, v]) => ({ key: k, ...v }))
-      .filter(it => it.grams > 0 || it.ml > 0 || it.units > 0),
-    freshItems,
-    hasBase: !!scalableKey && personTotals.some(pt => pt.baseGrams > 0),
-    blend: comboRef?.blend ?? null,   // si está, base + sharedItems se baten juntos
-  }
+    return {
+      meal: g.meal, mealType, mealName: g.comboRef.name,
+      proteinName: null, comboName: g.comboRef.name, prepName: null,
+      personTotals, recipePortionGrams,
+      sharedItems: Object.entries(g.sharedAcc)
+        .map(([k, v]) => ({ key: k, ...v }))
+        .filter(it => it.grams > 0 || it.ml > 0 || it.units > 0),
+      freshItems: g.freshItems,
+      hasBase: !!g.scalableKey && personTotals.some(pt => pt.baseGrams > 0),
+      blend: g.comboRef?.blend ?? null,
+    }
+  }).filter(Boolean)
 }
 
-// ─── Daily kcal via personLunchScale (accurate, includes AOVE tip) ────────────
-function computeDailyKcalPerPerson(repMeals, batchProfiles, allIng, allCombos) {
+// ─── Daily kcal, per person, via personDayKcal (comida Y cena escaladas) ──────
+function computeDailyKcalPerPerson(weekData, dayKey, dayIdx, batchProfiles, allIng, allCombos) {
   if (!batchProfiles || batchProfiles.length === 0) return []
-  const day = { desayuno: repMeals.desayuno, comida: repMeals.comida, merienda: repMeals.merienda, cena: repMeals.cena }
   return batchProfiles.map(person => {
-    const scale = personLunchScale(day, person, allIng, allCombos)
-    if (scale) {
-      return { person, kcalDay: scale.dayKcalAchieved, oilTbsp: scale.oilTbsp, cappedHigh: scale.cappedHigh }
+    const day = Object.fromEntries(
+      MEALS.map(m => [m, slotForPerson(weekData[`${dayKey}-${m}`] ?? null, person.id)])
+    )
+    return {
+      person,
+      kcalDay: personDayKcal(day, person, allIng, allCombos, dayIdx),
+      kcalDayTarget: personTargetForDay(person, dayIdx),
     }
-    return { person, kcalDay: Math.round(dayKcal(day, allIng, allCombos)), oilTbsp: 0, cappedHigh: false }
   }).filter(p => p.kcalDay > 0)
 }
 
@@ -477,7 +475,7 @@ function buildSchedule(mealDataList) {
 const MEAL_LABELS = { desayuno: 'Desayuno', comida: 'Comida', merienda: 'Merienda', cena: 'Cena' }
 const MEAL_TIMES  = { desayuno: '9:00 am', comida: '12–1 pm', merienda: '4:30 pm', cena: '7:30 pm' }
 
-function MealSection({ mealType, batchData, status }) {
+function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = null }) {
   const border  = { paddingBottom: '1rem', marginBottom: '1rem', borderBottom: '1px solid var(--t-border)' }
   const catLbl  = { fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--t-text-faint)', fontWeight: 700, marginBottom: '0.3rem' }
   const secHead = { fontSize: '0.7rem', fontWeight: 700, color: 'var(--t-text-soft)', marginBottom: '0.4rem', marginTop: '0.6rem' }
@@ -487,11 +485,19 @@ function MealSection({ mealType, batchData, status }) {
 
   return (
     <div style={border}>
-      <div style={catLbl}>{MEAL_LABELS[mealType]} <span style={{ fontWeight: 400, opacity: 0.7 }}>· {MEAL_TIMES[mealType]}</span></div>
+      {showMealLabel && (
+        <div style={catLbl}>{MEAL_LABELS[mealType]} <span style={{ fontWeight: 400, opacity: 0.7 }}>· {MEAL_TIMES[mealType]}</span></div>
+      )}
+      {/* groupLabel: cuando el mismo mealType tiene mas de un plato distinto
+          (p.ej. Julio burrito, Maria torta de garbanzo) -- cada grupo es un
+          bote/lote de cocina separado, no una fila mas del mismo. */}
+      {groupLabel && (
+        <div style={{ ...muted, paddingLeft: 0, fontWeight: 700, color: 'var(--t-accent)', marginBottom: '0.2rem' }}>👤 {groupLabel}</div>
+      )}
 
       {!batchData ? (
         <div style={{ fontSize: '0.8rem', color: 'var(--t-text-faint)', fontStyle: 'italic' }}>
-          {status === 'empty' ? 'Sin planificar' : 'Sin batch uniforme este periodo'}
+          Sin planificar
         </div>
       ) : (
         <>
@@ -499,7 +505,15 @@ function MealSection({ mealType, batchData, status }) {
 
           {(() => {
             const persons = batchData.personTotals.filter(pt => pt.activeDays > 0 || pt.recipeServings > 0)
-            const isDesayuno = batchData.meal.type === 'desayuno'
+            // BUG corregido (6 sep 2026): batchData.meal.type es SIEMPRE
+            // 'desayuno' (es el nombre del formato de plato unico, reutilizado
+            // para las 4 comidas) -- comprobarlo aqui hacia que comida/cena
+            // cayeran siempre en la rama de "una racion igual para todos" y
+            // NUNCA mostraran los gramos de arroz/patata por persona en el
+            // desglose de tupper (solo salian en el total del lote, arriba).
+            // Lo que de verdad distingue "racion fija" de "racion personal"
+            // es el mealType (la franja), no la forma del objeto.
+            const isDesayuno = mealType === 'desayuno' || mealType === 'merienda'
             const baseKey = persons[0]?.baseKey
             const blend = batchData.blend
             const totalPersonDays = persons.reduce((s, p) => s + p.activeDays, 0)
@@ -879,8 +893,8 @@ function BatchCard({ title, cookLabel, coverDays, mealSections, schedule, kcalSu
           <div style={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--t-text-faint)', fontWeight: 700, marginBottom: '0.3rem' }}>
             Kcal del día <span style={{ textTransform: 'none', fontWeight: 500, opacity: 0.7 }}>· rango ok ±15%</span>
           </div>
-          {kcalSummary.map(({ person, kcalDay }) => {
-            const target = person.kcalTarget || 0
+          {kcalSummary.map(({ person, kcalDay, kcalDayTarget }) => {
+            const target = kcalDayTarget ?? person.kcalTarget ?? 0
             const pct = target ? Math.round(kcalDay / target * 100) : null
             const deficit = target ? Math.max(0, target - kcalDay) : 0
             const surplus = target ? Math.max(0, kcalDay - target) : 0
@@ -940,8 +954,14 @@ function BatchCard({ title, cookLabel, coverDays, mealSections, schedule, kcalSu
 // ─── Main component ────────────────────────────────────────────────────────────
 const MEALS    = ['desayuno', 'comida', 'merienda', 'cena']
 // ── Ventanas de batch (partición limpia de la semana) ──────────────────────────
-// Batch Lunes:  cocinas el lun, comes lun→mar→mié→jue (4 días).
-// Batch Jueves: cocinas el jue, comes vie→sáb→dom    (3 días, + lun siguiente).
+// Batch Lunes:  cocinas el lun, comes lun→mar→mié→jue (4 días, misma semana ISO).
+// Batch Jueves: cocinas el jue, comes vie→sáb→dom→LUN SIGUIENTE (4 días).
+// BUG corregido (6 sep 2026): el lunes siguiente ya se etiquetaba en pantalla
+// ("Cubre: Vie·Sáb·Dom·Lun →") pero nunca se incluia en thuBatchDays -- las
+// cantidades del lote se calculaban para 3 raciones, no 4, aunque ese lunes
+// SI come de este mismo batch (pertenece al bloque B de las semanas modelo:
+// vie,sáb,dom,lun). Ese lunes cae en la semana ISO SIGUIENTE, con su propio
+// weekKey -- por eso no bastaba con anadir un dia mas a THU_DAYS.
 const MON_DAYS = ['lun', 'mar', 'mié', 'jue']
 const THU_DAYS = ['vie', 'sáb', 'dom']
 
@@ -968,57 +988,49 @@ export default function BatchPrepTab() {
     date: new Date(weekMonday.getTime() + i * 86400000),       // lun(0)→mié(2)
   })), [weekMonday, weekKey])
 
-  const thuBatchDays = useMemo(() => THU_DAYS.map((dk, i) => ({
-    dayKey: dk, wk: weekKey,
-    date: new Date(weekMonday.getTime() + (4 + i) * 86400000), // vie(4)→dom(6)
-  })), [weekMonday, weekKey])
+  // El lunes siguiente cae en la semana ISO SIGUIENTE (weekKey propio, no el
+  // de esta semana) -- por eso no es un elemento mas de THU_DAYS con el
+  // mismo wk, necesita su fecha y su weekKey calculados aparte.
+  const nextMonday = useMemo(() => new Date(weekMonday.getTime() + 7 * 86400000), [weekMonday])
+  const nextWeekKey = useMemo(() => getISOWeek(nextMonday), [nextMonday])
 
-  const batchDetect = useMemo(() => {
-    const detect = (days) => {
-      const result = {}
-      for (const mt of MEALS) {
-        const meals   = days.map(({ dayKey, wk }) => (weekPlan[wk] ?? {})[`${dayKey}-${mt}`] ?? null)
-        const nonNull = meals.filter(Boolean)
-        const first   = nonNull[0] ?? null
-        const uniform = nonNull.length > 0 && nonNull.every(m => mealsMatch(m, first))
-        result[mt] = { meal: uniform ? first : null, status: nonNull.length === 0 ? 'empty' : uniform ? 'batch' : 'varied' }
-      }
-      return result
-    }
-    return { mon: detect(monBatchDays), thu: detect(thuBatchDays) }
-  }, [weekPlan, monBatchDays, thuBatchDays])
+  const thuBatchDays = useMemo(() => [
+    ...THU_DAYS.map((dk, i) => ({
+      dayKey: dk, wk: weekKey,
+      date: new Date(weekMonday.getTime() + (4 + i) * 86400000), // vie(4)→dom(6)
+    })),
+    { dayKey: 'lun', wk: nextWeekKey, date: nextMonday },
+  ], [weekMonday, weekKey, nextWeekKey, nextMonday])
 
+  // 6 sep 2026: batchDetect (uniforme/variado) ya no hace falta -- cada grupo
+  // de computeBatchMeal se maneja nativamente, difieran o no por persona.
   const monData = useMemo(() => Object.fromEntries(
-    MEALS.map(mt => [mt, batchDetect.mon[mt].meal
-      ? computeBatchMeal(batchDetect.mon[mt].meal, mt, monBatchDays, profiles, allIng, allCombos, weekPlan)
-      : null
-    ])
-  ), [batchDetect, monBatchDays, profiles, allIng, allCombos, weekPlan])
+    MEALS.map(mt => [mt, computeBatchMeal(mt, monBatchDays, profiles, allIng, allCombos, weekPlan)])
+  ), [monBatchDays, profiles, allIng, allCombos, weekPlan])
 
   const thuData = useMemo(() => Object.fromEntries(
-    MEALS.map(mt => [mt, batchDetect.thu[mt].meal
-      ? computeBatchMeal(batchDetect.thu[mt].meal, mt, thuBatchDays, profiles, allIng, allCombos, weekPlan)
-      : null
-    ])
-  ), [batchDetect, thuBatchDays, profiles, allIng, allCombos, weekPlan])
+    MEALS.map(mt => [mt, computeBatchMeal(mt, thuBatchDays, profiles, allIng, allCombos, weekPlan)])
+  ), [thuBatchDays, profiles, allIng, allCombos, weekPlan])
 
   const monKcalSummary = useMemo(() => {
-    const rep = { desayuno: batchDetect.mon.desayuno.meal, comida: batchDetect.mon.comida.meal, merienda: batchDetect.mon.merienda.meal, cena: batchDetect.mon.cena.meal }
-    return computeDailyKcalPerPerson(rep, profilesActiveOn(profiles, monBatchDays[0].date), allIng, allCombos)
-  }, [batchDetect.mon, monBatchDays, profiles, allIng, allCombos])
+    const rep = monBatchDays[0]
+    const weekData = weekPlan[rep.wk] ?? {}
+    return computeDailyKcalPerPerson(weekData, rep.dayKey, ALL_DAY_KEYS.indexOf(rep.dayKey), profilesActiveOn(profiles, rep.date), allIng, allCombos)
+  }, [weekPlan, monBatchDays, profiles, allIng, allCombos])
 
   const thuKcalSummary = useMemo(() => {
-    const rep = { desayuno: batchDetect.thu.desayuno.meal, comida: batchDetect.thu.comida.meal, merienda: batchDetect.thu.merienda.meal, cena: batchDetect.thu.cena.meal }
-    return computeDailyKcalPerPerson(rep, profilesActiveOn(profiles, thuBatchDays[0].date), allIng, allCombos)
-  }, [batchDetect.thu, thuBatchDays, profiles, allIng, allCombos])
+    const rep = thuBatchDays[0]
+    const weekData = weekPlan[rep.wk] ?? {}
+    return computeDailyKcalPerPerson(weekData, rep.dayKey, ALL_DAY_KEYS.indexOf(rep.dayKey), profilesActiveOn(profiles, rep.date), allIng, allCombos)
+  }, [weekPlan, thuBatchDays, profiles, allIng, allCombos])
 
   const monSchedule = useMemo(() =>
-    buildSchedule(MEALS.map(mt => ({ meal: batchDetect.mon[mt].meal, batchData: monData[mt] })))
-  , [batchDetect, monData])
+    buildSchedule(MEALS.flatMap(mt => (monData[mt] || []).map(g => ({ meal: g.meal, batchData: g }))))
+  , [monData])
 
   const thuSchedule = useMemo(() =>
-    buildSchedule(MEALS.map(mt => ({ meal: batchDetect.thu[mt].meal, batchData: thuData[mt] })))
-  , [batchDetect, thuData])
+    buildSchedule(MEALS.flatMap(mt => (thuData[mt] || []).map(g => ({ meal: g.meal, batchData: g }))))
+  , [thuData])
 
   // ── COOK MODE ───────────────────────────────────────────────────────────────
   if (playBatch) {
@@ -1053,9 +1065,14 @@ export default function BatchPrepTab() {
           schedule={monSchedule}
           kcalSummary={monKcalSummary}
           onPlay={() => setPlayBatch('mon')}
-          mealSections={MEALS.map(mt => (
-            <MealSection key={mt} mealType={mt} batchData={monData[mt]} status={batchDetect.mon[mt].status} />
-          ))}
+          mealSections={MEALS.flatMap(mt => {
+            const groups = monData[mt] || []
+            if (groups.length === 0) return [<MealSection key={mt} mealType={mt} batchData={null} />]
+            return groups.map((g, gi) => (
+              <MealSection key={`${mt}-${gi}`} mealType={mt} batchData={g} showMealLabel={gi === 0}
+                groupLabel={groups.length > 1 ? g.personTotals.map(pt => pt.person.initial).join(' y ') : null} />
+            ))
+          })}
         />
         <BatchCard
           title="☀️ Batch Jueves"
@@ -1064,9 +1081,14 @@ export default function BatchPrepTab() {
           schedule={thuSchedule}
           kcalSummary={thuKcalSummary}
           onPlay={() => setPlayBatch('thu')}
-          mealSections={MEALS.map(mt => (
-            <MealSection key={mt} mealType={mt} batchData={thuData[mt]} status={batchDetect.thu[mt].status} />
-          ))}
+          mealSections={MEALS.flatMap(mt => {
+            const groups = thuData[mt] || []
+            if (groups.length === 0) return [<MealSection key={mt} mealType={mt} batchData={null} />]
+            return groups.map((g, gi) => (
+              <MealSection key={`${mt}-${gi}`} mealType={mt} batchData={g} showMealLabel={gi === 0}
+                groupLabel={groups.length > 1 ? g.personTotals.map(pt => pt.person.initial).join(' y ') : null} />
+            ))
+          })}
         />
       </div>
     </div>
