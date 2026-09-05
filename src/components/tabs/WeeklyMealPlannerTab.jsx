@@ -537,6 +537,8 @@ export default function WeeklyMealPlannerTab() {
   const weekPlan = useStore(s => s.weekPlan)
   const setMealSlot = useStore(s => s.setMealSlot)
   const clearMealSlot = useStore(s => s.clearMealSlot)
+  const setMealSlots = useStore(s => s.setMealSlots)
+  const replaceWeek = useStore(s => s.replaceWeek)
   const weekOffset    = useStore(s => s.weekOffset)
   const setWeekOffset = useStore(s => s.setWeekOffset)
 
@@ -606,13 +608,12 @@ export default function WeeklyMealPlannerTab() {
       return
     }
 
-    if (batchTypeFor(dayKey) === 'sun') {
+    const batchDays = batchTypeFor(dayKey) === 'sun'
       // Batch Domingo: cocinas el dom anterior, comes lun→mar→mié→jue (misma semana).
-      BATCH_SUN_DAYS.forEach(dk => setMealSlot(weekKey, slotKey(dk, mealType), mealData))
-    } else {
+      ? BATCH_SUN_DAYS
       // Batch Jueves: cocinas el jue, comes vie→sáb→dom (misma semana).
-      BATCH_THU_DAYS.forEach(dk => setMealSlot(weekKey, slotKey(dk, mealType), mealData))
-    }
+      : BATCH_THU_DAYS
+    setMealSlots(weekKey, Object.fromEntries(batchDays.map(dk => [slotKey(dk, mealType), mealData])))
   }
 
   function handleMealClear(dayKey, mealType) {
@@ -737,20 +738,26 @@ export default function WeeklyMealPlannerTab() {
     return result
   }, [activeProfileId, profiles, currentWeek, allIng, allCombos])
 
+  // 6 sep 2026 — clearCurrentWeek y las tres funciones de abajo (copiar,
+  // cargar semana modelo, generar barato) construyen el mapa de slots ENTERO
+  // en memoria y lo escriben con una sola llamada a replaceWeek, en vez de un
+  // clearMealSlot/setMealSlot por hueco (28 llamadas sueltas = 28 escrituras
+  // a Supabase carrera entre si, ver comentario en useStore.js) -- por eso
+  // "cargar semana modelo" podia verse completa en pantalla pero guardarse a
+  // medias o vacia al recargar la pagina.
   function clearCurrentWeek() {
-    DAY_KEYS.forEach(dayKey => {
-      MEALS.forEach(mealType => clearMealSlot(weekKey, slotKey(dayKey, mealType)))
-    })
+    replaceWeek(weekKey, {})
   }
 
   function copyPreviousWeek() {
-    clearCurrentWeek()
+    const slots = {}
     DAY_KEYS.forEach(dayKey => {
       MEALS.forEach(mealType => {
         const key = slotKey(dayKey, mealType)
-        if (previousWeek[key]) setMealSlot(weekKey, key, previousWeek[key])
+        if (previousWeek[key]) slots[key] = previousWeek[key]
       })
     })
+    replaceWeek(weekKey, slots)
   }
 
   // ── Cargar semana modelo (6 sep 2026) ──────────────────────────────────────
@@ -767,45 +774,44 @@ export default function WeeklyMealPlannerTab() {
     if (!week) return
     const expanded = expandModelWeek(week)
 
-    clearCurrentWeek()
+    const slots = {}
     DAY_KEYS.forEach((dayKey, i) => {
       const mariaMerienda = MARIA_NO_BATIDO_CASERO.includes(i)
         ? { type: 'desayuno', recipeKey: MARIA_MERIENDA_PORTATIL }
         : { type: 'desayuno', recipeKey: expanded.M[i] }
 
-      setMealSlot(weekKey, slotKey(dayKey, 'desayuno'), makeByPersonSlot({
+      slots[slotKey(dayKey, 'desayuno')] = makeByPersonSlot({
         julio: { type: 'desayuno', recipeKey: expanded.D[i] },
         maria: { type: 'desayuno', recipeKey: expanded.DM[i] },
-      }))
-      setMealSlot(weekKey, slotKey(dayKey, 'comida'), makeByPersonSlot({
+      })
+      slots[slotKey(dayKey, 'comida')] = makeByPersonSlot({
         julio: { type: 'desayuno', recipeKey: expanded.C[i] },
         maria: { type: 'desayuno', recipeKey: expanded.C[i] },
-      }))
-      setMealSlot(weekKey, slotKey(dayKey, 'merienda'), makeByPersonSlot({
+      })
+      slots[slotKey(dayKey, 'merienda')] = makeByPersonSlot({
         julio: { type: 'desayuno', recipeKey: expanded.M[i] },
         maria: mariaMerienda,
-      }))
-      setMealSlot(weekKey, slotKey(dayKey, 'cena'), makeByPersonSlot({
+      })
+      slots[slotKey(dayKey, 'cena')] = makeByPersonSlot({
         julio: { type: 'desayuno', recipeKey: expanded.N[i] },
         maria: { type: 'desayuno', recipeKey: expanded.N[i] },
-      }))
+      })
     })
+    replaceWeek(weekKey, slots)
   }
 
   function generateCheapDraft() {
     const cheapest = Object.fromEntries(MEALS.map(m => [m, findCheapestDish(m, allIng, allCombos)]))
 
-    clearCurrentWeek()
+    const slots = {}
     DAY_KEYS.forEach(dayKey => {
       MEALS.forEach(mealType => {
         if (cheapest[mealType]) {
-          setMealSlot(weekKey, slotKey(dayKey, mealType), {
-            type: 'desayuno',
-            recipeKey: cheapest[mealType],
-          })
+          slots[slotKey(dayKey, mealType)] = { type: 'desayuno', recipeKey: cheapest[mealType] }
         }
       })
     })
+    replaceWeek(weekKey, slots)
   }
 
   return (

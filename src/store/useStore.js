@@ -321,6 +321,38 @@ const useStore = create(
           }
         })
       },
+
+      // Merge several slots into one weekKey in a SINGLE set() call. Cada
+      // set() dispara su propio storage.setItem (persist no las agrupa) --
+      // rellenar una semana con N llamadas sueltas a setMealSlot lanza N
+      // escrituras a Supabase casi simultaneas, y como son promesas de red
+      // sin orden garantizado, la que termine de responder MAS TARDE gana,
+      // no la que se llamo la ultima. Resultado real: "cargar semana modelo"
+      // guardaba una semana a medias (o directamente vacia) al recargar,
+      // aunque en pantalla se viera completa. Con una sola llamada aqui,
+      // hay una sola escritura -- no hay carrera que perder.
+      setMealSlots(weekKey, slotsPartial) {
+        set(s => ({
+          weekPlan: {
+            ...s.weekPlan,
+            [weekKey]: { ...(s.weekPlan[weekKey] ?? {}), ...slotsPartial },
+          },
+        }))
+      },
+
+      // Como setMealSlots, pero sustituye la semana ENTERA (no fusiona) --
+      // para "Limpiar", "Cargar semana modelo", "Generar barato" y "Repetir
+      // anterior", que primero querian borrar los huecos viejos y luego
+      // rellenar: separarlo en clear()+N×set() tenia el mismo problema de
+      // carrera de arriba. slots vacio equivale a limpiar la semana.
+      replaceWeek(weekKey, slots) {
+        set(s => ({
+          weekPlan: {
+            ...s.weekPlan,
+            [weekKey]: Object.keys(slots).length === 0 ? undefined : slots,
+          },
+        }))
+      },
     }),
 
     {
