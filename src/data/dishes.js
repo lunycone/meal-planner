@@ -595,10 +595,12 @@ export const DISHES = {
   // la cocina real, aunque aqui solo exista la manzana cruda como ingrediente)
   // + miel para kcal facil de digerir.
   'm-astringente-platano-manzana': {
-    // Compota en vez de manzana cruda (pedido del usuario) -- sin piel, mucha
-    // menos fibra insoluble, mas en linea con el resto de la semana.
-    name: 'Plátano y compota de manzana con miel (astringente)', meals: ['merienda'],
-    items: [{ k: 'banana', p: { grams: 150 } }, { k: 'compota-manzana', p: { grams: 150 } }, { k: 'miel', p: { grams: 15 } }],
+    // Version final (pedido del usuario): tostada + manzana hervida (la
+    // compota YA ES esto -- "Lsm bio Unsweetened Apple Sauce", precio real
+    // confirmado por el) en vez de platano -- se descarto el membrillo por
+    // precio real ($2-3/ud, mucho mas caro que la compota).
+    name: 'Tostada de masa madre con manzana hervida y miel (astringente)', meals: ['merienda'],
+    items: [{ k: 'pan-masa-madre', p: { grams: 80 } }, { k: 'compota-manzana', p: { grams: 200 } }, { k: 'miel', p: { grams: 10 } }],
   },
   'b-blando': {
     name: 'Batido blando (día malo de estómago)', meals: ['merienda'],
