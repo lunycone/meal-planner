@@ -2,12 +2,17 @@ import { useState, useMemo } from 'react'
 import useStore, { selectAllIng, selectAllCombos } from '../store/useStore'
 import { PROTEIN } from '../data/proteins'
 import { PREP } from '../data/combos'
-import { comboAgg, fmt, proteinCost, proteinKcal, proteinProt, ingKcal, ingFat, ingFib, fmtPortion, personLunchScale, pcosCarbLevel, proteinLevel, kcalLevel, LEVEL_COLOR, slotForPerson, slotIsUniform } from '../engine/calc'
+import { comboAgg, fmt, proteinCost, proteinKcal, proteinProt, ingKcal, ingFat, ingFib, fmtPortion, personLunchScale, personMealScalesTwoPass, personTargetForDay, personDayCost, pcosCarbLevel, proteinLevel, kcalLevel, LEVEL_COLOR, slotForPerson, slotIsUniform } from '../engine/calc'
 import PcosBadge from '../components/PcosBadge'
 import DailyProgress from '../components/DailyProgress'
 import PersonalizedDay from '../components/PersonalizedDay'
 import ProfileSelector from '../components/ProfileSelector'
 import SyncStatus from '../components/SyncStatus'
+
+// Orden lun..dom -- personTargetForDay/personMealScalesTwoPass necesitan el
+// indice (0=lunes), mismo orden que en el resto de tabs.
+const ALL_DAY_KEYS = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom']
+const MEALS = ['desayuno', 'comida', 'merienda', 'cena']
 
 // ─── Utility functions ────────────────────────────────────────────────────────
 
@@ -593,62 +598,41 @@ function MealBlock({ time, mealType, meal, rawSlot, profiles, allIng, allCombos,
 
 // ─── Daily summary ───────────────────────────────────────────────────────────
 
-function DailySummary({ todayMeals, allIng, allCombos, comidaOverride }) {
-  const { cost, kcal, protein } = useMemo(() => {
-    let totalCost = 0, totalKcal = 0, totalProtein = 0, count = 0
+// 5 sep 2026 -- antes sumaba el coste/kcal/proteina de UN plato "de
+// portada" (siempre el del representante, ej. Julio) y lo mostraba sin
+// decir de quien era -- con Julio y Maria comiendo cosas distintas ese
+// numero no significaba nada en concreto ("¿el de Julio? ¿el de Maria?").
+// El coste SI tiene sentido combinado (lo que cuesta el dia para los dos,
+// como ya hace el total semanal de Planificador/Compra) -- kcal y proteina
+// no, esos son por persona y ya se ven abajo en "Reparto por persona" con
+// su objetivo. Aqui se deja solo Coste (con desglose J/M) y Comidas
+// planificadas, sin numeros ambiguos.
+function DailySummary({ rawSlots, profiles, dayIdx, allIng, allCombos }) {
+  const perPerson = useMemo(
+    () => (profiles ?? []).map(p => {
+      const day = Object.fromEntries(MEALS.map(m => [m, slotForPerson(rawSlots[m], p.id)]))
+      return { person: p, cost: personDayCost(day, p, allIng, allCombos, dayIdx) }
+    }),
+    [rawSlots, profiles, allIng, allCombos, dayIdx]
+  )
 
-    Object.entries(todayMeals).forEach(([mealType, meal]) => {
-      if (!meal) return
-      count++
-
-      if (meal.type === 'desayuno') {
-        const recipe = allCombos[meal.recipeKey]
-        if (recipe) {
-          const agg = comboAgg(recipe, allIng)
-          totalCost += agg.cost
-          totalKcal += agg.kcal
-          totalProtein += agg.prot ?? 0
-        }
-      } else if (meal.type === 'plato') {
-        const proteinObj = PROTEIN[meal.proteinKey]
-        const combo = allCombos[meal.comboKey]
-        if (proteinObj && combo) {
-          const ov = mealType === 'comida' ? (comidaOverride || {}) : {}
-          const protCost = proteinCost(proteinObj, false, meal.proteinUnits)
-          const protKcal = proteinKcal(proteinObj, false, meal.proteinUnits)
-          const protProt = proteinProt(proteinObj, false, meal.proteinUnits)
-          const combAgg = comboAgg(combo, allIng, meal.comboVariants || {}, ov)
-          totalCost += protCost + combAgg.cost
-          totalKcal += protKcal + combAgg.kcal + 235
-          totalProtein += protProt + (combAgg.prot ?? 0)
-        }
-      }
-    })
-
-    return { cost: totalCost, kcal: totalKcal, protein: totalProtein, count }
-  }, [todayMeals, allCombos, allIng, comidaOverride])
-
-  const plannedCount = Object.values(todayMeals).filter(m => m).length
+  const totalCost = perPerson.reduce((s, r) => s + r.cost, 0)
+  const plannedCount = MEALS.filter(m => rawSlots[m]).length
 
   return (
     <div className="home-daily-summary">
       <div className="hds-label">Resumen del día</div>
       <div className="hds-grid">
         <div className="hds-cell">
-          <div className="hds-value">{fmt(cost)}</div>
+          <div className="hds-value">{fmt(totalCost)}</div>
           <div className="hds-unit">Coste</div>
+          {perPerson.length > 1 && (
+            <div className="hds-sub">{perPerson.map(r => `${r.person.initial}: ${fmt(r.cost)}`).join(' · ')}</div>
+          )}
         </div>
-        <div className="hds-cell">
-          <div className="hds-value">{Math.round(kcal)}</div>
-          <div className="hds-unit">kcal</div>
-        </div>
-        <div className="hds-cell">
-          <div className="hds-value">{Math.round(protein)}g</div>
-          <div className="hds-unit">Proteína</div>
-        </div>
-        <div className={`hds-cell${plannedCount === 3 ? ' hds-cell--complete' : ''}`}>
+        <div className={`hds-cell${plannedCount === 4 ? ' hds-cell--complete' : ''}`}>
           <div className="hds-value">{plannedCount}/4</div>
-          <div className="hds-unit">Comidas</div>
+          <div className="hds-unit">Comidas planificadas</div>
         </div>
       </div>
     </div>
@@ -702,16 +686,33 @@ export default function HomeView() {
   })
   const repProfileId = activeProfileId !== 'all' ? activeProfileId : (validProfiles[0]?.id ?? null)
 
+  // dia de la semana (0=lun..6=dom) -- lo necesitan personTargetForDay /
+  // personMealScalesTwoPass para resolver el objetivo de kcal especifico
+  // del dia (no el kcalTarget plano), igual que Planificador y Batch.
+  const dayIdx = ALL_DAY_KEYS.indexOf(dayKey)
+
+  const rawSlots = useMemo(() => ({
+    desayuno: currentWeek[slotKey('desayuno')] ?? null,
+    comida: currentWeek[slotKey('comida')] ?? null,
+    merienda: currentWeek[slotKey('merienda')] ?? null,
+    cena: currentWeek[slotKey('cena')] ?? null,
+  }), [currentWeek, dayKey])
+
   const todayMeals = useMemo(() => ({
-    desayuno: slotForPerson(currentWeek[slotKey('desayuno')], repProfileId),
-    comida: slotForPerson(currentWeek[slotKey('comida')], repProfileId),
-    merienda: slotForPerson(currentWeek[slotKey('merienda')], repProfileId),
-    cena: slotForPerson(currentWeek[slotKey('cena')], repProfileId),
-  }), [currentWeek, dayKey, repProfileId])
-  const comidaScale = useMemo(
-    () => (activeProfile ? personLunchScale(todayMeals, activeProfile, allIng, allCombos) : null),
-    [activeProfile, todayMeals, allIng, allCombos]
-  )
+    desayuno: slotForPerson(rawSlots.desayuno, repProfileId),
+    comida: slotForPerson(rawSlots.comida, repProfileId),
+    merienda: slotForPerson(rawSlots.merienda, repProfileId),
+    cena: slotForPerson(rawSlots.cena, repProfileId),
+  }), [rawSlots, repProfileId])
+  // 5 sep 2026 -- antes usaba personLunchScale(todayMeals, ...), la version
+  // de UNA sola pasada con el kcalTarget plano -- por eso el gramaje de la
+  // base de la comida en pantalla no coincidia con lo que Planificador/Batch
+  // ya sirven de verdad (esos usan las dos pasadas + el objetivo del dia).
+  const comidaScale = useMemo(() => {
+    if (!activeProfile) return null
+    const target = personTargetForDay(activeProfile, dayIdx)
+    return personMealScalesTwoPass(todayMeals, activeProfile, allIng, allCombos, target).comida
+  }, [activeProfile, todayMeals, allIng, allCombos, dayIdx])
   const comidaOverride = comidaScale ? { [comidaScale.ingKey]: comidaScale.grams } : null
 
   function handleMealSelect(mealType, mealData) {
@@ -800,11 +801,11 @@ export default function HomeView() {
         />
       </div>
 
-      <DailySummary todayMeals={todayMeals} allIng={allIng} allCombos={allCombos} comidaOverride={comidaOverride} />
+      <DailySummary rawSlots={rawSlots} profiles={validProfiles} dayIdx={dayIdx} allIng={allIng} allCombos={allCombos} />
 
       <div style={{ padding: '0 1.5rem', marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <PersonalizedDay todayMeals={todayMeals} allIng={allIng} allCombos={allCombos} />
-        <DailyProgress todayMeals={todayMeals} allIng={allIng} allCombos={allCombos} />
+        <PersonalizedDay rawSlots={rawSlots} profiles={validProfiles} dayIdx={dayIdx} allIng={allIng} allCombos={allCombos} />
+        <DailyProgress rawSlots={rawSlots} profiles={validProfiles} dayIdx={dayIdx} allIng={allIng} allCombos={allCombos} />
       </div>
 
       {/* Detail modal (when clicking a filled meal) */}

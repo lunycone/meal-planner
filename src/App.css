@@ -592,7 +592,10 @@ input, select, textarea { font-family: inherit; }
 
 .hds-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  /* auto-fit en vez de repeat(4,...) fijo -- ahora el resumen tiene 2
+     celdas (Coste, Comidas), no 4; con columnas fijas se habrian quedado
+     dos huecos vacios a la derecha. */
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 1.5rem;
 }
 
@@ -617,6 +620,14 @@ input, select, textarea { font-family: inherit; }
   font-size: 12px;
   color: var(--t-text-soft);
   font-family: var(--t-font-ui);
+}
+
+/* Desglose "J: $x · M: $y" bajo el coste total -- por que ese numero es de
+   los dos, no de uno solo. */
+.hds-sub {
+  font-size: 12px;
+  color: var(--t-text-faint);
+  margin-top: 0.15rem;
 }
 
 .hds-cell--complete .hds-value { color: var(--t-success); }

@@ -1,22 +1,8 @@
 import useStore from '../store/useStore'
-import { comboAgg, proteinKcal, proteinProt, personLunchScale } from '../engine/calc'
+import { comboAgg, proteinProt, personDayKcal, personTargetForDay, slotForPerson } from '../engine/calc'
 import { PROTEIN } from '../data/proteins'
 
-function calcMealKcal(meal, allIng, allCombos) {
-  if (!meal) return 0
-  if (meal.type === 'desayuno') {
-    const recipe = allCombos[meal.recipeKey]
-    if (!recipe) return 0
-    return comboAgg(recipe, allIng).kcal
-  }
-  if (meal.type === 'plato') {
-    const protein = PROTEIN[meal.proteinKey]
-    const combo   = allCombos[meal.comboKey]
-    if (!protein || !combo) return 0
-    return proteinKcal(protein, false, meal.proteinUnits) + comboAgg(combo, allIng, meal.comboVariants || {}).kcal + 235
-  }
-  return 0
-}
+const MEALS = ['desayuno', 'comida', 'merienda', 'cena']
 
 function calcMealProt(meal, allIng, allCombos) {
   if (!meal) return 0
@@ -34,20 +20,29 @@ function calcMealProt(meal, allIng, allCombos) {
   return 0
 }
 
-export default function DailyProgress({ todayMeals, allIng, allCombos }) {
-  const profiles       = useStore(s => s.profiles)
+// 5 sep 2026 -- reescrito para resolver el dia de CADA persona por
+// separado (slotForPerson) y usar el mismo motor que Planificador/Batch
+// (personDayKcal + personTargetForDay): antes usaba personLunchScale (una
+// sola pasada, solo escala la comida, kcalTarget PLANO) sobre el dia del
+// representante compartido -- por eso el % de aqui no coincidia con el
+// 101% que ya mostraba Planificador para el mismo dia (aqui salia 92%,
+// con el objetivo plano de Julio -3100- en vez del especifico del dia
+// -3300 el sabado-, y sin el cierre de AOVE ni la doble pasada comida<->
+// cena). Ademas, al usar SIEMPRE el dia del representante, Julio y Maria
+// mostraban la MISMA proteina aunque comieran platos distintos.
+export default function DailyProgress({ rawSlots, profiles, dayIdx, allIng, allCombos }) {
   const activeProfileId = useStore(s => s.activeProfileId)
+  const validProfiles = profiles ?? []
 
-  const today = new Date()
-  const validProfiles = profiles.filter(p => !p.validoHasta || new Date(p.validoHasta) > today)
+  const rows = validProfiles.map(p => {
+    const day = Object.fromEntries(MEALS.map(m => [m, slotForPerson(rawSlots[m], p.id)]))
+    const kcal = personDayKcal(day, p, allIng, allCombos, dayIdx)
+    const prot = Math.round(MEALS.reduce((s, m) => s + calcMealProt(day[m], allIng, allCombos), 0))
+    const target = personTargetForDay(p, dayIdx)
+    return { person: p, kcal, prot, target }
+  })
 
-  // Total kcal y proteína planeadas hoy (comida compartida)
-  const totalKcal = Math.round(
-    Object.values(todayMeals).reduce((sum, meal) => sum + calcMealKcal(meal, allIng, allCombos), 0)
-  )
-  const totalProt = Math.round(
-    Object.values(todayMeals).reduce((sum, meal) => sum + calcMealProt(meal, allIng, allCombos), 0)
-  )
+  const totalKcal = rows.reduce((s, r) => s + r.kcal, 0)
 
   if (totalKcal === 0) {
     return (
@@ -80,13 +75,9 @@ export default function DailyProgress({ todayMeals, allIng, allCombos }) {
         gridTemplateColumns: validProfiles.length > 1 ? 'repeat(auto-fit, minmax(120px, 1fr))' : '1fr',
         gap: '0.75rem',
       }}>
-        {validProfiles.map(p => {
-          // Personalized day kcal: lunch base scales per person, so each
-          // person's total differs even though the menu is shared.
-          const scale = personLunchScale(todayMeals, p, allIng, allCombos)
-          const personKcal = scale ? scale.dayKcalAchieved : totalKcal
-          const kcalPercent = Math.round((personKcal / p.kcalTarget) * 100)
-          const protPercent = Math.round((totalProt / (p.proteinTarget || 1)) * 100)
+        {rows.map(({ person: p, kcal, prot, target }) => {
+          const kcalPercent = target ? Math.round((kcal / target) * 100) : null
+          const protPercent = Math.round((prot / (p.proteinTarget || 1)) * 100)
           const isActive = activeProfileId === p.id || activeProfileId === 'all'
 
           return (
@@ -107,13 +98,13 @@ export default function DailyProgress({ todayMeals, allIng, allCombos }) {
                 {kcalPercent}%
               </div>
               <div style={{ fontSize: '0.7rem', color: 'var(--t-text-faint)', marginBottom: '0.5rem' }}>
-                {personKcal} / {p.kcalTarget} kcal
+                {kcal} / {target} kcal
               </div>
               <div style={{ fontFamily: 'var(--t-font-display)', fontSize: '1rem', fontWeight: 300, color: protPercent > 100 ? 'var(--t-danger)' : 'var(--t-text)', lineHeight: 1, marginBottom: '0.2rem' }}>
                 {protPercent}%
               </div>
               <div style={{ fontSize: '0.65rem', color: 'var(--t-text-faint)' }}>
-                {totalProt} / {p.proteinTarget || 0}g proteína
+                {prot} / {p.proteinTarget || 0}g proteína
               </div>
             </div>
           )

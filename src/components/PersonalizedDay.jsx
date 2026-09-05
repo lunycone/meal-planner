@@ -1,24 +1,43 @@
 import useStore from '../store/useStore'
-import { personLunchScale, comboScalableKey, dayKcal } from '../engine/calc'
+import { comboScalableKey, personMealScalesTwoPass, personTargetForDay, personDayKcal, slotForPerson } from '../engine/calc'
+
+const MEALS = ['desayuno', 'comida', 'merienda', 'cena']
 
 // Per-person personalization panel. Reacts to the global T/J/M/C selector:
 //  · "Todos"      → differential line of the scalable lunch base per person
 //  · single person → that person's scaled recipe + deficit/oil if capped
-export default function PersonalizedDay({ todayMeals, allIng, allCombos }) {
-  const profiles        = useStore(s => s.profiles)
+//
+// 5 sep 2026 -- dos bugs de fondo, arreglados juntos:
+//  1. lunchCombo se resolvia con `lunch?.type === 'plato'` -- el modelo
+//     legacy (proteina+combo por separado). Todos los platos actuales
+//     (incluidos los que SI llevan patata/arroz/legumbre, como "Pollo
+//     pierna + pure...") usan el modelo de un solo plato (`type:
+//     'desayuno'`, reutilizado para las 4 comidas) -- asi que scalableKey
+//     salia SIEMPRE null y este panel SIEMPRE decia "sin base que escalar",
+//     aunque la comida de hoy si tuviera una.
+//  2. personLunchScale (una sola pasada, kcalTarget plano) no coincidia con
+//     lo que Planificador/Batch ya sirven de verdad (dos pasadas +
+//     objetivo especifico del dia) -- ahora usa personMealScalesTwoPass +
+//     personTargetForDay, igual que el resto de la app.
+export default function PersonalizedDay({ rawSlots, profiles, dayIdx, allIng, allCombos }) {
   const activeProfileId = useStore(s => s.activeProfileId)
+  const validProfiles = profiles ?? []
 
-  const today = new Date()
-  const validProfiles = profiles.filter(p => !p.validoHasta || new Date(p.validoHasta) > today)
-
-  const baseDayKcal = Math.round(dayKcal(todayMeals, allIng, allCombos))
-  if (baseDayKcal === 0) return null
-
-  const lunch      = todayMeals.comida
-  const lunchCombo = lunch?.type === 'plato' ? allCombos[lunch.comboKey] : null
+  // La comida (la franja, no confundir con "plato") es SIEMPRE el mismo
+  // plato para todos -- solo cambia la racion (regla del usuario) -- basta
+  // con resolverla para un perfil cualquiera para saber que plato es.
+  const repId = validProfiles[0]?.id ?? null
+  const lunch = slotForPerson(rawSlots.comida, repId)
+  const lunchCombo = lunch?.type === 'desayuno' ? allCombos[lunch.recipeKey] : null
   const scalableKey = lunchCombo ? comboScalableKey(lunchCombo, allIng) : null
 
-  const scales = validProfiles.map(p => ({ p, s: personLunchScale(todayMeals, p, allIng, allCombos) }))
+  const scales = validProfiles.map(p => {
+    const day = Object.fromEntries(MEALS.map(m => [m, slotForPerson(rawSlots[m], p.id)]))
+    const target = personTargetForDay(p, dayIdx)
+    const twoPass = personMealScalesTwoPass(day, p, allIng, allCombos, target)
+    const kcalAchieved = personDayKcal(day, p, allIng, allCombos, dayIdx)
+    return { p, s: twoPass.comida, target, kcalAchieved }
+  })
 
   const wrap = {
     background: 'var(--t-tinted-bg)',
@@ -30,6 +49,8 @@ export default function PersonalizedDay({ todayMeals, allIng, allCombos }) {
     fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase',
     color: 'var(--t-text-faint)', letterSpacing: '0.1em', marginBottom: '0.85rem',
   }
+
+  if (!lunch) return null
 
   // ── No scalable base today (e.g. lunch is a salad / 'otros') ──────────────
   if (!scalableKey) {
@@ -49,7 +70,7 @@ export default function PersonalizedDay({ todayMeals, allIng, allCombos }) {
   if (activeProfileId !== 'all') {
     const me = scales.find(x => x.p.id === activeProfileId)
     if (!me || !me.s) return null
-    const { p, s } = me
+    const { p, s, target, kcalAchieved } = me
     return (
       <div style={wrap}>
         <div style={heading}>Comida personalizada · {p.name}</div>
@@ -62,7 +83,7 @@ export default function PersonalizedDay({ todayMeals, allIng, allCombos }) {
           </span>
         </div>
         <div style={{ fontSize: '0.78rem', color: 'var(--t-text-faint)', marginBottom: s.deficitKcal > 0 ? '0.75rem' : 0 }}>
-          Día: {s.dayKcalAchieved} / {p.kcalTarget} kcal · proteína y resto compartidos
+          Día: {kcalAchieved} / {target} kcal · proteína y resto compartidos
         </div>
         {s.deficitKcal > 0 && (
           <div style={{
@@ -97,7 +118,8 @@ export default function PersonalizedDay({ todayMeals, allIng, allCombos }) {
       </div>
 
       <div style={{ fontSize: '0.74rem', color: 'var(--t-text-faint)', lineHeight: 1.5 }}>
-        Desayuno, cena y proteínas: iguales para todos. Solo escala la base de la comida.
+        Comida y cena: mismo plato para todos, solo escala la base. Desayuno y merienda
+        pueden ser un plato distinto por persona (ver arriba).
       </div>
 
       {deficits.length > 0 && (
