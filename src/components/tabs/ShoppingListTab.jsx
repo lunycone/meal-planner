@@ -2,8 +2,13 @@ import { useState, useMemo } from 'react'
 import useStore, { selectAllIng } from '../../store/useStore'
 import { CAT_ORDER, CAT_LABELS } from '../../data/ingredients'
 import { PROTEIN } from '../../data/proteins'
-import { PREP, COMBO } from '../../data/combos'
-import { ingCost, ingKcal, ingProt, ingFat, comboAgg, fmt, proteinCost, proteinKcal, personLunchScale, comboScalableKey, dayKcal } from '../../engine/calc'
+import { COMBO } from '../../data/combos'
+import { ingCost, ingKcal, ingProt, ingFat, comboAgg, fmt, personLunchScale, comboScalableKey, dayKcal, personMealScalesTwoPass, personTargetForDay, slotForPerson } from '../../engine/calc'
+
+// Orden lun..dom para resolver el indice que personTargetForDay/personMealScalesTwoPass
+// necesitan — mismo orden que en WeeklyMealPlannerTab/BatchPrepTab.
+const ALL_DAY_KEYS = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom']
+const MEALS = ['desayuno', 'comida', 'merienda', 'cena']
 
 function getISOWeek(date) {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
@@ -156,8 +161,20 @@ export default function ShoppingListTab() {
   }, [batchWindow, profiles])
 
   // Aggregate ingredients for the current batch window only.
-  // Fixed ingredients (protein, veggies, toppings) → × dayN (profiles active that day).
-  // Scalable bases in comida → sum of each person's personalised portion.
+  // 6 sep 2026 — reescrito para ser CONSCIENTE DE LA PERSONA: cada slot puede
+  // ser la forma plana (mismo plato para todos, como escribe el picker manual)
+  // o la forma { byPerson } (Julio y Maria comen platos distintos ese dia,
+  // como carga "semana modelo"). Antes esta funcion asumia siempre la forma
+  // plana y un unico `meal.recipeKey` para todo el dia — con byPerson, ese
+  // acceso directo no encontraba nada y la lista salia vacia ($0.00), aunque
+  // el Planificador y el Batch sí mostraran platos. Ahora cada persona activa
+  // resuelve su propio plato via slotForPerson, igual que esos otros tabs.
+  // Comida/cena ademas usan personMealScalesTwoPass (mismas dos pasadas que
+  // el kcal mostrado en Planificador/Batch) para que los gramos de la base
+  // escalable y el AOVE de autocierre coincidan con lo que de verdad se sirve.
+  // El tipo legacy 'plato' (proteina+combo por separado) ya no se soporta
+  // aqui — el planificador lo auto-limpia en cuanto lo ve (ver
+  // WeeklyMealPlannerTab), igual que ya asumia el Batch tab.
   const aggregatedItems = useMemo(() => {
     const agg = {}
 
@@ -174,8 +191,9 @@ export default function ShoppingListTab() {
       ps[person.id].serv  += pp.serv  ?? 0
       ps[person.id].days  += 1
     }
-    // perPersonPortion = un-scaled portion for one person (optional)
-    function addIng(ingKey, portion, mealTag, perPersonPortion = null, profs = null) {
+    // Racion de UNA persona para UNA comida — se suma al agregado y se
+    // registra en el desglose por persona.
+    function addForPerson(ingKey, portion, mealTag, person) {
       ensureAgg(ingKey)
       const { val, unit } = getQtyValue(portion)
       if (!agg[ingKey].qtyByUnit[unit]) agg[ingKey].qtyByUnit[unit] = 0
@@ -185,121 +203,69 @@ export default function ShoppingListTab() {
       agg[ingKey].prot += ingProt(ingKey, portion, allIng)
       agg[ingKey].fat  += ingFat(ingKey, portion, allIng)
       agg[ingKey].meals.add(mealTag)
-      if (perPersonPortion && profs) {
-        profs.forEach(p => trackPerson(ingKey, p, perPersonPortion))
-      }
+      trackPerson(ingKey, person, portion)
     }
 
-    function scaledGramsPortion(p, n) { return { ...p, grams: (p.grams ?? 0) * n } }
-    function scaledUnitsPortion(p, n) { return { ...p, units: (p.units ?? 0) * n } }
+    function scalePortion(p, factor) {
+      if (factor === 1) return p
+      const out = { ...p }
+      if (out.grams != null) out.grams = Math.round(out.grams * factor)
+      if (out.ml    != null) out.ml    = Math.round(out.ml    * factor)
+      if (out.units != null) out.units = Math.round(out.units * factor * 2) / 2
+      return out
+    }
 
     batchWindow.windowDates.forEach(({ date, wk, dayKey }) => {
       const weekData = weekPlan[wk] ?? {}
       const dayProfiles = profilesActiveOn(profiles, date)
-      const dayN = Math.max(1, dayProfiles.length)
+      if (dayProfiles.length === 0) return
+      const dayIdx = ALL_DAY_KEYS.indexOf(dayKey)
 
-      for (const mealType of ['desayuno', 'comida', 'cena']) {
-        const slotKey = `${dayKey}-${mealType}`
-        const meal = weekData[slotKey]
-        if (!meal) continue
+      for (const mealType of MEALS) {
+        const rawSlot = weekData[`${dayKey}-${mealType}`] ?? null
+        if (!rawSlot) continue
         const mealTag = `${dayKey} ${mealType}`
+        const isScalable = mealType === 'comida' || mealType === 'cena'
 
-        if (meal.type === 'desayuno') {
-          const recipe = allCombos[meal.recipeKey]
-          if (!recipe) continue
-          recipe.items.forEach(it => {
-            const p = it.p
-            if (p.grams != null) addIng(it.k, scaledGramsPortion(p, dayN), mealTag, p, dayProfiles)
-            else if (p.units != null) addIng(it.k, scaledUnitsPortion(p, dayN), mealTag, p, dayProfiles)
-            else addIng(it.k, p, mealTag, null, null)
-          })
-        } else if (meal.type === 'plato') {
-          // ── Protein ────────────────────────────────────────────────────────
-          const protein = PROTEIN[meal.proteinKey]
-          if (protein) {
-            const ration = protein.ration
-            if (ration.grams != null) {
-              const ingKey = meal.proteinKey
-              ensureAgg(ingKey)
-              const totalGrams = ration.grams * dayN
-              if (!agg[ingKey].qtyByUnit['grams']) agg[ingKey].qtyByUnit['grams'] = 0
-              agg[ingKey].qtyByUnit['grams'] += totalGrams
-              agg[ingKey].cost += proteinCost(protein) * dayN
-              agg[ingKey].kcal += proteinKcal(protein) * dayN
-              agg[ingKey].prot += (protein.prot ?? 0) * totalGrams / 100
-              agg[ingKey].meals.add(mealTag)
-              dayProfiles.forEach(p => trackPerson(ingKey, p, { grams: ration.grams }))
-            } else if (ration.units != null) {
-              const ingKey = meal.proteinKey === 'huevos' ? 'huevo' : meal.proteinKey
-              const perPerson = meal.proteinUnits ?? ration.units
-              ensureAgg(ingKey)
-              if (!agg[ingKey].qtyByUnit['units']) agg[ingKey].qtyByUnit['units'] = 0
-              agg[ingKey].qtyByUnit['units'] += perPerson * dayN
-              agg[ingKey].cost += proteinCost(protein, false, meal.proteinUnits) * dayN
-              agg[ingKey].kcal += proteinKcal(protein, false, meal.proteinUnits) * dayN
-              agg[ingKey].prot += (protein.protu ?? 0) * perPerson * dayN
-              agg[ingKey].meals.add(mealTag)
-              dayProfiles.forEach(p => trackPerson(ingKey, p, { units: perPerson }))
-            } else if (ration.flat != null) {
-              const ingKey = meal.proteinKey
-              ensureAgg(ingKey)
-              if (!agg[ingKey].qtyByUnit['serv']) agg[ingKey].qtyByUnit['serv'] = 0
-              agg[ingKey].qtyByUnit['serv'] += dayN
-              agg[ingKey].cost += proteinCost(protein) * dayN
-              agg[ingKey].kcal += proteinKcal(protein) * dayN
-              agg[ingKey].prot += (protein.protf ?? 0) * dayN
-              agg[ingKey].meals.add(mealTag)
-              dayProfiles.forEach(p => trackPerson(ingKey, p, { serv: 1 }))
-            }
-          }
-          // ── Prep ──────────────────────────────────────────────────────────
-          const prep = meal.prepKey ? PREP[meal.prepKey] : null
-          if (prep) {
-            prep.items.forEach(it => {
-              const p = it.p
-              if (p.grams != null) addIng(it.k, scaledGramsPortion(p, dayN), mealTag, p, dayProfiles)
-              else if (p.units != null) addIng(it.k, scaledUnitsPortion(p, dayN), mealTag, p, dayProfiles)
-              else addIng(it.k, p, mealTag, null, null)
-            })
-          }
-          // ── Combo ─────────────────────────────────────────────────────────
-          const combo = allCombos[meal.comboKey]
-          if (combo) {
-            const scalableKey = mealType === 'comida' ? comboScalableKey(combo, allIng) : null
-            const day = Object.fromEntries(
-              ['desayuno', 'comida', 'cena'].map(m => [m, weekData[`${dayKey}-${m}`] ?? null])
+        dayProfiles.forEach(person => {
+          const meal = slotForPerson(rawSlot, person.id)
+          if (!meal || meal.type !== 'desayuno') return
+          const combo = allCombos[meal.recipeKey]
+          if (!combo) return
+
+          let scale = null
+          let scalableKey = null
+          if (isScalable) {
+            scalableKey = comboScalableKey(combo, allIng)
+            const target = personTargetForDay(person, dayIdx)
+            const dayForPerson = Object.fromEntries(
+              MEALS.map(m => [m, slotForPerson(weekData[`${dayKey}-${m}`] ?? null, person.id)])
             )
-            combo.items.forEach(it => {
-              if (it.k === scalableKey && it.p.grams != null) {
-                // Scalable base: track personalized grams per person
-                let totalGrams = 0
-                dayProfiles.forEach(person => {
-                  const scale = personLunchScale(day, person, allIng, allCombos)
-                  const pg = scale ? scale.grams : (it.p.grams ?? 0)
-                  totalGrams += pg
-                  ensureAgg(it.k)
-                  trackPerson(it.k, person, { grams: pg })
-                })
-                addIng(it.k, { ...it.p, grams: totalGrams }, mealTag)
-              } else {
-                const p = it.p
-                if (p.grams != null) addIng(it.k, scaledGramsPortion(p, dayN), mealTag, p, dayProfiles)
-                else if (p.units != null) addIng(it.k, scaledUnitsPortion(p, dayN), mealTag, p, dayProfiles)
-                else addIng(it.k, p, mealTag, null, null)
-              }
-            })
-            if (combo.optionalItems && meal.comboOptionals?.length > 0) {
-              combo.optionalItems
-                .filter(oi => meal.comboOptionals.includes(oi.k))
-                .forEach(it => {
-                  const p = it.p
-                  if (p.grams != null) addIng(it.k, scaledGramsPortion(p, dayN), mealTag, p, dayProfiles)
-                  else if (p.units != null) addIng(it.k, scaledUnitsPortion(p, dayN), mealTag, p, dayProfiles)
-                  else addIng(it.k, p, mealTag, null, null)
-                })
-            }
+            const twoPass = personMealScalesTwoPass(dayForPerson, person, allIng, allCombos, target)
+            scale = mealType === 'comida' ? twoPass.comida : twoPass.cena
           }
-        }
+
+          const wholeFactor = (scale?.wholeDishFactor != null && scale.wholeDishFactor < 1) ? scale.wholeDishFactor : 1
+
+          combo.items.forEach(it => {
+            if (it.k === scalableKey && scale?.grams != null) {
+              addForPerson(it.k, { ...it.p, grams: scale.grams }, mealTag, person)
+            } else {
+              addForPerson(it.k, scalePortion(it.p, wholeFactor), mealTag, person)
+            }
+          })
+          if (combo.optionalItems && meal.comboOptionals?.length > 0) {
+            combo.optionalItems
+              .filter(oi => meal.comboOptionals.includes(oi.k))
+              .forEach(it => addForPerson(it.k, scalePortion(it.p, wholeFactor), mealTag, person))
+          }
+          // AOVE de autocierre (personMealScale): el chorro extra que cierra
+          // el hueco de kcal cuando la base ya esta al tope — mismo aceite
+          // que ya se cuenta en Planificador/Batch, aqui como ingrediente mas.
+          if (scale?.oilMlApplied > 0) {
+            addForPerson('aove', { ml: scale.oilMlApplied }, mealTag, person)
+          }
+        })
       }    // end mealType loop
     })     // end windowDates.forEach
 
