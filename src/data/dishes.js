@@ -38,6 +38,20 @@ export const DISHES = {
     name: 'Huevos revueltos con tostada de masa madre y miel', meals: ['desayuno'],
     items: [{ k: 'huevo', p: { units: 2 } }, { k: 'pan-masa-madre', p: { grams: 90 } }, { k: 'miel', p: { grams: 10 } }], scalable: 'pan-masa-madre',
   },
+  // Semana 12 (astringente) — variantes SIN miel de los dos platos de
+  // arriba, pedidas por el usuario (aceite+sal en vez de miel). Platos
+  // nuevos, no ediciones de los originales -- esos dos siguen usandose en
+  // las otras 11 semanas, ya afinados para cumplir grasa<=15g ahi; anadir
+  // AOVE a ESOS habria roto ese tope. Aqui no hay ese problema (grasa suelta
+  // bastante mas baja para empezar).
+  'd-tostada-platano-aove-sal': {
+    name: 'Tostada de masa madre con plátano, AOVE y sal', meals: ['desayuno'],
+    items: [{ k: 'pan-masa-madre', p: { grams: 100 } }, { k: 'banana', p: { grams: 120 } }, { k: 'aove', p: { ml: 10 } }, { k: 'sal', p: {} }],
+  },
+  'd-huevos-tostada-aove': {
+    name: 'Huevos revueltos con tostada de masa madre y AOVE', meals: ['desayuno'],
+    items: [{ k: 'huevo', p: { units: 2 } }, { k: 'pan-masa-madre', p: { grams: 90 } }, { k: 'aove', p: { ml: 10 } }], scalable: 'pan-masa-madre',
+  },
   // d-avena-huevo-platano RETIRADO (6 sep 2026): "vomitina", descartado por
   // el usuario. No usar esta combinacion en ningun plato futuro.
   //

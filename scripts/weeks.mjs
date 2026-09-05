@@ -167,10 +167,11 @@ export const WEEKS = [
   // dia a dia, no hay techo de grasa que cumplir) -- es una semana de
   // rescate para pocos dias, no para repetir en bucle como las otras 11.
   //
-  // Desayuno: huevo+tostada+miel <-> tostada+platano+miel (ya existentes,
-  // sin lacteos, sin fruta acida, sin grasa alta).
-  DA:'d-huevos-tostada-madre-miel-reforzado', DB:'d-tostada-madre-miel-platano',
-  DMA:'d-tostada-madre-miel-platano', DMB:'d-huevos-tostada-madre-miel-reforzado',
+  // Desayuno: sin miel, AOVE+sal en su lugar (pedido del usuario) -- variantes
+  // nuevas (d-tostada-platano-aove-sal / d-huevos-tostada-aove), no las
+  // originales con miel que siguen usandose en las otras 11 semanas.
+  DA:'d-huevos-tostada-aove', DB:'d-tostada-platano-aove-sal',
+  DMA:'d-tostada-platano-aove-sal', DMB:'d-huevos-tostada-aove',
   // Comida: los dos platos pedidos por el usuario. El rancho SI lleva ajo
   // (cantidad de sabor, no de bulto) -- se deja tal cual porque el propio
   // usuario dice que este plato en concreto le sienta bien a pesar de eso.

@@ -137,6 +137,7 @@ export const ING = {
   'pimienta-negra': { name: 'Pimienta negra',   cat: 'otro', flat: 0.05,   kcf: 2,  pack: 'especia',         per: 'uso → $0.05', est: true },
   pimenton:         { name: 'Pimentón',         cat: 'otro', flat: 0.05,   kcf: 3,  pack: 'especia',         per: 'uso → $0.05', est: true },
   comino:           { name: 'Comino',            cat: 'otro', flat: 0.05,   kcf: 5,  pack: 'especia',         per: 'uso → $0.05', est: true },
+  sal:              { name: 'Sal',                cat: 'otro', flat: 0.02,   kcf: 0,  pack: 'especia',         per: 'uso → $0.02', est: true },
   cacao:            { name: 'Cacao puro en polvo', cat: 'otro', per100: 4.00, kc: 350, prot: 20, fat: 12, fib: 30, gi: 20, pack: '225g · $9.00', per: '15g → $0.60 · 53 kcal' },
   ajo:              { name: 'Ajo',              cat: 'otro', flat: 0.10,   kcf: 5,  pack: 'estimado',        per: 'uso → $0.10', est: true },
   'squash-butternut': { name: 'Squash butternut', cat: 'fresco', per100: 0.441, kc: 45, prot: 1.0, fat: 0.1, fib: 2.0, fibSol: 1.0, pack: '2 lb (907g) · $4.00', per: '150g → $0.66 · 68 kcal' },
