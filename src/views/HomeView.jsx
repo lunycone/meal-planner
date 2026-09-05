@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import useStore, { selectAllIng, selectAllCombos } from '../store/useStore'
 import { PROTEIN } from '../data/proteins'
 import { PREP } from '../data/combos'
-import { comboAgg, fmt, proteinCost, proteinKcal, proteinProt, ingKcal, ingFat, ingFib, fmtPortion, personLunchScale, pcosCarbLevel, proteinLevel, kcalLevel, LEVEL_COLOR, slotForPerson } from '../engine/calc'
+import { comboAgg, fmt, proteinCost, proteinKcal, proteinProt, ingKcal, ingFat, ingFib, fmtPortion, personLunchScale, pcosCarbLevel, proteinLevel, kcalLevel, LEVEL_COLOR, slotForPerson, slotIsUniform } from '../engine/calc'
 import PcosBadge from '../components/PcosBadge'
 import DailyProgress from '../components/DailyProgress'
 import PersonalizedDay from '../components/PersonalizedDay'
@@ -467,7 +467,36 @@ function MealDetailModal({ mealType, meal, allIng, allCombos, onEdit, onClear, o
 
 // ─── Meal block ──────────────────────────────────────────────────────────────
 
-function MealBlock({ time, mealType, meal, allIng, allCombos, onEdit, onClear, onDetail, gramsOverride }) {
+// Resuelve titulo/coste/kcal/proteina de UN plato ya resuelto (forma plana
+// {type, recipeKey|proteinKey+comboKey}) -- compartido entre la vista
+// "representante" (un solo plato) y la vista por-persona de abajo.
+function getMealStats(meal, allIng, allCombos, gramsOverride) {
+  if (!meal) return { title: '', cost: 0, kcal: 0, protein: 0 }
+  if (meal.type === 'desayuno') {
+    const recipe = allCombos[meal.recipeKey]
+    if (!recipe) return { title: '', cost: 0, kcal: 0, protein: 0 }
+    const agg = comboAgg(recipe, allIng)
+    return { title: recipe.name, cost: agg.cost, kcal: agg.kcal, protein: agg.prot ?? 0 }
+  }
+  if (meal.type === 'plato') {
+    const proteinObj = PROTEIN[meal.proteinKey]
+    const combo = allCombos[meal.comboKey]
+    if (!proteinObj || !combo) return { title: '', cost: 0, kcal: 0, protein: 0 }
+    const protCost = proteinCost(proteinObj, false, meal.proteinUnits)
+    const protKcal = proteinKcal(proteinObj, false, meal.proteinUnits)
+    const protProt = proteinProt(proteinObj, false, meal.proteinUnits)
+    const combAgg = comboAgg(combo, allIng, meal.comboVariants || {}, gramsOverride || {})
+    return {
+      title: `${proteinObj.name} + ${combo.name}`,
+      cost: protCost + combAgg.cost,
+      kcal: protKcal + combAgg.kcal + 235,
+      protein: protProt + (combAgg.prot ?? 0),
+    }
+  }
+  return { title: '', cost: 0, kcal: 0, protein: 0 }
+}
+
+function MealBlock({ time, mealType, meal, rawSlot, profiles, allIng, allCombos, onEdit, onClear, onDetail, gramsOverride }) {
   const mealLabels = { desayuno: 'Desayuno', comida: 'Comida', merienda: 'Merienda', cena: 'Cena' }
 
   if (!meal) {
@@ -487,46 +516,58 @@ function MealBlock({ time, mealType, meal, allIng, allCombos, onEdit, onClear, o
     )
   }
 
-  let title = ''
-  let cost = 0
-  let kcal = 0
-  let protein = 0
+  // 5 sep 2026 -- desayuno y merienda pueden ser un plato DISTINTO por
+  // persona (Julio y Maria, semana modelo cargada); comida y cena siguen la
+  // regla de siempre (mismo plato, solo cambia la racion), asi que aqui
+  // slotIsUniform les da "true" y caen en la vista de un solo plato de
+  // abajo sin cambios. Con mas de un plato de verdad, se muestra una fila
+  // por persona en vez de fingir que solo hay uno (antes: se veia SOLO el
+  // plato del "representante" -- Julio -- como si Maria comiera lo mismo).
+  const profileIds = (profiles ?? []).map(p => p.id)
+  const uniform = profileIds.length <= 1 || slotIsUniform(rawSlot, profileIds)
 
-  if (meal.type === 'desayuno') {
-    const recipe = allCombos[meal.recipeKey]
-    if (recipe) {
-      title = recipe.name
-      const agg = comboAgg(recipe, allIng)
-      cost = agg.cost
-      kcal = agg.kcal
-      protein = agg.prot
-    }
-  } else if (meal.type === 'plato') {
-    const proteinObj = PROTEIN[meal.proteinKey]
-    const combo = allCombos[meal.comboKey]
-    if (proteinObj && combo) {
-      title = `${proteinObj.name} + ${combo.name}`
-      const protCost = proteinCost(proteinObj, false, meal.proteinUnits)
-      const protKcal = proteinKcal(proteinObj, false, meal.proteinUnits)
-      const protProt = proteinProt(proteinObj, false, meal.proteinUnits)
-      const combAgg = comboAgg(combo, allIng, meal.comboVariants || {}, gramsOverride || {})
-      cost = protCost + combAgg.cost
-      kcal = protKcal + combAgg.kcal + 235
-      protein = protProt + (combAgg.prot ?? 0)
-    }
+  const header = (
+    <div className="hmb-header">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span className="hmb-dot" />
+          <span className="hmb-time">{time}</span>
+        </div>
+        <span className="hmb-label">{mealLabels[mealType]}</span>
+      </div>
+    </div>
+  )
+
+  if (!uniform) {
+    const rows = profiles.map(p => ({ person: p, ...getMealStats(slotForPerson(rawSlot, p.id), allIng, allCombos) }))
+    return (
+      <div className={`home-meal-block filled home-meal-block--${mealType}`}>
+        {header}
+        <button className="hmb-content" onClick={onDetail}>
+          {rows.map(r => (
+            <div key={r.person.id} className="hmb-person-row">
+              <span className="hmb-person-badge">{r.person.initial}</span>
+              <div className="hmb-person-body">
+                <span className="hmb-person-title">{r.title || 'Sin plato'}</span>
+                <div className="hmb-person-stats">
+                  {r.protein > 0 && <span><strong>{Math.round(r.protein)}g</strong> prot</span>}
+                  <span><strong>{fmt(r.cost)}</strong></span>
+                  <span><strong>{Math.round(r.kcal)}</strong> kcal</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </button>
+        <button className="hmb-clear" onClick={e => { e.stopPropagation(); onClear() }}>✕</button>
+      </div>
+    )
   }
+
+  const { title, cost, kcal, protein } = getMealStats(meal, allIng, allCombos, gramsOverride)
 
   return (
     <div className={`home-meal-block filled home-meal-block--${mealType}`}>
-      <div className="hmb-header">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span className="hmb-dot" />
-            <span className="hmb-time">{time}</span>
-          </div>
-          <span className="hmb-label">{mealLabels[mealType]}</span>
-        </div>
-      </div>
+      {header}
       <button className="hmb-content" onClick={onDetail}>
         <span className="hmb-title">{title}</span>
         <div className="hmb-stats">
@@ -709,6 +750,8 @@ export default function HomeView() {
           time="9:00"
           mealType="desayuno"
           meal={todayMeals.desayuno}
+          rawSlot={currentWeek[slotKey('desayuno')]}
+          profiles={validProfiles}
           allIng={allIng}
           allCombos={allCombos}
           onEdit={() => setModalOpen('select-desayuno')}
@@ -720,6 +763,8 @@ export default function HomeView() {
           time="12:00"
           mealType="comida"
           meal={todayMeals.comida}
+          rawSlot={currentWeek[slotKey('comida')]}
+          profiles={validProfiles}
           allIng={allIng}
           allCombos={allCombos}
           gramsOverride={comidaOverride}
@@ -732,6 +777,8 @@ export default function HomeView() {
           time="16:30"
           mealType="merienda"
           meal={todayMeals.merienda}
+          rawSlot={currentWeek[slotKey('merienda')]}
+          profiles={validProfiles}
           allIng={allIng}
           allCombos={allCombos}
           onEdit={() => setModalOpen('select-merienda')}
@@ -743,6 +790,8 @@ export default function HomeView() {
           time="19:30"
           mealType="cena"
           meal={todayMeals.cena}
+          rawSlot={currentWeek[slotKey('cena')]}
+          profiles={validProfiles}
           allIng={allIng}
           allCombos={allCombos}
           onEdit={() => setModalOpen('select-cena')}
