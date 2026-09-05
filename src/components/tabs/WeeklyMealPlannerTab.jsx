@@ -523,13 +523,6 @@ function MealSlot({ mealType, slot, profiles, allIng, allCombos, onEdit, onDetai
   )
 }
 
-function findCheapestDish(mealType, allIng, allCombos) {
-  return Object.entries(allCombos)
-    .filter(([, c]) => (c.meals ?? []).includes(mealType))
-    .map(([key, recipe]) => ({ key, cost: comboAgg(recipe, allIng).cost }))
-    .sort((a, b) => a.cost - b.cost)[0]?.key
-}
-
 // ─── Main tab ────────────────────────────────────────────────────────────────
 export default function WeeklyMealPlannerTab() {
   const allIng = useStore(selectAllIng)
@@ -800,20 +793,6 @@ export default function WeeklyMealPlannerTab() {
     replaceWeek(weekKey, slots)
   }
 
-  function generateCheapDraft() {
-    const cheapest = Object.fromEntries(MEALS.map(m => [m, findCheapestDish(m, allIng, allCombos)]))
-
-    const slots = {}
-    DAY_KEYS.forEach(dayKey => {
-      MEALS.forEach(mealType => {
-        if (cheapest[mealType]) {
-          slots[slotKey(dayKey, mealType)] = { type: 'desayuno', recipeKey: cheapest[mealType] }
-        }
-      })
-    })
-    replaceWeek(weekKey, slots)
-  }
-
   return (
     <div className="weekly-planner">
       <div className="weekly-hero">
@@ -876,7 +855,6 @@ export default function WeeklyMealPlannerTab() {
       </div>
 
       <div className="weekly-actions">
-        <button className="btn-primary" onClick={generateCheapDraft}>Generar barato</button>
         <button className="btn-ghost" disabled={!hasPreviousWeek} onClick={copyPreviousWeek}>Repetir anterior</button>
         <button className="btn-ghost" onClick={clearCurrentWeek}>Limpiar</button>
 
