@@ -22,21 +22,27 @@ export const DISHES = {
   'd-avena-leche-desnatada-miel': {
     // 6 sep 2026: disenado para cumplir las DOS reglas del desayuno a la vez
     // (>=400 kcal, <=15g grasa) -- antes solo el burrito de maiz lo lograba.
+    // 6 sep 2026 (2): leche 300->400g a peticion (+3-5g prot al dia entre
+    // los dos) -- mismo ingrediente que ya llevaba, solo mas cantidad; la
+    // leche desnatada apenas sube grasa (0.1g/100g), asi que no toca el
+    // techo de grasa del desayuno.
     name: 'Avena con leche desnatada y miel', meals: ['desayuno'],
-    items: [{ k: 'avena', p: { grams: 70 } }, { k: 'leche-desnatada', p: { grams: 300 } }, { k: 'miel', p: { grams: 15 } }], scalable: 'avena',
+    items: [{ k: 'avena', p: { grams: 70 } }, { k: 'leche-desnatada', p: { grams: 400 } }, { k: 'miel', p: { grams: 15 } }], scalable: 'avena',
   },
   'd-tostada-madre-miel-platano': {
     // Mismo objetivo que el de arriba, con otra base (pan en vez de avena)
     // para dar variedad real sin repetir ingrediente principal.
+    // 6 sep 2026 (2): pan 100->140g a peticion (+3-5g prot).
     name: 'Tostada de masa madre con miel y plátano', meals: ['desayuno'],
-    items: [{ k: 'pan-masa-madre', p: { grams: 100 } }, { k: 'banana', p: { grams: 120 } }, { k: 'miel', p: { grams: 15 } }],
+    items: [{ k: 'pan-masa-madre', p: { grams: 140 } }, { k: 'banana', p: { grams: 120 } }, { k: 'miel', p: { grams: 15 } }],
   },
   'd-huevos-tostada-madre-miel-reforzado': {
     // 6 sep 2026: version con huevo de los dos platos de arriba -- llevaban
     // proteina (avena+leche desnatada ya daba 22g) pero sin huevo la sensacion
     // era de "no hay proteina real". Este la deja explicita: 20g, con huevo.
+    // 6 sep 2026 (2): huevo 2->2.5 unidades a peticion (+3-5g prot).
     name: 'Huevos revueltos con tostada de masa madre y miel', meals: ['desayuno'],
-    items: [{ k: 'huevo', p: { units: 2 } }, { k: 'pan-masa-madre', p: { grams: 90 } }, { k: 'miel', p: { grams: 10 } }], scalable: 'pan-masa-madre',
+    items: [{ k: 'huevo', p: { units: 2.5 } }, { k: 'pan-masa-madre', p: { grams: 90 } }, { k: 'miel', p: { grams: 10 } }], scalable: 'pan-masa-madre',
   },
   // Semana 12 (astringente) — variantes SIN miel de los dos platos de
   // arriba, pedidas por el usuario (aceite+sal en vez de miel). Platos
@@ -44,13 +50,15 @@ export const DISHES = {
   // las otras 11 semanas, ya afinados para cumplir grasa<=15g ahi; anadir
   // AOVE a ESOS habria roto ese tope. Aqui no hay ese problema (grasa suelta
   // bastante mas baja para empezar).
+  // 6 sep 2026 (2): pan 100->135g a peticion (+3-5g prot).
   'd-tostada-platano-aove-sal': {
     name: 'Tostada de masa madre con plátano, AOVE y sal', meals: ['desayuno'],
-    items: [{ k: 'pan-masa-madre', p: { grams: 100 } }, { k: 'banana', p: { grams: 120 } }, { k: 'aove', p: { ml: 10 } }, { k: 'sal', p: {} }],
+    items: [{ k: 'pan-masa-madre', p: { grams: 135 } }, { k: 'banana', p: { grams: 120 } }, { k: 'aove', p: { ml: 10 } }, { k: 'sal', p: {} }],
   },
+  // 6 sep 2026 (2): huevo 2->2.5 unidades a peticion (+3-5g prot).
   'd-huevos-tostada-aove': {
     name: 'Huevos revueltos con tostada de masa madre y AOVE', meals: ['desayuno'],
-    items: [{ k: 'huevo', p: { units: 2 } }, { k: 'pan-masa-madre', p: { grams: 90 } }, { k: 'aove', p: { ml: 10 } }], scalable: 'pan-masa-madre',
+    items: [{ k: 'huevo', p: { units: 2.5 } }, { k: 'pan-masa-madre', p: { grams: 90 } }, { k: 'aove', p: { ml: 10 } }], scalable: 'pan-masa-madre',
   },
   // d-avena-huevo-platano RETIRADO (6 sep 2026): "vomitina", descartado por
   // el usuario. No usar esta combinacion en ningun plato futuro.
@@ -84,9 +92,10 @@ export const DISHES = {
     name: 'Arroz con leche simple', meals: ['desayuno'],
     items: [{ k: 'arroz', p: { grams: 40 } }, { k: 'leche', p: { grams: 250 } }],
   },
+  // 6 sep 2026 (2): cheddar 20->32g a peticion (+3-5g prot).
   'd-tortilla-cheddar-aguacate': {
     name: 'Tortilla + cheddar + aguacate', meals: ['desayuno', 'cena'],
-    items: [{ k: 'huevo', p: { units: 3 } }, { k: 'cheddar', p: { grams: 20 } }, { k: 'aguacate', p: { units: 0.5 } }, { k: 'aove', p: { ml: 10 } }],
+    items: [{ k: 'huevo', p: { units: 3 } }, { k: 'cheddar', p: { grams: 32 } }, { k: 'aguacate', p: { units: 0.5 } }, { k: 'aove', p: { ml: 10 } }],
   },
   'd-sardinas-huevo-cheddar': {
     name: 'Sardinas + huevo + cheddar', meals: ['desayuno', 'cena'],
@@ -98,15 +107,20 @@ export const DISHES = {
     // encima del techo de 15 g del desayuno. Se cambia un huevo por 20 g de
     // masa: misma kcal, misma funcion, 13 g de grasa y +72 kcal. La regla no
     // vale nada si el plato mas usado del catalogo la incumple.
-    items: [{ k: 'masa-harina', p: { grams: 80 } }, { k: 'huevo', p: { units: 2 } }],
+    // 6 sep 2026 (2): masa 80->110g a peticion (+3-5g prot) -- se sube la
+    // masa, NO el huevo, para no volver a acercarse al techo de grasa de
+    // arriba (masa-harina apenas lleva grasa; +30g son +1.2g grasa, 13->14.2,
+    // sigue bajo el techo de 15).
+    items: [{ k: 'masa-harina', p: { grams: 110 } }, { k: 'huevo', p: { units: 2 } }],
   },
   'd-burrito-maiz-cheddar': {
     name: 'Burrito maíz + cheddar', meals: ['desayuno', 'cena'],
     items: [{ k: 'masa-harina', p: { grams: 60 } }, { k: 'huevo', p: { units: 3 } }, { k: 'cheddar', p: { grams: 10 } }],
   },
+  // 6 sep 2026 (2): harina de garbanzo 30->45g a peticion (+3-5g prot).
   'd-burrito-5050': {
     name: 'Burrito 50/50 (maíz + garbanzo)', meals: ['desayuno', 'cena'],
-    items: [{ k: 'masa-harina', p: { grams: 30 } }, { k: 'harina-garbanzo', p: { grams: 30 } }, { k: 'huevo', p: { units: 3 } }],
+    items: [{ k: 'masa-harina', p: { grams: 30 } }, { k: 'harina-garbanzo', p: { grams: 45 } }, { k: 'huevo', p: { units: 3 } }],
   },
   'd-burrito-5050-cheddar': {
     name: 'Burrito 50/50 + cheddar', meals: ['desayuno', 'cena'],
@@ -140,9 +154,12 @@ export const DISHES = {
     name: 'Overnight oats de chocolate', meals: ['desayuno'],
     items: [{ k: 'avena', p: { grams: 45 } }, { k: 'yogur-cabra', p: { grams: 120 } }, { k: 'leche', p: { grams: 120 } }, { k: 'chia', p: { grams: 12 } }, { k: 'cacao', p: { grams: 8 } }, { k: 'miel', p: { grams: 10 } }],
   },
+  // 6 sep 2026 (2): harina 60->75g a peticion (+3-5g prot) -- nombre
+  // actualizado a "75g" para que siga diciendo la cantidad real (la key
+  // 'd-torta-garbanzo-60' se queda igual, la referencian otras semanas).
   'd-torta-garbanzo-60': {
-    name: 'Torta de garbanzo (60g) + AOVE', meals: ['desayuno'],
-    items: [{ k: 'harina-garbanzo', p: { grams: 60 } }, { k: 'aove', p: { ml: 20 } }],
+    name: 'Torta de garbanzo (75g) + AOVE', meals: ['desayuno'],
+    items: [{ k: 'harina-garbanzo', p: { grams: 75 } }, { k: 'aove', p: { ml: 20 } }],
   },
   'd-torta-garbanzo-80': {
     name: 'Torta de garbanzo (80g) + AOVE', meals: ['desayuno'],
