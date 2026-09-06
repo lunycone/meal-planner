@@ -559,6 +559,18 @@ export const DISHES = {
     name: 'Batido clásico', meals: ['merienda'],
     items: [{ k: 'avena', p: { grams: 100 } }, { k: 'leche', p: { grams: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'mantequilla', p: { grams: 10 } }, { k: 'pumpkin-seeds', p: { grams: 20 } }], // mantequilla recortada 20->10g
   },
+  // 6 sep 2026 -- b-clasico + un scoop de proteina, para JULIO_MERIENDA_BOOST
+  // (ver modelWeeks.js). Necesitaba MAS proteina en lunes/miercoles sin
+  // perder kcal (el batido proteico portatil de Maria tiene menos kcal que
+  // su merienda normal -- bien para ella, que no necesita mas, pero a Julio
+  // le dejaba varios cientos de kcal por debajo de su objetivo esos dias,
+  // sin que comida/cena pudieran compensarlo por el tope de siempre en el
+  // almidon). 937 kcal / 50 g prot (vs 862/34 del clasico) -- sube proteina
+  // Y kcal a la vez, no cambia una cosa por la otra.
+  'b-clasico-reforzado': {
+    name: 'Batido clásico + proteína extra', meals: ['merienda'],
+    items: [{ k: 'avena', p: { grams: 100 } }, { k: 'leche', p: { grams: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'mantequilla', p: { grams: 10 } }, { k: 'pumpkin-seeds', p: { grams: 20 } }, { k: 'proteina-polvo', p: { grams: 20 } }],
+  },
   'b-clasico-2': {
     name: 'Batido clásico 2', meals: ['merienda'],
     items: [{ k: 'avena', p: { grams: 100 } }, { k: 'leche', p: { grams: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'almendras', p: { grams: 20 } }],
