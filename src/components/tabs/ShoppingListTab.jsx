@@ -154,8 +154,15 @@ export default function ShoppingListTab() {
     })
     if (minN === Infinity) minN = 1
     if (maxN === 0) maxN = 1
+    // 6 sep 2026 -- esto era "×N" pegado justo despues de "Total: $X" en el
+    // JSX (sin espacio ni separador visual), y el usuario lo leyo como "hay
+    // que multiplicar el total x2" -- el total YA suma a las dos personas
+    // (verificado: Batch Lun $59.49 + Batch Jue $56.20 = $115.69, el mismo
+    // total semanal del Planificador). El badge solo dice CUANTAS personas
+    // entran en esta lista, no un factor sobre el precio -- texto explicito
+    // en vez de "×N" para que no se pueda leer como multiplicacion.
     return {
-      label: minN === maxN ? `×${minN}` : `×${minN}→${maxN}`,
+      label: minN === maxN ? `Incluye a ${minN}` : `Incluye a ${minN}→${maxN}`,
       initials: [...initialsSet].join('+'),
     }
   }, [batchWindow, profiles])
@@ -428,8 +435,9 @@ export default function ShoppingListTab() {
             </h2>
             <p style={{ fontSize: '0.82rem', color: 'var(--muted)' }}>
               {batchWindow.label} · {batchWindow.rangeLabel} — Total: ${totalCost.toFixed(2)}
-              <span style={{ marginLeft: '0.75rem', background: 'rgba(154,123,67,0.12)', color: 'var(--t-accent)', borderRadius: '99px', padding: '1px 8px', fontSize: '0.75rem', fontWeight: 600 }}>
-                {badgeInfo.label} {badgeInfo.initials}
+              {' · '}
+              <span style={{ marginLeft: '0.25rem', background: 'rgba(154,123,67,0.12)', color: 'var(--t-accent)', borderRadius: '99px', padding: '1px 8px', fontSize: '0.75rem', fontWeight: 600 }}>
+                {badgeInfo.label} ({badgeInfo.initials})
               </span>
             </p>
           </div>
