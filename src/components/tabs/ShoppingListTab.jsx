@@ -357,7 +357,14 @@ export default function ShoppingListTab() {
       } else if (data.qtyByUnit.grams) {
         qtyStr += `${Math.round(data.qtyByUnit.grams)}g `
       }
-      if (data.qtyByUnit.units) qtyStr += `${data.qtyByUnit.units} ud `
+      // packSize/packLabel (huevo, ver ingredients.js): se vende en paquete
+      // cerrado (docena), no suelto -- decimal exacto (no redondeado), a
+      // peticion expresa del usuario ("docena=12" confirmado, no de 6 en 6).
+      if (data.qtyByUnit.units && ing.packSize) {
+        qtyStr += `~${(data.qtyByUnit.units / ing.packSize).toFixed(1)} ${ing.packLabel}s `
+      } else if (data.qtyByUnit.units) {
+        qtyStr += `${data.qtyByUnit.units} ud `
+      }
       if (data.qtyByUnit.ml) qtyStr += `${Math.round(data.qtyByUnit.ml)}ml `
       if (data.qtyByUnit.serv) qtyStr += `${data.qtyByUnit.serv} porción`
       qtyStr = qtyStr.trim()

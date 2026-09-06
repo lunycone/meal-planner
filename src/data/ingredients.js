@@ -154,7 +154,9 @@ export const ING = {
   // Formato vasitos (tipo Mott's), sin azucar añadido.
   'compota-manzana':{ name: 'Compota de manzana (sin azúcar)', cat: 'fresco', per100: 0.56, kc: 50, prot: 0.2, fat: 0.1, fib: 1.2, fibSol: 0.9, gi: 40, pack: 'Lsm bio Unsweetened Apple Sauce 620ml · $3.49', per: '150g → $0.84 · 75 kcal', est: true }, // precio real confirmado por el usuario; kcal/macros siguen siendo estimados (sin ver la etiqueta)
   membrillo:        { name: 'Membrillo (fruto, cocido)', cat: 'fresco', per100: 0.55, kc: 57, prot: 0.4, fat: 0.1, fib: 1.9, fibSol: 1.2, gi: 35, pack: '~$5.50/kg · temporada sep-nov', per: '150g → $0.83 · 86 kcal — PECTINA alta, hervir y TIRAR el agua (arrastra sorbitol)', est: true },
-  huevo:            { name: 'Huevo',            cat: 'otro', perUnit: 0.624, kcu: 72, protu: 6, fatu: 5, pack: 'docena · $7.49', per: 'ud → $0.62 · 72 kcal' },
+  // packSize/packLabel (6 sep 2026): se vende en docena, no suelto -- la
+  // lista de la compra muestra "~N docenas" (decimal) en vez de "49 ud".
+  huevo:            { name: 'Huevo',            cat: 'otro', perUnit: 0.624, kcu: 72, protu: 6, fatu: 5, packSize: 12, packLabel: 'docena', pack: 'docena · $7.49', per: 'ud → $0.62 · 72 kcal' },
   tahini:           { name: 'Tahini',           cat: 'otro', per100: 5.95, kc: 595, prot: 17, fat: 54, fib: 9.3, pack: '500g · ~$29.75', per: '15g → $0.89 · 89 kcal' },
   'tomate-conserva':{ name: 'Tomate cherry/conserva', cat: 'otro', per100: 0.30, kc: 33, prot: 1.6, fat: 0.2, fib: 1.9, pack: 'lata · ~$1.50', per: '100g → $0.30 · 33 kcal' },
   vinagre:          { name: 'Vinagre',          cat: 'otro', perML: 0.003, kcml: 0.18, pack: 'botella · ~$3.00', per: '15ml → $0.045 · 3 kcal' },
