@@ -2,7 +2,6 @@ import { agg, scaleLunch, scaleWholeDish, DAYS, JULIO, MARIA } from './gen-core.
 import { WEEKS } from './weeks.mjs'
 import { validateBlocks } from './blocks.mjs'
 import { DISHES } from '../src/data/dishes.js'
-import { JULIO_MERIENDA_BOOST_DAYS_BY_WEEK, JULIO_MERIENDA_BOOST } from '../src/data/modelWeeks.js'
 import { writeFileSync } from 'fs'
 
 const CAP = Math.round(JULIO.weightKg * JULIO.protCapGkg)
@@ -45,13 +44,7 @@ function day(w,i,p){
   // proteico para llevar (sin cocinar, apto para el trabajo) -- cierra
   // ~320 kcal limpias en vez de pedirle a comida+cena que compensen los
   // ~800 kcal enteros del batido casero, que era lo que disparaba la grasa.
-  //
-  // 6 sep 2026 (2) -- Julio salia con menos proteina que la suya propia (no
-  // solo que la de Maria) en varios dias, casi siempre lunes/miercoles --
-  // ver JULIO_MERIENDA_BOOST_DAYS_BY_WEEK en src/data/modelWeeks.js para el
-  // porque de la tabla (por que es POR SEMANA y no un dia fijo en las 12).
-  const julioBoost = p===JULIO && (JULIO_MERIENDA_BOOST_DAYS_BY_WEEK[w.n] ?? []).includes(i)
-  const M = noMerienda ? agg('m-proteina-portatil') : (julioBoost ? agg(JULIO_MERIENDA_BOOST) : agg(w.M[i]))
+  const M = noMerienda ? agg('m-proteina-portatil') : agg(w.M[i])
   const aoveCap = noMerienda ? AOVE_CAP_ML_NO_MERIENDA : AOVE_CAP_ML
   const target = p.kcal[i]
   const Craw = agg(w.C[i]), Nraw = agg(w.N[i])

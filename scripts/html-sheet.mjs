@@ -1,6 +1,5 @@
 import { DAYS, JULIO, MARIA, agg } from './gen-core.mjs'
 import { day, CAP, SOL_MIN, e, r } from './html-core.mjs'
-import { JULIO_MERIENDA_BOOST_DAYS_BY_WEEK, JULIO_MERIENDA_BOOST } from '../src/data/modelWeeks.js'
 import { writeFileSync } from 'fs'
 
 const CSS = `
@@ -85,20 +84,11 @@ function sheet(w, total=11){
   // Maria lleva un batido proteico para llevar (sin cocinar) lunes/miercoles
   // en vez del batido casero de Julio -- ver m-proteina-portatil, 6 sep 2026.
   const NO_MERIENDA_MARIA = [0,2]
-  // 6 sep 2026 (2) -- Julio tambien cambia de merienda algunos dias (no
-  // siempre los mismos, depende de la semana -- ver JULIO_MERIENDA_BOOST_
-  // DAYS_BY_WEEK en src/data/modelWeeks.js) para subir su proteina sin bajar
-  // su kcal, cuando el resto del dia se queda corto de la suya propia.
-  const julioBoostDays = JULIO_MERIENDA_BOOST_DAYS_BY_WEEK[w.n] ?? []
   const M=row('🥤 Merienda',i=>{
-    const noMaria = NO_MERIENDA_MARIA.includes(i)
-    const noJulio = julioBoostDays.includes(i)
-    const a = noJulio ? agg(JULIO_MERIENDA_BOOST) : agg(w.M[i])
-    if (!noMaria && !noJulio) return {...a, macro:`${r(a.kcal)} kcal · igual los dos`}
-    const b = noMaria ? agg('m-proteina-portatil') : agg(w.M[i])
-    const tagJ = noJulio ? ' (+ proteína)' : ''
-    const tagM = noMaria ? ' (para llevar)' : ''
-    return{...a, macro:`<span class="sw j"></span>${e(a.name)} · ${r(a.kcal)} kcal${tagJ}<br><span class="sw m"></span>${e(b.name)} · ${r(b.kcal)} kcal${tagM}`}
+    const a=agg(w.M[i])
+    if (!NO_MERIENDA_MARIA.includes(i)) return {...a, macro:`${r(a.kcal)} kcal · igual los dos`}
+    const b=agg('m-proteina-portatil')
+    return{...a, macro:`<span class="sw j"></span>${r(a.kcal)} kcal<br><span class="sw m"></span>${e(b.name)} · ${r(b.kcal)} kcal (para llevar)`}
   })
   // 6 sep 2026 -- N usaba agg(w.N[i]) (el plato SIN escalar) mientras que el
   // Total del dia de mas abajo ya sumaba el cena REAL (j[i].N/m[i].N, que se

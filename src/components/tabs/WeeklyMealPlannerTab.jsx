@@ -3,7 +3,7 @@ import useStore, { selectAllIng, selectAllCombos } from '../../store/useStore'
 import { PROTEIN } from '../../data/proteins'
 import { PREP, COMBO_SETS } from '../../data/combos'
 import { comboAgg, fmt, proteinCost, proteinKcal, proteinProt, ingKcal, ingCost, fmtPortion, personDayKcal, personDayCost, personDayProt, pcosCarbLevel, proteinLevel, kcalLevel, LEVEL_COLOR, slotForPerson, slotIsUniform, makeByPersonSlot } from '../../engine/calc'
-import { MODEL_WEEKS, expandModelWeek, MARIA_NO_BATIDO_CASERO, MARIA_MERIENDA_PORTATIL, JULIO_MERIENDA_BOOST_DAYS_BY_WEEK, JULIO_MERIENDA_BOOST } from '../../data/modelWeeks'
+import { MODEL_WEEKS, expandModelWeek, MARIA_NO_BATIDO_CASERO, MARIA_MERIENDA_PORTATIL } from '../../data/modelWeeks'
 import PcosBadge from '../PcosBadge'
 
 // Utility to get ISO week key from date
@@ -796,15 +796,6 @@ export default function WeeklyMealPlannerTab() {
       const mariaMerienda = MARIA_NO_BATIDO_CASERO.includes(i)
         ? { type: 'desayuno', recipeKey: MARIA_MERIENDA_PORTATIL }
         : { type: 'desayuno', recipeKey: expanded.M[i] }
-      // 6 sep 2026 -- ver comentario junto a JULIO_MERIENDA_BOOST_DAYS_BY_WEEK
-      // en modelWeeks.js: Julio salia con menos proteina que Maria en varias
-      // semanas, casi siempre lunes/miercoles -- pero no en todas (depende de
-      // que tan proteico sea SU desayuno/comida/cena esa semana concreta),
-      // por eso la tabla es por semana y no un dia fijo para las 12.
-      const boostDays = JULIO_MERIENDA_BOOST_DAYS_BY_WEEK[n] ?? []
-      const julioMerienda = boostDays.includes(i)
-        ? { type: 'desayuno', recipeKey: JULIO_MERIENDA_BOOST }
-        : { type: 'desayuno', recipeKey: expanded.M[i] }
 
       slots[slotKey(dayKey, 'desayuno')] = makeByPersonSlot({
         julio: { type: 'desayuno', recipeKey: expanded.D[i] },
@@ -815,7 +806,7 @@ export default function WeeklyMealPlannerTab() {
         maria: { type: 'desayuno', recipeKey: expanded.C[i] },
       })
       slots[slotKey(dayKey, 'merienda')] = makeByPersonSlot({
-        julio: julioMerienda,
+        julio: { type: 'desayuno', recipeKey: expanded.M[i] },
         maria: mariaMerienda,
       })
       slots[slotKey(dayKey, 'cena')] = makeByPersonSlot({

@@ -30,46 +30,6 @@ export const MODEL_KCAL_BY_DAY = {
 export const MARIA_NO_BATIDO_CASERO = [0, 2] // indices sobre MODEL_DAY_KEYS: lun, mié
 export const MARIA_MERIENDA_PORTATIL = 'm-proteina-portatil'
 
-// 6 sep 2026 -- auditadas las 12 semanas (node scripts/tmp-week-audit.mjs,
-// personDayProt real por dia): Julio salia con MENOS proteina que Maria pese
-// a comer siempre mas kcal, y en la mayoria de los casos marcados era
-// exactamente lunes/miercoles -- los mismos dos dias en que Maria cambia a
-// su batido proteico portatil (41g) mientras Julio se queda con el batido
-// normal de esa semana (20-34g segun el bloque). No es un bug del motor: el
-// desayuno/merienda son platos fijos por persona (a diferencia de comida/
-// cena, que escalan solo con almidon y por tanto casi no mueven la
-// proteina) -- si el catalogo le da a uno menos proteina fija que al otro,
-// el escalado por kcal nunca lo compensa. Fix global (una sola vez, cubre
-// las 12 semanas de golpe en vez de tocar plato a plato): Julio toma
-// TAMBIEN el batido proteico portatil esos dos dias, en vez del batido
-// normal de la semana.
-// Batido clásico + un scoop de proteína (dishes.js): sube proteína Y kcal a
-// la vez. El batido proteico portátil de María (más pequeño, 361 kcal) no
-// vale aquí -- probado primero y le dejaba a Julio 250-450 kcal por debajo
-// de su objetivo esos días, porque comida/cena ya estaban en su tope de
-// almidón y no podían compensar la merienda perdida.
-export const JULIO_MERIENDA_BOOST = 'b-clasico-reforzado'
-
-// Que dias necesita el boost NO es igual en las 12 semanas (a diferencia de
-// Maria, que siempre trabaja los mismos dos dias) -- depende de que tan
-// proteico sea el desayuno/comida/cena que le toque a Julio esa semana
-// concreta. El criterio NO es "¿Julio tiene menos que Maria ese dia?" (eso
-// dio una primera tabla que subia a Julio por encima de su propio techo en
-// semanas donde ya iba bien, hasta 165g en la semana 4, solo porque Maria
-// tenia mas todavia) -- el criterio real es el que puso el propio Julio:
-// "¿estoy yo por debajo de MI proteina?", sin mirar a Maria. Esta tabla sale
-// de auditar las 12 semanas de verdad (node scripts/tmp-week-audit.mjs,
-// personDayProt real, SIN ningun boost) y marca lunes/miercoles solo donde
-// Julio quedaba claramente bajo (<130g) sin el. Otros dias bajos que no son
-// lunes/miercoles (p.ej. semana 2 jueves/viernes, semana 9 martes-jueves)
-// esta mecanica no los toca -- necesitarian su propio ajuste de plato, no
-// solo de merienda.
-export const JULIO_MERIENDA_BOOST_DAYS_BY_WEEK = {
-  1: [0],    2: [0, 2], 3: [0, 2], 4: [2],
-  5: [0, 2], 6: [0, 2], 7: [2],    8: [],
-  9: [2],    10: [0],   11: [0, 2], 12: [0, 2],
-}
-
 export const MODEL_WEEKS = [
 { n:1, title:'La mejor equilibrada', note:'Desayuno cambia de bloque para los dos. Comida, merienda y cena tambien cambian.',
   DA:'d-burrito-maiz', DB:'d-burrito-maiz',
