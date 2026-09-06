@@ -55,10 +55,14 @@ export const DISHES = {
     name: 'Tostada de masa madre con plátano, AOVE y sal', meals: ['desayuno'],
     items: [{ k: 'pan-masa-madre', p: { grams: 135 } }, { k: 'banana', p: { grams: 120 } }, { k: 'aove', p: { ml: 10 } }, { k: 'sal', p: {} }],
   },
-  // 6 sep 2026 (2): huevo 2->2.5 unidades a peticion (+3-5g prot).
+  // 6 sep 2026 (2): este plato YA estaba a 20g de grasa (huevo+AOVE), por
+  // encima del techo de 15g, desde antes de hoy -- subir el huevo (como se
+  // hizo primero) lo habria dejado peor (22.5g). Se sube pan en su lugar
+  // (sin grasa) 90->125g: mismos +3g de proteina, sin empeorar lo que ya
+  // estaba roto.
   'd-huevos-tostada-aove': {
     name: 'Huevos revueltos con tostada de masa madre y AOVE', meals: ['desayuno'],
-    items: [{ k: 'huevo', p: { units: 2.5 } }, { k: 'pan-masa-madre', p: { grams: 90 } }, { k: 'aove', p: { ml: 10 } }], scalable: 'pan-masa-madre',
+    items: [{ k: 'huevo', p: { units: 2 } }, { k: 'pan-masa-madre', p: { grams: 125 } }, { k: 'aove', p: { ml: 10 } }], scalable: 'pan-masa-madre',
   },
   // d-avena-huevo-platano RETIRADO (6 sep 2026): "vomitina", descartado por
   // el usuario. No usar esta combinacion en ningun plato futuro.
