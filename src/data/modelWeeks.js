@@ -25,27 +25,36 @@ export const MODEL_KCAL_BY_DAY = {
   maria: [2500, 2900, 2500, 2750, 2500, 2750, 2500],
 }
 
-// Maria no toma merienda lunes ni miercoles (trabaja esos dias) — el batido
-// portatil (proteina en polvo + leche desnatada, ver dishes.js) la sustituye.
+// Maria no toma merienda lunes ni miercoles (trabaja esos dias) -- se
+// sustituye por algo que aguante en un tupper sin cocinar ni batidora.
+// 6 sep 2026 (2): era un batido de proteina en polvo (41g) -- el usuario
+// pidio explicitamente quitar la proteina en polvo de aqui tambien y pasar a
+// algo normal (yogur+fruta), aunque suba menos la proteina, con tal de que
+// siga sirviendo en tupper para el trabajo. d-yogur-platano-avena (yogur +
+// platano + avena, sin cocinar, sin proteina en polvo: 291 kcal, 11 g prot,
+// $0.91) cumple los dos: nada que batir ni cocinar, y baja su proteina en
+// vez de subirla. Verificado (node, las 12 semanas): NO deja ningun dia por
+// debajo de su objetivo de kcal (a diferencia del batido reforzado que se
+// probo para Julio, que si lo hacia -- ver commit revertido 7241041) porque
+// Maria suele estar en el regimen de "sobra kcal" (su objetivo ya esta por
+// debajo del plato por defecto), no en el de "falta kcal" de Julio.
 export const MARIA_NO_BATIDO_CASERO = [0, 2] // indices sobre MODEL_DAY_KEYS: lun, mié
-export const MARIA_MERIENDA_PORTATIL = 'm-proteina-portatil'
+export const MARIA_MERIENDA_PORTATIL = 'd-yogur-platano-avena'
 
 // 6 sep 2026 -- techo de proteina de Maria, mismo criterio que el de Julio
 // (2,23 g/kg, ver CAP en scripts/html-core.mjs) aplicado a SU peso (58,4 kg)
 // en vez del de el: 58.4*2.23 ≈ 130 g. Auditando las 12 semanas (personDayProt
 // real) salia por encima en 8 de las 12, casi siempre por dos motivos
-// distintos: (1) su batido proteico portatil de lunes/miercoles (41g, ver
-// MARIA_MERIENDA_PORTATIL) sumado a un desayuno/comida ya proteicos ese dia,
-// y (2) su desayuno normal (Tortilla+cheddar+aguacate, 25g) combinado con
-// una comida especialmente proteica esa semana (comida es el MISMO plato
-// que Julio, solo cambia la racion -- no se puede tocar por persona). Esta
-// tabla solo cubre el motivo (2): dias donde bajar su desayuno a la torta de
-// garbanzo con huevo (17g, un plato que YA usa en otras semanas del propio
-// catalogo, sin tocar nada mas) basta para bajarla del techo. El motivo (1)
-// -- el batido portatil de lunes/miercoles -- sigue sin arreglar: no hay
-// otro plato en el catalogo pensado para "sin batidora, para el trabajo" con
-// menos proteina (el unico parecido, m-astringente-platano-manzana, es
-// especifico de dias de diarrea) -- pendiente de decidir con el usuario.
+// distintos: (1) su desayuno normal (Tortilla+cheddar+aguacate, 25g)
+// combinado con una comida especialmente proteica esa semana (comida es el
+// MISMO plato que Julio, solo cambia la racion -- no se puede tocar por
+// persona), arreglado con esta tabla bajandola a la torta de garbanzo con
+// huevo (17g, un plato que YA usa en otras semanas del propio catalogo) los
+// dias donde eso basta; y (2) el batido proteico portatil de lunes/miercoles
+// -- ya resuelto arriba (MARIA_MERIENDA_PORTATIL). Con las dos cosas quedan
+// solo 4 de 84 dias-persona por encima del techo (sabado semanas 7 y 9,
+// martes/jueves semana 10) -- dias sueltos donde su comida/cena compartida
+// con Julio es la que sube, no su desayuno ni su merienda.
 export const MARIA_DESAYUNO_DOWNGRADE = 'd-torta-garbanzo-50-huevo'
 export const MARIA_DESAYUNO_DOWNGRADE_DAYS_BY_WEEK = {
   1: [1], 5: [2], 6: [1], 7: [2], 8: [1, 3],

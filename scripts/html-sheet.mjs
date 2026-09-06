@@ -1,6 +1,6 @@
 import { DAYS, JULIO, MARIA, agg } from './gen-core.mjs'
 import { day, CAP, CAP_MARIA, SOL_MIN, e, r } from './html-core.mjs'
-import { MARIA_DESAYUNO_DOWNGRADE, MARIA_DESAYUNO_DOWNGRADE_DAYS_BY_WEEK } from '../src/data/modelWeeks.js'
+import { MARIA_DESAYUNO_DOWNGRADE, MARIA_DESAYUNO_DOWNGRADE_DAYS_BY_WEEK, MARIA_MERIENDA_PORTATIL } from '../src/data/modelWeeks.js'
 import { writeFileSync } from 'fs'
 
 const CSS = `
@@ -90,13 +90,15 @@ function sheet(w, total=11){
   const C=row('🍽️ Comida',i=>{const a=j[i].C,b=m[i].C;return{...a,macro:`<span class="sw j"></span>${macroBase(a)} · ${r(a.kcal)} kcal<br><span class="sw m"></span>${macroBase(b)} · ${r(b.kcal)} kcal`}})
   // Maria no toma merienda lunes ni miercoles (Paso 4, 5 sep 2026): la fila
   // deja constancia de que ese dia es solo para Julio.
-  // Maria lleva un batido proteico para llevar (sin cocinar) lunes/miercoles
-  // en vez del batido casero de Julio -- ver m-proteina-portatil, 6 sep 2026.
+  // Maria lleva algo para el trabajo (sin cocinar) lunes/miercoles en vez
+  // del batido casero de Julio -- ver MARIA_MERIENDA_PORTATIL en
+  // src/data/modelWeeks.js (yogur+platano+avena, sin proteina en polvo,
+  // 6 sep 2026).
   const NO_MERIENDA_MARIA = [0,2]
   const M=row('🥤 Merienda',i=>{
     const a=agg(w.M[i])
     if (!NO_MERIENDA_MARIA.includes(i)) return {...a, macro:`${r(a.kcal)} kcal · igual los dos`}
-    const b=agg('m-proteina-portatil')
+    const b=agg(MARIA_MERIENDA_PORTATIL)
     return{...a, macro:`<span class="sw j"></span>${r(a.kcal)} kcal<br><span class="sw m"></span>${e(b.name)} · ${r(b.kcal)} kcal (para llevar)`}
   })
   // 6 sep 2026 -- N usaba agg(w.N[i]) (el plato SIN escalar) mientras que el

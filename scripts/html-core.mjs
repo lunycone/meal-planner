@@ -2,7 +2,7 @@ import { agg, scaleLunch, scaleWholeDish, DAYS, JULIO, MARIA } from './gen-core.
 import { WEEKS } from './weeks.mjs'
 import { validateBlocks } from './blocks.mjs'
 import { DISHES } from '../src/data/dishes.js'
-import { MARIA_DESAYUNO_DOWNGRADE, MARIA_DESAYUNO_DOWNGRADE_DAYS_BY_WEEK } from '../src/data/modelWeeks.js'
+import { MARIA_DESAYUNO_DOWNGRADE, MARIA_DESAYUNO_DOWNGRADE_DAYS_BY_WEEK, MARIA_MERIENDA_PORTATIL } from '../src/data/modelWeeks.js'
 import { writeFileSync } from 'fs'
 
 const CAP = Math.round(JULIO.weightKg * JULIO.protCapGkg)
@@ -46,11 +46,14 @@ function day(w,i,p){
   const desKey = p===JULIO ? w.D[i] : (mariaDowngrade ? MARIA_DESAYUNO_DOWNGRADE : w.DM[i])
   const D=agg(desKey)
   const noMerienda = p===MARIA && MARIA_NO_MERIENDA.includes(i)
-  // 6 sep 2026: el "cero merienda" (kcal:0) se sustituye por un batido
-  // proteico para llevar (sin cocinar, apto para el trabajo) -- cierra
-  // ~320 kcal limpias en vez de pedirle a comida+cena que compensen los
-  // ~800 kcal enteros del batido casero, que era lo que disparaba la grasa.
-  const M = noMerienda ? agg('m-proteina-portatil') : agg(w.M[i])
+  // 6 sep 2026: el "cero merienda" (kcal:0) se sustituye por algo que
+  // aguante en tupper sin cocinar, apto para el trabajo -- cierra kcal
+  // limpias en vez de pedirle a comida+cena que compensen los ~800 kcal
+  // enteros del batido casero, que era lo que disparaba la grasa.
+  // 6 sep 2026 (2): era un batido de proteina en polvo -- ver
+  // MARIA_MERIENDA_PORTATIL en src/data/modelWeeks.js para el porque del
+  // cambio a yogur+platano+avena (sin proteina en polvo, a peticion).
+  const M = noMerienda ? agg(MARIA_MERIENDA_PORTATIL) : agg(w.M[i])
   const aoveCap = noMerienda ? AOVE_CAP_ML_NO_MERIENDA : AOVE_CAP_ML
   const target = p.kcal[i]
   const Craw = agg(w.C[i]), Nraw = agg(w.N[i])
