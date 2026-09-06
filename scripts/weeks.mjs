@@ -62,7 +62,7 @@ export const WEEKS = [
   DMA:'d-tortilla-cheddar-aguacate', DMB:'d-torta-garbanzo-50-huevo',
   CA:'c-lomo-arroz-afgano', CB:'c-turkey-garbanzos-huevo-sofrito',   // cerdo -> pavo
   MA:'b-ganancia', MB:'b-ganancia-manzana',
-  NA:'n-bacalao-pure-squash-huevo', NB:'n-turkey-patata-huevo' },    // bacalao -> pavo
+  NA:'n-turkey-patata-huevo-cheddar', NB:'n-turkey-patata-huevo' },    // bacalao -> pavo
 
 { n:5, title:'PCOS maximo (Maria) + margen de fibra', note:'Desayuno cambia de bloque. Comida cordero -> pavo. Cena bacalao -> pavo.',
   // DA/DB (torta garbanzo, 24g grasa) violaban el techo. Reasignado.
@@ -193,16 +193,23 @@ export const WEEKS = [
 // (siempre >=157) los 7 dias; Maria 152-154g (siempre >=143) los 7 dias.
 // Grasa MUY por encima del techo de desayuno de siempre (torta extrema:
 // huevo+cheddar+aove) -- esperado y aceptado, como la semana 11.
-// 6 sep 2026 (2) -- primera version: pavo en comida Y cena los 7 dias
-// (misma especie de golpe). Funcionalmente cumplia el objetivo pero era
-// una tonteria de verdad (el usuario, entre risas: "has puesto todos los
-// dias TURKEY"). Bloques A/B como el resto de semanas, con tres especies
-// distintas (pavo, cerdo, bacalao) en vez de una sola -- verificado (node)
-// que sigue pasando el +10% los 7 dias para los dos con la variedad.
-{ n:13, extrema:true, title:'ALTA EN PROTEÍNA — pasa el techo de los dos a propósito', note:'⚠ Solo referencia — se pasa un ~10% del techo de proteína de Julio y de María TODOS los días, sin proteína en polvo (solo comida real: huevo, pavo, cerdo, bacalao, legumbre, queso). Rompe a propósito el techo de grasa del desayuno y la cadencia de legumbre. No usar como plantilla recurrente.',
-  DA:'d-torta-garbanzo-extrema', DB:'d-torta-garbanzo-extrema',
-  DMA:'d-torta-garbanzo-extrema', DMB:'d-torta-garbanzo-extrema',
-  CA:'c-turkey-blackbeans-huevo-cheddar', CB:'c-lomo-pintas-cebolla-vino',
+// 6 sep 2026 (3) -- version 2 (pavo martes-jueves, cerdo+bacalao el resto)
+// seguia mal: desayuno garbanzo LOS 7 DIAS (legumbre en desayuno 7/7) y
+// comida con legumbre en los dos bloques a la vez (7/7 tambien) -- el
+// usuario, con razon: "piensa tambien en el gut". Redisenada respetando
+// las cadencias de verdad (max 4/7 por franja, GOS y fructano por
+// separado): desayuno con legumbre solo 3/7 (bloque A), comida con
+// legumbre solo 4/7 (bloque B), cena sin legumbre y sin cebolla/ajo mas
+// de 4/7. Seis especies distintas en vez de pavo por todas partes
+// (garbanzo, bacon/cerdo, cerdo, pavo, bacalao+calabaza, bacalao+
+// mejillones). Verificado (node): sigue pasando el techo +10% los 7 dias
+// para Maria y para Julio salvo martes/miercoles, que se quedan a 151-
+// 154g (aun asi 5-8% por encima de su techo de 143g, no por debajo) --
+// preferido a forzar mas legumbre/cebolla solo para llegar al 10% exacto.
+{ n:13, extrema:true, title:'ALTA EN PROTEÍNA — pasa el techo de los dos a propósito', note:'⚠ Solo referencia — se pasa el techo de proteína de Julio y de María la mayoría de los días (objetivo ~10%, respetando las cadencias de legumbre/cebolla-ajo de siempre), sin proteína en polvo. Rompe a propósito el techo de grasa del desayuno. No usar como plantilla recurrente.',
+  DA:'d-torta-garbanzo-extrema', DB:'d-burrito-bacon',
+  DMA:'d-torta-garbanzo-extrema', DMB:'d-burrito-bacon',
+  CA:'c-rancho-aragones-xl', CB:'c-turkey-blackbeans-huevo-cheddar',
   MA:'b-clasico', MB:'b-clasico',
-  NA:'n-turkey-patata-huevo-cheddar', NB:'n-bacalao-blackbeans-comino' },
+  NA:'n-turkey-patata-huevo-cheddar', NB:'n-bacalao-mejillones-cazuela' },
 ]
