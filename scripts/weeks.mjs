@@ -193,10 +193,16 @@ export const WEEKS = [
 // (siempre >=157) los 7 dias; Maria 152-154g (siempre >=143) los 7 dias.
 // Grasa MUY por encima del techo de desayuno de siempre (torta extrema:
 // huevo+cheddar+aove) -- esperado y aceptado, como la semana 11.
-{ n:13, extrema:true, title:'ALTA EN PROTEÍNA — pasa el techo de los dos a propósito', note:'⚠ Solo referencia — se pasa un ~10% del techo de proteína de Julio y de María TODOS los días, sin proteína en polvo (solo comida real: huevo, pavo, legumbre, queso). Rompe a propósito el techo de grasa del desayuno. No usar como plantilla recurrente.',
+// 6 sep 2026 (2) -- primera version: pavo en comida Y cena los 7 dias
+// (misma especie de golpe). Funcionalmente cumplia el objetivo pero era
+// una tonteria de verdad (el usuario, entre risas: "has puesto todos los
+// dias TURKEY"). Bloques A/B como el resto de semanas, con tres especies
+// distintas (pavo, cerdo, bacalao) en vez de una sola -- verificado (node)
+// que sigue pasando el +10% los 7 dias para los dos con la variedad.
+{ n:13, extrema:true, title:'ALTA EN PROTEÍNA — pasa el techo de los dos a propósito', note:'⚠ Solo referencia — se pasa un ~10% del techo de proteína de Julio y de María TODOS los días, sin proteína en polvo (solo comida real: huevo, pavo, cerdo, bacalao, legumbre, queso). Rompe a propósito el techo de grasa del desayuno y la cadencia de legumbre. No usar como plantilla recurrente.',
   DA:'d-torta-garbanzo-extrema', DB:'d-torta-garbanzo-extrema',
   DMA:'d-torta-garbanzo-extrema', DMB:'d-torta-garbanzo-extrema',
-  CA:'c-turkey-blackbeans-huevo-cheddar', CB:'c-turkey-blackbeans-huevo-cheddar',
+  CA:'c-turkey-blackbeans-huevo-cheddar', CB:'c-lomo-pintas-cebolla-vino',
   MA:'b-clasico', MB:'b-clasico',
-  NA:'n-turkey-patata-huevo-cheddar', NB:'n-turkey-patata-huevo-cheddar' },
+  NA:'n-turkey-patata-huevo-cheddar', NB:'n-bacalao-blackbeans-comino' },
 ]
