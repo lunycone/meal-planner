@@ -232,6 +232,29 @@ input, select, textarea { font-family: inherit; }
 }
 .btn-primary:disabled { opacity: 0.45; transform: none; box-shadow: none; }
 
+/* "Cargar semana modelo" (Planificador) -- clase propia, no toca
+   .btn-primary (usado en toda la app). 6 sep 2026: pedido explicito de
+   quitarle el marron plano de siempre; usa el teal del tema (--t-blue-*,
+   ya reservado para "destacado"/info en el resto de la app) en vez de
+   inventar un color nuevo, con un degradado suave y un halo del mismo tono
+   en vez de la sombra marron generica. */
+.btn-load-week {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 7px 18px; border-radius: 99px; border: none;
+  background: linear-gradient(135deg, #2a6a72, #1d4f56);
+  color: #fff; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.01em;
+  box-shadow: 0 2px 10px rgba(42,106,114,0.38), inset 0 1px 0 rgba(255,255,255,0.12);
+  transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
+}
+.btn-load-week-icon { font-size: 0.95em; filter: brightness(1.6) saturate(0.7); }
+.btn-load-week:hover {
+  background: linear-gradient(135deg, #327d86, #235c64);
+  box-shadow: 0 4px 16px rgba(42,106,114,0.46), inset 0 1px 0 rgba(255,255,255,0.16);
+  transform: translateY(-1px);
+}
+.btn-load-week:active { transform: translateY(0); }
+.btn-load-week:disabled { opacity: 0.45; transform: none; box-shadow: none; }
+
 .btn-ghost {
   padding: 5px 12px; border-radius: 99px;
   background: var(--t-surface);

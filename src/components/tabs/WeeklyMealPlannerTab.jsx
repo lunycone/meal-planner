@@ -918,11 +918,11 @@ export default function WeeklyMealPlannerTab() {
             ))}
           </select>
           <button
-            className="btn-primary"
+            className="btn-load-week"
             title="Rellena esta semana con el plato de Julio y de María, día a día, de la semana modelo elegida"
             onClick={() => loadModelWeek(modelWeekChoice)}
           >
-            📋 Cargar semana modelo
+            <span className="btn-load-week-icon">📋</span> Cargar semana modelo
           </button>
         </div>
       </div>
