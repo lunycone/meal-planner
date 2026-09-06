@@ -57,7 +57,10 @@ export const ING = {
   jalapeno:          { name: 'Jalapeño',           cat: 'fresco',   per100: 1.10,  kc: 29,  fib: 1.9, pack: 'ud ~40g · CA$11.00/kg', per: 'ud → $0.44 · 12 kcal' },
   'green-beans':     { name: 'Ejotes / Green beans', cat: 'fresco', per100: 0.60,  kc: 31,  fib: 3.4, pack: 'bunch ~0.08kg · $0.48', per: '80g → $0.48 · 25 kcal' },
   arandanos:         { name: 'Arándanos congelados (Farm Boy)', cat: 'fresco', per100: 0.977, kc: 57, prot: 0.7, fat: 0.3, fib: 2.4, fibSol: 0.5, gi: 53, pack: '2.25 kg · $21.99', per: '40g → $0.39 · 23 kcal' },
-  banana:            { name: 'Banana',            cat: 'fresco',   per100: 0.25,  kc: 89,  prot: 1.1, fat: 0.3, fib: 2.6, fibSol: 0.7, gi: 51, pack: 'estimado ~$0.30/ud',    per: '120g → $0.30 · 107 kcal' },
+  // unitGrams (6 sep 2026): las recetas la miden en gramos (portion:{grams}),
+  // pero en la tienda se compra por pieza, no pesada -- la lista de la compra
+  // usa esto para mostrar "~N ud" en vez de gramos sueltos.
+  banana:            { name: 'Banana',            cat: 'fresco',   per100: 0.25,  kc: 89,  prot: 1.1, fat: 0.3, fib: 2.6, fibSol: 0.7, gi: 51, unitGrams: 120, pack: 'estimado ~$0.30/ud',    per: '120g → $0.30 · 107 kcal' },
   mandarina:         { name: 'Mandarina / Clementina', cat: 'fresco', per100: 0.660, kc: 53, prot: 0.9, fat: 0.2, fib: 1.7, fibSol: 1.0, pack: '907g · $5.99',          per: 'ud ~74g → $0.49 · 39 kcal' },
   naranja:           { name: 'Naranja',           cat: 'fresco',   per100: 0.440, kc: 47,  prot: 0.9, fat: 0.1, fib: 2.4, fibSol: 1.4, pack: '1.36kg · $5.99',        per: '½ ud ~100g → $0.44 · 47 kcal' },
   'melon-cantalupo': { name: 'Melón cantalupo',  cat: 'fresco',   per100: 0.233, kc: 34,  prot: 0.8, fat: 0.2, fib: 0.9, fibSol: 0.3, pack: '~1.5kg · $3.50 est.',   per: '200g → $0.47 · 68 kcal', est: true },

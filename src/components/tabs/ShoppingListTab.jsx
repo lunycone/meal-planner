@@ -347,8 +347,16 @@ export default function ShoppingListTab() {
       if (!categories[cat]) categories[cat] = []
 
       // Format quantities
+      // 6 sep 2026 -- ingredientes con unitGrams (banana, ver ingredients.js):
+      // la receta los mide en gramos pero se compran por pieza, no pesados --
+      // aqui se muestran como "~N ud" en vez de gramos sueltos. Redondeo hacia
+      // arriba (Math.ceil): mejor que sobre media banana a que falte una.
       let qtyStr = ''
-      if (data.qtyByUnit.grams) qtyStr += `${Math.round(data.qtyByUnit.grams)}g `
+      if (data.qtyByUnit.grams && ing.unitGrams) {
+        qtyStr += `~${Math.ceil(data.qtyByUnit.grams / ing.unitGrams)} ud `
+      } else if (data.qtyByUnit.grams) {
+        qtyStr += `${Math.round(data.qtyByUnit.grams)}g `
+      }
       if (data.qtyByUnit.units) qtyStr += `${data.qtyByUnit.units} ud `
       if (data.qtyByUnit.ml) qtyStr += `${Math.round(data.qtyByUnit.ml)}ml `
       if (data.qtyByUnit.serv) qtyStr += `${data.qtyByUnit.serv} porción`
