@@ -1,5 +1,6 @@
 import { DAYS, JULIO, MARIA, agg } from './gen-core.mjs'
-import { day, CAP, SOL_MIN, e, r } from './html-core.mjs'
+import { day, CAP, CAP_MARIA, SOL_MIN, e, r } from './html-core.mjs'
+import { MARIA_DESAYUNO_DOWNGRADE, MARIA_DESAYUNO_DOWNGRADE_DAYS_BY_WEEK } from '../src/data/modelWeeks.js'
 import { writeFileSync } from 'fs'
 
 const CSS = `
@@ -77,7 +78,15 @@ function sheet(w, total=11){
   // (D = tuyo, DM = de Maria) — no una sola fila con el mismo plato repetido
   // para ambos, que fue el error del 3 sep.
   const D=row('🍳 Desayuno · Julio',i=>{const a=agg(w.D[i]);return{...a,macro:`${r(a.kcal)} kcal · ${r(a.prot)} g prot · ${a.fat.toFixed(0)} g grasa`}})
-  const DM=row('🍳 Desayuno · María',i=>{const a=agg(w.DM[i]);return{...a,macro:`${r(a.kcal)} kcal · ${r(a.prot)} g prot`}})
+  // 6 sep 2026 -- ver MARIA_DESAYUNO_DOWNGRADE_DAYS_BY_WEEK en
+  // src/data/modelWeeks.js: algunos dias su desayuno real ya no es w.DM[i]
+  // (se baja a uno menos proteico para no pasarse de su propio techo).
+  const mariaDowngradeDays = MARIA_DESAYUNO_DOWNGRADE_DAYS_BY_WEEK[w.n] ?? []
+  const DM=row('🍳 Desayuno · María',i=>{
+    const key = mariaDowngradeDays.includes(i) ? MARIA_DESAYUNO_DOWNGRADE : w.DM[i]
+    const a=agg(key)
+    return{...a,macro:`${r(a.kcal)} kcal · ${r(a.prot)} g prot`}
+  })
   const C=row('🍽️ Comida',i=>{const a=j[i].C,b=m[i].C;return{...a,macro:`<span class="sw j"></span>${macroBase(a)} · ${r(a.kcal)} kcal<br><span class="sw m"></span>${macroBase(b)} · ${r(b.kcal)} kcal`}})
   // Maria no toma merienda lunes ni miercoles (Paso 4, 5 sep 2026): la fila
   // deja constancia de que ese dia es solo para Julio.
@@ -100,8 +109,11 @@ function sheet(w, total=11){
     const a=j[i],b=m[i]
     const pf=a.prot>CAP?` style="color:var(--bad);font-weight:700"`:''
     const sf=a.fibSol<SOL_MIN?` style="color:var(--warn);font-weight:700"`:''
+    // 6 sep 2026 -- techo de proteina de Maria (130g, 2.23g/kg a 58.4kg, ver
+    // CAP_MARIA en build-html.mjs), mismo aviso visual que ya tenia Julio.
+    const pfM=b.prot>CAP_MARIA?` style="color:var(--bad);font-weight:700"`:''
     return `<td class="kpi"><div><span class="sw j"></span>${r(a.kcal)} kcal · <span${pf}>${r(a.prot)} g</span> · <span${sf}>${a.fibSol.toFixed(1)} g sol</span> · $${a.cost.toFixed(2)}</div>`+
-           `<div><span class="sw m"></span>${r(b.kcal)} kcal · ${r(b.prot)} g · $${b.cost.toFixed(2)}</div></td>`
+           `<div><span class="sw m"></span>${r(b.kcal)} kcal · <span${pfM}>${r(b.prot)} g</span> · $${b.cost.toFixed(2)}</div></td>`
   }).join('')+'</tr>'
 
   return `<section class="sheet">

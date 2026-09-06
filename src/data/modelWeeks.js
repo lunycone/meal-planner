@@ -30,6 +30,27 @@ export const MODEL_KCAL_BY_DAY = {
 export const MARIA_NO_BATIDO_CASERO = [0, 2] // indices sobre MODEL_DAY_KEYS: lun, mié
 export const MARIA_MERIENDA_PORTATIL = 'm-proteina-portatil'
 
+// 6 sep 2026 -- techo de proteina de Maria, mismo criterio que el de Julio
+// (2,23 g/kg, ver CAP en scripts/html-core.mjs) aplicado a SU peso (58,4 kg)
+// en vez del de el: 58.4*2.23 ≈ 130 g. Auditando las 12 semanas (personDayProt
+// real) salia por encima en 8 de las 12, casi siempre por dos motivos
+// distintos: (1) su batido proteico portatil de lunes/miercoles (41g, ver
+// MARIA_MERIENDA_PORTATIL) sumado a un desayuno/comida ya proteicos ese dia,
+// y (2) su desayuno normal (Tortilla+cheddar+aguacate, 25g) combinado con
+// una comida especialmente proteica esa semana (comida es el MISMO plato
+// que Julio, solo cambia la racion -- no se puede tocar por persona). Esta
+// tabla solo cubre el motivo (2): dias donde bajar su desayuno a la torta de
+// garbanzo con huevo (17g, un plato que YA usa en otras semanas del propio
+// catalogo, sin tocar nada mas) basta para bajarla del techo. El motivo (1)
+// -- el batido portatil de lunes/miercoles -- sigue sin arreglar: no hay
+// otro plato en el catalogo pensado para "sin batidora, para el trabajo" con
+// menos proteina (el unico parecido, m-astringente-platano-manzana, es
+// especifico de dias de diarrea) -- pendiente de decidir con el usuario.
+export const MARIA_DESAYUNO_DOWNGRADE = 'd-torta-garbanzo-50-huevo'
+export const MARIA_DESAYUNO_DOWNGRADE_DAYS_BY_WEEK = {
+  1: [1], 5: [2], 6: [1], 7: [2], 8: [1, 3],
+}
+
 export const MODEL_WEEKS = [
 { n:1, title:'La mejor equilibrada', note:'Desayuno cambia de bloque para los dos. Comida, merienda y cena tambien cambian.',
   DA:'d-burrito-maiz', DB:'d-burrito-maiz',

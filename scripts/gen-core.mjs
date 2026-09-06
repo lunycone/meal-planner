@@ -15,7 +15,11 @@ export const DAYS = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado',
 // Se dejan como constante documentada, no adivinadas.
 export const JULIO = { name:'Julio', weightKg:64, protCapGkg:2.23,
   kcal:[3150,3150,3100,3300,3000,3300,3000] }
-export const MARIA = { name:'María',
+// 6 sep 2026 -- weightKg/protCapGkg de Maria, mismo criterio que el de Julio
+// (2,23 g/kg) aplicado a su propio peso (58,4 kg) -> techo ~130g. Antes no
+// tenia techo de proteina propio en ningun sitio del codigo (el CAP de
+// html-core.mjs era solo el de Julio, nunca se comprobaba el de ella).
+export const MARIA = { name:'María', weightKg:58.4, protCapGkg:2.23,
   kcal:[2500,2900,2500,2750,2500,2750,2500] }
 
 const SCALABLE = ['patata','arroz','pasta','maiz','avena','harina','buckwheat',

@@ -3,7 +3,7 @@ import useStore, { selectAllIng, selectAllCombos } from '../../store/useStore'
 import { PROTEIN } from '../../data/proteins'
 import { PREP, COMBO_SETS } from '../../data/combos'
 import { comboAgg, fmt, proteinCost, proteinKcal, proteinProt, ingKcal, ingCost, fmtPortion, personDayKcal, personDayCost, personDayProt, pcosCarbLevel, proteinLevel, kcalLevel, LEVEL_COLOR, slotForPerson, slotIsUniform, makeByPersonSlot } from '../../engine/calc'
-import { MODEL_WEEKS, expandModelWeek, MARIA_NO_BATIDO_CASERO, MARIA_MERIENDA_PORTATIL } from '../../data/modelWeeks'
+import { MODEL_WEEKS, expandModelWeek, MARIA_NO_BATIDO_CASERO, MARIA_MERIENDA_PORTATIL, MARIA_DESAYUNO_DOWNGRADE, MARIA_DESAYUNO_DOWNGRADE_DAYS_BY_WEEK } from '../../data/modelWeeks'
 import PcosBadge from '../PcosBadge'
 
 // Utility to get ISO week key from date
@@ -792,14 +792,23 @@ export default function WeeklyMealPlannerTab() {
     const expanded = expandModelWeek(week)
 
     const slots = {}
+    const mariaDowngradeDays = MARIA_DESAYUNO_DOWNGRADE_DAYS_BY_WEEK[n] ?? []
     DAY_KEYS.forEach((dayKey, i) => {
       const mariaMerienda = MARIA_NO_BATIDO_CASERO.includes(i)
         ? { type: 'desayuno', recipeKey: MARIA_MERIENDA_PORTATIL }
         : { type: 'desayuno', recipeKey: expanded.M[i] }
+      // 6 sep 2026 -- ver comentario junto a MARIA_DESAYUNO_DOWNGRADE_DAYS_BY_
+      // WEEK en modelWeeks.js: su techo de proteina (130g, 2.23g/kg a 58.4kg)
+      // se pasaba algunos dias por su desayuno normal + la comida ya proteica
+      // de esa semana -- se baja a un desayuno mas suave que ya usa en otras
+      // semanas del catalogo, sin tocar ningun plato ni cantidad mas.
+      const mariaDesayuno = mariaDowngradeDays.includes(i)
+        ? { type: 'desayuno', recipeKey: MARIA_DESAYUNO_DOWNGRADE }
+        : { type: 'desayuno', recipeKey: expanded.DM[i] }
 
       slots[slotKey(dayKey, 'desayuno')] = makeByPersonSlot({
         julio: { type: 'desayuno', recipeKey: expanded.D[i] },
-        maria: { type: 'desayuno', recipeKey: expanded.DM[i] },
+        maria: mariaDesayuno,
       })
       slots[slotKey(dayKey, 'comida')] = makeByPersonSlot({
         julio: { type: 'desayuno', recipeKey: expanded.C[i] },

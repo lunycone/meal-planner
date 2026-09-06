@@ -2,9 +2,11 @@ import { agg, scaleLunch, scaleWholeDish, DAYS, JULIO, MARIA } from './gen-core.
 import { WEEKS } from './weeks.mjs'
 import { validateBlocks } from './blocks.mjs'
 import { DISHES } from '../src/data/dishes.js'
+import { MARIA_DESAYUNO_DOWNGRADE, MARIA_DESAYUNO_DOWNGRADE_DAYS_BY_WEEK } from '../src/data/modelWeeks.js'
 import { writeFileSync } from 'fs'
 
 const CAP = Math.round(JULIO.weightKg * JULIO.protCapGkg)
+const CAP_MARIA = Math.round(MARIA.weightKg * MARIA.protCapGkg)
 const SOL_MIN = 8, DES_KCAL_MIN = 400, DES_FAT_MAX = 15, CAD = 4
 const e = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
 const r = n => Math.round(n)
@@ -37,7 +39,11 @@ function day(w,i,p){
   // BUG 3 sep 2026: usaba w.D[i] para las dos personas. El desayuno de María
   // es propio (w.DM) y antes de este fix sus totales de kcal/coste estaban
   // calculados sobre TU desayuno, no el suyo.
-  const desKey = p===JULIO ? w.D[i] : w.DM[i]
+  // 6 sep 2026 (2) -- ver MARIA_DESAYUNO_DOWNGRADE_DAYS_BY_WEEK en
+  // src/data/modelWeeks.js: su techo de proteina (130g) se pasaba algunos
+  // dias por su desayuno normal + la comida ya proteica de esa semana.
+  const mariaDowngrade = p===MARIA && (MARIA_DESAYUNO_DOWNGRADE_DAYS_BY_WEEK[w.n] ?? []).includes(i)
+  const desKey = p===JULIO ? w.D[i] : (mariaDowngrade ? MARIA_DESAYUNO_DOWNGRADE : w.DM[i])
   const D=agg(desKey)
   const noMerienda = p===MARIA && MARIA_NO_MERIENDA.includes(i)
   // 6 sep 2026: el "cero merienda" (kcal:0) se sustituye por un batido
@@ -141,4 +147,4 @@ function warns(w,j){
   }
   return o
 }
-export { day, warns, slotCount, CAP, SOL_MIN, DES_KCAL_MIN, DES_FAT_MAX, e, r }
+export { day, warns, slotCount, CAP, CAP_MARIA, SOL_MIN, DES_KCAL_MIN, DES_FAT_MAX, e, r }
