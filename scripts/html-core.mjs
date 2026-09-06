@@ -42,10 +42,16 @@ function day(w,i,p){
   // 6 sep 2026 (2) -- ver MARIA_DESAYUNO_DOWNGRADE_DAYS_BY_WEEK en
   // src/data/modelWeeks.js: su techo de proteina (130g) se pasaba algunos
   // dias por su desayuno normal + la comida ya proteica de esa semana.
-  const mariaDowngrade = p===MARIA && (MARIA_DESAYUNO_DOWNGRADE_DAYS_BY_WEEK[w.n] ?? []).includes(i)
+  // 6 sep 2026 (3) -- ninguna de las dos correcciones de rutina (bajar
+  // desayuno, sustituir merienda) tiene sentido en una semana "extrema"
+  // (11, 13...): son de referencia, rompen reglas a proposito y siempre
+  // llevan el mismo plato en los dos bloques -- aplicarlas le habria
+  // bajado la proteina justo en la semana pensada para subirla (13).
+  const isReference = !!w.extrema
+  const mariaDowngrade = !isReference && p===MARIA && (MARIA_DESAYUNO_DOWNGRADE_DAYS_BY_WEEK[w.n] ?? []).includes(i)
   const desKey = p===JULIO ? w.D[i] : (mariaDowngrade ? MARIA_DESAYUNO_DOWNGRADE : w.DM[i])
   const D=agg(desKey)
-  const noMerienda = p===MARIA && MARIA_NO_MERIENDA.includes(i)
+  const noMerienda = !isReference && p===MARIA && MARIA_NO_MERIENDA.includes(i)
   // 6 sep 2026: el "cero merienda" (kcal:0) se sustituye por algo que
   // aguante en tupper sin cocinar, apto para el trabajo -- cierra kcal
   // limpias en vez de pedirle a comida+cena que compensen los ~800 kcal

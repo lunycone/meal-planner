@@ -792,9 +792,20 @@ export default function WeeklyMealPlannerTab() {
     const expanded = expandModelWeek(week)
 
     const slots = {}
-    const mariaDowngradeDays = MARIA_DESAYUNO_DOWNGRADE_DAYS_BY_WEEK[n] ?? []
+    // 6 sep 2026 (3) -- las dos correcciones de abajo (batido portatil de
+    // lunes/miercoles, desayuno bajado de proteina) parten de reglas de
+    // rutina normal (Maria trabaja esos dias / no pasarse de su techo). Las
+    // semanas "extrema" (11, 13...) son de referencia, rompen reglas a
+    // proposito y SIEMPRE llevan el mismo plato en los dos bloques -- no
+    // tiene sentido aplicarles ninguna de las dos correcciones (en la 13
+    // concretamente, cambiarle la merienda esos dos dias le habria bajado
+    // la proteina por debajo del +10% que es justo el objetivo de esa
+    // semana). Bug menor encontrado de paso: esto tampoco se comprobaba
+    // para la semana 11 antes de hoy.
+    const isReference = !!week.extrema
+    const mariaDowngradeDays = isReference ? [] : (MARIA_DESAYUNO_DOWNGRADE_DAYS_BY_WEEK[n] ?? [])
     DAY_KEYS.forEach((dayKey, i) => {
-      const mariaMerienda = MARIA_NO_BATIDO_CASERO.includes(i)
+      const mariaMerienda = (!isReference && MARIA_NO_BATIDO_CASERO.includes(i))
         ? { type: 'desayuno', recipeKey: MARIA_MERIENDA_PORTATIL }
         : { type: 'desayuno', recipeKey: expanded.M[i] }
       // 6 sep 2026 -- ver comentario junto a MARIA_DESAYUNO_DOWNGRADE_DAYS_BY_

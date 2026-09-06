@@ -21,10 +21,15 @@ const costs = WEEKS.map(w=>{
     sol:Math.min(...j.map(d=>d.fibSol)),
     blockWarn: ws.some(x=>x.includes('bloque A y B')) }
 })
+// 6 sep 2026 -- antes esto asumia UNA sola semana extrema (la 11, fila
+// escrita a mano). Con la 13 (alta en proteina, tambien "solo referencia")
+// hacian falta dos filas fijas iguales -- ahora recorre TODAS las marcadas
+// extrema:true, sean cuantas sean.
 const rank=[...costs].filter(c=>!c.extrema).sort((a,b)=>a.cost-b.cost)
+const extremas=costs.filter(c=>c.extrema)
 
 const idx = `<section class="sheet noprint">
-<div class="eyebrow">Índice</div><div class="title">Las once, ordenadas por coste (solo Julio)</div>
+<div class="eyebrow">Índice</div><div class="title">Las ${rank.length}, ordenadas por coste (solo Julio)</div>
 <div class="note">Todos los números salen del motor de <code>dishes.js</code>. El HTML anterior los tenía escritos a mano y no coincidían: decía 751 kcal para el Batido clásico cuando la receta real da 934.</div>
 <table><thead><tr><th>#</th><th>Semana</th><th>Coste/sem</th><th>Prot. máx Julio</th><th>Prot. máx María</th><th>Fibra soluble mín</th><th>Bloques</th></tr></thead><tbody>
 ${rank.map(c=>`<tr><td>${c.n}</td><td class="dish">${c.title}</td><td class="kpi">$${c.cost.toFixed(2)}</td>
@@ -32,7 +37,7 @@ ${rank.map(c=>`<tr><td>${c.n}</td><td class="dish">${c.title}</td><td class="kpi
 <td class="kpi"${c.protM>CAP_MARIA?' style="color:var(--bad);font-weight:700"':''}>${Math.round(c.protM)} g</td>
 <td class="kpi"${c.sol<SOL_MIN?' style="color:var(--warn);font-weight:700"':''}>${c.sol.toFixed(1)} g</td>
 <td${c.blockWarn?' style="color:var(--bad);font-weight:700"':''}>${c.blockWarn?'⚠ repite especie':'✓'}</td></tr>`).join('')}
-<tr><td>11</td><td class="dish">⚠ Extrema — solo referencia</td><td class="kpi">$${costs.find(c=>c.extrema).cost.toFixed(2)}</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+${extremas.map(c=>`<tr><td>${c.n}</td><td class="dish">⚠ ${c.title} — solo referencia</td><td class="kpi">$${c.cost.toFixed(2)}</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>`).join('')}
 </tbody></table>
 <div class="foot">Techo de proteína — Julio ${CAP} g (2,23 g/kg a 64 kg) · María ${CAP_MARIA} g (2,23 g/kg a 58,4 kg). Suelo de fibra soluble ${SOL_MIN} g/día.
 Rojo y ámbar son avisos reales, no adornos: la semana sigue siendo utilizable, pero sabes qué estás aceptando.</div>
@@ -42,7 +47,7 @@ const html = `<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Semanas modelo — Julio &amp; María</title><style>${CSS}</style></head><body><div class="wrap">
 <h1>Semanas modelo · Julio &amp; María</h1>
-<p class="lede">Doce semanas con las reglas digestivas aplicadas y auditadas por el propio motor.
+<p class="lede">${WEEKS.length} semanas con las reglas digestivas aplicadas y auditadas por el propio motor.
 Cada casilla se calcula desde las recetas reales; no hay ningún número escrito a mano.</p>
 <p class="noprint"><button onclick="window.print()">Imprimir / Guardar PDF</button></p>
 ${idx}

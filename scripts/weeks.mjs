@@ -182,4 +182,21 @@ export const WEEKS = [
   // Cena: especie distinta a la comida de ese dia (pollo/pavo vs
   // ternera/cerdo), siempre hervido/al horno simple, sin cebolla/ajo.
   NA:'n-pollo-hervido-arroz-zanahoria', NB:'n-turkey-patata-huevo' },
+
+// 6 sep 2026 -- pedido explicito del usuario: una semana de referencia
+// (como la 11) que se pase un ~10% del techo de proteina de LOS DOS todos
+// los dias (Julio 143g -> pasa de 157g; Maria 130g -> pasa de 143g), SIN
+// proteina en polvo (probado y descartado explicitamente, ver commit
+// b2cfb1c y conversacion) -- solo comida real. Misma para los dos bloques,
+// no hace falta variar dia a dia en una semana que no se usa de plantilla.
+// Verificado (node, personDayProt/personDayKcal reales): Julio 152-178g
+// (siempre >=157) los 7 dias; Maria 152-154g (siempre >=143) los 7 dias.
+// Grasa MUY por encima del techo de desayuno de siempre (torta extrema:
+// huevo+cheddar+aove) -- esperado y aceptado, como la semana 11.
+{ n:13, extrema:true, title:'ALTA EN PROTEÍNA — pasa el techo de los dos a propósito', note:'⚠ Solo referencia — se pasa un ~10% del techo de proteína de Julio y de María TODOS los días, sin proteína en polvo (solo comida real: huevo, pavo, legumbre, queso). Rompe a propósito el techo de grasa del desayuno. No usar como plantilla recurrente.',
+  DA:'d-torta-garbanzo-extrema', DB:'d-torta-garbanzo-extrema',
+  DMA:'d-torta-garbanzo-extrema', DMB:'d-torta-garbanzo-extrema',
+  CA:'c-turkey-blackbeans-huevo-cheddar', CB:'c-turkey-blackbeans-huevo-cheddar',
+  MA:'b-clasico', MB:'b-clasico',
+  NA:'n-turkey-patata-huevo-cheddar', NB:'n-turkey-patata-huevo-cheddar' },
 ]

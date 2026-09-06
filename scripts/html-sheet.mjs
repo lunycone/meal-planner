@@ -81,7 +81,10 @@ function sheet(w, total=11){
   // 6 sep 2026 -- ver MARIA_DESAYUNO_DOWNGRADE_DAYS_BY_WEEK en
   // src/data/modelWeeks.js: algunos dias su desayuno real ya no es w.DM[i]
   // (se baja a uno menos proteico para no pasarse de su propio techo).
-  const mariaDowngradeDays = MARIA_DESAYUNO_DOWNGRADE_DAYS_BY_WEEK[w.n] ?? []
+  // 6 sep 2026 (3): ninguna correccion de rutina aplica en semanas
+  // "extrema" (11, 13...) -- ver el mismo comentario en html-core.mjs day().
+  const isReference = !!w.extrema
+  const mariaDowngradeDays = isReference ? [] : (MARIA_DESAYUNO_DOWNGRADE_DAYS_BY_WEEK[w.n] ?? [])
   const DM=row('🍳 Desayuno · María',i=>{
     const key = mariaDowngradeDays.includes(i) ? MARIA_DESAYUNO_DOWNGRADE : w.DM[i]
     const a=agg(key)
@@ -94,7 +97,7 @@ function sheet(w, total=11){
   // del batido casero de Julio -- ver MARIA_MERIENDA_PORTATIL en
   // src/data/modelWeeks.js (yogur+platano+avena, sin proteina en polvo,
   // 6 sep 2026).
-  const NO_MERIENDA_MARIA = [0,2]
+  const NO_MERIENDA_MARIA = isReference ? [] : [0,2]
   const M=row('🥤 Merienda',i=>{
     const a=agg(w.M[i])
     if (!NO_MERIENDA_MARIA.includes(i)) return {...a, macro:`${r(a.kcal)} kcal · igual los dos`}
