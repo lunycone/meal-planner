@@ -458,15 +458,23 @@ function buildSchedule(mealDataList) {
           const bc = BASE_COOK[baseKey]
           const totalDry = Math.round(batchData.personTotals.reduce((s, p) => s + p.baseGrams, 0))
           const cooked   = COOK_RATIO[baseKey] ? Math.round(totalDry * COOK_RATIO[baseKey]) : null
-          const qtyLabel = cooked ? `${totalDry}g seco → ~${cooked}g cocido` : `${totalDry}g`
+          // 6 sep 2026 -- BUG: el numero de "Repartir" (1200g Julio, 1000g
+          // Maria...) es la BASE escalable (patata/arroz/etc), pero en
+          // ninguna parte de la tarjeta se decia que ese numero era eso --
+          // ni la carne ni el resto de ingredientes lo mencionan (se
+          // excluyen a proposito de "Lleva", ver computeBatchMeal linea
+          // ~294, para no duplicar la cantidad ya escalada). El usuario:
+          // "y la patata?? q cojones esta pasando" -- con razon, estaba ahi
+          // pero invisible. Ahora el nombre de la base va delante del gramaje.
+          const qtyLabel = `${baseName}: ${totalDry}g` + (cooked ? ` seco → ~${cooked}g cocido` : '')
           if (bc?.soak)      vispera.push({ emoji: '💧', text: `Pon en remojo ${totalDry}g de ${baseName} — cubre con agua abundante 8–12 h.` })
           if (bc?.overnight) vispera.push({ emoji: '❄️', text: `Deja ${baseName} en la nevera la noche anterior (${qtyLabel}).` })
           if (bc && bc.cookMin > 0) {
             jobs.push({ key: 'b-' + meal.recipeKey, name: batchData.mealName, emoji: bc.emoji, cookMin: bc.cookMin, label: bc.label, qtyLabel, split: baseSplit(batchData, baseKey) })
           } else if (bc?.alMomento) {
-            noCook.push({ emoji: bc.emoji, text: `${batchData.mealName} — ${baseName}: ${bc.label} (${qtyLabel})`, split: baseSplit(batchData, baseKey) })
+            noCook.push({ emoji: bc.emoji, text: `${batchData.mealName} — ${bc.label} (${qtyLabel})`, split: baseSplit(batchData, baseKey) })
           } else {
-            noCook.push({ emoji: '🍚', text: `${batchData.mealName} — ${baseName}: cuece según el paquete (${qtyLabel})`, split: baseSplit(batchData, baseKey) })
+            noCook.push({ emoji: '🍚', text: `${batchData.mealName} — cuece según el paquete (${qtyLabel})`, split: baseSplit(batchData, baseKey) })
           }
         }
       } else if (!seenJob.has('m-' + meal.recipeKey)) {
