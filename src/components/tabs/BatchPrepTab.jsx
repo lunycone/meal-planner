@@ -17,6 +17,32 @@ const FRESH_KEYS = new Set([
 ])
 const YOGUR_FRESH_IN_PLATO = new Set(['yogur-cabra', 'yogur-cabra-plain'])
 
+// ─── Puré: que ingredientes se machacan CON la patata, no aparte ─────────────
+// 6 sep 2026 -- el usuario, con razon: en "Pollo pierna + puré patata-
+// zanahoria", la leche/mantequilla/zanahoria se mezclan con la patata para
+// hacer el pure -- listarlas sueltas junto al pollo (que se hace APARTE, a
+// la plancha/horno) da a entender que son independientes quando no lo son.
+// Sin anadir metadatos nuevos a cada uno de los ~14 platos de "pure" del
+// catalogo (tarea de contenido en si misma) -- heuristica generica: si el
+// plato lleva leche+mantequilla juntas (el indicador real de que hay un
+// pure), todo lo que este en esta lista se agrupa CON la base escalable
+// (patata); lo demas (proteina, aove, especias, guarniciones aparte como
+// setas/pipas/manzana) se queda en su propio grupo.
+const PUREE_COMPANION_KEYS = new Set(['leche', 'mantequilla', 'zanahoria', 'cebolla-amarilla', 'squash-butternut', 'zucchini', 'puerro'])
+
+// Separa sharedItems (mas la base, si se pasa) en { pureeItems, restItems }.
+// Devuelve pureeItems=[] si el plato no lleva pure de verdad (sin leche+
+// mantequilla juntas) -- en ese caso todo se queda en restItems, tal cual.
+function splitPureeItems(sharedItems, baseName, baseQtyLabel) {
+  const keys = new Set(sharedItems.map(it => it.key))
+  const isPuree = keys.has('leche') && keys.has('mantequilla')
+  if (!isPuree) return { isPuree: false, pureeItems: [], restItems: sharedItems }
+  const pureeItems = sharedItems.filter(it => PUREE_COMPANION_KEYS.has(it.key))
+  const restItems  = sharedItems.filter(it => !PUREE_COMPANION_KEYS.has(it.key))
+  if (baseName && baseQtyLabel) pureeItems.unshift({ name: baseName, qty: baseQtyLabel, key: 'base' })
+  return { isPuree: true, pureeItems, restItems }
+}
+
 // ─── Protein cook-loss: raw → cooked yield for meats/fish ────────────────────
 // The batch total shows RAW grams (what you weigh and put in the oven).
 // The per-tupper display shows COOKED grams (what actually lands in the box).
@@ -603,29 +629,49 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
 
             // ── COCINAR: everything that goes into the pots/blender, as totals ──
             const cookLines = []
-            // protein
+            // protein (tipo legacy 'plato' -- para comida/cena de semana
+            // modelo esto siempre sale 0, la proteina va dentro de sharedItems)
             const pg = persons.reduce((s, p) => s + p.proteinGrams, 0)
             const pu = persons.reduce((s, p) => s + p.proteinUnits, 0)
             const psv = persons.reduce((s, p) => s + p.proteinServings, 0)
+            const proteinLines = []
             if (batchData.proteinName) {
-              if (pg  > 0) cookLines.push(`${batchData.proteinName}: ${R(pg)}g`)
-              if (pu  > 0) cookLines.push(`${batchData.proteinName}: ${pu} ud`)
-              if (psv > 0) cookLines.push(`${batchData.proteinName}: ${psv} raciones`)
+              if (pg  > 0) proteinLines.push(`${batchData.proteinName}: ${R(pg)}g`)
+              if (pu  > 0) proteinLines.push(`${batchData.proteinName}: ${pu} ud`)
+              if (psv > 0) proteinLines.push(`${batchData.proteinName}: ${psv} raciones`)
             }
             // base
+            let baseName = null, baseQty = null
             if (batchData.hasBase) {
               const totalDry = persons.reduce((s, p) => s + p.baseGrams, 0)
               const ratio = COOK_RATIO[baseKey]
-              const baseName = persons[0]?.baseName
+              baseName = persons[0]?.baseName
               // 6 sep 2026 -- "seco" pegado siempre, aunque la base fuera
               // patata (se pesa cruda, no es un seco que se hidrata como el
               // arroz o las lentejas) -- el usuario, riendose: "Patata: 250g
               // seco... no tiene sentido". Solo decir "seco" cuando de verdad
               // hay ratio seco->cocido (arroz, legumbre); si no, gramaje llano.
-              cookLines.push(`${baseName}: ${R(totalDry)}g${ratio ? ` seco → ~${R(totalDry * ratio)}g cocido` : ''}`)
+              baseQty = `${R(totalDry)}g${ratio ? ` seco → ~${R(totalDry * ratio)}g cocido` : ''}`
             }
-            // shared (pot or blender contents)
-            batchData.sharedItems.forEach(it => cookLines.push(`${it.name}: ${fmtQty(it)}`))
+            // 6 sep 2026 -- ver PUREE_COMPANION_KEYS/splitPureeItems arriba: el
+            // usuario, con razon, "la mantequilla y la leche la mezclo con el
+            // pure y la zanahoria tambien" -- listar todo suelto (patata por
+            // un lado, leche/mantequilla/zanahoria como si fueran aparte del
+            // pollo) no dice que unas cosas se machacan juntas y otras se
+            // cocinan aparte. Si el plato lleva leche+mantequilla (el
+            // indicador real de que hay pure), se agrupan visualmente.
+            const { isPuree, pureeItems, restItems } = splitPureeItems(batchData.sharedItems, baseName, baseQty)
+            if (isPuree) {
+              cookLines.push({ header: true, text: '🥔 Puré — machacar todo junto' })
+              pureeItems.forEach(it => cookLines.push({ text: `${it.name}: ${it.key === 'base' ? it.qty : fmtQty(it)}` }))
+              if (proteinLines.length || restItems.length) cookLines.push({ header: true, text: '🍗 Aparte' })
+              proteinLines.forEach(l => cookLines.push({ text: l }))
+              restItems.forEach(it => cookLines.push({ text: `${it.name}: ${fmtQty(it)}` }))
+            } else {
+              proteinLines.forEach(l => cookLines.push({ text: l }))
+              if (baseName) cookLines.push({ text: `${baseName}: ${baseQty}` })
+              batchData.sharedItems.forEach(it => cookLines.push({ text: `${it.name}: ${fmtQty(it)}` }))
+            }
 
             // ── TUPPER lines per person ──
             function sharedPerRacion(it) {
@@ -640,32 +686,37 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
                 const ml = totalPortions > 0 ? R(it.ml / totalPortions) : 0
                 const u = totalPortions > 0 ? +(it.units / totalPortions).toFixed(2) : 0
                 const qty = g > 0 ? `${g}g` : ml > 0 ? `${ml}ml` : u > 0 ? `${u} ud` : null
-                return qty ? `${it.name}: ${qty}` : null
+                return qty ? { text: `${it.name}: ${qty}` } : null
               }).filter(Boolean)
             }
             function platoLines(pt) {
-              const lines = []
+              const proteinLines = []
               const protKey = batchData.meal.proteinKey
               const yield_ = PROTEIN_YIELD[protKey] ?? null
               if (pt.proteinGrams > 0) {
                 const rawG = R(pt.proteinGrams / pt.activeDays)
                 if (yield_) {
-                  lines.push(`${batchData.proteinName}: ~${R(rawG * yield_)}g cocinado (desde ${rawG}g crudo)`)
+                  proteinLines.push(`${batchData.proteinName}: ~${R(rawG * yield_)}g cocinado (desde ${rawG}g crudo)`)
                 } else {
-                  lines.push(`${batchData.proteinName}: ${rawG}g`)
+                  proteinLines.push(`${batchData.proteinName}: ${rawG}g`)
                 }
               }
-              if (pt.proteinUnits > 0)     lines.push(`${batchData.proteinName}: ${R(pt.proteinUnits / pt.activeDays)} ud`)
-              if (pt.proteinServings > 0)  lines.push(`${batchData.proteinName}: 1 ración`)
+              if (pt.proteinUnits > 0)     proteinLines.push(`${batchData.proteinName}: ${R(pt.proteinUnits / pt.activeDays)} ud`)
+              if (pt.proteinServings > 0)  proteinLines.push(`${batchData.proteinName}: 1 ración`)
               let blendGrams = 0
+              let baseName_ = null, baseQty_ = null
               if (pt.baseGrams > 0) {
                 const gPerDay = R(pt.baseGrams / pt.activeDays)
                 if (blend && blend.base) { blendGrams += gPerDay }
                 else {
                   const ratio = COOK_RATIO[baseKey]
-                  lines.push(`${pt.baseName}: ${gPerDay}g${ratio ? ` seco (~${R(gPerDay * ratio)}g cocido)` : ''}`)
+                  baseName_ = pt.baseName
+                  baseQty_ = `${gPerDay}g${ratio ? ` seco (~${R(gPerDay * ratio)}g cocido)` : ''}`
                 }
               }
+              // sharedItems per-racion, como objetos {key,name,qty} para poder
+              // agrupar con splitPureeItems igual que en "Cocinar" de arriba.
+              const perRacionItems = []
               batchData.sharedItems.forEach(it => {
                 if (blend) {
                   if (totalPersonDays > 0) {
@@ -674,10 +725,31 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
                   }
                 } else {
                   const pr = sharedPerRacion(it)
-                  if (pr) lines.push(`${it.name}: ${pr}`)
+                  if (pr) perRacionItems.push({ key: it.key, name: it.name, qty: pr })
                 }
               })
-              if (blend && blendGrams > 0) lines.push(`🫕 ${blend.label} (batido): ~${blendGrams}g`)
+              if (blend) {
+                const lines = [...proteinLines]
+                if (blendGrams > 0) lines.push(`🫕 ${blend.label} (batido): ~${blendGrams}g`)
+                return lines.map(text => ({ text }))
+              }
+              // 6 sep 2026 -- mismo agrupado de pure que en "Cocinar" (ver
+              // splitPureeItems arriba), aqui a nivel de racion individual.
+              const isPuree = perRacionItems.some(it => it.key === 'leche') && perRacionItems.some(it => it.key === 'mantequilla')
+              if (isPuree) {
+                const pureeItems = perRacionItems.filter(it => PUREE_COMPANION_KEYS.has(it.key))
+                const restItems  = perRacionItems.filter(it => !PUREE_COMPANION_KEYS.has(it.key))
+                if (baseName_) pureeItems.unshift({ name: baseName_, qty: baseQty_ })
+                const lines = [{ header: true, text: '🥔 Puré — machacar todo junto' }]
+                pureeItems.forEach(it => lines.push({ text: `${it.name}: ${it.qty}` }))
+                if (proteinLines.length || restItems.length) lines.push({ header: true, text: '🍗 Aparte' })
+                proteinLines.forEach(l => lines.push({ text: l }))
+                restItems.forEach(it => lines.push({ text: `${it.name}: ${it.qty}` }))
+                return lines
+              }
+              const lines = proteinLines.map(text => ({ text }))
+              if (baseName_) lines.push({ text: `${baseName_}: ${baseQty_}` })
+              perRacionItems.forEach(it => lines.push({ text: `${it.name}: ${it.qty}` }))
               return lines
             }
 
@@ -689,7 +761,7 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
             }))
             const groups = []
             built.forEach(b => {
-              const key = `${b.tuppers}|${b.lines.join('§')}`
+              const key = `${b.tuppers}|${b.lines.map(l => l.text).join('§')}`
               const g = groups.find(x => x.key === key)
               if (g) g.names.push(b.name)
               else groups.push({ key, names: [b.name], tuppers: b.tuppers, lines: b.lines })
@@ -700,7 +772,9 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
                 {/* ── COCINAR ── */}
                 <div style={secHead}>🍳 Cocinar — total del batch</div>
                 {cookLines.map((l, i) => (
-                  <div key={'c' + i} style={{ ...muted, lineHeight: 1.7, paddingLeft: '0.5rem' }}>{l}</div>
+                  l.header
+                    ? <div key={'c' + i} style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--t-accent)', marginTop: i > 0 ? '0.3rem' : 0, paddingLeft: '0.5rem' }}>{l.text}</div>
+                    : <div key={'c' + i} style={{ ...muted, lineHeight: 1.7, paddingLeft: '1.1rem' }}>{l.text}</div>
                 ))}
                 {isDesayuno && (() => {
                   const totalPortions = persons.reduce((s, p) => s + p.recipeServings, 0)
@@ -724,7 +798,9 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
                       {' — '}{g.tuppers} tupper{g.tuppers > 1 ? 's' : ''}
                     </div>
                     {g.lines.map((l, i) => (
-                      <div key={i} style={{ ...muted, lineHeight: 1.7, paddingLeft: '0.5rem' }}>{l}</div>
+                      l.header
+                        ? <div key={i} style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--t-accent)', marginTop: i > 0 ? '0.25rem' : 0 }}>{l.text}</div>
+                        : <div key={i} style={{ ...muted, lineHeight: 1.7, paddingLeft: '1.1rem' }}>{l.text}</div>
                     ))}
                   </div>
                 ))}
