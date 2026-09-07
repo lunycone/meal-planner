@@ -641,9 +641,9 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
               if (psv > 0) proteinLines.push(`${batchData.proteinName}: ${psv} raciones`)
             }
             // base
-            let baseName = null, baseQty = null
+            let baseName = null, baseQty = null, baseTotalG = 0
             if (batchData.hasBase) {
-              const totalDry = persons.reduce((s, p) => s + p.baseGrams, 0)
+              baseTotalG = persons.reduce((s, p) => s + p.baseGrams, 0)
               const ratio = COOK_RATIO[baseKey]
               baseName = persons[0]?.baseName
               // 6 sep 2026 -- "seco" pegado siempre, aunque la base fuera
@@ -651,7 +651,7 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
               // arroz o las lentejas) -- el usuario, riendose: "Patata: 250g
               // seco... no tiene sentido". Solo decir "seco" cuando de verdad
               // hay ratio seco->cocido (arroz, legumbre); si no, gramaje llano.
-              baseQty = `${R(totalDry)}g${ratio ? ` seco → ~${R(totalDry * ratio)}g cocido` : ''}`
+              baseQty = `${R(baseTotalG)}g${ratio ? ` seco → ~${R(baseTotalG * ratio)}g cocido` : ''}`
             }
             // 6 sep 2026 -- ver PUREE_COMPANION_KEYS/splitPureeItems arriba: el
             // usuario, con razon, "la mantequilla y la leche la mezclo con el
@@ -664,6 +664,12 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
             if (isPuree) {
               cookLines.push({ header: true, text: '🥔 Puré — machacar todo junto' })
               pureeItems.forEach(it => cookLines.push({ text: `${it.name}: ${it.key === 'base' ? it.qty : fmtQty(it)}` }))
+              // 6 sep 2026 -- el usuario, con razon: "sigues sin decirme el
+              // total" -- listar cada ingrediente por separado no dice cuanto
+              // pure sale en total. Suma grams+ml (1ml de leche ~ 1g, buena
+              // aproximacion para saber cuanto ocupa/pesa el pure ya mezclado).
+              const pureeTotalG = baseTotalG + pureeItems.reduce((s, it) => s + (it.key === 'base' ? 0 : (it.grams ?? 0) + (it.ml ?? 0)), 0)
+              if (pureeTotalG > 0) cookLines.push({ text: `→ Total puré: ~${R(pureeTotalG)}g`, total: true })
               if (proteinLines.length || restItems.length) cookLines.push({ header: true, text: '🍗 Aparte' })
               proteinLines.forEach(l => cookLines.push({ text: l }))
               restItems.forEach(it => cookLines.push({ text: `${it.name}: ${fmtQty(it)}` }))
@@ -704,7 +710,7 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
               if (pt.proteinUnits > 0)     proteinLines.push(`${batchData.proteinName}: ${R(pt.proteinUnits / pt.activeDays)} ud`)
               if (pt.proteinServings > 0)  proteinLines.push(`${batchData.proteinName}: 1 ración`)
               let blendGrams = 0
-              let baseName_ = null, baseQty_ = null
+              let baseName_ = null, baseQty_ = null, baseGramsPerDay = 0
               if (pt.baseGrams > 0) {
                 const gPerDay = R(pt.baseGrams / pt.activeDays)
                 if (blend && blend.base) { blendGrams += gPerDay }
@@ -712,6 +718,7 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
                   const ratio = COOK_RATIO[baseKey]
                   baseName_ = pt.baseName
                   baseQty_ = `${gPerDay}g${ratio ? ` seco (~${R(gPerDay * ratio)}g cocido)` : ''}`
+                  baseGramsPerDay = gPerDay
                 }
               }
               // sharedItems per-racion, como objetos {key,name,qty} para poder
@@ -725,7 +732,11 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
                   }
                 } else {
                   const pr = sharedPerRacion(it)
-                  if (pr) perRacionItems.push({ key: it.key, name: it.name, qty: pr })
+                  if (pr) {
+                    const g  = totalPersonDays > 0 ? R(it.grams / totalPersonDays) : 0
+                    const ml = totalPersonDays > 0 ? R(it.ml    / totalPersonDays) : 0
+                    perRacionItems.push({ key: it.key, name: it.name, qty: pr, grams: g, ml })
+                  }
                 }
               })
               if (blend) {
@@ -739,9 +750,14 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
               if (isPuree) {
                 const pureeItems = perRacionItems.filter(it => PUREE_COMPANION_KEYS.has(it.key))
                 const restItems  = perRacionItems.filter(it => !PUREE_COMPANION_KEYS.has(it.key))
+                // 6 sep 2026 -- el usuario, con razon: "sigues sin decirme el
+                // total" -- cada ingrediente por separado no dice cuanto pure
+                // sale en total por raciоn. Suma grams+ml (1ml de leche ~ 1g).
+                const pureeTotalG = baseGramsPerDay + pureeItems.reduce((s, it) => s + (it.grams ?? 0) + (it.ml ?? 0), 0)
                 if (baseName_) pureeItems.unshift({ name: baseName_, qty: baseQty_ })
                 const lines = [{ header: true, text: '🥔 Puré — machacar todo junto' }]
                 pureeItems.forEach(it => lines.push({ text: `${it.name}: ${it.qty}` }))
+                if (pureeTotalG > 0) lines.push({ text: `→ Total puré: ~${R(pureeTotalG)}g`, total: true })
                 if (proteinLines.length || restItems.length) lines.push({ header: true, text: '🍗 Aparte' })
                 proteinLines.forEach(l => lines.push({ text: l }))
                 restItems.forEach(it => lines.push({ text: `${it.name}: ${it.qty}` }))
@@ -774,7 +790,9 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
                 {cookLines.map((l, i) => (
                   l.header
                     ? <div key={'c' + i} style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--t-accent)', marginTop: i > 0 ? '0.3rem' : 0, paddingLeft: '0.5rem' }}>{l.text}</div>
-                    : <div key={'c' + i} style={{ ...muted, lineHeight: 1.7, paddingLeft: '1.1rem' }}>{l.text}</div>
+                    : l.total
+                      ? <div key={'c' + i} style={{ ...rowStyle, fontWeight: 700, paddingLeft: '1.1rem' }}>{l.text}</div>
+                      : <div key={'c' + i} style={{ ...muted, lineHeight: 1.7, paddingLeft: '1.1rem' }}>{l.text}</div>
                 ))}
                 {isDesayuno && (() => {
                   const totalPortions = persons.reduce((s, p) => s + p.recipeServings, 0)
@@ -800,7 +818,9 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
                     {g.lines.map((l, i) => (
                       l.header
                         ? <div key={i} style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--t-accent)', marginTop: i > 0 ? '0.25rem' : 0 }}>{l.text}</div>
-                        : <div key={i} style={{ ...muted, lineHeight: 1.7, paddingLeft: '1.1rem' }}>{l.text}</div>
+                        : l.total
+                          ? <div key={i} style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--t-text)', lineHeight: 1.7, paddingLeft: '1.1rem' }}>{l.text}</div>
+                          : <div key={i} style={{ ...muted, lineHeight: 1.7, paddingLeft: '1.1rem' }}>{l.text}</div>
                     ))}
                   </div>
                 ))}
