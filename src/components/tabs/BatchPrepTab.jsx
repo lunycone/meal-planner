@@ -617,7 +617,12 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
               const totalDry = persons.reduce((s, p) => s + p.baseGrams, 0)
               const ratio = COOK_RATIO[baseKey]
               const baseName = persons[0]?.baseName
-              cookLines.push(`${baseName}: ${R(totalDry)}g seco${ratio ? ` → ~${R(totalDry * ratio)}g cocido` : ''}`)
+              // 6 sep 2026 -- "seco" pegado siempre, aunque la base fuera
+              // patata (se pesa cruda, no es un seco que se hidrata como el
+              // arroz o las lentejas) -- el usuario, riendose: "Patata: 250g
+              // seco... no tiene sentido". Solo decir "seco" cuando de verdad
+              // hay ratio seco->cocido (arroz, legumbre); si no, gramaje llano.
+              cookLines.push(`${baseName}: ${R(totalDry)}g${ratio ? ` seco → ~${R(totalDry * ratio)}g cocido` : ''}`)
             }
             // shared (pot or blender contents)
             batchData.sharedItems.forEach(it => cookLines.push(`${it.name}: ${fmtQty(it)}`))
@@ -658,7 +663,7 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
                 if (blend && blend.base) { blendGrams += gPerDay }
                 else {
                   const ratio = COOK_RATIO[baseKey]
-                  lines.push(`${pt.baseName}: ${gPerDay}g seco${ratio ? ` (~${R(gPerDay * ratio)}g cocido)` : ''}`)
+                  lines.push(`${pt.baseName}: ${gPerDay}g${ratio ? ` seco (~${R(gPerDay * ratio)}g cocido)` : ''}`)
                 }
               }
               batchData.sharedItems.forEach(it => {
