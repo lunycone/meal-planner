@@ -438,6 +438,43 @@ function buildSchedule(mealDataList) {
 
       pushPrep(batchData.sharedItems)
 
+    } else if (meal.type === 'desayuno' && (batchData.mealType === 'comida' || batchData.mealType === 'cena')) {
+      // 6 sep 2026 -- BUG: comida/cena de semana modelo tambien se guardan
+      // con meal.type:'desayuno' (es solo la forma de guardado -- combo
+      // directo, sin proteina separada -- no el momento del dia). Esta rama
+      // solo miraba recipeServings (que SOLO se rellena para desayuno/
+      // merienda, ver computeBatchMeal linea ~246) -- comida/cena usan
+      // baseGrams en su lugar, asi que totalPortions siempre salia 0 y el
+      // job nunca se creaba: comida y cena desaparecian enteras del Modo
+      // cocina sin ningun aviso. Aqui se trata igual que la base del tipo
+      // 'plato' de arriba (mismo BASE_COOK/COOK_RATIO), sin proteina aparte
+      // porque en comida/cena la carne/pescado va fija dentro de
+      // sharedItems (no se escala por persona, solo el almidon).
+      if (batchData.hasBase) {
+        const baseKey  = batchData.personTotals[0]?.baseKey
+        const baseName = batchData.personTotals[0]?.baseName
+        if (baseKey && !seenJob.has('b-' + meal.recipeKey)) {
+          seenJob.add('b-' + meal.recipeKey)
+          const bc = BASE_COOK[baseKey]
+          const totalDry = Math.round(batchData.personTotals.reduce((s, p) => s + p.baseGrams, 0))
+          const cooked   = COOK_RATIO[baseKey] ? Math.round(totalDry * COOK_RATIO[baseKey]) : null
+          const qtyLabel = cooked ? `${totalDry}g seco → ~${cooked}g cocido` : `${totalDry}g`
+          if (bc?.soak)      vispera.push({ emoji: '💧', text: `Pon en remojo ${totalDry}g de ${baseName} — cubre con agua abundante 8–12 h.` })
+          if (bc?.overnight) vispera.push({ emoji: '❄️', text: `Deja ${baseName} en la nevera la noche anterior (${qtyLabel}).` })
+          if (bc && bc.cookMin > 0) {
+            jobs.push({ key: 'b-' + meal.recipeKey, name: batchData.mealName, emoji: bc.emoji, cookMin: bc.cookMin, label: bc.label, qtyLabel, split: baseSplit(batchData, baseKey) })
+          } else if (bc?.alMomento) {
+            noCook.push({ emoji: bc.emoji, text: `${batchData.mealName} — ${baseName}: ${bc.label} (${qtyLabel})`, split: baseSplit(batchData, baseKey) })
+          } else {
+            noCook.push({ emoji: '🍚', text: `${batchData.mealName} — ${baseName}: cuece según el paquete (${qtyLabel})`, split: baseSplit(batchData, baseKey) })
+          }
+        }
+      } else if (!seenJob.has('m-' + meal.recipeKey)) {
+        // Sin base escalable (p.ej. pescado sin patata): nota simple, sin timer.
+        seenJob.add('m-' + meal.recipeKey)
+        noCook.push({ emoji: '🍽️', text: `${batchData.mealName}: cocina a tu método habitual` })
+      }
+      pushPrep(batchData.sharedItems)
     } else if (meal.type === 'desayuno') {
       const totalPortions = batchData.personTotals.reduce((s, p) => s + p.recipeServings, 0)
       if (totalPortions > 0 && !seenJob.has('d-' + meal.recipeKey)) {
@@ -461,7 +498,11 @@ function buildSchedule(mealDataList) {
       const ingr = batchData.sharedItems.map(it => ({ name: it.name, qty: fmtQty(it) }))
       if (ingr.length > 0) {
         jobs[jobsBefore].ingredients      = ingr
-        jobs[jobsBefore].ingredientsLabel = meal.type === 'desayuno' ? 'Mezcla todo' : 'Lleva'
+        // 'Mezcla todo' es para desayuno/merienda (combo directo, todo va en
+        // el mismo bol/batido); comida/cena y 'plato' llevan carne/pescado +
+        // guarnicion aparte, no se "mezclan" -- 'Lleva' encaja mejor.
+        const isMealSlot = batchData.mealType === 'comida' || batchData.mealType === 'cena'
+        jobs[jobsBefore].ingredientsLabel = (meal.type === 'desayuno' && !isMealSlot) ? 'Mezcla todo' : 'Lleva'
       }
     }
   }
