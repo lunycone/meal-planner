@@ -115,20 +115,27 @@ export const DISHES = {
     // masa, NO el huevo, para no volver a acercarse al techo de grasa de
     // arriba (masa-harina apenas lleva grasa; +30g son +1.2g grasa, 13->14.2,
     // sigue bajo el techo de 15).
-    items: [{ k: 'masa-harina', p: { grams: 110 } }, { k: 'huevo', p: { units: 2 } }],
+    // 6 sep 2026 (3): agua añadida -- la masa harina nixtamalizada (maiz)
+    // necesita agua para hacerse masa de verdad, antes no estaba en ningun
+    // sitio (el usuario lo hizo "a ojo": 440g masa + agua le dieron 916g,
+    // ratio real ~1.08x). El huevo se cocina APARTE (revuelto) y se pone
+    // dentro del burrito ya hecho -- no se mezcla crudo con la masa.
+    items: [{ k: 'masa-harina', p: { grams: 110 } }, { k: 'agua', p: { grams: 119 } }, { k: 'huevo', p: { units: 2 } }],
   },
   'd-burrito-maiz-cheddar': {
     name: 'Burrito maíz + cheddar', meals: ['desayuno', 'cena'],
-    items: [{ k: 'masa-harina', p: { grams: 60 } }, { k: 'huevo', p: { units: 3 } }, { k: 'cheddar', p: { grams: 10 } }],
+    items: [{ k: 'masa-harina', p: { grams: 60 } }, { k: 'agua', p: { grams: 65 } }, { k: 'huevo', p: { units: 3 } }, { k: 'cheddar', p: { grams: 10 } }],
   },
   // 6 sep 2026 (2): harina de garbanzo 30->45g a peticion (+3-5g prot).
+  // 6 sep 2026 (3): agua para las dos harinas juntas (ver comentario en
+  // d-burrito-maiz).
   'd-burrito-5050': {
     name: 'Burrito 50/50 (maíz + garbanzo)', meals: ['desayuno', 'cena'],
-    items: [{ k: 'masa-harina', p: { grams: 30 } }, { k: 'harina-garbanzo', p: { grams: 45 } }, { k: 'huevo', p: { units: 3 } }],
+    items: [{ k: 'masa-harina', p: { grams: 30 } }, { k: 'harina-garbanzo', p: { grams: 45 } }, { k: 'agua', p: { grams: 81 } }, { k: 'huevo', p: { units: 3 } }],
   },
   'd-burrito-5050-cheddar': {
     name: 'Burrito 50/50 + cheddar', meals: ['desayuno', 'cena'],
-    items: [{ k: 'masa-harina', p: { grams: 30 } }, { k: 'harina-garbanzo', p: { grams: 30 } }, { k: 'huevo', p: { units: 3 } }, { k: 'cheddar', p: { grams: 10 } }],
+    items: [{ k: 'masa-harina', p: { grams: 30 } }, { k: 'harina-garbanzo', p: { grams: 30 } }, { k: 'agua', p: { grams: 65 } }, { k: 'huevo', p: { units: 3 } }, { k: 'cheddar', p: { grams: 10 } }],
   },
   'd-pan-huevos-aguacate': {
     name: 'Pan + huevos + aguacate', meals: ['desayuno', 'cena'],

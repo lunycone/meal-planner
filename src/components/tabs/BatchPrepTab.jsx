@@ -132,6 +132,16 @@ function desayunoMethod(name = '', keys = []) {
   if (/overnight|noche anterior|nevera/.test(n) || keys.includes('avena')) {
     return { mode: 'nevera', cookMin: 0, emoji: '❄️', label: 'Nevera (víspera)' }
   }
+  // 6 sep 2026 -- masa harina nixtamalizada (maiz, key 'masa-harina') caia
+  // por las rendijas: no es 'harina' (harina de trigo, cae en "baked" de
+  // abajo) y su nombre ("Burrito 100% maiz") no contiene "tortilla" ni
+  // "huevo" -- acababa en el ultimo caso, "Solo mezclar (sin coccion)",
+  // que es mentira: la masa se cuece en comal/plancha, y el huevo se
+  // revuelve APARTE (no se mezcla crudo con la masa) y se pone dentro del
+  // burrito ya hecho. El usuario, con razon: "obviamente van separados".
+  if (keys.includes('masa-harina')) {
+    return { mode: 'griddle', cookMin: 10, emoji: '🫓', label: 'Comal/plancha la masa — huevo revuelto aparte, no se mezcla crudo' }
+  }
   const baked = /cheesecake|brownie|magdalena|muffin|waffle|gofre|pizza|shakshuka|tortilla de patata|al horno|bizcocho|bread|pan |frittata/.test(n)
     || keys.includes('harina')
   if (baked) return { mode: 'oven', cookMin: 25, emoji: '🫕', label: 'Hornear 175°' }
@@ -510,7 +520,15 @@ function buildSchedule(mealDataList) {
         // el mismo bol/batido); comida/cena y 'plato' llevan carne/pescado +
         // guarnicion aparte, no se "mezclan" -- 'Lleva' encaja mejor.
         const isMealSlot = batchData.mealType === 'comida' || batchData.mealType === 'cena'
-        jobs[jobsBefore].ingredientsLabel = (meal.type === 'desayuno' && !isMealSlot) ? 'Mezcla todo' : 'Lleva'
+        // 6 sep 2026 -- masa harina + huevo: el huevo NO se mezcla crudo con
+        // la masa, se revuelve aparte y se pone dentro del burrito ya hecho
+        // (ver desayunoMethod). 'Mezcla todo' era enganoso justo aqui -- el
+        // label lo deja explicito en vez de dar por hecho que se entiende.
+        const keys = batchData.sharedItems.map(it => it.key)
+        const isMasaHuevo = keys.includes('masa-harina') && keys.includes('huevo')
+        jobs[jobsBefore].ingredientsLabel = isMasaHuevo
+          ? 'Masa+agua (huevo aparte, revuelto)'
+          : (meal.type === 'desayuno' && !isMealSlot) ? 'Mezcla todo' : 'Lleva'
       }
     }
   }
