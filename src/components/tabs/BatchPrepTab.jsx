@@ -383,12 +383,22 @@ function buildSchedule(mealDataList) {
       const qty = g > 0 ? `${g}g` : ml > 0 ? `${ml}ml` : u > 0 ? `${u} ud` : null
       return qty ? { name: it.name, qty } : null
     }).filter(Boolean)
+    // 6 sep 2026 -- el usuario, con razon: "229g de masa por tortilla es
+    // muchisimo, no cabe en ninguna sarten". No se toca NINGUNA cantidad
+    // (la masa total de la receta sigue siendo la misma) -- solo se sugiere
+    // en cuantas tortillas MAS PEQUEÑAS hacer esa misma masa, ~75g cada
+    // una (tamaño real de tortilla que cabe en un comal/sarten casero, no
+    // una bola enorme de una sola pieza).
+    const isMasa = bd.sharedItems.some(it => it.key === 'masa-harina')
     return bd.personTotals.filter(pt => pt.recipeServings > 0)
-      .map(pt => ({
-        name: pt.person.name,
-        label: `${pt.recipeServings} tupper${pt.recipeServings > 1 ? 's' : ''}${W > 0 ? ` (~${Math.round(W)}g c/u)` : ''}`,
-        items: perTupperItems,
-      }))
+      .map(pt => {
+        let label = `${pt.recipeServings} tupper${pt.recipeServings > 1 ? 's' : ''}${W > 0 ? ` (~${Math.round(W)}g c/u)` : ''}`
+        if (isMasa && W > 75) {
+          const n = Math.max(2, Math.round(W / 75))
+          label += ` → ${n} tortillas de ~${Math.round(W / n)}g (no una sola)`
+        }
+        return { name: pt.person.name, label, items: perTupperItems }
+      })
   }
 
   const pushPrep = (sharedItems) => {
