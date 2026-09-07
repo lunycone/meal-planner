@@ -56,28 +56,31 @@ const MEAL_LABELS = { desayuno: 'Desayuno', comida: 'Comida', merienda: 'Meriend
 const MEAL_TIMES  = { desayuno: '9:00 am', comida: '12–1 pm', merienda: '4:30 pm', cena: '7:30 pm' }
 const MONTH_INITIALS = ['E', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D']
 
-// ─── Batch windows (partición limpia de la semana, misma ISO week) ────────────
-// Domingo: cocinas el dom anterior y comes lun→mar→mié→jue (4 días).
-// Jueves:  cocinas el jue y comes vie→sáb→dom (3 días).
-// Juntos cubren los 7 días sin solaparse ni cruzar de semana.
-const BATCH_SUN_DAYS = ['lun', 'mar', 'mié', 'jue']   // 4 días
-const BATCH_THU_DAYS = ['vie', 'sáb', 'dom']          // 3 días
-const SUN_BATCH_ANCHORS = new Set(['lun', 'mar', 'mié', 'jue'])
+// ─── Batch windows (partición limpia de la semana) ────────────────────────────
+// 6 sep 2026 -- corregido para que coincida con BatchPrepTab.jsx (que ya
+// usaba lunes/jueves, dias reales del usuario) -- esta pestaña se habia
+// quedado con domingo/jueves, el ciclo VIEJO, y las dos ya no coincidian.
+// Batch Lunes:  cocinas el lun, comes lun→mar→mié→jue (4 días, misma semana).
+// Batch Jueves: cocinas el jue, comes vie→sáb→dom→LUN SIGUIENTE (4 días) --
+// ese lunes cae en la semana ISO siguiente (ver handleMealSelect).
+const BATCH_MON_DAYS = ['lun', 'mar', 'mié', 'jue']   // 4 días
+const BATCH_THU_DAYS = ['vie', 'sáb', 'dom']          // + lunes siguiente (fuera de esta semana)
+const MON_BATCH_ANCHORS = new Set(['lun', 'mar', 'mié', 'jue'])
 
 // Returns which batch type a given anchor day belongs to.
 function batchTypeFor(dayKey) {
-  return SUN_BATCH_ANCHORS.has(dayKey) ? 'sun' : 'thu'
+  return MON_BATCH_ANCHORS.has(dayKey) ? 'mon' : 'thu'
 }
 
 // Display-only list for the toggle label.
 function batchDisplayDays(dayKey) {
-  return SUN_BATCH_ANCHORS.has(dayKey) ? BATCH_SUN_DAYS : BATCH_THU_DAYS
+  return MON_BATCH_ANCHORS.has(dayKey) ? BATCH_MON_DAYS : [...BATCH_THU_DAYS, 'lun →']
 }
 
 // Opt-in segmented control shown at the confirm step of the meal picker.
 function BatchApplyToggle({ dayKey, value, onChange }) {
   const days = batchDisplayDays(dayKey)
-  const cookLabel = SUN_BATCH_ANCHORS.has(dayKey) ? 'domingo' : 'jueves'
+  const cookLabel = MON_BATCH_ANCHORS.has(dayKey) ? 'lunes' : 'jueves'
   const pill = (active) => ({
     fontSize: '0.72rem', padding: '4px 12px', borderRadius: '99px',
     border: active ? '1px solid var(--t-accent)' : '1px solid var(--t-border)',
@@ -606,12 +609,19 @@ export default function WeeklyMealPlannerTab() {
       return
     }
 
-    const batchDays = batchTypeFor(dayKey) === 'sun'
-      // Batch Domingo: cocinas el dom anterior, comes lun→mar→mié→jue (misma semana).
-      ? BATCH_SUN_DAYS
-      // Batch Jueves: cocinas el jue, comes vie→sáb→dom (misma semana).
-      : BATCH_THU_DAYS
-    setMealSlots(weekKey, Object.fromEntries(batchDays.map(dk => [slotKey(dk, mealType), mealData])))
+    if (batchTypeFor(dayKey) === 'mon') {
+      // Batch Lunes: cocinas el lun, comes lun→mar→mié→jue (misma semana).
+      setMealSlots(weekKey, Object.fromEntries(BATCH_MON_DAYS.map(dk => [slotKey(dk, mealType), mealData])))
+      return
+    }
+    // Batch Jueves: cocinas el jue, comes vie→sáb→dom→LUN SIGUIENTE. Ese
+    // lunes cae en la semana ISO siguiente (su propio weekKey) -- igual que
+    // ya corrigio BatchPrepTab.jsx (ver comentario junto a MON_DAYS/THU_DAYS
+    // ahi): sin esto, el batch de jueves solo aplicaba a 3 dias en vez de 4.
+    setMealSlots(weekKey, Object.fromEntries(BATCH_THU_DAYS.map(dk => [slotKey(dk, mealType), mealData])))
+    const nextMonday = new Date(weekDates[6].getTime() + 86400000)
+    const nextWeekKey = getISOWeek(nextMonday)
+    setMealSlots(nextWeekKey, { [slotKey('lun', mealType)]: mealData })
   }
 
   function handleMealClear(dayKey, mealType) {
@@ -1085,7 +1095,7 @@ export default function WeeklyMealPlannerTab() {
             // OFF when any sibling already has a meal (avoid silent overwrites).
             (() => {
               const mt   = modalOpen.mealType
-              const days = batchTypeFor(modalOpen.dayKey) === 'sun' ? BATCH_SUN_DAYS : BATCH_THU_DAYS
+              const days = batchTypeFor(modalOpen.dayKey) === 'mon' ? BATCH_MON_DAYS : BATCH_THU_DAYS
               return !days
                 .filter(dk => dk !== modalOpen.dayKey)
                 .some(dk => !!currentWeek[slotKey(dk, mt)])
