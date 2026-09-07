@@ -57,30 +57,33 @@ const MEAL_TIMES  = { desayuno: '9:00 am', comida: '12–1 pm', merienda: '4:30 
 const MONTH_INITIALS = ['E', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D']
 
 // ─── Batch windows (partición limpia de la semana) ────────────────────────────
-// 6 sep 2026 -- corregido para que coincida con BatchPrepTab.jsx (que ya
-// usaba lunes/jueves, dias reales del usuario) -- esta pestaña se habia
-// quedado con domingo/jueves, el ciclo VIEJO, y las dos ya no coincidian.
-// Batch Lunes:  cocinas el lun, comes lun→mar→mié→jue (4 días, misma semana).
-// Batch Jueves: cocinas el jue, comes vie→sáb→dom→LUN SIGUIENTE (4 días) --
-// ese lunes cae en la semana ISO siguiente (ver handleMealSelect).
-const BATCH_MON_DAYS = ['lun', 'mar', 'mié', 'jue']   // 4 días
+// 6 sep 2026 (2) -- corregido de nuevo: el ciclo real NO empieza en lunes,
+// empieza en MARTES (ver BatchPrepTab.jsx, mismo comentario). El lunes de
+// esta semana pertenece al batch de jueves de la semana ANTERIOR
+// (vie·sáb·dom·LUN) -- por eso, al editarlo, su grupo "hacia atras" no se
+// puede representar con dayKeys de una sola semana; se resuelve aparte en
+// handleMealSelect (necesita el weekKey de la semana anterior).
+const BATCH_TUE_DAYS = ['mar', 'mié', 'jue']          // 3 días
 const BATCH_THU_DAYS = ['vie', 'sáb', 'dom']          // + lunes siguiente (fuera de esta semana)
-const MON_BATCH_ANCHORS = new Set(['lun', 'mar', 'mié', 'jue'])
+const TUE_BATCH_ANCHORS = new Set(['mar', 'mié', 'jue'])
 
-// Returns which batch type a given anchor day belongs to.
+// Returns which batch type a given anchor day belongs to. 'lun' cuenta como
+// 'thu' (pertenece al batch de jueves de la semana ANTERIOR).
 function batchTypeFor(dayKey) {
-  return MON_BATCH_ANCHORS.has(dayKey) ? 'mon' : 'thu'
+  return TUE_BATCH_ANCHORS.has(dayKey) ? 'tue' : 'thu'
 }
 
 // Display-only list for the toggle label.
 function batchDisplayDays(dayKey) {
-  return MON_BATCH_ANCHORS.has(dayKey) ? BATCH_MON_DAYS : [...BATCH_THU_DAYS, 'lun →']
+  if (TUE_BATCH_ANCHORS.has(dayKey)) return BATCH_TUE_DAYS
+  if (dayKey === 'lun') return ['← vie', 'sáb', 'dom', 'lun']
+  return [...BATCH_THU_DAYS, 'lun →']
 }
 
-// Opt-in segmented control shown at the confirm step of the meal picker.
+// Opt-in segmented control shown at el confirm step de meal picker.
 function BatchApplyToggle({ dayKey, value, onChange }) {
   const days = batchDisplayDays(dayKey)
-  const cookLabel = MON_BATCH_ANCHORS.has(dayKey) ? 'lunes' : 'jueves'
+  const cookLabel = TUE_BATCH_ANCHORS.has(dayKey) ? 'martes' : 'jueves'
   const pill = (active) => ({
     fontSize: '0.72rem', padding: '4px 12px', borderRadius: '99px',
     border: active ? '1px solid var(--t-accent)' : '1px solid var(--t-border)',
@@ -609,14 +612,23 @@ export default function WeeklyMealPlannerTab() {
       return
     }
 
-    if (batchTypeFor(dayKey) === 'mon') {
-      // Batch Lunes: cocinas el lun, comes lun→mar→mié→jue (misma semana).
-      setMealSlots(weekKey, Object.fromEntries(BATCH_MON_DAYS.map(dk => [slotKey(dk, mealType), mealData])))
+    if (dayKey === 'lun') {
+      // El lunes pertenece al batch de jueves de la semana ANTERIOR
+      // (vie·sáb·dom·lun) -- aplica hacia atras, a esa otra semana.
+      setMealSlot(weekKey, slotKey('lun', mealType), mealData)
+      const prevMonday = new Date(weekDates[0].getTime() - 7 * 86400000)
+      const prevWeekKey = getISOWeek(prevMonday)
+      setMealSlots(prevWeekKey, Object.fromEntries(BATCH_THU_DAYS.map(dk => [slotKey(dk, mealType), mealData])))
+      return
+    }
+    if (batchTypeFor(dayKey) === 'tue') {
+      // Batch Martes: cocinas el mar, comes mar→mié→jue (misma semana).
+      setMealSlots(weekKey, Object.fromEntries(BATCH_TUE_DAYS.map(dk => [slotKey(dk, mealType), mealData])))
       return
     }
     // Batch Jueves: cocinas el jue, comes vie→sáb→dom→LUN SIGUIENTE. Ese
     // lunes cae en la semana ISO siguiente (su propio weekKey) -- igual que
-    // ya corrigio BatchPrepTab.jsx (ver comentario junto a MON_DAYS/THU_DAYS
+    // ya corrigio BatchPrepTab.jsx (ver comentario junto a TUE_DAYS/THU_DAYS
     // ahi): sin esto, el batch de jueves solo aplicaba a 3 dias en vez de 4.
     setMealSlots(weekKey, Object.fromEntries(BATCH_THU_DAYS.map(dk => [slotKey(dk, mealType), mealData])))
     const nextMonday = new Date(weekDates[6].getTime() + 86400000)
@@ -801,20 +813,18 @@ export default function WeeklyMealPlannerTab() {
     if (!week) return
     const expanded = expandModelWeek(week)
 
-    const slots = {}
-    // 6 sep 2026 (3) -- las dos correcciones de abajo (batido portatil de
-    // lunes/miercoles, desayuno bajado de proteina) parten de reglas de
-    // rutina normal (Maria trabaja esos dias / no pasarse de su techo). Las
-    // semanas "extrema" (11, 13...) son de referencia, rompen reglas a
-    // proposito y SIEMPRE llevan el mismo plato en los dos bloques -- no
-    // tiene sentido aplicarles ninguna de las dos correcciones (en la 13
-    // concretamente, cambiarle la merienda esos dos dias le habria bajado
-    // la proteina por debajo del +10% que es justo el objetivo de esa
-    // semana). Bug menor encontrado de paso: esto tampoco se comprobaba
-    // para la semana 11 antes de hoy.
-    const isReference = !!week.extrema
-    const mariaDowngradeDays = isReference ? [] : (MARIA_DESAYUNO_DOWNGRADE_DAYS_BY_WEEK[n] ?? [])
-    DAY_KEYS.forEach((dayKey, i) => {
+    // 6 sep 2026 (4) -- el ciclo real del usuario no empieza en lunes: ese
+    // dia ya lo cocino el batch de jueves de la semana ANTERIOR (vie·sáb·
+    // dom·lun, ver BatchPrepTab.jsx) -- "cargar semana modelo" no debe
+    // tocarlo ni pisarlo. Marca..domingo de ESTA semana se rellenan con los
+    // indices 1..6 del modelo (el modelo sigue siendo lun=0..dom=6 por
+    // dentro, solo cambia A QUE DIA REAL va cada indice); el indice 0 (el
+    // "lunes" del propio modelo) se escribe en el LUNES DE LA SEMANA
+    // SIGUIENTE, para que sea ese lunes el que de verdad arranca el ciclo
+    // martes→jueves→(vie·sáb·dom·lun) de la carga siguiente.
+    const buildDaySlots = (dayKey, i) => {
+      const isReference = !!week.extrema
+      const mariaDowngradeDays = isReference ? [] : (MARIA_DESAYUNO_DOWNGRADE_DAYS_BY_WEEK[n] ?? [])
       const mariaMerienda = (!isReference && MARIA_NO_BATIDO_CASERO.includes(i))
         ? { type: 'desayuno', recipeKey: MARIA_MERIENDA_PORTATIL }
         : { type: 'desayuno', recipeKey: expanded.M[i] }
@@ -827,24 +837,47 @@ export default function WeeklyMealPlannerTab() {
         ? { type: 'desayuno', recipeKey: MARIA_DESAYUNO_DOWNGRADE }
         : { type: 'desayuno', recipeKey: expanded.DM[i] }
 
-      slots[slotKey(dayKey, 'desayuno')] = makeByPersonSlot({
-        julio: { type: 'desayuno', recipeKey: expanded.D[i] },
-        maria: mariaDesayuno,
-      })
-      slots[slotKey(dayKey, 'comida')] = makeByPersonSlot({
-        julio: { type: 'desayuno', recipeKey: expanded.C[i] },
-        maria: { type: 'desayuno', recipeKey: expanded.C[i] },
-      })
-      slots[slotKey(dayKey, 'merienda')] = makeByPersonSlot({
-        julio: { type: 'desayuno', recipeKey: expanded.M[i] },
-        maria: mariaMerienda,
-      })
-      slots[slotKey(dayKey, 'cena')] = makeByPersonSlot({
-        julio: { type: 'desayuno', recipeKey: expanded.N[i] },
-        maria: { type: 'desayuno', recipeKey: expanded.N[i] },
-      })
+      return {
+        [slotKey(dayKey, 'desayuno')]: makeByPersonSlot({
+          julio: { type: 'desayuno', recipeKey: expanded.D[i] },
+          maria: mariaDesayuno,
+        }),
+        [slotKey(dayKey, 'comida')]: makeByPersonSlot({
+          julio: { type: 'desayuno', recipeKey: expanded.C[i] },
+          maria: { type: 'desayuno', recipeKey: expanded.C[i] },
+        }),
+        [slotKey(dayKey, 'merienda')]: makeByPersonSlot({
+          julio: { type: 'desayuno', recipeKey: expanded.M[i] },
+          maria: mariaMerienda,
+        }),
+        [slotKey(dayKey, 'cena')]: makeByPersonSlot({
+          julio: { type: 'desayuno', recipeKey: expanded.N[i] },
+          maria: { type: 'desayuno', recipeKey: expanded.N[i] },
+        }),
+      }
+    }
+
+    // Mar..Dom de esta semana (indices 1..6) -- reemplaza la semana entera
+    // salvo el lunes, que se preserva copiando lo que ya hubiera ahi (
+    // replaceWeek sustituye TODO el objeto de la semana, no fusiona).
+    const slots = {}
+    DAY_KEYS.forEach((dayKey, i) => {
+      if (i === 0) return // lunes: no se toca, ver arriba
+      Object.assign(slots, buildDaySlots(dayKey, i))
+    })
+    const currentMonday = weekPlan[weekKey] ?? {}
+    MEALS.forEach(mt => {
+      const key = slotKey('lun', mt)
+      if (currentMonday[key]) slots[key] = currentMonday[key]
     })
     replaceWeek(weekKey, slots)
+
+    // Lunes de la semana SIGUIENTE = indice 0 del modelo. setMealSlots
+    // fusiona (no reemplaza la semana siguiente entera), asi que el resto
+    // de esa semana (si ya tenia algo) no se toca.
+    const nextMonday = new Date(weekDates[6].getTime() + 86400000)
+    const nextWeekKey = getISOWeek(nextMonday)
+    setMealSlots(nextWeekKey, buildDaySlots('lun', 0))
   }
 
   return (
@@ -1095,7 +1128,7 @@ export default function WeeklyMealPlannerTab() {
             // OFF when any sibling already has a meal (avoid silent overwrites).
             (() => {
               const mt   = modalOpen.mealType
-              const days = batchTypeFor(modalOpen.dayKey) === 'mon' ? BATCH_MON_DAYS : BATCH_THU_DAYS
+              const days = modalOpen.dayKey === 'lun' ? ['lun'] : (batchTypeFor(modalOpen.dayKey) === 'tue' ? BATCH_TUE_DAYS : BATCH_THU_DAYS)
               return !days
                 .filter(dk => dk !== modalOpen.dayKey)
                 .some(dk => !!currentWeek[slotKey(dk, mt)])
