@@ -29,6 +29,8 @@ const PATHS = {
   play: 'M7 4l13 8-13 8V4z',
   lock: 'M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4',
   sparkle: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z',
+  more: 'M5 12h.01M12 12h.01M19 12h.01',
+  pause: 'M7 5h3v14H7zM14 5h3v14h-3z',
   edit: 'M4 20h4L19 9l-4-4L4 16v4zM13 7l4 4',
 }
 

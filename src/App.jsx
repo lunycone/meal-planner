@@ -12,6 +12,8 @@ import SyncStatus          from './components/SyncStatus'
 import Segmented           from './components/ui/Segmented'
 import Icon                from './components/ui/Icon'
 import { computeInsights } from './engine/insights'
+import MobileApp from './mobile/MobileApp'
+import useIsMobile from './mobile/useIsMobile'
 import { PERSON_COLOR, activeProfilesOn } from './lib/mealplan'
 
 const TABS = [
@@ -136,6 +138,18 @@ function AppShell() {
   }
 
   useEffect(() => { window.scrollTo({ top: 0 }) }, [view.value])
+
+  const isMobile = useIsMobile()
+  if (isMobile) {
+    return (
+      <MobileApp unseen={unseen} ideasOpen={ideasOpen} setIdeasOpen={setIdeasOpen}
+        ideasPanel={ideasOpen && (
+          <IdeasPanel ideas={ideas} hiddenCount={allIdeas.length - ideas.length}
+            onClose={() => setIdeasOpen(false)} onDismiss={dismiss} onRestore={restoreDismissed}
+            onPick={v => { setView(v); setIdeasOpen(false) }} />
+        )} />
+    )
+  }
 
   return (
     <div className="mp-app">
