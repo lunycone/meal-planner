@@ -1075,7 +1075,7 @@ function BatchCard({ title, cookLabel, coverDays, mealSections, schedule, kcalSu
       {/* Header */}
       <div style={{ marginBottom: '1.25rem', paddingBottom: '1rem', borderBottom: '2px solid var(--t-border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.2rem' }}>
-          <div style={{ fontWeight: 700, fontSize: '1rem' }}>{title}</div>
+          <div style={{ fontFamily: 'var(--t-font-display)', fontWeight: 500, fontSize: '1.1rem' }}>{title}</div>
           {hasPlan && (
             <button className="btn-primary" onClick={onPlay} style={{ fontSize: '0.78rem', padding: '0.3rem 0.75rem', whiteSpace: 'nowrap' }}>
               ▶ Cocinar
