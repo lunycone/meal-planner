@@ -5,6 +5,7 @@ import { PROTEIN } from '../../data/proteins'
 import { ingCost, ingKcal, ingProt, ingFat, comboAgg, personLunchScale, comboScalableKey, dayKcal, personMealScalesTwoPass, personTargetForDay, slotForPerson } from '../../engine/calc'
 import Icon from '../ui/Icon'
 import Segmented from '../ui/Segmented'
+import { storeOf, storeColor } from '../../lib/stores'
 import { DAY_KEYS, addDays, mondayOf, weekKeyOf, fmtRange, fmtMoney, activeProfilesOn, startOfDay } from '../../lib/mealplan'
 
 // Orden lun..dom para resolver el indice que personTargetForDay/personMealScalesTwoPass
@@ -69,7 +70,9 @@ export default function ShoppingListTab() {
   const [viewMode, setViewMode] = useState('batch') // 'batch' | 'semana'
   const [tab, setTab] = useState('buy')             // 'buy' | 'home'
   const [searchTerm, setSearchTerm] = useState('')
-  const [sortBy, setSortBy] = useState('category')
+  // Por tienda por defecto: así la lista sale ya separada por supermercado
+  const [sortBy, setSortByState] = useState(() => { try { return localStorage.getItem('mp-compra-sort') || 'store' } catch { return 'store' } })
+  const setSortBy = v => { setSortByState(v); try { localStorage.setItem('mp-compra-sort', v) } catch {} }
   const [copied, setCopied] = useState(false)
 
   const batchWindow = useMemo(() => getWindow(batchOffset, viewMode), [batchOffset, viewMode])
@@ -301,7 +304,7 @@ export default function ShoppingListTab() {
 
       const usedDays = new Set(Array.from(data.meals).map(t => t.split(' ')[0]))
       out.push({
-        key: ingKey, name: ing.name, brand: ing.brand, store: ing.store, cat: ing.cat ?? 'otro',
+        key: ingKey, name: ing.name, brand: ing.brand, store: storeOf(allIng[ingKey] ?? ing), cat: ing.cat ?? 'otro',
         qty: qtyStr, cost: data.cost, breakdown, usedDays, home: isHome(ingKey),
       })
     })
@@ -312,10 +315,17 @@ export default function ShoppingListTab() {
   const buy = items.filter(i => !i.home)
   const home = items.filter(i => i.home)
   const visible = (tab === 'buy' ? buy : home).filter(i => !q || i.name.toLowerCase().includes(q))
+  // Tiendas de esta lista, de la que más gasto a la que menos; «Sin tienda» al final
+  const storeTotals = {}
+  buy.forEach(i => { const k = i.store ?? ''; storeTotals[k] = storeTotals[k] ?? { cost: 0, n: 0 }; storeTotals[k].cost += i.cost; storeTotals[k].n++ })
+  const storeOrder = Object.keys(storeTotals).filter(Boolean).sort((a, b) => storeTotals[b].cost - storeTotals[a].cost).concat(storeTotals[''] ? [''] : [])
+  const storeRank = k => { const r = storeOrder.indexOf(k ?? ''); return r === -1 ? 99 : r }
+  const byCatOrder = (a, b) => (CAT_ORDER.indexOf(a.cat) - CAT_ORDER.indexOf(b.cat)) || a.name.localeCompare(b.name)
   const sorted = [...visible].sort((a, b) =>
     sortBy === 'cost' ? b.cost - a.cost
     : sortBy === 'name' ? a.name.localeCompare(b.name)
-    : (CAT_ORDER.indexOf(a.cat) - CAT_ORDER.indexOf(b.cat)) || a.name.localeCompare(b.name))
+    : sortBy === 'store' ? (storeRank(a.store) - storeRank(b.store)) || byCatOrder(a, b)
+    : byCatOrder(a, b))
 
   const buyTotal = buy.reduce((s, i) => s + i.cost, 0)
   const done = buy.filter(i => checked.has(i.key))
@@ -328,10 +338,12 @@ export default function ShoppingListTab() {
 
   function copyToClipboard() {
     let text = `Compra · ${viewMode === 'batch' ? 'batch' : 'semana'} ${batchWindow.rangeLabel}\n\n`
-    CAT_ORDER.forEach(cat => {
-      const list = buy.filter(i => i.cat === cat)
+    const groupsForCopy = sortBy === 'store'
+      ? storeOrder.map(k => [k || 'Sin tienda', buy.filter(i => (i.store ?? '') === k)])
+      : CAT_ORDER.map(c => [CAT_LABELS[c] ?? c, buy.filter(i => i.cat === c)])
+    groupsForCopy.forEach(([label, list]) => {
       if (!list.length) return
-      text += `${(CAT_LABELS[cat] ?? cat).toUpperCase()}\n`
+      text += `${label.toUpperCase()}\n`
       list.forEach(i => { text += `  ☐ ${i.name} — ${i.qty} (${fmtMoney(i.cost)})\n` })
       text += '\n'
     })
@@ -371,7 +383,7 @@ export default function ShoppingListTab() {
               <input placeholder="Buscar ingrediente…" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
             </label>
             <Segmented label="Ordenar" value={sortBy} onChange={setSortBy}
-              options={[{ value: 'category', label: 'Categoría' }, { value: 'cost', label: 'Precio' }, { value: 'name', label: 'A–Z' }]} />
+              options={[{ value: 'store', label: 'Tienda' }, { value: 'category', label: 'Categoría' }, { value: 'cost', label: 'Precio' }, { value: 'name', label: 'A–Z' }]} />
             {tab === 'buy' && <button className="mp-btn mp-btn-glass mp-btn-sm" onClick={copyToClipboard} disabled={!buy.length}><Icon name={copied ? 'check' : 'copy'} size={14} />{copied ? 'Copiada' : 'Copiar lista'}</button>}
           </div>
 
@@ -391,10 +403,19 @@ export default function ShoppingListTab() {
               </div>
               {sorted.map((i, n) => {
                 const on = checked.has(i.key)
-                const header = sortBy === 'category' && i.cat !== lastCat ? (lastCat = i.cat, CAT_LABELS[i.cat] ?? i.cat) : null
+                const gk = sortBy === 'store' ? (i.store ?? '') : sortBy === 'category' ? i.cat : null
+                const header = gk !== null && gk !== lastCat ? (lastCat = gk, true) : false
+                const st = storeTotals[i.store ?? '']
                 return (
                   <div key={i.key}>
-                    {header && <div className="compra-cat">{header}</div>}
+                    {header && sortBy === 'category' && <div className="compra-cat">{CAT_LABELS[i.cat] ?? i.cat}</div>}
+                    {header && sortBy === 'store' && (
+                      <div className="compra-cat compra-store">
+                        <span className="mp-dot" style={{ width: 10, height: 10, background: i.store ? storeColor(i.store) : 'rgba(110,80,50,0.35)' }} />
+                        {i.store ?? 'Sin tienda'}
+                        <span className="mp-muted mp-num" style={{ fontWeight: 500 }}>{st ? `${st.n} · ${fmtMoney(st.cost)}` : ''}</span>
+                      </div>
+                    )}
                     <div className={`compra-row mp-in${on ? ' is-done' : ''}`} style={{ gridTemplateColumns: gridCols, animationDelay: `${Math.min(n, 20) * 22}ms` }}>
                       <button type="button" className="compra-hit" aria-pressed={on} aria-label={`${on ? 'Desmarcar' : 'Marcar'} ${i.name}`} onClick={() => toggleChecked(i.key)} />
                       <Check on={on} />
@@ -464,7 +485,21 @@ export default function ShoppingListTab() {
             <span className="mp-muted mp-num" style={{ fontSize: 12.5 }}>{fmtMoney(doneCost)} de {fmtMoney(buyTotal)} en el carro</span>
           </section>
 
-          {byCat.length > 0 && (
+          {sortBy === 'store' && storeOrder.length > 0 && (
+            <section className="mp-glass mp-card mp-rise" style={{ animationDelay: '220ms', display: 'flex', flexDirection: 'column', gap: 9 }}>
+              <span style={{ fontSize: 15, fontWeight: 700 }}>Por tienda</span>
+              {storeOrder.map(k => (
+                <div key={k || 'none'} style={{ display: 'grid', gridTemplateColumns: '12px minmax(0, 1fr) auto', gap: 9, alignItems: 'center', fontSize: 13 }}>
+                  <span className="mp-dot" style={{ width: 9, height: 9, background: k ? storeColor(k) : 'rgba(110,80,50,0.35)' }} />
+                  <span style={{ color: 'var(--c-ink-2)' }}>{k || 'Sin tienda'} <span className="mp-muted">· {storeTotals[k].n}</span></span>
+                  <span className="mp-num" style={{ fontWeight: 650 }}>{fmtMoney(storeTotals[k].cost)}</span>
+                </div>
+              ))}
+              {storeTotals[''] && <span className="mp-muted" style={{ fontSize: 12, lineHeight: 1.45 }}>Asigna tienda a lo que falta en Ingredientes: un toque en su etiqueta.</span>}
+            </section>
+          )}
+
+          {sortBy !== 'store' && byCat.length > 0 && (
             <section className="mp-glass mp-card mp-rise" style={{ animationDelay: '220ms', display: 'flex', flexDirection: 'column', gap: 9 }}>
               <span style={{ fontSize: 15, fontWeight: 700 }}>Dónde va el dinero</span>
               {byCat.map(({ c, cost }) => (
