@@ -2,17 +2,20 @@ import { useState } from 'react'
 import useStore, { selectAllIng, selectAllCats } from '../../store/useStore'
 import { CAT_ORDER } from '../../data/ingredients'
 import { ING } from '../../data/ingredients'
+import { ingredientUnitType } from '../../engine/calc'
 
 // ─── helpers ──────────────────────────────────────────────────────────────
 
 function priceLabel(i) {
-  if (i.pend)             return '—'
-  if (i.flat === 0)       return '$0.00'
-  if (i.per100    != null) return `$${i.per100.toFixed(3)}/100g`
-  if (i.perUnit   != null) return `$${i.perUnit.toFixed(2)}/ud`
-  if (i.perML     != null) return `$${(i.perML * 100).toFixed(3)}/100ml`
-  if (i.perServing != null) return `~$${i.perServing.toFixed(2)}/plato`
-  return '—'
+  if (i.pend)       return '—'
+  if (i.flat === 0) return '$0.00'
+  switch (ingredientUnitType(i)) {
+    case 'per100':     return `$${i.per100.toFixed(3)}/100g`
+    case 'perUnit':    return `$${i.perUnit.toFixed(2)}/ud`
+    case 'perML':      return `$${(i.perML * 100).toFixed(3)}/100ml`
+    case 'perServing': return `~$${i.perServing.toFixed(2)}/plato`
+    default:           return '—'
+  }
 }
 
 function kcalLabel(i) {
@@ -24,12 +27,11 @@ function kcalLabel(i) {
   return ''
 }
 
+// 'flat' no tiene input de precio propio en el formulario de edicion (se
+// trata como precio fijo no editable ahi), asi que se excluye del resultado.
 function priceField(i) {
-  if (i.per100    != null) return 'per100'
-  if (i.perUnit   != null) return 'perUnit'
-  if (i.perML     != null) return 'perML'
-  if (i.perServing != null) return 'perServing'
-  return null
+  const t = ingredientUnitType(i)
+  return t === 'flat' ? null : t
 }
 
 function isBaseIng(key) { return !!ING[key] }

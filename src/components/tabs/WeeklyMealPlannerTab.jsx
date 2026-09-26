@@ -5,48 +5,7 @@ import { PREP, COMBO_SETS } from '../../data/combos'
 import { comboAgg, fmt, proteinCost, proteinKcal, proteinProt, ingKcal, ingCost, fmtPortion, personDayKcal, personDayCost, personDayProt, pcosCarbLevel, proteinLevel, kcalLevel, LEVEL_COLOR, slotForPerson, slotIsUniform, makeByPersonSlot } from '../../engine/calc'
 import { MODEL_WEEKS, expandModelWeek, MARIA_NO_BATIDO_CASERO, MARIA_MERIENDA_PORTATIL, MARIA_DESAYUNO_DOWNGRADE, MARIA_DESAYUNO_DOWNGRADE_DAYS_BY_WEEK } from '../../data/modelWeeks'
 import PcosBadge from '../PcosBadge'
-
-// Utility to get ISO week key from date
-function getISOWeek(date) {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
-  const dayNum = d.getUTCDay() || 7
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum)
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
-  return `${d.getUTCFullYear()}-W${String(Math.ceil((d - yearStart) / 86400000 / 7)).padStart(2, '0')}`
-}
-
-// Get actual dates for a week (Monday to Sunday)
-function getWeekDates(weekOffset) {
-  const now = new Date()
-  const target = new Date(now.getTime() + weekOffset * 7 * 24 * 60 * 60 * 1000)
-
-  // Get Monday of that week
-  const day = target.getDay()
-  const diff = target.getDate() - day + (day === 0 ? -6 : 1)
-  const monday = new Date(target.setDate(diff))
-
-  const dates = []
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(monday)
-    d.setDate(d.getDate() + i)
-    dates.push(d)
-  }
-  return dates
-}
-
-// Format date as "16 jun"
-function formatDateShort(date) {
-  const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
-  return `${date.getDate()} ${months[date.getMonth()]}`
-}
-
-// Check if date is today
-function isToday(date) {
-  const today = new Date()
-  return date.getDate() === today.getDate() &&
-         date.getMonth() === today.getMonth() &&
-         date.getFullYear() === today.getFullYear()
-}
+import { getISOWeek, getWeekDates, formatDateShort, isToday } from '../../utils/date'
 
 // Days and meals
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
