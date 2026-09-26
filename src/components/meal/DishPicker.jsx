@@ -77,7 +77,7 @@ export default function DishPicker({ weekKey, weekData, dayKey, date, mealType, 
               <label className="mp-search" style={{ flex: 1, minWidth: 180 }}>
                 <Icon name="search" size={14} stroke={2.4} />
                 <span className="sr-only">Search dishes</span>
-                <input autoFocus placeholder="Search dishes…" value={q} onChange={e => setQ(e.target.value)} />
+                <input autoFocus={!window.matchMedia?.("(max-width: 760px)").matches} placeholder="Search dishes…" value={q} onChange={e => setQ(e.target.value)} />
               </label>
               <Segmented label="Sort" value={sort} onChange={setSort}
                 options={[{ value: 'name', label: 'A–Z' }, { value: 'price', label: 'Price' }, { value: 'kcal', label: 'Kcal' }, { value: 'prot', label: 'Protein' }]} />

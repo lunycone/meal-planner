@@ -15,6 +15,14 @@ import { People, Bulb } from './MobileApp'
 
 const STEP = 250
 
+function cardStyle(p) {
+  const a = Math.abs(p)
+  return {
+    transform: `translate3d(${(p * STEP).toFixed(1)}px, 0, 0) scale(${(1 - Math.min(a, 1) * 0.1).toFixed(3)}) rotateY(${(-p * 12).toFixed(1)}deg)`,
+    opacity: String(Math.max(0, 1 - a * 0.45)), zIndex: String(10 - Math.round(a)),
+  }
+}
+
 function nextMealIndex(now) {
   const mins = now.getHours() * 60 + now.getMinutes()
   const i = MEALS.findIndex(m => { const [h, mm] = MEAL_TIME[m].split(':').map(Number); return h * 60 + mm + 60 > mins })
@@ -39,9 +47,8 @@ export default function MHoy({ unseen, onIdeas }) {
 
   const [day, setDay] = useState(todayIdx)
   const [sel, setSel] = useState(nextIdx)
-  const [dx, setDx] = useState(0)
-  const [dragging, setDragging] = useState(false)
   const drag = useRef(null)
+  const cardEls = useRef([])
   const [picker, setPicker] = useState(null)
   const [sheet, setSheet] = useState(null)
 
@@ -61,26 +68,61 @@ export default function MHoy({ unseen, onIdeas }) {
     type, rows: focus.map(person => ({ person, info: mealInfo(dayForPerson(week, dk, person.id), type, person, day, allIng, allCombos) })),
   })), [week, dk, day, focus.map(p => p.id).join(), allIng, allCombos]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const totals = Object.fromEntries(people.map(p => [p.id, dayTotals(dayForPerson(week, dk, p.id), p, day, allIng, allCombos)]))
-  const rings = Object.fromEntries(people.map(p => [p.id, totals[p.id].target ? totals[p.id].kcal / totals[p.id].target * 100 : 0]))
+  const rings = useMemo(() => Object.fromEntries(people.map(p => {
+    const t = dayTotals(dayForPerson(week, dk, p.id), p, day, allIng, allCombos)
+    return [p.id, t.target ? t.kcal / t.target * 100 : 0]
+  })), [week, dk, day, people.map(p => p.id).join(), allIng, allCombos]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const eff = Math.max(-0.4, Math.min(MEALS.length - 0.6, sel - dx / STEP))
   const isToday = day === todayIdx
 
-  function down(e) { drag.current = { x: e.clientX, moved: false }; setDragging(true) }
-  function move(e) {
-    if (!drag.current) return
-    const d = e.clientX - drag.current.x
-    if (Math.abs(d) > 6) drag.current.moved = true
-    if (drag.current.moved) setDx(d)
+  // Arrastre: se mueve el DOM directamente en cada frame (sin re-render de
+  // React, que recalculaba toda la pantalla y daba tirones en el iPhone) y
+  // solo al soltar se fija la tarjeta. Un gesto rápido pasa de tarjeta
+  // aunque se haya movido poco.
+  function place(pos, animate) {
+    cardEls.current.forEach((el, i) => {
+      if (!el) return
+      const st = cardStyle(i - pos)
+      el.style.transition = animate ? '' : 'none'
+      el.style.transform = st.transform
+      el.style.opacity = st.opacity
+      el.style.zIndex = st.zIndex
+    })
   }
-  function up() {
-    if (!drag.current) return
-    const moved = drag.current.moved
-    drag.current = moved ? { moved: true, done: true } : null
-    setDragging(false)
-    if (moved) setSel(Math.max(0, Math.min(MEALS.length - 1, Math.round(sel - dx / STEP))))
-    setDx(0)
+  function down(e) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return
+    drag.current = { x: e.clientX, y: e.clientY, x0: e.clientX, t0: e.timeStamp, lastX: e.clientX, lastT: e.timeStamp, v: 0, moved: false, id: e.pointerId, raf: 0 }
+  }
+  function move(e) {
+    const d = drag.current
+    if (!d || d.done || e.pointerId !== d.id) return
+    const dx = e.clientX - d.x0
+    if (!d.moved) {
+      if (Math.abs(dx) < 8) return
+      if (Math.abs(e.clientY - d.y) > Math.abs(dx)) { drag.current = null; return } // es scroll vertical
+      d.moved = true
+      try { e.currentTarget.setPointerCapture(e.pointerId) } catch { /* sin captura */ }
+    }
+    const dt = e.timeStamp - d.lastT
+    if (dt > 0) d.v = 0.8 * ((e.clientX - d.lastX) / dt) + 0.2 * d.v
+    d.lastX = e.clientX; d.lastT = e.timeStamp
+    d.dx = dx
+    if (!d.raf) d.raf = requestAnimationFrame(() => {
+      d.raf = 0
+      place(Math.max(-0.4, Math.min(MEALS.length - 0.6, sel - d.dx / STEP)), false)
+    })
+  }
+  function up(e) {
+    const d = drag.current
+    if (!d || d.done || (e && e.pointerId !== d.id)) return
+    if (d.raf) cancelAnimationFrame(d.raf)
+    if (!d.moved) { drag.current = null; return }
+    let next = Math.round(sel - d.dx / STEP)
+    if (next === sel && Math.abs(d.v) > 0.35 && Math.abs(d.dx) > 18) next = sel + (d.v < 0 ? 1 : -1)
+    next = Math.max(0, Math.min(MEALS.length - 1, next))
+    place(next, true)
+    setSel(next)
+    drag.current = { moved: true, done: true }
     setTimeout(() => { if (drag.current?.done) drag.current = null }, 0)
   }
   function tapCard(m, i) {
@@ -115,15 +157,14 @@ export default function MHoy({ unseen, onIdeas }) {
 
       <section className="mh-deck" aria-label="Meals of the day · swipe" onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
         {meals.map((m, i) => {
-          const p = i - eff, a = Math.abs(p), on = Math.round(eff) === i
+          const on = sel === i
           const st = MEAL_STYLE[m.type]
           const main = m.rows.find(r => r.info)?.info
           const others = m.rows.filter(r => r.info && main && r.info.key !== main.key)
           const [pp, cp, fp] = macroPct(main)
           return (
-            <article key={m.type} className="mh-card" onClick={() => tapCard(m, i)} aria-current={on ? 'true' : undefined}
-              style={{ transform: `translateX(${(p * STEP).toFixed(1)}px) scale(${(1 - Math.min(a, 1) * 0.1).toFixed(3)}) rotateY(${(-p * 12).toFixed(1)}deg)`,
-                opacity: Math.max(0, 1 - a * 0.45), zIndex: 10 - Math.round(a), transition: dragging ? 'none' : undefined }}>
+            <article key={m.type} ref={el => { cardEls.current[i] = el }} className="mh-card" onClick={() => tapCard(m, i)} aria-current={on ? 'true' : undefined}
+              style={cardStyle(i - sel)}>
               {on && <span aria-hidden="true" className="hoy-glow" />}
               <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -172,7 +213,7 @@ export default function MHoy({ unseen, onIdeas }) {
       <div className="mh-dots">
         {meals.map((m, i) => (
           <button key={m.type} type="button" aria-label={MEAL_LABEL[m.type]} onClick={() => setSel(i)}
-            style={{ width: Math.round(eff) === i ? 26 : 8, background: Math.round(eff) === i ? MEAL_STYLE[m.type].color : 'rgba(31,27,22,0.2)' }} />
+            style={{ width: sel === i ? 26 : 8, background: sel === i ? MEAL_STYLE[m.type].color : 'rgba(31,27,22,0.2)' }} />
         ))}
       </div>
       <nav className="mh-strip" aria-label="Days">

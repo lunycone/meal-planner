@@ -206,3 +206,23 @@
   .pl-row-stats { gap: 10px; font-size: 12px; }
   .mp-overlay .mp-seg { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
 }
+
+/* ── Rendimiento y zoom en iPhone ─────────────────────────────
+   1. iOS hace zoom al enfocar un campo con letra < 16 px (el buscador del
+      selector de platos) y no lo deshace: la vista queda ampliada y la barra
+      de pestañas se sale por abajo — «hay que bajar mucho para verla». Con
+      16 px no hay zoom; el doble toque tampoco amplía (manipulation).
+   2. El desenfoque en vivo (backdrop-filter) de cada tarjeta se recalcula en
+      cada frame del scroll y es lo que más pesa en Safari: dentro del
+      contenido se quita (el fondo ya es casi opaco); se queda en la barra.
+   ───────────────────────────────────────────────────────────── */
+@media (max-width: 760px) {
+  html, body { height: 100%; overflow: hidden; overscroll-behavior: none; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  html { touch-action: manipulation; }
+  input, textarea, select { font-size: 16px !important; }
+  .m-scroll *, .m-scroll *::before, .m-scroll *::after,
+  .mp-overlay, .mp-sheet, .mp-sheet *, .mp-ideas { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+  .mp-overlay { background: rgba(40,30,20,0.32); }
+  .mp-sheet, .mp-ideas { background: #FBF8F3; }
+  .mh-card { will-change: transform, opacity; -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+}
