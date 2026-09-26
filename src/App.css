@@ -1267,6 +1267,66 @@ input, select, textarea { font-family: inherit; }
 .batch-block:hover .batch-actions,
 .batch-block.is-active .batch-actions { opacity: 1; }
 
+/* ============================================================
+   BATCH TAB — tarjeta por plato, Cocinar | Tuppers a dos columnas
+   ============================================================ */
+.batch-dish-card {
+  background: var(--t-surface); border: 1px solid var(--t-border);
+  border-radius: var(--t-radius-lg); padding: 1.1rem 1.25rem;
+  margin-bottom: 0.9rem; box-shadow: var(--t-card-shadow);
+}
+.batch-dish-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 0.8rem; }
+.batch-dish-name { font-family: var(--t-font-display); font-weight: 500; font-size: 1.02rem; color: var(--t-text); }
+.batch-dish-avatars { display: flex; gap: 4px; flex-shrink: 0; }
+.batch-avatar {
+  width: 24px; height: 24px; border-radius: 50%; background: var(--brown); color: #fff;
+  font-size: 0.62rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.batch-avatar-sm { width: 18px; height: 18px; font-size: 0.56rem; }
+
+.batch-body { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; }
+@media (max-width: 700px) { .batch-body { grid-template-columns: 1fr; } }
+
+.batch-col-label {
+  font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--t-text-faint); font-weight: 700; margin-bottom: 0.5rem;
+}
+
+/* Cada caja tintada es un grupo (p.ej. "Puré" o "Aparte") -- antes esta
+   info y la de los tuppers se veian identicas (mismo gris pequeño), sin
+   nada que dijera "esto es lo que va a la olla" vs "esto es el reparto". */
+.batch-statbox { background: var(--t-tinted-bg); border-radius: var(--t-radius); padding: 0.7rem 0.85rem; margin-bottom: 0.6rem; }
+.batch-statbox:last-child { margin-bottom: 0; }
+.batch-statbox-label { font-size: 0.72rem; font-weight: 700; color: var(--brown); margin-bottom: 0.35rem; }
+.batch-statbox-row { display: flex; justify-content: space-between; gap: 8px; font-size: 0.8rem; padding: 1px 0; }
+.batch-statbox-row span:first-child { color: var(--t-text-soft); }
+.batch-statbox-qty { font-weight: 700; color: var(--t-text); flex-shrink: 0; text-align: right; }
+.batch-statbox-total {
+  border-top: 1px solid var(--t-border-soft); margin-top: 0.4rem; padding-top: 0.4rem;
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+.batch-statbox-total span:first-child { font-size: 0.7rem; color: var(--t-text-faint); }
+.batch-statbox-total-val { font-size: 1.05rem; font-weight: 700; color: var(--brown); }
+
+.batch-note { font-size: 0.72rem; color: var(--t-text-faint); font-style: italic; margin-top: 0.3rem; }
+
+.batch-tupper-card { border: 1px solid var(--t-border-soft); border-radius: var(--t-radius); padding: 0.6rem 0.85rem; margin-bottom: 0.6rem; }
+.batch-tupper-card:last-child { margin-bottom: 0; }
+.batch-tupper-head { display: flex; align-items: center; gap: 5px; margin-bottom: 0.4rem; flex-wrap: wrap; }
+.batch-tupper-name { font-size: 0.8rem; font-weight: 700; color: var(--t-text); }
+
+.batch-fresh { margin-top: 0.7rem; padding-top: 0.6rem; border-top: 1px solid var(--t-border-soft); }
+.batch-fresh-row { font-size: 0.82rem; color: var(--t-text); line-height: 1.7; opacity: 0.85; }
+
+/* "La vispera": antes tarjeta con borde de color a la izquierda -- justo
+   el patron que las guias de diseño de esta app piden evitar. Ahora una
+   tarjeta normal con una etiqueta, igual que el resto de badges. */
+.batch-vispera { background: var(--t-tinted-bg); border-radius: var(--t-radius); padding: 0.6rem 0.9rem; }
+.batch-vispera-tag {
+  display: inline-block; font-size: 0.6rem; border-radius: 99px; padding: 2px 9px;
+  background: rgba(99,102,241,0.12); color: #4f46e5; font-weight: 700; letter-spacing: 0.04em;
+}
+
 .row-actions   { display: flex; align-items: center; gap: 6px; opacity: 0; transition: opacity 0.12s; flex-shrink: 0; }
 .saved-combo-card:hover .row-actions,
 .saved-combo-card.is-active .row-actions { opacity: 1; }
