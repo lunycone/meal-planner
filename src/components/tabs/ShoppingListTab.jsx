@@ -4,7 +4,7 @@ import { CAT_ORDER, CAT_LABELS } from '../../data/ingredients'
 import { PROTEIN } from '../../data/proteins'
 import { COMBO } from '../../data/combos'
 import { ingCost, ingKcal, ingProt, ingFat, comboAgg, fmt, personLunchScale, comboScalableKey, dayKcal, personMealScalesTwoPass, personTargetForDay, slotForPerson } from '../../engine/calc'
-import { getISOWeek } from '../../utils/date'
+import { getISOWeek, getWeekMonday } from '../../utils/date'
 
 // Orden lun..dom para resolver el indice que personTargetForDay/personMealScalesTwoPass
 // necesitan — mismo orden que en WeeklyMealPlannerTab/BatchPrepTab.
@@ -19,57 +19,26 @@ function fmtShortDate(d) {
 }
 
 // ─── Batch-window navigation ─────────────────────────────────────────────────
-// Two windows per week:
-//   "Batch Lun" → covers Lun · Mar · Mié · Jue    (4 days, cooked Monday)
-//   "Batch Jue" → covers Vie · Sáb · Dom · Lun    (4 days, cooked Thursday)
+// 26 sep 2026 -- alineado con BatchPrepTab: ya no se cocina dos veces por
+// semana (Lun/Jue), se cocina UNA vez, el domingo, para lunes-viernes de la
+// MISMA semana. Antes esta tab seguia calculando sobre el patron viejo de
+// dos ventanas alternas -- se quedo desincronizada cuando se corrigio Batch,
+// asi que el titulo/rango de fechas de la lista de la compra ya no
+// coincidia con la rutina real.
 function getBatchWindow(offset) {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const dow = today.getDay() // 0=Sun … 6=Sat
+  const monday = getWeekMonday(offset)
+  const friday = new Date(monday.getTime() + 4 * 86400000)
+  const days = 5
+  const windowDates = ['lun', 'mar', 'mié', 'jue', 'vie'].map((dayKey, i) => {
+    const d = new Date(monday.getTime() + i * 86400000)
+    return { date: d, wk: getISOWeek(d), dayKey }
+  })
 
-  // Is today in the Fri-Sun window? (Fri=5, Sat=6, Sun=0); Mon-Thu all belong to Lun window
-  const inFriSun = dow === 0 || dow >= 5
-
-  // Start date of the current batch window (a Monday or a Friday)
-  const curStart = new Date(today)
-  if (inFriSun) {
-    const backToFri = dow === 0 ? 2 : dow - 5
-    curStart.setDate(today.getDate() - backToFri)
-  } else {
-    curStart.setDate(today.getDate() - (dow - 1)) // back to Monday
+  return {
+    start: monday, end: friday, days, windowDates,
+    label: '☀️ Batch Domingo',
+    rangeLabel: `${fmtShortDate(monday)} – ${fmtShortDate(friday)}`,
   }
-
-  // Walk forward or backward by `offset` windows
-  let start = new Date(curStart)
-  let isFriWin = inFriSun
-  const step = offset >= 0 ? 1 : -1
-  for (let i = 0; i < Math.abs(offset); i++) {
-    if (step > 0) {
-      start.setDate(start.getDate() + (isFriWin ? 3 : 4))
-      isFriWin = !isFriWin
-    } else {
-      start.setDate(start.getDate() - (isFriWin ? 4 : 3))
-      isFriWin = !isFriWin
-    }
-  }
-
-  // Both windows are 4 days: Mon-Thu (Lun batch) and Fri-Mon (Jue batch, includes next Mon)
-  const days = 4
-  const end = new Date(start)
-  end.setDate(start.getDate() + days - 1)
-
-  // Build list of { date, wk, dayKey } for each day in this window
-  const windowDates = []
-  for (let i = 0; i < days; i++) {
-    const d = new Date(start)
-    d.setDate(start.getDate() + i)
-    windowDates.push({ date: d, wk: getISOWeek(d), dayKey: DOW_TO_DAYKEY[d.getDay()] })
-  }
-
-  const label = isFriWin ? '☀️ Batch Jue' : '🌙 Batch Lun'
-  const rangeLabel = `${fmtShortDate(start)} – ${fmtShortDate(end)}`
-
-  return { start, end, days, isFriWin, windowDates, label, rangeLabel }
 }
 
 // Which profiles are active on a specific Date
@@ -102,7 +71,7 @@ function getWeekWindow(offset) {
     const d = new Date(monday); d.setDate(monday.getDate() + i)
     windowDates.push({ date: d, wk: getISOWeek(d), dayKey: DOW_TO_DAYKEY[d.getDay()] })
   }
-  return { start: monday, end: sunday, days: 7, isFriWin: false, windowDates, label: '📅 Semana', rangeLabel: `${fmtShortDate(monday)} – ${fmtShortDate(sunday)}` }
+  return { start: monday, end: sunday, days: 7, windowDates, label: '📅 Semana', rangeLabel: `${fmtShortDate(monday)} – ${fmtShortDate(sunday)}` }
 }
 
 // ─── Main shopping list ──────────────────────────────────────────────────────
