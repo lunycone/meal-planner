@@ -563,34 +563,70 @@ function buildSchedule(mealDataList) {
 const MEAL_LABELS = { desayuno: 'Desayuno', comida: 'Comida', merienda: 'Merienda', cena: 'Cena' }
 const MEAL_TIMES  = { desayuno: '9:00 am', comida: '12–1 pm', merienda: '4:30 pm', cena: '7:30 pm' }
 
+// Agrupa la lista plana de lineas {header|total|text} (que ya calculaban
+// cookLines/platoLines/desayunoLines) en cajas -- una caja nueva por cada
+// header ('🥔 Puré', '🍗 Aparte'...), o una sola caja sin titulo si no hay
+// ningun header (plato simple sin agrupacion). Solo cambia como se PINTA la
+// info que el motor ya calculaba, no el calculo en si.
+function groupStatLines(lines) {
+  const groups = []
+  let current = null
+  for (const l of lines) {
+    if (l.header) {
+      current = { label: l.text, rows: [], total: null }
+      groups.push(current)
+      continue
+    }
+    if (!current) { current = { label: null, rows: [], total: null }; groups.push(current) }
+    if (l.total) {
+      const clean = l.text.replace(/^→\s*/, '')
+      const i = clean.indexOf(': ')
+      current.total = i >= 0 ? { label: clean.slice(0, i), value: clean.slice(i + 2) } : { label: clean, value: '' }
+    } else {
+      const i = l.text.indexOf(': ')
+      current.rows.push(i >= 0 ? { name: l.text.slice(0, i), qty: l.text.slice(i + 2) } : { name: l.text, qty: '' })
+    }
+  }
+  return groups
+}
+
+function StatBoxes({ lines }) {
+  return groupStatLines(lines).map((g, gi) => (
+    <div key={gi} className="batch-statbox">
+      {g.label && <div className="batch-statbox-label">{g.label}</div>}
+      <div>
+        {g.rows.map((r, ri) => (
+          <div key={ri} className="batch-statbox-row">
+            <span>{r.name}</span>
+            <span className="batch-statbox-qty">{r.qty}</span>
+          </div>
+        ))}
+      </div>
+      {g.total && (
+        <div className="batch-statbox-total">
+          <span>{g.total.label}</span>
+          <span className="batch-statbox-total-val">{g.total.value}</span>
+        </div>
+      )}
+    </div>
+  ))
+}
+
 function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = null }) {
-  const border  = { paddingBottom: '1rem', marginBottom: '1rem', borderBottom: '1px solid var(--t-border)' }
   const catLbl  = { fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--t-text-faint)', fontWeight: 700, marginBottom: '0.3rem' }
-  const secHead = { fontSize: '0.7rem', fontWeight: 700, color: 'var(--t-text-soft)', marginBottom: '0.4rem', marginTop: '0.6rem' }
-  const muted   = { fontSize: '0.72rem', color: 'var(--t-text-faint)', paddingLeft: '0.75rem' }
-  const accent  = { fontWeight: 700, color: 'var(--t-accent)' }
-  const rowStyle = { fontSize: '0.82rem', color: 'var(--t-text)', paddingLeft: '0.75rem', lineHeight: 1.8 }
 
   return (
-    <div style={border}>
+    <>
       {showMealLabel && (
         <div style={catLbl}>{MEAL_LABELS[mealType]} <span style={{ fontWeight: 400, opacity: 0.7 }}>· {MEAL_TIMES[mealType]}</span></div>
       )}
-      {/* groupLabel: cuando el mismo mealType tiene mas de un plato distinto
-          (p.ej. Julio burrito, Maria torta de garbanzo) -- cada grupo es un
-          bote/lote de cocina separado, no una fila mas del mismo. */}
-      {groupLabel && (
-        <div style={{ ...muted, paddingLeft: 0, fontWeight: 700, color: 'var(--t-accent)', marginBottom: '0.2rem' }}>👤 {groupLabel}</div>
-      )}
 
       {!batchData ? (
-        <div style={{ fontSize: '0.8rem', color: 'var(--t-text-faint)', fontStyle: 'italic' }}>
+        <div className="batch-dish-card" style={{ color: 'var(--t-text-faint)', fontStyle: 'italic', fontSize: '0.8rem' }}>
           Sin planificar
         </div>
       ) : (
-        <>
-          <div style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.5rem' }}>{batchData.mealName}</div>
-
+        <div className="batch-dish-card">
           {(() => {
             const persons = batchData.personTotals.filter(pt => pt.activeDays > 0 || pt.recipeServings > 0)
             // BUG corregido (6 sep 2026): batchData.meal.type es SIEMPRE
@@ -765,65 +801,70 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
 
             return (
               <>
-                {/* ── COCINAR ── */}
-                <div style={secHead}>🍳 Cocinar — total del batch</div>
-                {cookLines.map((l, i) => (
-                  l.header
-                    ? <div key={'c' + i} style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--t-accent)', marginTop: i > 0 ? '0.3rem' : 0, paddingLeft: '0.5rem' }}>{l.text}</div>
-                    : l.total
-                      ? <div key={'c' + i} style={{ ...rowStyle, fontWeight: 700, paddingLeft: '1.1rem' }}>{l.text}</div>
-                      : <div key={'c' + i} style={{ ...muted, lineHeight: 1.7, paddingLeft: '1.1rem' }}>{l.text}</div>
-                ))}
-                {isDesayuno && (() => {
-                  const totalPortions = persons.reduce((s, p) => s + p.recipeServings, 0)
-                  const W = batchData.recipePortionGrams || 0
-                  const dm = desayunoMethod(batchData.mealName, batchData.sharedItems.map(it => it.key))
-                  const verb = dm.mode === 'oven' ? 'hornear y cortar' : dm.mode === 'stove' ? 'cuajar y cortar' : 'mezclar y repartir'
-                  return (
-                    <div style={{ ...muted, marginTop: '0.25rem', paddingLeft: '0.5rem', fontStyle: 'italic' }}>
-                      → {verb} en {totalPortions} tuppers{W > 0 ? ` de ~${R(W)}g` : ''}
-                    </div>
-                  )
-                })()}
-
-                {/* ── TUPPER ── */}
-                <div style={{ ...secHead, marginTop: '0.9rem' }}>🥡 En cada tupper</div>
-                {groups.map((g, gi) => (
-                  <div key={gi} style={{ ...rowStyle, marginBottom: '0.4rem' }}>
-                    <div>
-                      <span style={accent}>{g.names.join(' y ')}</span>
-                      {g.names.length > 1 ? ' (igual)' : ''}
-                      {' — '}{g.tuppers} tupper{g.tuppers > 1 ? 's' : ''}
-                    </div>
-                    {g.lines.map((l, i) => (
-                      l.header
-                        ? <div key={i} style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--t-accent)', marginTop: i > 0 ? '0.25rem' : 0 }}>{l.text}</div>
-                        : l.total
-                          ? <div key={i} style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--t-text)', lineHeight: 1.7, paddingLeft: '1.1rem' }}>{l.text}</div>
-                          : <div key={i} style={{ ...muted, lineHeight: 1.7, paddingLeft: '1.1rem' }}>{l.text}</div>
+                <div className="batch-dish-head">
+                  <div className="batch-dish-name">{batchData.mealName}</div>
+                  <div className="batch-dish-avatars">
+                    {persons.map(pt => (
+                      <span key={pt.person.id} className="batch-avatar" title={pt.person.name}>{pt.person.initial}</span>
                     ))}
                   </div>
-                ))}
+                </div>
+
+                <div className="batch-body">
+                  {/* ── COCINAR ── */}
+                  <div>
+                    <div className="batch-col-label">🍳 Cocinar — total del batch</div>
+                    <StatBoxes lines={cookLines} />
+                    {isDesayuno && (() => {
+                      const totalPortions = persons.reduce((s, p) => s + p.recipeServings, 0)
+                      const W = batchData.recipePortionGrams || 0
+                      const dm = desayunoMethod(batchData.mealName, batchData.sharedItems.map(it => it.key))
+                      const verb = dm.mode === 'oven' ? 'hornear y cortar' : dm.mode === 'stove' ? 'cuajar y cortar' : 'mezclar y repartir'
+                      return (
+                        <div className="batch-note">
+                          → {verb} en {totalPortions} tuppers{W > 0 ? ` de ~${R(W)}g` : ''}
+                        </div>
+                      )
+                    })()}
+                  </div>
+
+                  {/* ── TUPPER ── */}
+                  <div>
+                    <div className="batch-col-label">🥡 Tuppers</div>
+                    {groups.map((g, gi) => (
+                      <div key={gi} className="batch-tupper-card">
+                        <div className="batch-tupper-head">
+                          {g.names.map(n => <span key={n} className="batch-avatar batch-avatar-sm">{n.charAt(0)}</span>)}
+                          <span className="batch-tupper-name">
+                            {g.names.join(' y ')}{g.names.length > 1 ? ' (igual)' : ''}
+                            {' — '}{g.tuppers} tupper{g.tuppers > 1 ? 's' : ''}
+                          </span>
+                        </div>
+                        <StatBoxes lines={g.lines} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </>
             )
           })()}
 
           {batchData.freshItems.length > 0 && (
-            <>
-              <div style={{ ...secHead, color: '#b45309' }}>🥑 Al momento — añadir al servir (×ración)</div>
+            <div className="batch-fresh">
+              <div className="batch-col-label" style={{ color: '#b45309' }}>🥑 Al momento — añadir al servir (×ración)</div>
               {batchData.freshItems.map(it => (
-                <div key={it.ingKey} style={{ fontSize: '0.82rem', color: 'var(--t-text)', paddingLeft: '0.75rem', lineHeight: 1.7, opacity: 0.85 }}>
+                <div key={it.ingKey} className="batch-fresh-row">
                   {it.name}
                   {(it.portion.grams || it.portion.ml || it.portion.units)
                     ? `: ${fmtQty({ grams: it.portion.grams ?? 0, ml: it.portion.ml ?? 0, units: it.portion.units ?? 0 })}`
                     : ' (al gusto)'}
                 </div>
               ))}
-            </>
+            </div>
           )}
-        </>
+        </div>
       )}
-    </div>
+    </>
   )
 }
 
@@ -878,12 +919,10 @@ function CookMode({ schedule, title, onExit }) {
 
       {/* Víspera reminder */}
       {vispera.length > 0 && (
-        <div style={{ marginBottom: '1rem', padding: '0.6rem 0.9rem', background: 'rgba(99,102,241,0.08)', borderLeft: '3px solid #6366f1', borderRadius: '0.5rem' }}>
-          <div style={{ fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#6366f1', fontWeight: 700, marginBottom: '0.3rem' }}>
-            🌙 Anoche (la víspera)
-          </div>
+        <div className="batch-vispera" style={{ marginBottom: '1rem' }}>
+          <span className="batch-vispera-tag">🌙 Anoche (la víspera)</span>
           {vispera.map((v, i) => (
-            <div key={i} style={{ fontSize: '0.8rem', color: 'var(--t-text)', lineHeight: 1.6 }}>{v.emoji} {v.text}</div>
+            <div key={i} style={{ fontSize: '0.8rem', color: 'var(--t-text)', lineHeight: 1.6, marginTop: i === 0 ? '0.4rem' : 0 }}>{v.emoji} {v.text}</div>
           ))}
         </div>
       )}
@@ -1094,12 +1133,10 @@ function BatchCard({ title, cookLabel, coverDays, mealSections, schedule, kcalSu
 
       {/* Víspera */}
       {schedule.vispera.length > 0 && (
-        <div style={{ margin: '0.75rem 0', padding: '0.6rem 0.9rem', background: 'rgba(99,102,241,0.07)', borderLeft: '3px solid #6366f1', borderRadius: '0.5rem' }}>
-          <div style={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#6366f1', fontWeight: 700, marginBottom: '0.3rem' }}>
-            🌙 La víspera
-          </div>
+        <div className="batch-vispera">
+          <span className="batch-vispera-tag">🌙 La víspera</span>
           {schedule.vispera.map((v, i) => (
-            <div key={i} style={{ fontSize: '0.78rem', color: 'var(--t-text)', lineHeight: 1.6 }}>{v.emoji} {v.text}</div>
+            <div key={i} style={{ fontSize: '0.78rem', color: 'var(--t-text)', lineHeight: 1.6, marginTop: i === 0 ? '0.4rem' : 0 }}>{v.emoji} {v.text}</div>
           ))}
         </div>
       )}
@@ -1188,7 +1225,7 @@ export default function BatchPrepTab() {
         </div>
       </div>
 
-      <div style={{ maxWidth: '640px' }}>
+      <div style={{ maxWidth: '960px' }}>
         <BatchCard
           title="☀️ Batch Domingo"
           cookLabel={`dom ${formatDateShort(cookDate)}`}
