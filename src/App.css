@@ -214,6 +214,7 @@ input, select, textarea { font-family: inherit; }
 .badge-oveja      { background: rgba(232,240,216,0.85); color: #3a5c20; }
 .badge-pend       { background: rgba(232,237,245,0.85); color: #3a4a7a; }
 .badge-modified   { background: rgba(255,243,205,0.9);  color: #856404; }
+.badge-organic    { background: var(--green-bg);    color: var(--green-ink); font-weight: 600; }
 
 /* ============================================================
    BUTTONS
