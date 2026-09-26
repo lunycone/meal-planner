@@ -5,10 +5,11 @@ import Segmented from '../components/ui/Segmented'
 import DishPicker from '../components/meal/DishPicker'
 import MealSheet from '../components/meal/MealSheet'
 import ModelWeekSheet from '../components/meal/ModelWeekSheet'
+import SaveWeekSheet from '../components/meal/SaveWeekSheet'
 import { clearFor, weekWith, cleanWeek } from '../lib/planActions'
 import {
   DAY_KEYS, DAY_SHORT, DAY_LONG, MONTHS, MEALS, MEAL_LABEL, MEAL_TIME, MEAL_STYLE, PCOS_STYLE, PERSON_COLOR,
-  BATCH_DAYS, FREEZE_FROM_DAY, addDays, mondayOf, weekKeyOf, dayIndexOf, sameDay, startOfDay, fmtMoney, fmtRange,
+  BATCH_DAYS, addDays, mondayOf, weekKeyOf, dayIndexOf, sameDay, startOfDay, fmtMoney, fmtRange,
   activeProfilesOn, dayForPerson, mealInfo, dayTotals, shortName,
 } from '../lib/mealplan'
 
@@ -19,7 +20,6 @@ import {
 // va a los 5 días del batch (DishPicker → «Aplicar a»).
 // Mes: el calendario del mes con comida y cena de cada día.
 
-const FREEZE_IDX = DAY_KEYS.indexOf(FREEZE_FROM_DAY)
 
 function MealRow({ type, rows, pcosPerson, onOpen, delay }) {
   const st = MEAL_STYLE[type]
@@ -149,6 +149,12 @@ export default function PlannerView() {
   const [sheet, setSheet] = useState(null)    // { dayIdx, mealType }
   const [models, setModels] = useState(false)
   const [confirmClear, setConfirmClear] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [savedName, setSavedName] = useState(null)
+  const editingWeek = useStore(s => s.editingWeek)
+  const setEditingWeek = useStore(s => s.setEditingWeek)
+  const linked = editingWeek?.weekKey === wk ? editingWeek : null
+  useEffect(() => { if (!savedName) return; const t = setTimeout(() => setSavedName(null), 2600); return () => clearTimeout(t) }, [savedName])
 
   useEffect(() => {
     const cleaned = cleanWeek(weekPlan[wk], allCombos)
@@ -175,7 +181,6 @@ export default function PlannerView() {
   const weekCost = days.reduce((s, d) => s + d.cost, 0)
   const prevKey = weekKeyOf(addDays(monday, -7))
   const hasPrev = Object.values(weekPlan[prevKey] ?? {}).some(Boolean)
-  const batchSunday = addDays(monday, -1)
   const pcosPerson = shown.find(p => p.pcos)
 
   const cols = DAY_KEYS.map((_, i) => i === sel ? 'minmax(0, 2.7fr)' : 'minmax(0, 1fr)').join(' ')
@@ -234,6 +239,9 @@ export default function PlannerView() {
         <>
           <div className="plan-actions mp-rise" style={{ animationDelay: '60ms' }}>
             <button className="mp-btn mp-btn-glass mp-btn-sm" onClick={() => setModels(true)}><Icon name="layers" size={14} />Cargar semana modelo</button>
+            <button className="mp-btn mp-btn-glass mp-btn-sm" disabled={!planned} onClick={() => setSaving(true)} title={planned ? 'Guardarla con nombre para volver a cargarla' : 'La semana está vacía'}>
+              <Icon name="sparkle" size={14} />{linked ? `Guardar cambios en «${linked.name.length > 20 ? linked.name.slice(0, 18) + '…' : linked.name}»` : 'Guardar semana'}
+            </button>
             <button className="mp-btn mp-btn-glass mp-btn-sm" disabled={!hasPrev} onClick={() => replaceWeek(wk, { ...(weekPlan[prevKey] ?? {}) })} title={hasPrev ? 'Copia las 28 comidas de la semana anterior' : 'La semana anterior está vacía'}><Icon name="repeat" size={14} />Repetir semana anterior</button>
             {planned > 0 && (confirmClear
               ? <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -242,26 +250,21 @@ export default function PlannerView() {
                   <button className="mp-btn mp-btn-glass mp-btn-sm" onClick={() => setConfirmClear(false)}>No</button>
                 </span>
               : <button className="mp-btn mp-btn-glass mp-btn-sm" onClick={() => setConfirmClear(true)}><Icon name="trash" size={14} />Vaciar semana</button>)}
-            <span className="mp-muted" style={{ marginLeft: 'auto', fontSize: 12.5 }}>
-              Un plato puesto en lunes–viernes va a los 5 días del batch; puedes limitarlo a un solo día.
-            </span>
+            {savedName && <span className="mp-chip mp-in" style={{ color: 'var(--c-green)' }}><Icon name="check" size={13} stroke={2.6} />Guardada como «{savedName}»</span>}
+            {!savedName && linked && (
+              <span className="mp-chip" style={{ color: '#5B3FC4' }} title="Los cambios que hagas aquí se pueden guardar en esa semana modelo">
+                Editando «{linked.name}»
+                <button type="button" aria-label="Dejar de editar" onClick={() => setEditingWeek(null)} style={{ border: 0, background: 'transparent', cursor: 'pointer', color: 'inherit', display: 'flex', padding: 0, marginLeft: 2 }}><Icon name="x" size={10} stroke={3} /></button>
+              </span>
+            )}
           </div>
 
           <div className="plan-grid" style={{ gridTemplateColumns: cols }}>
-            <div className="plan-band is-batch mp-rise" style={{ gridColumn: '1 / 6' }}>
-              <Icon name="pot" size={13} stroke={2.2} />
-              <span><strong>Batch del domingo {batchSunday.getDate()}</strong> · lunes a viernes en tupper · jueves y viernes al congelador</span>
-            </div>
-            <div className="plan-band is-weekend mp-rise" style={{ gridColumn: '6 / 8' }}>
-              <Icon name="home" size={13} stroke={2.2} />
-              <span>Fin de semana · se cocina en el día</span>
-            </div>
-
             {days.map(d => {
               const big = d.i === sel
               const isToday = d.i === todayIdx
               const past = todayIdx >= 0 && d.i < todayIdx
-              const tag = isToday ? 'Hoy' : d.i === 6 ? 'Batch' : d.i >= FREEZE_IDX && d.i <= 4 ? 'Congelar' : null
+              const tag = isToday ? 'Hoy' : d.i === 6 ? 'Batch' : null
               return (
                 <article key={d.dk} className={`plan-day mp-glass mp-rise${big ? ' is-big' : ''}`}
                   style={{ animationDelay: `${80 + d.i * 40}ms`, opacity: past && !big ? 0.62 : 1 }}
@@ -273,17 +276,14 @@ export default function PlannerView() {
                       <span className="mp-num" style={{ fontSize: big ? 34 : 22, fontWeight: 700, letterSpacing: '-0.03em', transition: 'font-size .5s var(--c-ease)' }}>{d.date.getDate()}</span>
                     </span>
                     {tag && (
-                      <span className="mp-tag" style={tag === 'Hoy' ? { background: 'var(--c-ink)', color: '#fff' } : tag === 'Congelar' ? { background: 'rgba(46,155,214,0.14)', color: '#1F6E9E' } : { background: 'rgba(232,98,124,0.14)', color: '#C2375A' }}>
-                        {tag === 'Congelar' && !big ? <Icon name="snow" size={10} stroke={2.6} /> : tag}
+                      <span className="mp-tag" style={tag === 'Hoy' ? { background: 'var(--c-ink)', color: '#fff' } : { background: 'rgba(232,98,124,0.14)', color: '#C2375A' }}>
+                        {tag}
                       </span>
                     )}
                   </div>
 
                   {big ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flexGrow: 1 }}>
-                      {BATCH_DAYS.includes(d.dk) && d.i >= FREEZE_IDX && (
-                        <span className="mp-muted" style={{ fontSize: 12, lineHeight: 1.4 }}>Comida y cena salen del congelador: pásalas a la nevera la noche antes.</span>
-                      )}
                       {MEALS.map((m, k) => (
                         <MealRow key={m} type={m} rows={d.meals[m]} pcosPerson={pcosPerson} delay={k * 50} onOpen={() => openSlot(d.i, m)} />
                       ))}
@@ -332,6 +332,7 @@ export default function PlannerView() {
         <DishPicker weekKey={wk} weekData={week} dayKey={pickDay.dk} date={pickDay.date} mealType={picker.mealType}
           initialWho={picker.who} currentKey={picker.currentKey} onClose={() => setPicker(null)} />
       )}
+      {saving && <SaveWeekSheet weekKey={wk} monday={monday} onClose={() => setSaving(false)} onSaved={setSavedName} />}
       {models && <ModelWeekSheet initialTarget={weekOffset} onClose={() => setModels(false)} onLoaded={t => { setWeekOffset(t); setPlannerDay(null) }} />}
     </div>
   )

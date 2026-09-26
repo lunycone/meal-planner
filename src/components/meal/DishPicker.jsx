@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import useStore, { selectAllIng, selectAllCombos } from '../../store/useStore'
 import { comboAgg, fmtPortion, ingKcal, ingCost, pcosCarbLevel } from '../../engine/calc'
+import Overlay from '../ui/Overlay'
 import Icon, { MEAL_ICON } from '../ui/Icon'
 import Segmented from '../ui/Segmented'
 import { MEAL_LABEL, MEAL_STYLE, PCOS_STYLE, BATCH_DAYS, DAY_LONG, DAY_KEYS, fmtMoney, activeProfilesOn } from '../../lib/mealplan'
@@ -57,7 +58,7 @@ export default function DishPicker({ weekKey, weekData, dayKey, date, mealType, 
   }
 
   return (
-    <div className="mp-overlay" onClick={onClose}>
+    <Overlay onClose={onClose}>
       <div className="mp-sheet" style={{ maxWidth: 920, height: 'min(760px, calc(100vh - 48px))' }} onClick={e => e.stopPropagation()} role="dialog" aria-label={`Elegir ${MEAL_LABEL[mealType].toLowerCase()}`}>
         <div className="mp-sheet-head">
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -174,6 +175,6 @@ export default function DishPicker({ weekKey, weekData, dayKey, date, mealType, 
           </div>
         </div>
       </div>
-    </div>
+    </Overlay>
   )
 }

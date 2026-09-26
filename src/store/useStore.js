@@ -413,6 +413,48 @@ const useStore = create(
         set(s => ({ batchTups: toggleIn(s.batchTups, weekKey, tupId) }))
       },
 
+      // ── SEMANAS GUARDADAS (semanas modelo propias) ─────────────────────
+      // «Guardar semana» copia los 28 huecos de una semana del plan con un
+      // nombre. Las semanas modelo de fábrica (data/modelWeeks.js) no se
+      // pueden borrar del código: se ocultan (hiddenModelWeeks) y se pueden
+      // renombrar (modelWeekNames). Todo en el guardado compartido.
+      customWeeks:      [],   // [{ id, name, slots, savedAt }]
+      hiddenModelWeeks: [],   // [n]
+      modelWeekNames:   {},   // { n: 'nombre' }
+      // Semana modelo que se está editando en el Planificador (por dispositivo,
+      // no se guarda): { kind: 'custom' | 'model', id, name, weekKey }
+      editingWeek: null,
+      setEditingWeek(v) { set({ editingWeek: v }) },
+
+      saveCustomWeek({ id = null, name, slots }) {
+        const newId = id ?? Date.now().toString(36)
+        set(s => {
+          const entry = { id: newId, name, slots, savedAt: new Date().toISOString() }
+          const exists = s.customWeeks.some(w => w.id === newId)
+          return { customWeeks: exists ? s.customWeeks.map(w => w.id === newId ? entry : w) : [...s.customWeeks, entry] }
+        })
+        return newId
+      },
+      // Guardar encima de una semana de fábrica: pasa a ser tuya con el mismo
+      // nombre y la original se oculta (una sola escritura).
+      replaceModelWeek(n, { name, slots }) {
+        const newId = Date.now().toString(36)
+        set(s => ({
+          customWeeks: [...s.customWeeks, { id: newId, name, slots, savedAt: new Date().toISOString() }],
+          hiddenModelWeeks: [...new Set([...(s.hiddenModelWeeks ?? []), n])],
+        }))
+        return newId
+      },
+      renameWeek(kind, id, name) {
+        if (kind === 'custom') set(s => ({ customWeeks: s.customWeeks.map(w => w.id === id ? { ...w, name } : w) }))
+        else set(s => ({ modelWeekNames: { ...s.modelWeekNames, [id]: name } }))
+      },
+      deleteWeek(kind, id) {
+        if (kind === 'custom') set(s => ({ customWeeks: s.customWeeks.filter(w => w.id !== id) }))
+        else set(s => ({ hiddenModelWeeks: [...new Set([...(s.hiddenModelWeeks ?? []), id])] }))
+      },
+      restoreModelWeeks() { set({ hiddenModelWeeks: [] }) },
+
       // Como setMealSlots, pero sustituye la semana ENTERA (no fusiona) --
       // para "Limpiar", "Cargar semana modelo", "Generar barato" y "Repetir
       // anterior", que primero querian borrar los huecos viejos y luego
@@ -457,6 +499,9 @@ const useStore = create(
         shopChecks:          s.shopChecks,
         pantry:              s.pantry,
         batchTups:           s.batchTups,
+        customWeeks:         s.customWeeks,
+        hiddenModelWeeks:    s.hiddenModelWeeks,
+        modelWeekNames:      s.modelWeekNames,
         // activeView / activeMeal NOT persisted → always start at home
       }),
     }
