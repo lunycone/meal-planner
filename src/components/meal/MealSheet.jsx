@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import useStore, { selectAllIng } from '../../store/useStore'
 import { fmtPortion, ingKcal } from '../../engine/calc'
+import Overlay from '../ui/Overlay'
 import Icon, { MEAL_ICON } from '../ui/Icon'
 import Segmented from '../ui/Segmented'
 import { MEAL_LABEL, MEAL_TIME, MEAL_STYLE, PCOS_STYLE, fmtMoney, macroPct } from '../../lib/mealplan'
@@ -25,7 +26,7 @@ export default function MealSheet({ mealType, dayLabel, rows, onChange, onClear,
   const scaledKey = info.scaled?.ingName
 
   return (
-    <div className="mp-overlay" onClick={onClose}>
+    <Overlay onClose={onClose}>
       <div className="mp-sheet" style={{ maxWidth: 620 }} onClick={e => e.stopPropagation()} role="dialog" aria-label={info.name}>
         <div className="mp-sheet-head">
           <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
@@ -133,7 +134,7 @@ export default function MealSheet({ mealType, dayLabel, rows, onChange, onClear,
           {onChange && <button className="mp-btn mp-btn-dark" onClick={onChange}><Icon name="repeat" size={14} />Cambiar plato</button>}
         </div>
       </div>
-    </div>
+    </Overlay>
   )
 }
 

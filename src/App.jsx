@@ -46,27 +46,54 @@ function PeopleToggle() {
   )
 }
 
-function IdeasPanel({ ideas, onClose, onGo }) {
+// Sugerencias vistas / descartadas: por dispositivo y por día (las
+// sugerencias dependen del día, así que mañana vuelven a salir si siguen
+// aplicando).
+const dayTag = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}` }
+function readTags(key) {
+  try {
+    const today = dayTag()
+    return new Set((JSON.parse(localStorage.getItem(key)) ?? []).filter(t => t.endsWith('@' + today)))
+  } catch { return new Set() }
+}
+function writeTags(key, set) { try { localStorage.setItem(key, JSON.stringify([...set])) } catch {} }
+
+function IdeasPanel({ ideas, hiddenCount, onClose, onPick, onDismiss, onRestore }) {
+  const [leaving, setLeaving] = useState(() => new Set())
+  function leave(i, go) {
+    setLeaving(l => new Set(l).add(i.id))
+    setTimeout(() => { onDismiss(i); if (go && i.view) onPick(i.view) }, go && i.view ? 180 : 280)
+  }
   return (
     <aside className="mp-ideas" aria-label="Sugerencias">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '2px 4px 10px' }}>
         <span style={{ fontSize: 17, fontWeight: 700 }}>Sugerencias</span>
         <button className="mp-icon-btn" style={{ width: 30, height: 30 }} aria-label="Cerrar" onClick={onClose}><Icon name="x" size={12} stroke={3} /></button>
       </div>
-      {ideas.length === 0 && <div className="mp-empty" style={{ padding: 20 }}>Nada que revisar ahora mismo.</div>}
+      {ideas.length === 0 && (
+        <div className="mp-empty" style={{ padding: '26px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+          <span className="mp-bubble" style={{ width: 38, height: 38, background: 'rgba(47,158,91,0.14)', color: 'var(--c-green)' }}><Icon name="check" size={18} stroke={2.6} /></span>
+          Todo al día.
+        </div>
+      )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {ideas.map((i, n) => (
-          <button key={i.id} type="button" className="mp-in mp-row" onClick={() => i.view && onGo(i.view)}
-            style={{ display: 'flex', gap: 12, padding: 12, border: 0, borderRadius: 18, background: 'rgba(255,255,255,0.85)', textAlign: 'left', cursor: i.view ? 'pointer' : 'default', animationDelay: `${60 + n * 60}ms` }}>
-            <span className="mp-bubble" style={{ width: 32, height: 32, background: i.tint, color: i.color }}><Icon name={i.icon} size={16} stroke={2.2} /></span>
-            <span style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--c-ink-3)' }}>{i.when}</span>
-              <span style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.3 }}>{i.title}</span>
-              <span style={{ fontSize: 12.5, lineHeight: 1.45, color: 'var(--c-ink-2)' }}>{i.detail}</span>
-            </span>
-          </button>
+          <div key={i.id} className={`mp-idea mp-in${leaving.has(i.id) ? ' is-leaving' : ''}`} style={{ animationDelay: `${60 + n * 60}ms` }}>
+            <button type="button" className="mp-idea-main" onClick={() => leave(i, true)} title={i.view ? 'Abrir y quitar de la lista' : 'Hecho: quitar de la lista'}>
+              <span className="mp-bubble" style={{ width: 32, height: 32, background: i.tint, color: i.color }}><Icon name={i.icon} size={16} stroke={2.2} /></span>
+              <span style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
+                <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--c-ink-3)' }}>{i.when}</span>
+                <span style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.3 }}>{i.title}</span>
+                <span style={{ fontSize: 12.5, lineHeight: 1.45, color: 'var(--c-ink-2)' }}>{i.detail}</span>
+              </span>
+            </button>
+            <button type="button" className="mp-idea-x" aria-label={`Descartar: ${i.title}`} onClick={() => leave(i, false)}><Icon name="x" size={10} stroke={3} /></button>
+          </div>
         ))}
       </div>
+      {hiddenCount > 0 && (
+        <button type="button" className="mp-idea-restore" onClick={onRestore}>Mostrar las {hiddenCount} descartadas hoy</button>
+      )}
     </aside>
   )
 }
@@ -81,10 +108,32 @@ function AppShell() {
   const [ideasOpen, setIdeasOpen] = useState(false)
 
   const view = TABS.find(t => t.value === activeView) ?? TABS[0]
-  const ideas = useMemo(
+  const allIdeas = useMemo(
     () => computeInsights({ weekPlan, profiles, allIng, allCombos }),
     [weekPlan, profiles, allIng, allCombos]
   )
+  const [dismissed, setDismissed] = useState(() => readTags('mp-ideas-dismissed'))
+  const [seen, setSeen] = useState(() => readTags('mp-ideas-seen'))
+  const tagOf = i => `${i.id}@${dayTag()}`
+  const ideas = allIdeas.filter(i => !dismissed.has(tagOf(i)))
+  const unseen = ideas.filter(i => !seen.has(tagOf(i))).length
+
+  // Al abrir el panel, todo lo que se ve cuenta como visto (el número se va)
+  useEffect(() => {
+    if (!ideasOpen) return
+    const next = new Set(seen)
+    ideas.forEach(i => next.add(tagOf(i)))
+    if (next.size !== seen.size) { setSeen(next); writeTags('mp-ideas-seen', next) }
+  }, [ideasOpen, ideas.length]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function dismiss(i) {
+    const next = new Set(dismissed).add(tagOf(i))
+    setDismissed(next); writeTags('mp-ideas-dismissed', next)
+  }
+  function restoreDismissed() {
+    const next = new Set()
+    setDismissed(next); writeTags('mp-ideas-dismissed', next)
+  }
 
   useEffect(() => { window.scrollTo({ top: 0 }) }, [view.value])
 
@@ -102,7 +151,7 @@ function AppShell() {
           <button type="button" className={`mp-icon-btn${ideasOpen ? ' is-on' : ''}`} aria-label="Sugerencias" aria-expanded={ideasOpen}
             onClick={() => setIdeasOpen(o => !o)} style={{ position: 'relative' }}>
             <Icon name="bulb" size={18} />
-            {ideas.length > 0 && <span className="mp-badge">{ideas.length}</span>}
+            {unseen > 0 && !ideasOpen && <span className="mp-badge">{unseen}</span>}
           </button>
           {supabase && (
             <button type="button" className="mp-icon-btn" aria-label="Cerrar sesión" title="Cerrar sesión" onClick={() => supabase.auth.signOut()}>
@@ -116,7 +165,11 @@ function AppShell() {
         <view.Component />
       </main>
 
-      {ideasOpen && <IdeasPanel ideas={ideas} onClose={() => setIdeasOpen(false)} onGo={v => { setView(v); setIdeasOpen(false) }} />}
+      {ideasOpen && (
+        <IdeasPanel ideas={ideas} hiddenCount={allIdeas.length - ideas.length}
+          onClose={() => setIdeasOpen(false)} onDismiss={dismiss} onRestore={restoreDismissed}
+          onPick={v => { setView(v); setIdeasOpen(false) }} />
+      )}
     </div>
   )
 }

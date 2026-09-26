@@ -1077,7 +1077,6 @@ const MEALS    = ['desayuno', 'comida', 'merienda', 'cena']
 const WEEKDAY_DAYS = ['lun', 'mar', 'mié', 'jue', 'vie']
 
 const DAY_LETTER = { lun: 'L', mar: 'M', 'mié': 'X', jue: 'J', vie: 'V' }
-const FREEZE_DAYS = new Set(['jue', 'vie'])
 
 export default function BatchPrepTab() {
   const allIng        = useStore(selectAllIng)
@@ -1179,9 +1178,6 @@ export default function BatchPrepTab() {
             <Icon name="play" size={14} fill="currentColor" />Empezar a cocinar
           </button>
         )}
-        <span className="mp-muted" style={{ marginTop: 14, fontSize: 12.5, lineHeight: 1.5 }}>
-          Los tuppers de jueves y viernes van al congelador; la sugerencia del miércoles y jueves por la noche te recuerda pasarlos a la nevera.
-        </span>
       </section>
 
       <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -1226,13 +1222,11 @@ export default function BatchPrepTab() {
                   <div style={{ marginTop: 'auto', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                     {c.tupList.map(t => {
                       const on = tups.has(t.id)
-                      const freeze = FREEZE_DAYS.has(t.dayKey)
                       return (
-                        <button key={t.id} type="button" className={`bt-tup${on ? ' is-on' : ''}${freeze ? ' is-freeze' : ''}`} aria-pressed={on}
-                          title={`${t.person.name} · ${t.dayKey}${freeze ? ' · al congelador' : ''}`} onClick={() => toggleTup(t.id)}>
+                        <button key={t.id} type="button" className={`bt-tup${on ? ' is-on' : ''}`} aria-pressed={on}
+                          title={`${t.person.name} · ${t.dayKey}`} onClick={() => toggleTup(t.id)}>
                           <span className="bt-tup-check"><Icon name="check" size={8} stroke={4} /></span>
                           {DAY_LETTER[t.dayKey]} {t.person.initial}
-                          {freeze && <Icon name="snow" size={10} stroke={2.4} />}
                         </button>
                       )
                     })}

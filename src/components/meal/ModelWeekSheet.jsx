@@ -1,56 +1,71 @@
 import { useMemo, useState } from 'react'
 import useStore, { selectAllIng, selectAllCombos } from '../../store/useStore'
 import { MODEL_WEEKS } from '../../data/modelWeeks'
+import Overlay from '../ui/Overlay'
 import Icon from '../ui/Icon'
 import Segmented from '../ui/Segmented'
 import { buildModelWeekSlots } from '../../lib/planActions'
-import {
-  DAY_KEYS, addDays, mondayOf, weekKeyOf, fmtRange, fmtMoney,
-  activeProfilesOn, dayForPerson, dayTotals, shortName,
-} from '../../lib/mealplan'
+import { addDays, mondayOf, weekKeyOf, fmtRange, fmtMoney, activeProfilesOn, weekStats } from '../../lib/mealplan'
 
-// Cargar una semana modelo en esta semana o en la del próximo batch. Cada
-// fila enseña las cifras REALES de esa semana (mismo motor que el resto):
-// coste de la semana para todos y kcal medias frente al objetivo.
+const pretty = t => t.charAt(0) + t.slice(1).toLowerCase()
+
+// Semanas modelo: las tuyas (guardadas con «Guardar semana») arriba y las de
+// fábrica debajo. Cualquiera se carga, se renombra, se edita (se carga en la
+// semana destino y el Planificador queda enlazado para «Guardar cambios») o
+// se elimina (las de fábrica solo se ocultan y se pueden restaurar).
 export default function ModelWeekSheet({ initialTarget = 1, onClose, onLoaded }) {
   const allIng     = useStore(selectAllIng)
   const allCombos  = useStore(selectAllCombos)
   const profiles   = useStore(s => s.profiles)
   const weekPlan   = useStore(s => s.weekPlan)
   const replaceWeek = useStore(s => s.replaceWeek)
+  const customWeeks = useStore(s => s.customWeeks) ?? []
+  const hidden      = useStore(s => s.hiddenModelWeeks) ?? []
+  const names       = useStore(s => s.modelWeekNames) ?? {}
+  const renameWeek  = useStore(s => s.renameWeek)
+  const deleteWeek  = useStore(s => s.deleteWeek)
+  const restoreModelWeeks = useStore(s => s.restoreModelWeeks)
+  const setEditingWeek = useStore(s => s.setEditingWeek)
+
   const [target, setTarget] = useState(initialTarget) // 0 = esta semana, 1 = próximo batch
-  const [sel, setSel] = useState(null)
+  const [sel, setSel] = useState(null)          // 'c:<id>' | 'm:<n>'
+  const [renaming, setRenaming] = useState(null) // { key, value }
+  const [confirmDel, setConfirmDel] = useState(null)
 
   const monday = addDays(mondayOf(new Date()), target * 7)
   const wk = weekKeyOf(monday)
   const people = activeProfilesOn(profiles, addDays(monday, 2))
   const existing = Object.keys(weekPlan[wk] ?? {}).filter(k => weekPlan[wk][k]).length
+  const peopleKey = people.map(p => p.id).join()
 
-  const rows = useMemo(() => MODEL_WEEKS.map(w => {
-    const slots = buildModelWeekSlots(w.n)
-    let cost = 0, hit = 0, n = 0
-    const perPerson = people.map(p => {
-      let kcal = 0, tgt = 0
-      DAY_KEYS.forEach((dk, i) => {
-        const t = dayTotals(dayForPerson(slots, dk, p.id), p, i, allIng, allCombos)
-        cost += t.cost; kcal += t.kcal; tgt += t.target
-        n++; if (Math.abs(t.kcal - t.target) <= t.target * 0.05) hit++
-      })
-      return { p, kcal: Math.round(kcal / 7), target: Math.round(tgt / 7) }
-    })
-    const comida = [...new Set(DAY_KEYS.map(dk => slots[`${dk}-comida`]?.byPerson?.julio?.recipeKey ?? slots[`${dk}-comida`]?.recipeKey))]
-      .map(k => shortName(allCombos[k]?.name ?? k))
-    return { w, cost, hit, n, perPerson, comida }
-  }), [people.map(p => p.id).join(), allIng, allCombos]) // eslint-disable-line react-hooks/exhaustive-deps
+  const modelSlots = useMemo(() => Object.fromEntries(MODEL_WEEKS.map(w => [w.n, buildModelWeekSlots(w.n)])), [])
+  const rows = useMemo(() => {
+    const mine = [...customWeeks]
+      .sort((a, b) => (b.savedAt ?? '').localeCompare(a.savedAt ?? ''))
+      .map(w => ({ key: `c:${w.id}`, kind: 'custom', id: w.id, name: w.name, slots: w.slots, badge: 'Tuya' }))
+    const factory = MODEL_WEEKS.filter(w => !hidden.includes(w.n))
+      .map(w => ({ key: `m:${w.n}`, kind: 'model', id: w.n, num: w.n, name: names[w.n] ?? pretty(w.title), slots: modelSlots[w.n], note: w.note, extrema: !!w.extrema }))
+    return [...mine, ...factory].map(r => ({ ...r, stats: weekStats(r.slots, people, allIng, allCombos) }))
+  }, [customWeeks, hidden, names, modelSlots, peopleKey, allIng, allCombos]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  function load() {
-    if (sel == null) return
-    replaceWeek(wk, buildModelWeekSlots(sel))
+  const selRow = rows.find(r => r.key === sel)
+  const mineCount = rows.filter(r => r.kind === 'custom').length
+
+  function load(row = selRow, edit = false) {
+    if (!row) return
+    replaceWeek(wk, JSON.parse(JSON.stringify(row.slots)))
+    setEditingWeek(edit ? { kind: row.kind, id: row.id, name: row.name, weekKey: wk } : null)
     onLoaded?.(target)
     onClose()
   }
+  function commitRename() {
+    if (!renaming) return
+    const row = rows.find(r => r.key === renaming.key)
+    const v = renaming.value.trim()
+    if (row && v && v !== row.name) renameWeek(row.kind, row.id, v)
+    setRenaming(null)
+  }
 
-  const selRow = rows.find(r => r.w.n === sel)
   const thisMon = mondayOf(new Date())
   const targetLabel = o => {
     const m = addDays(thisMon, o * 7), r = fmtRange(m, addDays(m, 6))
@@ -59,8 +74,8 @@ export default function ModelWeekSheet({ initialTarget = 1, onClose, onLoaded })
   const targetOptions = [...new Set([0, 1, initialTarget])].sort((a, b) => a - b).map(o => ({ value: o, label: targetLabel(o) }))
 
   return (
-    <div className="mp-overlay" onClick={onClose}>
-      <div className="mp-sheet" style={{ maxWidth: 820, height: 'min(760px, calc(100vh - 48px))' }} onClick={e => e.stopPropagation()} role="dialog" aria-label="Semanas modelo">
+    <Overlay onClose={onClose}>
+      <div className="mp-sheet" style={{ maxWidth: 860, height: 'min(780px, calc(100dvh - 48px))' }} onClick={e => e.stopPropagation()} role="dialog" aria-label="Semanas modelo">
         <div className="mp-sheet-head">
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span className="mp-bubble" style={{ width: 42, height: 42, background: 'rgba(139,111,232,0.15)', color: '#7154DA' }}><Icon name="layers" size={20} /></span>
@@ -78,42 +93,77 @@ export default function ModelWeekSheet({ initialTarget = 1, onClose, onLoaded })
         </div>
 
         <div className="mp-sheet-body" style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 0 }}>
-          {rows.map(({ w, cost, hit, n, perPerson, comida }) => {
-            const on = sel === w.n
+          {rows.map((r, idx) => {
+            const on = sel === r.key
+            const header = idx === 0 && mineCount ? 'Tus semanas' : idx === mineCount ? 'De fábrica' : null
+            const isRen = renaming?.key === r.key
+            const isDel = confirmDel === r.key
             return (
-              <button key={w.n} type="button" className="mp-row" aria-pressed={on} onClick={() => setSel(w.n)}
-                style={{ display: 'grid', gridTemplateColumns: '38px minmax(0, 1fr) auto', gap: 14, alignItems: 'center', padding: '12px 14px', border: 0, cursor: 'pointer', textAlign: 'left', background: on ? '#FFFFFF' : 'rgba(255,255,255,0.5)', boxShadow: on ? '0 10px 24px rgba(110,80,50,0.12)' : 'none' }}>
-                <span className="mp-bubble mp-num" style={{ width: 38, height: 38, background: on ? 'var(--c-ink)' : 'rgba(31,27,22,0.07)', color: on ? '#fff' : 'var(--c-ink)', fontWeight: 700, fontSize: 14 }}>{w.n}</span>
-                <span style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
-                  <span style={{ fontSize: 14.5, fontWeight: 650, lineHeight: 1.3 }}>
-                    {w.title.charAt(0) + w.title.slice(1).toLowerCase()}
-                    {w.extrema && <span className="mp-tag" style={{ marginLeft: 8, background: 'rgba(214,69,69,0.12)', color: '#B53333' }}>solo referencia</span>}
+              <div key={r.key}>
+                {header && <div className="mp-eyebrow" style={{ padding: idx ? '14px 2px 6px' : '2px 2px 6px' }}>{header}</div>}
+                <div className={`mw-row${on ? ' is-on' : ''}`}>
+                  {!isRen && <button type="button" className="mw-hit" aria-pressed={on} aria-label={`Elegir ${r.name}`}
+                    onClick={() => setSel(r.key)} onDoubleClick={() => load(r)} />}
+                  <span className="mp-bubble mp-num mw-num" style={{ background: on ? 'var(--c-ink)' : r.kind === 'custom' ? 'rgba(139,111,232,0.15)' : 'rgba(31,27,22,0.07)', color: on ? '#fff' : r.kind === 'custom' ? '#5B3FC4' : 'var(--c-ink)' }}>
+                    {r.kind === 'custom' ? <Icon name="sparkle" size={15} stroke={2.2} /> : r.num}
                   </span>
-                  <span className="mp-muted" style={{ fontSize: 12.5, lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Comidas: {comida.join(' · ')}</span>
-                  <span style={{ display: 'flex', gap: 12, fontSize: 12, color: 'var(--c-ink-2)' }} className="mp-num">
-                    {perPerson.map(x => <span key={x.p.id}>{x.p.name} {x.kcal} / {x.target} kcal</span>)}
+                  <span style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
+                    {isRen ? (
+                      <input className="mw-rename" autoFocus value={renaming.value} aria-label="Nuevo nombre"
+                        onChange={e => setRenaming({ ...renaming, value: e.target.value })}
+                        onBlur={commitRename}
+                        onKeyDown={e => { if (e.key === 'Enter') commitRename(); if (e.key === 'Escape') { e.stopPropagation(); setRenaming(null) } }} />
+                    ) : (
+                      <span style={{ fontSize: 14.5, fontWeight: 650, lineHeight: 1.3 }}>
+                        {r.name}
+                        {r.extrema && <span className="mp-tag" style={{ marginLeft: 8, background: 'rgba(214,69,69,0.12)', color: '#B53333' }}>solo referencia</span>}
+                      </span>
+                    )}
+                    <span className="mp-muted" style={{ fontSize: 12.5, lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {r.stats.comida.length ? `Comidas: ${r.stats.comida.join(' · ')}` : 'Sin comidas'}{r.stats.planned < 28 ? ` · ${r.stats.planned}/28` : ''}
+                    </span>
+                    <span style={{ display: 'flex', gap: 12, fontSize: 12, color: 'var(--c-ink-2)' }} className="mp-num">
+                      {r.stats.perPerson.map(x => <span key={x.p.id}>{x.p.name} {x.kcal} / {x.target} kcal</span>)}
+                    </span>
                   </span>
-                </span>
-                <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
-                  <span className="mp-num" style={{ fontSize: 17, fontWeight: 650 }}>{fmtMoney(cost)}</span>
-                  <span className="mp-muted mp-num" style={{ fontSize: 11.5 }}>{hit}/{n} días ±5 %</span>
-                </span>
-              </button>
+                  {isDel ? (
+                    <span className="mw-confirm">
+                      <span style={{ fontSize: 12.5, fontWeight: 600 }}>{r.kind === 'custom' ? '¿Eliminar?' : '¿Ocultar?'}</span>
+                      <button className="mp-btn mp-btn-glass mp-btn-sm" onClick={() => setConfirmDel(null)}>No</button>
+                      <button className="mp-btn mp-btn-danger mp-btn-sm" onClick={() => { deleteWeek(r.kind, r.id); setConfirmDel(null); if (sel === r.key) setSel(null) }}>Sí</button>
+                    </span>
+                  ) : (
+                    <span className="mw-side">
+                      <span className="mw-actions">
+                        <button type="button" className="mw-act" title="Renombrar" aria-label={`Renombrar ${r.name}`} onClick={() => setRenaming({ key: r.key, value: r.name })}><Icon name="edit" size={13} /></button>
+                        <button type="button" className="mw-act" title="Editar sus platos en el Planificador" aria-label={`Editar ${r.name}`} onClick={() => load(r, true)}><Icon name="cal" size={13} /></button>
+                        <button type="button" className="mw-act is-danger" title={r.kind === 'custom' ? 'Eliminar' : 'Ocultar'} aria-label={`Eliminar ${r.name}`} onClick={() => setConfirmDel(r.key)}><Icon name="trash" size={13} /></button>
+                      </span>
+                      <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+                        <span className="mp-num" style={{ fontSize: 17, fontWeight: 650 }}>{fmtMoney(r.stats.cost)}</span>
+                        <span className="mp-muted mp-num" style={{ fontSize: 11.5 }}>{r.stats.hit}/{r.stats.n} días ±5 %</span>
+                      </span>
+                    </span>
+                  )}
+                </div>
+              </div>
             )
           })}
+          {hidden.length > 0 && (
+            <button type="button" className="mp-idea-restore" onClick={restoreModelWeeks}>Restaurar {hidden.length === 1 ? 'la semana de fábrica oculta' : `las ${hidden.length} semanas de fábrica ocultas`}</button>
+          )}
         </div>
 
         <div className="mp-sheet-foot" style={{ justifyContent: 'space-between' }}>
-          <span className="mp-muted" style={{ fontSize: 12.5, maxWidth: 420, lineHeight: 1.4 }}>
-            {selRow ? (selRow.w.note ?? '').split('.')[0] + '.' : 'Elige una semana. El coste es de toda la semana para ' + people.map(p => p.name).join(' y ') + '.'}
+          <span className="mp-muted" style={{ fontSize: 12.5, maxWidth: 440, lineHeight: 1.4 }}>
+            {selRow?.note ? (selRow.note.split('.')[0] + '.') : selRow ? 'Doble clic en una semana para cargarla directamente.' : `Coste de la semana entera para ${people.map(p => p.name).join(' y ')}.`}
           </span>
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="mp-btn mp-btn-glass" onClick={onClose}>Cancelar</button>
-            <button className="mp-btn mp-btn-dark" disabled={sel == null} onClick={load}>Cargar semana {sel ?? ''}</button>
+            <button className="mp-btn mp-btn-dark" disabled={!selRow} onClick={() => load()}>{selRow ? `Cargar «${selRow.name.length > 28 ? selRow.name.slice(0, 26) + '…' : selRow.name}»` : 'Cargar semana'}</button>
           </div>
         </div>
       </div>
-    </div>
+    </Overlay>
   )
 }
-

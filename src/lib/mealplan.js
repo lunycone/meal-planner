@@ -167,3 +167,50 @@ export const PCOS_STYLE = {
   yellow: { color: '#B7791F', label: 'PCOS medio', long: 'Carbo medio (PCOS)' },
   red:    { color: '#D64545', label: 'PCOS alto',  long: 'Carbo alto (PCOS)' },
 }
+
+/** Lunes de una clave de semana ISO ('2026-W40' → lun 28 sep 2026). */
+export function mondayOfWeekKey(key) {
+  const m = /^(\d{4})-W(\d{2})$/.exec(key ?? '')
+  if (!m) return null
+  return addDays(mondayOf(new Date(+m[1], 0, 4)), (+m[2] - 1) * 7)
+}
+
+/** Dónde aparece un plato en el plan: [{ weekKey, monday, days:Set, count }],
+ *  de la semana más reciente a la más antigua. */
+export function dishUsage(weekPlan, recipeKey) {
+  const out = []
+  for (const [wk, week] of Object.entries(weekPlan ?? {})) {
+    if (!week) continue
+    let count = 0
+    const days = new Set()
+    for (const [slot, v] of Object.entries(week)) {
+      if (!v) continue
+      const metas = v.byPerson ? Object.values(v.byPerson) : [v]
+      const n = metas.filter(m => m?.recipeKey === recipeKey).length
+      if (n) { count += n; days.add(slot.split('-')[0]) }
+    }
+    if (count) out.push({ weekKey: wk, monday: mondayOfWeekKey(wk), days, count })
+  }
+  return out.sort((a, b) => (b.monday?.getTime() ?? 0) - (a.monday?.getTime() ?? 0))
+}
+
+/** Cifras de una semana entera (28 huecos) con el motor real: coste de todos,
+ *  kcal media por persona frente a su objetivo, días dentro de ±5 % y los
+ *  platos de comida (para reconocerla de un vistazo). */
+export function weekStats(slots, people, allIng, allCombos) {
+  let cost = 0, hit = 0, n = 0, planned = 0
+  const perPerson = people.map(p => {
+    let kcal = 0, tgt = 0
+    DAY_KEYS.forEach((dk, i) => {
+      const t = dayTotals(dayForPerson(slots, dk, p.id), p, i, allIng, allCombos)
+      cost += t.cost; kcal += t.kcal; tgt += t.target
+      n++; if (t.planned && Math.abs(t.kcal - t.target) <= t.target * 0.05) hit++
+    })
+    return { p, kcal: Math.round(kcal / 7), target: Math.round(tgt / 7) }
+  })
+  DAY_KEYS.forEach(dk => MEALS.forEach(m => { if (slots?.[`${dk}-${m}`]) planned++ }))
+  const keyOf = v => v?.byPerson ? Object.values(v.byPerson).find(Boolean)?.recipeKey : v?.recipeKey
+  const comida = [...new Set(DAY_KEYS.map(dk => keyOf(slots?.[`${dk}-comida`])).filter(Boolean))]
+    .map(k => shortName(allCombos[k]?.name ?? k))
+  return { cost, hit, n, perPerson, comida, planned }
+}

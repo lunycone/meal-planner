@@ -310,10 +310,10 @@ export default function HomeView() {
       <section className="hoy-left mp-rise">
         <span style={{ fontSize: 22, fontWeight: 500, color: 'var(--c-ink-3)' }}>{DAY_LONG[di]}</span>
         <span className="hoy-date mp-num">{dayNum}</span>
-        <span style={{ fontSize: 15, color: 'var(--c-ink-3)', marginTop: 10 }}>
+        <span style={{ fontSize: 15, color: 'var(--c-ink-3)', marginTop: 8 }}>
           {MONTHS[today.getMonth()]} · {BATCH_DAYS.includes(dk) ? 'semana de batch' : di === 6 ? 'día de batch' : 'fin de semana'}
         </span>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 28 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 'clamp(14px, 3vh, 28px)' }}>
           {totals.map(({ p, tot }) => <Ring key={p.id} person={p} color={colorOf(p)} tot={tot} />)}
         </div>
       </section>
@@ -335,10 +335,9 @@ export default function HomeView() {
       <section className="hoy-week mp-glass mp-rise" aria-label="Esta semana" style={{ animationDelay: '320ms' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: 4 }}>
           <span style={{ fontSize: 17, fontWeight: 700 }}>Esta semana</span>
-          <span className="mp-muted" style={{ fontSize: 12.5, lineHeight: 1.45 }}>Comida y cena de cada día. Toca uno para abrirlo en el Planificador.</span>
           <span style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column' }}>
             <span className="mp-muted" style={{ fontSize: 12 }}>Coste {shown.length > 1 ? `de ${shown.length === 2 ? 'los dos' : 'todos'}` : `· ${shown[0]?.name ?? ''}`}</span>
-            <span className="mp-num" style={{ fontSize: 26, fontWeight: 600, letterSpacing: '-0.03em' }}>{fmtMoney(weekCost)}</span>
+            <span className="mp-num" style={{ fontSize: 24, fontWeight: 600, letterSpacing: '-0.03em' }}>{fmtMoney(weekCost)}</span>
           </span>
         </div>
         {strip.map(s => {
@@ -357,7 +356,7 @@ export default function HomeView() {
               {[['comida', s.com], ['cena', s.cen]].map(([m, n]) => (
                 <span key={m} style={{ display: 'flex', gap: 7, alignItems: 'flex-start' }}>
                   <span className="mp-bubble" style={{ width: 20, height: 20, background: MEAL_STYLE[m].tint, color: MEAL_STYLE[m].color }}><Icon name={MEAL_ICON[m]} size={11} stroke={2.4} /></span>
-                  <span style={{ fontSize: 12, fontWeight: n ? 600 : 400, lineHeight: 1.25, color: n ? 'var(--c-ink)' : 'var(--c-ink-3)' }}>{n ?? 'Sin plato'}</span>
+                  <span className="hoy-day-dish" style={{ fontWeight: n ? 600 : 400, color: n ? 'var(--c-ink)' : 'var(--c-ink-3)' }}>{n ?? 'Sin plato'}</span>
                 </span>
               ))}
               <span className="mp-muted mp-num" style={{ marginTop: 'auto', fontSize: 11.5 }}>{s.planned ? `${fmtMoney(s.cost)} · ${s.planned}/4` : 'Vacío'}</span>

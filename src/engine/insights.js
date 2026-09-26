@@ -1,7 +1,7 @@
 // Sugerencias del panel de la bombilla. Todo sale de los datos reales
 // (weekPlan + motor), nada escrito a mano: si no aplica, no aparece.
 
-import { comboAgg, pcosCarbLevel, slotForPerson } from './calc'
+import { slotForPerson } from './calc'
 import { weekViolations } from './weekRules'
 import {
   DAY_KEYS, DAY_LONG, BATCH_DAYS, MEALS, addDays, mondayOf, weekKeyOf, nextBatchMonday,
@@ -97,37 +97,6 @@ export function computeInsights({ weekPlan, profiles, allIng, allCombos, today =
       detail: `Semana del ${fmtRange(nextMon, addDays(nextMon, 6))}. Puedes cargar una semana modelo.`, view: 'planificador',
     })
   }
-
-  // 5 · PCOS (perfiles marcados) en los próximos 7 días
-  profiles.filter(p => p.pcos).forEach(person => {
-    let red = 0, total = 0
-    const worst = {}
-    for (let i = 0; i < 7; i++) {
-      const date = addDays(t, i)
-      if (!activeProfilesOn([person], date).length) continue
-      const mon = mondayOf(date), dk = DAY_KEYS[(date.getDay() + 6) % 7]
-      const day = dayForPerson(weekPlan[weekKeyOf(mon)] ?? {}, dk, person.id)
-      ;['desayuno', 'cena'].forEach(mt => {
-        const combo = day[mt]?.type === 'desayuno' ? allCombos[day[mt].recipeKey] : null
-        if (!combo) return
-        total++
-        if (pcosCarbLevel(combo, allIng, mt) === 'red') { red++; worst[mt] = combo }
-      })
-    }
-    if (red >= 3) {
-      const mt = worst.cena ? 'cena' : 'desayuno'
-      const base = comboAgg(worst[mt], allIng).kcal
-      const alt = Object.entries(allCombos)
-        .filter(([, c]) => (c.meals ?? []).includes(mt) && pcosCarbLevel(c, allIng, mt) === 'green')
-        .map(([k, c]) => ({ k, c, d: Math.abs(comboAgg(c, allIng).kcal - base) }))
-        .sort((a, b) => a.d - b.d).slice(0, 2).map(x => x.c.name)
-      out.push({
-        id: 'pcos-' + person.id, when: `PCOS · ${person.name}`, icon: 'warn', color: '#D64545', tint: 'rgba(214,69,69,0.12)',
-        title: `${red} de ${total} desayunos y cenas altos en carbo esta semana`,
-        detail: alt.length ? `Alternativas en verde para la ${mt}: ${alt.join(' · ')}.` : 'Busca platos en verde en el Planificador.', view: 'planificador',
-      })
-    }
-  })
 
   // 6 · Techo de proteína (perfiles con protCap)
   profiles.filter(p => p.protCap).forEach(person => {

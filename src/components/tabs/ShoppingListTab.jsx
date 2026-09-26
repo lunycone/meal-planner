@@ -323,7 +323,6 @@ export default function ShoppingListTab() {
   const byCat = CAT_ORDER.map(c => ({ c, cost: buy.filter(i => i.cat === c).reduce((s, i) => s + i.cost, 0) })).filter(x => x.cost > 0.004)
   const maxCat = Math.max(0.01, ...byCat.map(x => x.cost))
   const catsPresent = CAT_ORDER.filter(c => buy.some(i => i.cat === c))
-  const freezeMeat = viewMode === 'batch' && buy.some(i => (i.cat === 'carne' || i.cat === 'proteina') && (i.usedDays.has('jue') || i.usedDays.has('vie')))
   const batchSunday = addDays(batchWindow.start, -1)
   const dayCols = batchWindow.windowDates.map(w => w.dayKey)
 
@@ -488,15 +487,6 @@ export default function ShoppingListTab() {
             </section>
           )}
 
-          {viewMode === 'batch' && (
-            <section className="mp-card mp-rise compra-tip" style={{ animationDelay: '340ms' }}>
-              <span style={{ fontSize: 15, fontWeight: 700 }}>Frescura, resuelta</span>
-              <span style={{ fontSize: 13, lineHeight: 1.5, color: '#3A342D' }}>
-                Todo se cocina el domingo {batchSunday.getDate()}; lo de jueves y viernes va al congelador ya hecho.
-                {freezeMeat ? ' Por eso la carne y el pescado de esos días se pueden comprar con el resto.' : ''}
-              </span>
-            </section>
-          )}
         </aside>
       </div>
     </div>
