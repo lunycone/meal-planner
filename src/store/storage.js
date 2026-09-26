@@ -13,7 +13,7 @@ export const STORAGE_KEY = 'meal-planner-v3'
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-const supabase = (supabaseUrl && supabaseKey)
+export const supabase = (supabaseUrl && supabaseKey)
   ? createClient(supabaseUrl, supabaseKey)
   : null
 

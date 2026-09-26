@@ -1,6 +1,81 @@
 import { useState, useRef } from 'react'
+import { supabase } from '../store/storage'
 
+// Login real con Supabase Auth (Julio/María, cuentas creadas a mano en el
+// dashboard) cuando Supabase esta configurado. Si no lo esta (dev local sin
+// proyecto Supabase), cae al gate de contraseña compartida de siempre --
+// mismo patron que storage.js usa para elegir entre Supabase y localStorage.
 export default function AuthGate({ onAuth }) {
+  if (!supabase) return <PasswordGate onAuth={onAuth} />
+  return <SupabaseLoginGate onAuth={onAuth} />
+}
+
+function SupabaseLoginGate({ onAuth }) {
+  const [email,    setEmail]    = useState('')
+  const [password, setPassword] = useState('')
+  const [error,    setError]    = useState(null)
+  const [loading,  setLoading]  = useState(false)
+  const [shake,    setShake]    = useState(false)
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+    const { error: err } = await supabase.auth.signInWithPassword({ email, password })
+    setLoading(false)
+    if (err) {
+      // Mensaje generico -- no confirmar si el email existe o no.
+      setError('Email o contraseña incorrectos')
+      setShake(true)
+      setPassword('')
+      setTimeout(() => setShake(false), 500)
+      return
+    }
+    onAuth()
+  }
+
+  return (
+    <div className="auth-gate">
+      <div className={`auth-card${shake ? ' shake' : ''}`}>
+        <div className="auth-icon">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+        </div>
+        <h1 className="auth-title">Meal Planner</h1>
+        <p className="auth-sub">Acceso privado · inicia sesión para continuar</p>
+
+        <form onSubmit={handleSubmit} className="auth-form">
+          <input
+            type="email"
+            className="auth-input"
+            placeholder="Email"
+            value={email}
+            onChange={e => { setEmail(e.target.value); setError(null) }}
+            autoFocus
+            autoComplete="username"
+          />
+          <input
+            type="password"
+            className={`auth-input${error ? ' auth-input-error' : ''}`}
+            placeholder="Contraseña"
+            value={password}
+            onChange={e => { setPassword(e.target.value); setError(null) }}
+            autoComplete="current-password"
+          />
+          {error && <p className="auth-error">✕ {error}</p>}
+          <button type="submit" className="auth-btn" disabled={!email || !password || loading}>
+            {loading ? 'Entrando…' : 'Entrar'}
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function PasswordGate({ onAuth }) {
   const [value, setValue] = useState('')
   const [shake, setShake]   = useState(false)
   const [error, setError]   = useState(false)

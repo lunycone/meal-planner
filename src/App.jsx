@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import useStore            from './store/useStore'
+import { supabase }        from './store/storage'
 import HomeView            from './views/HomeView'
 import MealPlannerView     from './views/MealPlannerView'
 import PlatosTab           from './components/tabs/PlatosTab'
@@ -52,6 +53,16 @@ function AppShell() {
         <div className="tab-bar-right" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <SyncStatus />
           <ProfileSelector />
+          {supabase && (
+            <button
+              className="btn-ghost"
+              style={{ fontSize: '0.72rem' }}
+              onClick={() => supabase.auth.signOut()}
+              title="Cerrar sesión"
+            >
+              Salir
+            </button>
+          )}
         </div>
       </nav>
 
@@ -73,17 +84,32 @@ function AppShell() {
 }
 
 export default function App() {
-  // Auth gate — persists in sessionStorage (cleared when browser closes)
+  // Con Supabase configurado, el gate real es la sesión de Supabase Auth
+  // (persiste en localStorage entre recargas; onAuthStateChange detecta
+  // login/logout en caliente, incluido el "Salir" del nav). Sin Supabase
+  // (dev local), cae al gate de contraseña compartida de antes, que sigue
+  // viviendo en sessionStorage.
   const [authed, setAuthed] = useState(() => {
+    if (supabase) return null // null = "aún no lo sabemos", ver useEffect
     const pw = import.meta.env.VITE_APP_PASSWORD
-    if (!pw) return true                          // no password → open
-    return sessionStorage.getItem('mp-auth') === '1'
+    return !pw || sessionStorage.getItem('mp-auth') === '1'
   })
+
+  useEffect(() => {
+    if (!supabase) return
+    supabase.auth.getSession().then(({ data }) => setAuthed(!!data.session))
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthed(!!session)
+    })
+    return () => sub.subscription.unsubscribe()
+  }, [])
+
+  if (authed === null) return null // esperando a saber si hay sesión
 
   if (!authed) {
     return (
       <AuthGate onAuth={() => {
-        sessionStorage.setItem('mp-auth', '1')
+        if (!supabase) sessionStorage.setItem('mp-auth', '1')
         setAuthed(true)
       }} />
     )
