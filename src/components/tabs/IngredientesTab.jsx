@@ -56,10 +56,11 @@ function IngEditForm({ ingKey, ing, onClose }) {
     ing.kc != null ? String(ing.kc) :
     ing.kcu != null ? String(ing.kcu) : ''
   )
+  const [organic, setOrganic] = useState(!!ing.organic)
   const [confirmDel, setConfirmDel] = useState(false)
 
   function save() {
-    const overrideData = { name: name.trim(), pack, per, cat }
+    const overrideData = { name: name.trim(), pack, per, cat, organic }
     if (field && price !== '') overrideData[field] = parseFloat(price)
     // kcal
     const kcNum = parseFloat(kcal)
@@ -128,6 +129,12 @@ function IngEditForm({ ingKey, ing, onClose }) {
         </div>
       </div>
 
+      {/* Orgánico */}
+      <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', color: 'var(--t-text)', cursor: 'pointer' }}>
+        <input type="checkbox" checked={organic} onChange={e => setOrganic(e.target.checked)} />
+        Orgánico
+      </label>
+
       {/* Actions */}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginTop: 2 }}>
         <button className="btn-primary" onClick={save}>Guardar</button>
@@ -167,6 +174,7 @@ function IngCard({ ingKey, ing, isModified, editingKey, setEditingKey }) {
               {ing.name}
               {ing.tag === 'vaca'  && <span className="badge badge-vaca">vaca</span>}
               {ing.tag === 'oveja' && <span className="badge badge-oveja">oveja</span>}
+              {ing.organic         && <span className="badge badge-organic">orgánico</span>}
               {ing.pend            && <span className="badge badge-pend">pendiente</span>}
               {ing.est && !ing.pend && <span className="badge badge-est">est.</span>}
               {ing.jessica         && <span className="badge badge-jessica">Jessica</span>}
