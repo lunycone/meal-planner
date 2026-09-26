@@ -40,7 +40,6 @@ function SupabaseLoginGate({ onAuth }) {
       <div className={`auth-card${shake ? ' shake' : ''}`}>
         <span className="auth-orb" aria-hidden="true" />
         <h1 className="auth-title">meal planner</h1>
-        <p className="auth-sub">Julio y María · inicia sesión para ver vuestra semana</p>
 
         <form onSubmit={handleSubmit} className="auth-form">
           <input
@@ -96,7 +95,6 @@ function PasswordGate({ onAuth }) {
       <div className={`auth-card${shake ? ' shake' : ''}`}>
         <span className="auth-orb" aria-hidden="true" />
         <h1 className="auth-title">meal planner</h1>
-        <p className="auth-sub">Julio y María · escribe la contraseña para entrar</p>
 
         <form onSubmit={handleSubmit} className="auth-form">
           <input

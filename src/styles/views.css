@@ -256,7 +256,7 @@
   box-shadow: 0 14px 34px rgba(201,184,245,0.55), inset 0 2px 0 rgba(255,255,255,0.8);
   animation: mp-spin 14s linear infinite;
 }
-.auth-title { margin: 0; font-family: var(--c-font); font-size: 26px; font-weight: 700; letter-spacing: -0.03em; color: var(--c-ink); }
+.auth-title { margin: 0 0 18px; font-family: var(--c-font); font-size: 26px; font-weight: 700; letter-spacing: -0.03em; color: var(--c-ink); }
 .auth-sub { margin: 0 0 18px; font-size: 13.5px; line-height: 1.45; color: var(--c-ink-3); }
 .auth-form { width: 100%; display: flex; flex-direction: column; gap: 10px; }
 .auth-input {
