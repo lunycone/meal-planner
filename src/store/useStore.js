@@ -19,19 +19,48 @@ const BASE_PLANS = {
 const MEAL_KEYS = ['desayuno', 'comida', 'merienda', 'cena']
 const emptyPerMeal = (val) => Object.fromEntries(MEAL_KEYS.map(k => [k, val()]))
 
+// Vistas validas para restaurar desde localStorage -- si un dia cambian los
+// ids de tab y localStorage tiene guardado uno viejo, mejor caer a 'home'
+// que dejar la pantalla en blanco (activeConfigTab/activeView sin match).
+const VALID_VIEWS = ['home', 'meal', 'platos', 'ingredientes', 'planificador', 'compra', 'batch']
+
+// 26 sep 2026 -- la tab activa se guarda SOLO en localStorage (por
+// dispositivo), nunca en el guardado compartido de Supabase: si fuera
+// compartido, recargar en el movil de Maria te llevaria a la ultima tab que
+// tocara Julio en el suyo. Asi cada uno conserva su propia posicion al
+// recargar (F5) sin afectar al otro.
+function readStoredView() {
+  if (typeof window === 'undefined') return { activeView: 'home', activeMeal: null }
+  try {
+    const v = localStorage.getItem('mp-active-view')
+    return {
+      activeView: VALID_VIEWS.includes(v) ? v : 'home',
+      activeMeal: localStorage.getItem('mp-active-meal') || null,
+    }
+  } catch { return { activeView: 'home', activeMeal: null } }
+}
+const initialView = readStoredView()
+
 // ─── Store ───────────────────────────────────────────────────────────────────
 
 const useStore = create(
   persist(
     (set, get) => ({
 
-      // ── NAVIGATION (not persisted) ────────────────────────────────────────
-      activeView: 'home',
-      activeMeal: null,
+      // ── NAVIGATION (no en el guardado compartido -- ver readStoredView) ────
+      activeView: initialView.activeView,
+      activeMeal: initialView.activeMeal,
       weekOffset: 0,
       setWeekOffset(offset) { set({ weekOffset: offset }) },
 
-      setView(view, meal = null) { set({ activeView: view, activeMeal: meal }) },
+      setView(view, meal = null) {
+        set({ activeView: view, activeMeal: meal })
+        try {
+          localStorage.setItem('mp-active-view', view)
+          if (meal) localStorage.setItem('mp-active-meal', meal)
+          else localStorage.removeItem('mp-active-meal')
+        } catch {}
+      },
 
       // ── PROFILES ──────────────────────────────────────────────────────────
       profiles: [
