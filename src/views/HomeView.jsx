@@ -1,788 +1,382 @@
-import { useState, useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import useStore, { selectAllIng, selectAllCombos } from '../store/useStore'
-import { PROTEIN } from '../data/proteins'
-import { PREP } from '../data/combos'
-import { comboAgg, fmt, proteinCost, proteinKcal, proteinProt, ingKcal, ingFat, ingFib, fmtPortion, personLunchScale, personMealScalesTwoPass, personTargetForDay, personDayCost, pcosCarbLevel, proteinLevel, kcalLevel, LEVEL_COLOR, slotForPerson, slotIsUniform } from '../engine/calc'
-import PcosBadge from '../components/PcosBadge'
-import DailyProgress from '../components/DailyProgress'
-import PersonalizedDay from '../components/PersonalizedDay'
-import ProfileSelector from '../components/ProfileSelector'
-import SyncStatus from '../components/SyncStatus'
-import { getISOWeek, formatDateShort, formatFullDate, getDayName, isToday, getTodayDayKey } from '../utils/date'
+import Icon, { MEAL_ICON } from '../components/ui/Icon'
+import DishPicker from '../components/meal/DishPicker'
+import MealSheet from '../components/meal/MealSheet'
+import ModelWeekSheet from '../components/meal/ModelWeekSheet'
+import { clearFor, weekWith, cleanWeek } from '../lib/planActions'
+import {
+  DAY_KEYS, DAY_SHORT, DAY_LONG, MONTHS, MEALS, MEAL_LABEL, MEAL_TIME, MEAL_STYLE, PCOS_STYLE, PERSON_COLOR,
+  BATCH_DAYS, addDays, mondayOf, weekKeyOf, dayIndexOf, nextBatchMonday, startOfDay, fmtMoney,
+  activeProfilesOn, dayForPerson, mealInfo, dayTotals, shortName, macroPct,
+} from '../lib/mealplan'
 
-// Orden lun..dom -- personTargetForDay/personMealScalesTwoPass necesitan el
-// indice (0=lunes), mismo orden que en el resto de tabs.
-const ALL_DAY_KEYS = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom']
-const MEALS = ['desayuno', 'comida', 'merienda', 'cena']
+// ─── Hoy ─────────────────────────────────────────────────────────────────────
+// Izquierda: la fecha y cómo va el día de cada uno (kcal planificadas frente
+// a su objetivo de hoy). Centro: las 4 comidas de hoy en un carrusel que se
+// arrastra; arranca en la siguiente según la hora. Derecha: accesos con su
+// cifra real. Abajo: la semana (comida y cena) — tocar un día lo abre en el
+// Planificador.
 
-// ─── Combo detail modal (preview: coste · kcal · proteína · ingredientes) ─────
-function ComboDetailModal({ combo, allIng, onConfirm, onClose }) {
-  const agg = comboAgg(combo, allIng)
+function useCountUp(value, dur = 900) {
+  const [v, setV] = useState(0)
+  const from = useRef(0)
+  useEffect(() => {
+    const start = performance.now(), a = from.current, b = value
+    let raf
+    const tick = t => {
+      const k = Math.min(1, (t - start) / dur)
+      const e = 1 - Math.pow(1 - k, 3)
+      setV(Math.round(a + (b - a) * e))
+      if (k < 1) raf = requestAnimationFrame(tick)
+      else from.current = b
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [value, dur])
+  return v
+}
+
+function nextMealIndex(now) {
+  const mins = now.getHours() * 60 + now.getMinutes()
+  const idx = MEALS.findIndex(m => {
+    const [h, mm] = MEAL_TIME[m].split(':').map(Number)
+    return h * 60 + mm + 60 > mins // hasta 1 h después de su hora sigue siendo "la de ahora"
+  })
+  return idx === -1 ? MEALS.length - 1 : idx
+}
+
+function Ring({ person, color, tot }) {
+  const kcal = useCountUp(tot.kcal)
+  const R = 26, C = 2 * Math.PI * R
+  const frac = tot.target ? Math.min(1, tot.kcal / tot.target) : 0
+  const diff = tot.kcal - tot.target
+  const sub = tot.planned === 0 ? 'Sin comidas puestas hoy'
+    : Math.abs(diff) <= tot.target * 0.05 ? `En objetivo · ${tot.prot} g prot`
+    : diff > 0 ? `+${diff} kcal · ${tot.prot} g prot` : `Faltan ${-diff} kcal · ${tot.prot} g prot`
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-dialog" onClick={e => e.stopPropagation()} style={{ maxWidth: '420px' }}>
-        <div className="modal-header">
-          <h3>{combo.name}</h3>
-          <button className="modal-close" onClick={onClose}>✕</button>
-        </div>
-        <div className="modal-body">
-          <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
-            <div>
-              <div style={{ fontSize: '0.65rem', color: 'var(--t-text-faint)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Costo</div>
-              <div style={{ fontFamily: 'var(--t-font-display)', fontSize: '1.25rem', fontWeight: 300 }}>{fmt(agg.cost)}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: '0.65rem', color: 'var(--t-text-faint)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>kcal</div>
-              <div style={{ fontFamily: 'var(--t-font-display)', fontSize: '1.25rem', fontWeight: 300 }}>{Math.round(agg.kcal)}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: '0.65rem', color: 'var(--t-text-faint)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>proteína</div>
-              <div style={{ fontFamily: 'var(--t-font-display)', fontSize: '1.25rem', fontWeight: 300 }}>{Math.round(agg.prot)}g</div>
-            </div>
-          </div>
-          <div style={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--t-text-faint)', marginBottom: '0.75rem' }}>Ingredientes</div>
-          {(combo.items ?? []).map((it, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '0.5rem 0', borderBottom: '1px solid var(--t-border)' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--t-text)' }}>{allIng[it.k]?.name ?? it.k}</span>
-              <div style={{ display: 'flex', gap: '0.75rem', flexShrink: 0, marginLeft: '1rem', fontSize: '0.72rem', color: 'var(--t-text-faint)' }}>
-                <span>{fmtPortion(it.p)}</span>
-                {ingKcal(it.k, it.p, allIng) > 0 && <span style={{ minWidth: '42px', textAlign: 'right' }}>{Math.round(ingKcal(it.k, it.p, allIng))} kcal</span>}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="modal-footer">
-          <button className="btn-ghost" onClick={onClose}>Cancelar</button>
-          <button className="btn-primary" onClick={() => onConfirm(combo.key)}>Seleccionar</button>
-        </div>
+    <div className="hoy-ring mp-glass">
+      <div style={{ position: 'relative', width: 62, height: 62, flexShrink: 0 }}>
+        <svg width="62" height="62" viewBox="0 0 62 62" aria-hidden="true" style={{ transform: 'rotate(-90deg)' }}>
+          <circle cx="31" cy="31" r={R} fill="none" stroke="rgba(110,80,50,0.10)" strokeWidth="7" />
+          <circle cx="31" cy="31" r={R} fill="none" stroke={color} strokeWidth="7" strokeLinecap="round"
+            style={{ strokeDasharray: C, strokeDashoffset: C * (1 - frac), transition: 'stroke-dashoffset 1.2s var(--c-ease)' }} />
+        </svg>
+        <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color }}>{person.initial}</span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+        <span className="mp-num" style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.03em' }}>
+          {kcal} <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--c-ink-3)' }}>/ {tot.target} kcal</span>
+        </span>
+        <span className="mp-muted" style={{ fontSize: 12.5 }}>{person.name} · {sub}</span>
       </div>
     </div>
   )
 }
 
-// ─── Meal selector modal ──────────────────────────────────────────────────────
-
-const MEAL_LABELS_PICKER = { desayuno: 'desayuno', comida: 'comida', merienda: 'merienda', cena: 'cena' }
-
-function MealSelectorModal({ allIng, allCombos, onSelect, onClose, mealType }) {
-  const [search, setSearch] = useState('')
-  const [recipeDetail, setRecipeDetail] = useState(null)
-  const [sortBy, setSortBy] = useState('name') // 'name' | 'price'
-
-  // Every dish for this meal slot — one flat, searchable, sortable list.
-  // No protein→combo step: each entry in allCombos is already a complete dish.
-  const dishes = useMemo(() => {
-    const q = search.toLowerCase()
-    let list = Object.entries(allCombos)
-      .filter(([, c]) => (c.meals ?? []).includes(mealType))
-      .map(([k, c]) => ({ key: k, ...c, _agg: comboAgg(c, allIng) }))
-    if (q) list = list.filter(d => d.name.toLowerCase().includes(q))
-    if (sortBy === 'price') list = [...list].sort((a, b) => a._agg.cost - b._agg.cost)
-    else list = [...list].sort((a, b) => a.name.localeCompare(b.name))
-    return list
-  }, [allCombos, allIng, search, sortBy, mealType])
-
-  function confirmMeal(recipeKey) {
-    onSelect({ type: 'desayuno', recipeKey })
-    onClose()
-  }
-
+function Donut({ info }) {
+  const [p, c] = macroPct(info)
+  const bg = info
+    ? `conic-gradient(#2E9BD6 0 ${p}%, #E0A21B ${p}% ${p + c}%, #8B6FE8 ${p + c}% 100%)`
+    : 'rgba(110,80,50,0.10)'
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-dialog" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h3>Selecciona {MEAL_LABELS_PICKER[mealType] ?? 'plato'}</h3>
-          <button className="modal-close" onClick={onClose}>✕</button>
-        </div>
-        <div className="modal-body">
-          <input
-            className="picker-search"
-            placeholder="Buscar plato…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-          <div style={{ display: 'flex', gap: 6, margin: '0.5rem 0 0.6rem' }}>
-            {[['name', 'A-Z'], ['price', 'Precio ↑']].map(([key, label]) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setSortBy(key)}
-                style={{
-                  fontSize: '0.68rem', padding: '3px 10px', borderRadius: '99px',
-                  border: sortBy === key ? '1px solid var(--t-accent)' : '1px solid var(--t-border)',
-                  background: sortBy === key ? 'rgba(154,123,67,0.12)' : 'var(--t-surface)',
-                  color: sortBy === key ? 'var(--t-text)' : 'var(--t-text-soft)',
-                  fontWeight: sortBy === key ? 600 : 400, cursor: 'pointer',
-                }}
-              >{label}</button>
-            ))}
-          </div>
-          <div className="recipe-list">
-            {dishes.length === 0 ? (
-              <div className="combo-empty">No hay platos para {MEAL_LABELS_PICKER[mealType]}</div>
-            ) : (
-              dishes.map(recipe => {
-                const pLevel = proteinLevel(recipe._agg.prot, mealType)
-                const kLevel = kcalLevel(recipe._agg.kcal, mealType)
-                return (
-                <div
-                  key={recipe.key}
-                  className="recipe-option"
-                  onClick={() => setRecipeDetail(recipe)}
-                >
-                  <div className="ro-name">
-                    {recipe.name}
-                    {recipe.jessica && <span className="badge badge-jessica" style={{ marginLeft: 6 }}>María</span>}
-                    {pcosCarbLevel(recipe, allIng, mealType) && <PcosBadge level={pcosCarbLevel(recipe, allIng, mealType)} />}
-                  </div>
-                  <div className="ro-stats">
-                    {fmt(recipe._agg.cost)} · <span style={{ color: LEVEL_COLOR[kLevel], fontWeight: 600 }}>{Math.round(recipe._agg.kcal)} kcal</span> · <span style={{ color: LEVEL_COLOR[pLevel], fontWeight: 600 }}>{Math.round(recipe._agg.prot)}g prot</span>
-                  </div>
-                </div>
-              )})
-            )}
-          </div>
-        </div>
-        <div className="modal-footer">
-          <button className="btn-ghost" onClick={onClose}>Cancelar</button>
-        </div>
-      </div>
-      {recipeDetail && (
-        <ComboDetailModal
-          combo={recipeDetail}
-          allIng={allIng}
-          onConfirm={(key) => confirmMeal(key)}
-          onClose={() => setRecipeDetail(null)}
-        />
-      )}
+    <div style={{ position: 'relative', width: 84, height: 84, flexShrink: 0, borderRadius: '50%', background: bg, boxShadow: '0 8px 22px rgba(110,80,50,0.14)' }}>
+      <span style={{ position: 'absolute', inset: 12, borderRadius: '50%', background: '#FBF8F3', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <span className="mp-num" style={{ fontSize: 15, fontWeight: 700 }}>{info ? `${info.prot} g` : '—'}</span>
+        <span style={{ fontSize: 10, color: 'var(--c-ink-3)' }}>prot</span>
+      </span>
     </div>
   )
 }
 
+function Carousel({ meals, active, setActive, nextIdx, isToday, onOpen }) {
+  const [drag, setDrag] = useState(0)
+  const st = useRef({ down: false, x: 0, moved: false })
+  const W = 250 // px por paso
 
-const CYCLE_PHASES = [
-  { id: 'menstrual',  name: 'Menstrual',  days: 'Días 1–5',   color: '#b85a5a', bg: 'rgba(184,90,90,0.07)',  border: 'rgba(184,90,90,0.18)' },
-  { id: 'folicular',  name: 'Folicular',  days: 'Días 6–13',  color: '#9a7b43', bg: 'rgba(154,123,67,0.07)', border: 'rgba(154,123,67,0.18)' },
-  { id: 'ovulatoria', name: 'Ovulatoria', days: 'Días 14–16', color: '#5a8a3a', bg: 'rgba(90,138,58,0.07)',  border: 'rgba(90,138,58,0.18)' },
-  { id: 'lutea',      name: 'Lútea',      days: 'Días 17–28', color: '#7a5aaa', bg: 'rgba(122,90,170,0.07)', border: 'rgba(122,90,170,0.18)' },
-]
-
-function getPhaseScore(proteinKey) {
-  const key = (proteinKey ?? '').toLowerCase()
-  if (['bacalao','salmón','sardina','caballa','calamar','mejillon','pollock','langosta','ostra'].some(k => key.includes(k)))
-    return {
-      menstrual:  { stars: 2, note: 'Omega-3 reduce la inflamación menstrual. Aporta hierro no-hemo.' },
-      folicular:  { stars: 3, note: 'Proteína ligera y omega-3. Apoya perfectamente la energía ascendente.' },
-      ovulatoria: { stars: 3, note: 'Máximo antiinflamatorio. Perfecta combinación para la ovulación.' },
-      lutea:      { stars: 3, note: 'B6 y omega-3 reducen retención de líquidos y mejoran el ánimo.' },
-    }
-  if (['carne-picada','lamb','lomo','cerdo'].some(k => key.includes(k)))
-    return {
-      menstrual:  { stars: 3, note: 'Hierro hemo biodisponible. Ideal para reponer durante la menstruación.' },
-      folicular:  { stars: 1, note: 'Proteína más pesada en esta fase. Mejor optar por opciones ligeras.' },
-      ovulatoria: { stars: 1, note: 'Puede ser proinflamatorio. Prefiere pescado o pollo en esta fase.' },
-      lutea:      { stars: 3, note: 'Zinc y B12 apoyan el sistema nervioso en la fase lútea.' },
-    }
-  if (key.includes('hígado') || key.includes('higado'))
-    return {
-      menstrual:  { stars: 3, note: 'El superalimento menstrual: hierro, folato y B12 en abundancia.' },
-      folicular:  { stars: 2, note: 'Nutricionalmente denso. Una vez por semana está muy bien.' },
-      ovulatoria: { stars: 1, note: 'Demasiado intenso para esta fase. Opta por algo más ligero.' },
-      lutea:      { stars: 2, note: 'B12 y zinc apoyan el sistema nervioso en la fase lútea.' },
-    }
-  if (key.includes('huevo') || key.includes('tortilla') || key.includes('desayuno'))
-    return {
-      menstrual:  { stars: 2, note: 'Fáciles de digerir. Aportan colina para el bienestar mental.' },
-      folicular:  { stars: 3, note: 'Colina y vitaminas B. Energía limpia para la fase activa.' },
-      ovulatoria: { stars: 2, note: 'Proteína completa. Combina con vegetales para potenciar el efecto.' },
-      lutea:      { stars: 3, note: 'B6 y triptófano mejoran el sueño y el ánimo en fase lútea.' },
-    }
-  if (['pollo','pechuga','muslo'].some(k => key.includes(k)))
-    return {
-      menstrual:  { stars: 2, note: 'Proteína digestiva y suave para días de menor energía.' },
-      folicular:  { stars: 3, note: 'Magra y rica en B3. Perfecta para la fase de mayor actividad.' },
-      ovulatoria: { stars: 2, note: 'Buena opción combinada con vegetales crucíferos.' },
-      lutea:      { stars: 2, note: 'Triptófano para mejorar el sueño en la fase final del ciclo.' },
-    }
-  return {
-    menstrual:  { stars: 2, note: 'Añade una fuente de hierro si puedes (espinacas, semillas).' },
-    folicular:  { stars: 2, note: 'Buena base. Complementa con vitamina C para mayor absorción.' },
-    ovulatoria: { stars: 2, note: 'Añade vegetales crudos o fermentados para potenciar el efecto.' },
-    lutea:      { stars: 2, note: 'Suma magnesio (semillas de calabaza, cacao) para esta fase.' },
+  function down(e) {
+    if (e.button !== 0) return
+    st.current = { down: true, x: e.clientX, moved: false }
   }
-}
-
-// ─── Meal detail modal ───────────────────────────────────────────────────────
-
-function MealDetailModal({ mealType, meal, allIng, allCombos, onEdit, onClear, onClose }) {
-  const [tab, setTab] = useState('nutricion')
-  const mealLabels = { desayuno: 'Desayuno', comida: 'Comida', merienda: 'Merienda', cena: 'Cena' }
-
-  if (!meal) return null
-
-  let title = '', cost = 0, kcal = 0, fat = 0, protein = 0, fiber = 0
-  let proteinKey = null, ingredients = []
-
-  if (meal.type === 'desayuno') {
-    const recipe = allCombos[meal.recipeKey]
-    if (recipe) {
-      title = recipe.name
-      const agg = comboAgg(recipe, allIng)
-      cost = agg.cost; kcal = agg.kcal; protein = agg.prot; fat = agg.fat ?? 0; fiber = agg.fib ?? 0
-      ingredients = (recipe.items ?? []).map(it => ({
-        name: allIng[it.k]?.name ?? it.k,
-        portion: fmtPortion(it.p),
-        kcal: ingKcal(it.k, it.p, allIng),
-        fib: ingFib(it.k, it.p, allIng),
-      }))
-      proteinKey = meal.recipeKey
-    }
-  } else if (meal.type === 'plato') {
-    const proteinObj = PROTEIN[meal.proteinKey]
-    const combo = allCombos[meal.comboKey]
-    if (proteinObj && combo) {
-      title = `${proteinObj.name} + ${combo.name}`
-      const protCost = proteinCost(proteinObj, false, meal.proteinUnits)
-      const protKcal = proteinKcal(proteinObj, false, meal.proteinUnits)
-      const protProt = proteinProt(proteinObj, false, meal.proteinUnits)
-      const combAgg  = comboAgg(combo, allIng, meal.comboVariants || {})
-      cost    = protCost + combAgg.cost
-      kcal    = protKcal + combAgg.kcal + 235
-      protein = protProt + (combAgg.prot ?? 0)
-      fat     = combAgg.fat ?? 0
-      fiber   = combAgg.fib ?? 0
-      proteinKey  = meal.proteinKey
-      const rationUnits = meal.proteinUnits ?? proteinObj.ration?.units
-      const rationLabel = proteinObj.ration?.grams
-        ? `${proteinObj.ration.grams}g`
-        : (proteinObj.ration?.units != null
-            ? `${rationUnits} ud`
-            : (proteinObj.ration?.label ?? '1 ración'))
-      ingredients = [
-        { name: proteinObj.name, portion: rationLabel, kcal: protKcal, fib: 0 },
-        ...(combo.items ?? []).map(it => {
-          let portion = it.p
-          if (meal.comboVariants?.[it.k] != null && it.p.units != null) {
-            portion = { ...it.p, units: meal.comboVariants[it.k] }
-          }
-          return {
-            name: allIng[it.k]?.name ?? it.k,
-            portion: fmtPortion(portion),
-            kcal: ingKcal(it.k, portion, allIng),
-            fib: ingFib(it.k, portion, allIng),
-          }
-        }),
-      ]
+  function move(e) {
+    if (!st.current.down) return
+    const dx = e.clientX - st.current.x
+    if (Math.abs(dx) > 5) st.current.moved = true
+    if (st.current.moved) {
+      // resistencia en los extremos
+      let d = dx / W
+      if ((active === 0 && d > 0) || (active === meals.length - 1 && d < 0)) d *= 0.3
+      setDrag(d)
     }
   }
-
-  const carbs    = Math.max(0, (kcal - protein * 4 - fat * 9) / 4)
-  const maxMacro = Math.max(protein, fat, carbs, fiber, 1)
-  const phaseScore = getPhaseScore(proteinKey)
-  const starLabel  = { 1: 'Evitar', 2: 'OK', 3: 'Ideal' }
-  const macros = [
-    { label: 'Proteína', value: protein, color: '#5a8a3a' },
-    { label: 'Grasa',    value: fat,     color: '#9a7b43' },
-    { label: 'Carboh.',  value: carbs,   color: '#6a7aaa' },
-    { label: 'Fibra',    value: fiber,   color: '#3a8a7a' },
-  ]
+  function up() {
+    if (!st.current.down) return
+    st.current.down = false
+    if (st.current.moved) setActive(Math.max(0, Math.min(meals.length - 1, Math.round(active - drag))))
+    setDrag(0)
+  }
+  function onKey(e) {
+    if (e.key === 'ArrowLeft') setActive(Math.max(0, active - 1))
+    if (e.key === 'ArrowRight') setActive(Math.min(meals.length - 1, active + 1))
+  }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="mds-sheet" onClick={e => e.stopPropagation()}>
-
-        {/* Header */}
-        <div style={{ padding: '1.75rem 1.75rem 0', position: 'relative' }}>
-          <button onClick={onClose} style={{
-            position: 'absolute', right: '1.5rem', top: '1.5rem',
-            background: 'none', border: 'none', color: 'var(--t-text-faint)',
-            fontSize: '1rem', cursor: 'pointer', lineHeight: 1, padding: 4,
-          }}>✕</button>
-
-          <div style={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--t-text-faint)', marginBottom: '0.45rem' }}>
-            {mealLabels[mealType]}
-          </div>
-          <h2 style={{ fontFamily: 'var(--t-font-display)', fontOpticalSizing: 'auto', fontSize: '1.4rem', fontWeight: 300, color: 'var(--t-text)', lineHeight: 1.25, marginBottom: '1.25rem', paddingRight: '2rem' }}>
-            {title}
-          </h2>
-
-          {/* Hero stats */}
-          <div style={{ display: 'flex', gap: '2rem', marginBottom: '1.5rem' }}>
-            {[
-              { val: Math.round(kcal),          lbl: 'kcal'     },
-              { val: `${Math.round(protein)}g`, lbl: 'proteína' },
-              { val: fmt(cost),                 lbl: 'coste'    },
-            ].map(s => (
-              <div key={s.lbl}>
-                <div style={{ fontFamily: 'var(--t-font-display)', fontOpticalSizing: 'auto', fontSize: '1.9rem', fontWeight: 300, color: 'var(--t-text)', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>{s.val}</div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--t-text-faint)', marginTop: '0.25rem' }}>{s.lbl}</div>
+    <section className="hoy-carousel" aria-label="Comidas de hoy · arrastra para cambiar" tabIndex={0} onKeyDown={onKey}
+      onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onPointerLeave={up}
+      style={{ cursor: st.current.down && st.current.moved ? 'grabbing' : 'grab' }}>
+      <div className="hoy-stage">
+        {meals.map((m, i) => {
+          const off = i - active + drag
+          const a = Math.abs(off)
+          const st2 = MEAL_STYLE[m.type]
+          const tf = `translateX(${off * 205}px) translateZ(${-a * 170}px) rotateY(${-off * 24}deg) scale(${1 - Math.min(a, 2) * 0.04})`
+          // la vecina se ve; la de dos pasos se desvanece (no invade las columnas laterales)
+          const op = a <= 1 ? 1 - a * 0.3 : Math.max(0, 0.7 - (a - 1) * 1.1)
+          const on = i === active
+          const main = m.rows[0]?.info
+          return (
+            <article key={m.type} className="hoy-card mp-glass"
+              style={{ transform: tf, opacity: op, pointerEvents: op < 0.05 ? 'none' : undefined, filter: a > 0.5 ? `blur(${Math.min(a, 2) * 1.6}px)` : 'none', zIndex: 10 - Math.round(a * 2), transition: drag ? 'none' : undefined }}
+              onClick={() => { if (st.current.moved) return; on ? onOpen(m) : setActive(i) }}
+              aria-current={on ? 'true' : undefined}>
+              {on && <span aria-hidden="true" className="hoy-glow" />}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span className="mp-bubble" style={{ width: 44, height: 44, background: st2.tint, color: st2.color, boxShadow: `inset 0 1px 0 rgba(255,255,255,0.9), 0 6px 16px ${st2.glow}` }}><Icon name={MEAL_ICON[m.type]} size={21} /></span>
+                  <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
+                    <span style={{ fontSize: 15, fontWeight: 600 }}>{MEAL_LABEL[m.type]}</span>
+                    <span className="mp-muted" style={{ fontSize: 12.5 }}>{MEAL_TIME[m.type]}</span>
+                  </span>
+                </span>
+                {isToday && i === nextIdx && <span className="mp-tag" style={{ background: 'var(--c-ink)', color: '#fff' }}>Siguiente</span>}
               </div>
-            ))}
-          </div>
-        </div>
 
-        {/* Tabs */}
-        <div style={{ display: 'flex', borderBottom: '1px solid var(--t-border)', padding: '0 1.75rem' }}>
-          {[['nutricion','Nutrición'], ['ciclo','Ciclo menstrual']].map(([id, label]) => (
-            <button key={id} onClick={() => setTab(id)} style={{
-              background: 'none', border: 'none',
-              borderBottom: `2px solid ${tab === id ? 'var(--t-accent)' : 'transparent'}`,
-              padding: '0.75rem 0', marginRight: '1.5rem',
-              fontSize: '0.82rem', fontWeight: tab === id ? 600 : 400,
-              color: tab === id ? 'var(--t-text)' : 'var(--t-text-faint)',
-              cursor: 'pointer', transition: 'all 0.15s',
-            }}>{label}</button>
-          ))}
-        </div>
-
-        {/* Body */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem 1.75rem' }}>
-
-          {tab === 'nutricion' && (
-            <div>
-              <div style={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--t-text-faint)', marginBottom: '1rem' }}>Macronutrientes</div>
-              {macros.map(m => (
-                <div key={m.label} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.9rem' }}>
-                  <div style={{ width: '60px', fontSize: '0.75rem', color: 'var(--t-text-soft)', flexShrink: 0 }}>{m.label}</div>
-                  <div style={{ flex: 1, height: 4, background: 'var(--t-border)', borderRadius: 99 }}>
-                    <div style={{ width: `${Math.min(100, m.value / maxMacro * 100)}%`, height: '100%', background: m.color, borderRadius: 99, transition: 'width 0.4s ease' }} />
+              {main ? (
+                <>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <span className="hoy-card-name">{main.name}</span>
+                    {m.rows.slice(1).filter(r => r.info && r.info.key !== main.key).map(r => (
+                      <span key={r.person.id} style={{ fontSize: 13.5, lineHeight: 1.4, color: 'var(--c-ink-3)' }}>{r.person.name}: {r.info.name}</span>
+                    ))}
                   </div>
-                  <div style={{ width: '38px', fontSize: '0.78rem', fontWeight: 600, color: 'var(--t-text)', textAlign: 'right', fontVariantNumeric: 'tabular-nums', flexShrink: 0 }}>
-                    {Math.round(m.value)}g
-                  </div>
-                </div>
-              ))}
-
-              {ingredients.length > 0 && (
-                <div style={{ marginTop: '1.75rem' }}>
-                  <div style={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--t-text-faint)', marginBottom: '0.75rem' }}>Ingredientes</div>
-                  {ingredients.map((ing, i) => (
-                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '0.6rem 0', borderBottom: '1px solid var(--t-border)' }}>
-                      <span style={{ fontSize: '0.85rem', color: 'var(--t-text)' }}>{ing.name}</span>
-                      <div style={{ display: 'flex', gap: '0.75rem', flexShrink: 0, marginLeft: '1rem', alignItems: 'baseline' }}>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--t-text-faint)' }}>{ing.portion}</span>
-                        {ing.kcal > 0 && <span style={{ fontSize: '0.75rem', color: 'var(--t-text-faint)', minWidth: '48px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{Math.round(ing.kcal)} kcal</span>}
-                        {ing.fib > 0 && <span style={{ fontSize: '0.72rem', color: '#3a8a7a', minWidth: '38px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{ing.fib.toFixed(1)}g fib</span>}
-                      </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 'auto' }}>
+                    <Donut info={main} />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 12, color: 'var(--c-ink-2)' }}>
+                      {['Proteína', 'Carbohidrato', 'Grasa'].map((l, k) => (
+                        <span key={l} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span className="mp-dot" style={{ background: ['#2E9BD6', '#E0A21B', '#8B6FE8'][k] }} />{l} {macroPct(main)[k]}%
+                        </span>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {tab === 'ciclo' && (
-            <div>
-              <p style={{ fontSize: '0.82rem', color: 'var(--t-text-soft)', marginBottom: '1.25rem', lineHeight: 1.6 }}>
-                Cómo encaja esta comida en cada fase del ciclo.
-              </p>
-              {CYCLE_PHASES.map(phase => {
-                const info = phaseScore[phase.id]
-                return (
-                  <div key={phase.id} style={{
-                    padding: '1rem 1.25rem', borderRadius: '6px',
-                    border: `1px solid ${phase.border}`, background: phase.bg,
-                    marginBottom: '0.75rem',
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: phase.color, flexShrink: 0 }} />
-                        <span style={{ fontSize: '0.82rem', fontWeight: 600, color: phase.color }}>{phase.name}</span>
-                        <span style={{ fontSize: '0.7rem', color: 'var(--t-text-faint)' }}>{phase.days}</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <div style={{ display: 'flex', gap: 3 }}>
-                          {[1,2,3].map(i => (
-                            <div key={i} style={{ width: 7, height: 7, borderRadius: '50%', background: i <= info.stars ? phase.color : 'var(--t-border)' }} />
-                          ))}
-                        </div>
-                        <span style={{ fontSize: '0.7rem', fontWeight: 600, color: phase.color, width: '36px', textAlign: 'right' }}>
-                          {starLabel[info.stars]}
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(m.rows.length, 3)}, minmax(0, 1fr))`, gap: 8 }}>
+                    {m.rows.map(r => (
+                      <div key={r.person.id} className="hoy-stat">
+                        <span className="mp-muted" style={{ fontSize: 11.5 }}>{r.person.name}</span>
+                        <span className="mp-num" style={{ fontSize: 17, fontWeight: 600 }}>{r.info ? `${r.info.kcal} kcal` : '—'}</span>
+                        <span style={{ fontSize: 11, color: r.info?.pcos && r.person.pcos ? PCOS_STYLE[r.info.pcos].color : 'var(--c-ink-3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {!r.info ? 'Sin plato' : r.person.pcos && r.info.pcos ? PCOS_STYLE[r.info.pcos].label : r.info.portion}
                         </span>
                       </div>
-                    </div>
-                    <p style={{ fontSize: '0.78rem', color: 'var(--t-text-soft)', lineHeight: 1.55, margin: 0 }}>
-                      {info.note}
-                    </p>
+                    ))}
                   </div>
-                )
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div style={{ padding: '1rem 1.75rem', borderTop: '1px solid var(--t-border)', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-          <button className="btn-ghost" onClick={onEdit}>Cambiar</button>
-          <button className="btn-danger" onClick={() => { onClear(); onClose() }}>Borrar</button>
-        </div>
-
-      </div>
-    </div>
-  )
-}
-
-// ─── Meal block ──────────────────────────────────────────────────────────────
-
-// Resuelve titulo/coste/kcal/proteina de UN plato ya resuelto (forma plana
-// {type, recipeKey|proteinKey+comboKey}) -- compartido entre la vista
-// "representante" (un solo plato) y la vista por-persona de abajo.
-function getMealStats(meal, allIng, allCombos, gramsOverride) {
-  if (!meal) return { title: '', cost: 0, kcal: 0, protein: 0 }
-  if (meal.type === 'desayuno') {
-    const recipe = allCombos[meal.recipeKey]
-    if (!recipe) return { title: '', cost: 0, kcal: 0, protein: 0 }
-    const agg = comboAgg(recipe, allIng)
-    return { title: recipe.name, cost: agg.cost, kcal: agg.kcal, protein: agg.prot ?? 0 }
-  }
-  if (meal.type === 'plato') {
-    const proteinObj = PROTEIN[meal.proteinKey]
-    const combo = allCombos[meal.comboKey]
-    if (!proteinObj || !combo) return { title: '', cost: 0, kcal: 0, protein: 0 }
-    const protCost = proteinCost(proteinObj, false, meal.proteinUnits)
-    const protKcal = proteinKcal(proteinObj, false, meal.proteinUnits)
-    const protProt = proteinProt(proteinObj, false, meal.proteinUnits)
-    const combAgg = comboAgg(combo, allIng, meal.comboVariants || {}, gramsOverride || {})
-    return {
-      title: `${proteinObj.name} + ${combo.name}`,
-      cost: protCost + combAgg.cost,
-      kcal: protKcal + combAgg.kcal + 235,
-      protein: protProt + (combAgg.prot ?? 0),
-    }
-  }
-  return { title: '', cost: 0, kcal: 0, protein: 0 }
-}
-
-function MealBlock({ time, mealType, meal, rawSlot, profiles, allIng, allCombos, onEdit, onClear, onDetail, gramsOverride }) {
-  const mealLabels = { desayuno: 'Desayuno', comida: 'Comida', merienda: 'Merienda', cena: 'Cena' }
-
-  if (!meal) {
-    return (
-      <div className={`home-meal-block empty home-meal-block--${mealType}`} onClick={onEdit}>
-        <div className="hmb-header">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span className="hmb-dot" />
-              <span className="hmb-time">{time}</span>
-            </div>
-            <span className="hmb-label">{mealLabels[mealType]}</span>
-          </div>
-        </div>
-        <button className="hmb-empty-btn">+ Agregar comida</button>
-      </div>
-    )
-  }
-
-  // 5 sep 2026 -- desayuno y merienda pueden ser un plato DISTINTO por
-  // persona (Julio y Maria, semana modelo cargada); comida y cena siguen la
-  // regla de siempre (mismo plato, solo cambia la racion), asi que aqui
-  // slotIsUniform les da "true" y caen en la vista de un solo plato de
-  // abajo sin cambios. Con mas de un plato de verdad, se muestra una fila
-  // por persona en vez de fingir que solo hay uno (antes: se veia SOLO el
-  // plato del "representante" -- Julio -- como si Maria comiera lo mismo).
-  const profileIds = (profiles ?? []).map(p => p.id)
-  const uniform = profileIds.length <= 1 || slotIsUniform(rawSlot, profileIds)
-
-  const header = (
-    <div className="hmb-header">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span className="hmb-dot" />
-          <span className="hmb-time">{time}</span>
-        </div>
-        <span className="hmb-label">{mealLabels[mealType]}</span>
-      </div>
-    </div>
-  )
-
-  if (!uniform) {
-    const rows = profiles.map(p => ({ person: p, ...getMealStats(slotForPerson(rawSlot, p.id), allIng, allCombos) }))
-    return (
-      <div className={`home-meal-block filled home-meal-block--${mealType}`}>
-        {header}
-        <button className="hmb-content" onClick={onDetail}>
-          {rows.map(r => (
-            <div key={r.person.id} className="hmb-person-row">
-              <span className="hmb-person-badge">{r.person.initial}</span>
-              <div className="hmb-person-body">
-                <span className="hmb-person-title">{r.title || 'Sin plato'}</span>
-                <div className="hmb-person-stats">
-                  {r.protein > 0 && <span><strong>{Math.round(r.protein)}g</strong> prot</span>}
-                  <span><strong>{fmt(r.cost)}</strong></span>
-                  <span><strong>{Math.round(r.kcal)}</strong> kcal</span>
+                </>
+              ) : (
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, textAlign: 'center' }}>
+                  <span className="mp-muted" style={{ fontSize: 15 }}>Sin plato para {MEAL_LABEL[m.type].toLowerCase()}</span>
+                  <span className="mp-btn mp-btn-dark"><Icon name="plus" size={14} stroke={2.6} />Elegir plato</span>
                 </div>
-              </div>
-            </div>
-          ))}
-        </button>
-        <button className="hmb-clear" onClick={e => { e.stopPropagation(); onClear() }}>✕</button>
+              )}
+            </article>
+          )
+        })}
       </div>
-    )
-  }
-
-  const { title, cost, kcal, protein } = getMealStats(meal, allIng, allCombos, gramsOverride)
-
-  return (
-    <div className={`home-meal-block filled home-meal-block--${mealType}`}>
-      {header}
-      <button className="hmb-content" onClick={onDetail}>
-        <span className="hmb-title">{title}</span>
-        <div className="hmb-stats">
-          {protein > 0 && (
-            <span className="hmb-stat key">
-              <span className="hmb-stat-num">{Math.round(protein)}g</span>
-              <span className="hmb-stat-lbl">proteína</span>
-            </span>
-          )}
-          <span className="hmb-stat">
-            <span className="hmb-stat-num">{fmt(cost)}</span>
-          </span>
-          <span className="hmb-stat">
-            <span className="hmb-stat-num">{Math.round(kcal)}</span>
-            <span className="hmb-stat-lbl">kcal</span>
-          </span>
-        </div>
-      </button>
-      <button className="hmb-clear" onClick={e => { e.stopPropagation(); onClear() }}>✕</button>
-    </div>
+      <div className="hoy-dots">
+        <button type="button" className="mp-icon-btn" style={{ width: 30, height: 30 }} aria-label="Comida anterior" onClick={() => setActive(Math.max(0, active - 1))}><Icon name="left" size={12} stroke={2.6} /></button>
+        {meals.map((m, i) => (
+          <button key={m.type} type="button" aria-label={MEAL_LABEL[m.type]} onClick={() => setActive(i)}
+            style={{ width: i === active ? 26 : 8, height: 8, borderRadius: 4, border: 0, padding: 0, cursor: 'pointer', background: i === active ? MEAL_STYLE[m.type].color : 'rgba(110,80,50,0.2)', transition: 'width .5s var(--c-spring), background .3s' }} />
+        ))}
+        <button type="button" className="mp-icon-btn" style={{ width: 30, height: 30 }} aria-label="Comida siguiente" onClick={() => setActive(Math.min(meals.length - 1, active + 1))}><Icon name="right" size={12} stroke={2.6} /></button>
+      </div>
+    </section>
   )
 }
-
-// ─── Daily summary ───────────────────────────────────────────────────────────
-
-// 5 sep 2026 -- antes sumaba el coste/kcal/proteina de UN plato "de
-// portada" (siempre el del representante, ej. Julio) y lo mostraba sin
-// decir de quien era -- con Julio y Maria comiendo cosas distintas ese
-// numero no significaba nada en concreto ("¿el de Julio? ¿el de Maria?").
-// El coste SI tiene sentido combinado (lo que cuesta el dia para los dos,
-// como ya hace el total semanal de Planificador/Compra) -- kcal y proteina
-// no, esos son por persona y ya se ven abajo en "Reparto por persona" con
-// su objetivo. Aqui se deja solo Coste (con desglose J/M) y Comidas
-// planificadas, sin numeros ambiguos.
-function DailySummary({ rawSlots, profiles, dayIdx, allIng, allCombos }) {
-  const perPerson = useMemo(
-    () => (profiles ?? []).map(p => {
-      const day = Object.fromEntries(MEALS.map(m => [m, slotForPerson(rawSlots[m], p.id)]))
-      return { person: p, cost: personDayCost(day, p, allIng, allCombos, dayIdx) }
-    }),
-    [rawSlots, profiles, allIng, allCombos, dayIdx]
-  )
-
-  const totalCost = perPerson.reduce((s, r) => s + r.cost, 0)
-  const plannedCount = MEALS.filter(m => rawSlots[m]).length
-
-  return (
-    <div className="home-daily-summary">
-      <div className="hds-label">Resumen del día</div>
-      <div className="hds-grid">
-        <div className="hds-cell">
-          <div className="hds-value">{fmt(totalCost)}</div>
-          <div className="hds-unit">Coste</div>
-          {perPerson.length > 1 && (
-            <div className="hds-sub">{perPerson.map(r => `${r.person.initial}: ${fmt(r.cost)}`).join(' · ')}</div>
-          )}
-        </div>
-        <div className={`hds-cell${plannedCount === 4 ? ' hds-cell--complete' : ''}`}>
-          <div className="hds-value">{plannedCount}/4</div>
-          <div className="hds-unit">Comidas planificadas</div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ─── Home view ────────────────────────────────────────────────────────────────
 
 export default function HomeView() {
-  const allIng = useStore(selectAllIng)
-  const allCombos = useStore(selectAllCombos)
-  const weekPlan = useStore(s => s.weekPlan)
-  const setMealSlot = useStore(s => s.setMealSlot)
-  const clearMealSlot = useStore(s => s.clearMealSlot)
-
-  const [modalOpen, setModalOpen] = useState(null) // null | 'select-TYPE' | 'detail-TYPE'
-
-  const today = new Date()
-  const weekKey = getISOWeek(today)
-  const dayKey = getTodayDayKey()
-  const dateStr = formatDateShort(today)
-  const dayName = getDayName(today)
-  const fullDate = formatFullDate(today)
-
-  const currentWeek = weekPlan[weekKey] ?? {}
-  const slotKey = (mealType) => `${dayKey}-${mealType}`
-
-  // Per-person lunch scaling: when a single person is selected (not "Todos"),
-  // their comida shows the scaled base portion (more rice/potato → more kcal).
-  const profiles        = useStore(s => s.profiles)
+  const allIng     = useStore(selectAllIng)
+  const allCombos  = useStore(selectAllCombos)
+  const weekPlan   = useStore(s => s.weekPlan)
+  const profiles   = useStore(s => s.profiles)
   const activeProfileId = useStore(s => s.activeProfileId)
-  const activeProfile   = activeProfileId === 'all'
-    ? null
-    : profiles.find(p => p.id === activeProfileId)
+  const replaceWeek = useStore(s => s.replaceWeek)
+  const setView    = useStore(s => s.setView)
+  const openPlanner = useStore(s => s.openPlanner)
 
-  // 5 sep 2026 -- un slot de weekPlan puede ser la forma plana de siempre o
-  // { byPerson } (Julio y Maria con platos distintos, semana modelo cargada)
-  // -- sin pasar por slotForPerson, meal.type salia undefined para esos
-  // dias y CADA lector de todayMeals (MealBlock, DailySummary,
-  // DailyProgress, PersonalizedDay...) se quedaba en 0/vacio aunque el slot
-  // no fuera null: por eso "Hoy" mostraba las 4 franjas "rellenas" pero a
-  // $0.00 / 0 kcal, y a la vez "Sin comidas planeadas para hoy" mas abajo.
-  // Con un perfil concreto elegido arriba (T/J/M) se resuelve SU plato de
-  // verdad; con "Todos" se usa un representante (el primer perfil valido
-  // hoy), igual que hace el resto de tabs.
-  const today0 = new Date(); today0.setHours(0, 0, 0, 0)
-  const validProfiles = profiles.filter(p => {
-    if (p.validoDesde && new Date(p.validoDesde) > today0) return false
-    if (p.validoHasta && new Date(p.validoHasta) <= today0) return false
-    return true
+  const now = new Date()
+  const today = startOfDay(now)
+  const monday = mondayOf(today)
+  const wk = weekKeyOf(monday)
+  const week = weekPlan[wk] ?? {}
+  const di = dayIndexOf(today)
+  const dk = DAY_KEYS[di]
+  const people = activeProfilesOn(profiles, today)
+  const focus = activeProfileId === 'all' ? people : people.filter(p => p.id === activeProfileId)
+  const shown = focus.length ? focus : people
+  const colorOf = p => PERSON_COLOR[Math.max(0, people.findIndex(x => x.id === p.id)) % PERSON_COLOR.length]
+
+  const nextIdx = nextMealIndex(now)
+  const [active, setActive] = useState(nextIdx)
+  const [picker, setPicker] = useState(null)   // { mealType, currentKey, who }
+  const [sheet, setSheet] = useState(null)     // mealType
+  const [models, setModels] = useState(false)
+
+  // Limpia huecos rotos de esta semana (una sola escritura)
+  useEffect(() => {
+    const cleaned = cleanWeek(weekPlan[wk], allCombos)
+    if (cleaned) replaceWeek(wk, cleaned)
+  }, [wk]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const meals = useMemo(() => MEALS.map(type => ({
+    type,
+    rows: shown.map(person => ({ person, info: mealInfo(dayForPerson(week, dk, person.id), type, person, di, allIng, allCombos) })),
+  })), [week, dk, di, shown.map(p => p.id).join(), allIng, allCombos]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const totals = shown.map(p => ({ p, tot: dayTotals(dayForPerson(week, dk, p.id), p, di, allIng, allCombos) }))
+
+  // Semana (tira de abajo)
+  const strip = DAY_KEYS.map((d, i) => {
+    const date = addDays(monday, i)
+    const ps = activeProfilesOn(shown, date)
+    const first = ps[0]
+    const day = first ? dayForPerson(week, d, first.id) : {}
+    const name = m => { const k = day[m]?.recipeKey; return k && allCombos[k] ? shortName(allCombos[k].name) : null }
+    const cost = ps.reduce((s, p) => s + dayTotals(dayForPerson(week, d, p.id), p, i, allIng, allCombos).cost, 0)
+    const planned = MEALS.filter(m => week[`${d}-${m}`]).length
+    return { d, i, date, com: name('comida'), cen: name('cena'), cost, planned }
   })
-  const repProfileId = activeProfileId !== 'all' ? activeProfileId : (validProfiles[0]?.id ?? null)
+  const weekCost = strip.reduce((s, x) => s + x.cost, 0)
 
-  // dia de la semana (0=lun..6=dom) -- lo necesitan personTargetForDay /
-  // personMealScalesTwoPass para resolver el objetivo de kcal especifico
-  // del dia (no el kcalTarget plano), igual que Planificador y Batch.
-  const dayIdx = ALL_DAY_KEYS.indexOf(dayKey)
+  // Accesos (cifras reales)
+  const plannedThis = DAY_KEYS.reduce((s, d) => s + MEALS.filter(m => week[`${d}-${m}`]).length, 0)
+  const nextMon = nextBatchMonday(today)
+  const nextWeek = weekPlan[weekKeyOf(nextMon)] ?? {}
+  const nextIngs = new Set()
+  let tuppers = 0
+  BATCH_DAYS.forEach((d, i) => {
+    activeProfilesOn(profiles, addDays(nextMon, i)).forEach(p => {
+      MEALS.forEach(m => {
+        const meal = dayForPerson(nextWeek, d, p.id)[m]
+        const combo = meal && allCombos[meal.recipeKey]
+        if (!combo) return
+        combo.items.forEach(it => nextIngs.add(it.k))
+        if (m === 'comida' || m === 'cena') tuppers++
+      })
+    })
+  })
+  const batchSunday = addDays(nextMon, -1)
+  const inUse = new Set()
+  Object.values(weekPlan).forEach(w => Object.values(w ?? {}).forEach(s => {
+    if (!s) return
+    if (s.byPerson) Object.values(s.byPerson).forEach(m => m?.recipeKey && inUse.add(m.recipeKey))
+    else if (s.recipeKey) inUse.add(s.recipeKey)
+  }))
+  const apps = [
+    { l: 'Planificador', icon: 'cal', c: '#1F1B16', g: 'rgba(31,27,22,0.25)', v: `${plannedThis}/28`, title: 'Comidas puestas esta semana', go: () => openPlanner(0, di) },
+    { l: 'Semanas modelo', icon: 'layers', c: '#7154DA', g: 'rgba(139,111,232,0.45)', v: 'Cargar', title: 'Cargar una semana modelo entera', go: () => setModels(true) },
+    { l: 'Compra', icon: 'bag', c: '#C1850C', g: 'rgba(224,162,27,0.45)', v: nextIngs.size ? `${nextIngs.size} ingr.` : 'Vacía', title: `Para el batch del ${nextMon.getDate()}–${addDays(nextMon, 4).getDate()}`, go: () => setView('compra') },
+    { l: 'Batch', icon: 'pot', c: '#D9486A', g: 'rgba(232,98,124,0.45)', v: di === 6 ? 'Hoy' : `Dom ${batchSunday.getDate()}`, title: tuppers ? `${tuppers} tuppers de comida y cena` : 'Semana que viene sin planificar', go: () => setView('batch') },
+    { l: 'Platos', icon: 'plate', c: '#2585BC', g: 'rgba(46,155,214,0.45)', v: `${Object.keys(allCombos).length}`, title: `${inUse.size} en algún plan`, go: () => setView('platos') },
+    { l: 'Ingredientes', icon: 'leaf', c: '#2F9E5B', g: 'rgba(47,158,91,0.45)', v: `${Object.keys(allIng).length}`, title: 'Precios y nutrientes', go: () => setView('ingredientes') },
+  ]
 
-  const rawSlots = useMemo(() => ({
-    desayuno: currentWeek[slotKey('desayuno')] ?? null,
-    comida: currentWeek[slotKey('comida')] ?? null,
-    merienda: currentWeek[slotKey('merienda')] ?? null,
-    cena: currentWeek[slotKey('cena')] ?? null,
-  }), [currentWeek, dayKey])
+  const sheetMeal = sheet ? meals.find(m => m.type === sheet) : null
+  const who = activeProfileId === 'all' ? 'all' : activeProfileId
 
-  const todayMeals = useMemo(() => ({
-    desayuno: slotForPerson(rawSlots.desayuno, repProfileId),
-    comida: slotForPerson(rawSlots.comida, repProfileId),
-    merienda: slotForPerson(rawSlots.merienda, repProfileId),
-    cena: slotForPerson(rawSlots.cena, repProfileId),
-  }), [rawSlots, repProfileId])
-  // 5 sep 2026 -- antes usaba personLunchScale(todayMeals, ...), la version
-  // de UNA sola pasada con el kcalTarget plano -- por eso el gramaje de la
-  // base de la comida en pantalla no coincidia con lo que Planificador/Batch
-  // ya sirven de verdad (esos usan las dos pasadas + el objetivo del dia).
-  const comidaScale = useMemo(() => {
-    if (!activeProfile) return null
-    const target = personTargetForDay(activeProfile, dayIdx)
-    return personMealScalesTwoPass(todayMeals, activeProfile, allIng, allCombos, target).comida
-  }, [activeProfile, todayMeals, allIng, allCombos, dayIdx])
-  const comidaOverride = comidaScale ? { [comidaScale.ingKey]: comidaScale.grams } : null
-
-  function handleMealSelect(mealType, mealData) {
-    setMealSlot(weekKey, slotKey(mealType), mealData)
-    setModalOpen(null)
+  function openMeal(m) {
+    if (m.rows.some(r => r.info)) setSheet(m.type)
+    else setPicker({ mealType: m.type, currentKey: null, who })
+  }
+  function clearMeal(type) {
+    const key = `${dk}-${type}`
+    const w = (type === 'comida' || type === 'cena') ? 'all' : who
+    replaceWeek(wk, weekWith(week, key, clearFor(week[key], w, people)))
   }
 
-  function handleMealClear(mealType) {
-    clearMealSlot(weekKey, slotKey(mealType))
-  }
-
-  // Detect modal type
-  const modalType = modalOpen?.split('-')[0] // 'select' or 'detail'
-  const mealTypeFromModal = modalOpen?.split('-')[1] // 'desayuno', 'comida', 'cena'
+  const dayNum = useCountUp(today.getDate(), 700)
 
   return (
-    <div className="home-view">
-      <header className="home-header">
-        <div>
-          <h1 className="home-title">Hoy</h1>
-          <p className="home-meta">Tu día</p>
+    <div className="hoy">
+      <section className="hoy-left mp-rise">
+        <span style={{ fontSize: 22, fontWeight: 500, color: 'var(--c-ink-3)' }}>{DAY_LONG[di]}</span>
+        <span className="hoy-date mp-num">{dayNum}</span>
+        <span style={{ fontSize: 15, color: 'var(--c-ink-3)', marginTop: 10 }}>
+          {MONTHS[today.getMonth()]} · {BATCH_DAYS.includes(dk) ? 'semana de batch' : di === 6 ? 'día de batch' : 'fin de semana'}
+        </span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 28 }}>
+          {totals.map(({ p, tot }) => <Ring key={p.id} person={p} color={colorOf(p)} tot={tot} />)}
         </div>
-        <div className="home-date-block">
-          <div className="home-date-day">{dayName}</div>
-          <div className="home-date-rest">{fullDate}</div>
+      </section>
+
+      <Carousel meals={meals} active={active} setActive={setActive} nextIdx={nextIdx} isToday onOpen={openMeal} />
+
+      <section className="hoy-apps" aria-label="Secciones">
+        {apps.map((a, i) => (
+          <button key={a.l} type="button" className="hoy-app mp-rise" onClick={a.go} title={a.title} style={{ animationDelay: `${120 + i * 60}ms` }}>
+            <span className="hoy-app-sq mp-rim">
+              <Icon name={a.icon} size={32} stroke={1.8} color={a.c} style={{ filter: `drop-shadow(0 3px 8px ${a.g})` }} />
+              <span className="mp-num" style={{ fontSize: 12, fontWeight: 600, color: 'var(--c-ink-2)' }}>{a.v}</span>
+            </span>
+            <span style={{ fontSize: 13.5, fontWeight: 600 }}>{a.l}</span>
+          </button>
+        ))}
+      </section>
+
+      <section className="hoy-week mp-glass mp-rise" aria-label="Esta semana" style={{ animationDelay: '320ms' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: 4 }}>
+          <span style={{ fontSize: 17, fontWeight: 700 }}>Esta semana</span>
+          <span className="mp-muted" style={{ fontSize: 12.5, lineHeight: 1.45 }}>Comida y cena de cada día. Toca uno para abrirlo en el Planificador.</span>
+          <span style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column' }}>
+            <span className="mp-muted" style={{ fontSize: 12 }}>Coste {shown.length > 1 ? `de ${shown.length === 2 ? 'los dos' : 'todos'}` : `· ${shown[0]?.name ?? ''}`}</span>
+            <span className="mp-num" style={{ fontSize: 26, fontWeight: 600, letterSpacing: '-0.03em' }}>{fmtMoney(weekCost)}</span>
+          </span>
         </div>
-      </header>
-      {/* Profile + Sync — only visible on mobile (hidden from tab bar there) */}
-      <div className="home-mobile-controls">
-        <SyncStatus />
-        <ProfileSelector />
-      </div>
+        {strip.map(s => {
+          const isToday = s.i === di
+          const past = s.i < di
+          const tag = isToday ? 'Hoy' : s.i === 6 ? 'Batch' : null
+          return (
+            <button key={s.d} type="button" className={`hoy-day${isToday ? ' is-today' : ''}`} onClick={() => openPlanner(0, s.i)} style={{ opacity: past ? 0.55 : 1 }}>
+              <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                <span style={{ display: 'flex', alignItems: 'baseline', gap: 5 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: isToday ? '#D9486A' : 'var(--c-ink)' }}>{DAY_SHORT[s.i]}</span>
+                  <span className="mp-muted" style={{ fontSize: 12 }}>{s.date.getDate()}</span>
+                </span>
+                {tag && <span className="mp-tag" style={isToday ? { background: 'var(--c-ink)', color: '#fff' } : { background: 'rgba(232,98,124,0.14)', color: '#C2375A' }}>{tag}</span>}
+              </span>
+              {[['comida', s.com], ['cena', s.cen]].map(([m, n]) => (
+                <span key={m} style={{ display: 'flex', gap: 7, alignItems: 'flex-start' }}>
+                  <span className="mp-bubble" style={{ width: 20, height: 20, background: MEAL_STYLE[m].tint, color: MEAL_STYLE[m].color }}><Icon name={MEAL_ICON[m]} size={11} stroke={2.4} /></span>
+                  <span style={{ fontSize: 12, fontWeight: n ? 600 : 400, lineHeight: 1.25, color: n ? 'var(--c-ink)' : 'var(--c-ink-3)' }}>{n ?? 'Sin plato'}</span>
+                </span>
+              ))}
+              <span className="mp-muted mp-num" style={{ marginTop: 'auto', fontSize: 11.5 }}>{s.planned ? `${fmtMoney(s.cost)} · ${s.planned}/4` : 'Vacío'}</span>
+            </button>
+          )
+        })}
+      </section>
 
-      <div className="home-meals">
-        <MealBlock
-          time="9:00"
-          mealType="desayuno"
-          meal={todayMeals.desayuno}
-          rawSlot={currentWeek[slotKey('desayuno')]}
-          profiles={validProfiles}
-          allIng={allIng}
-          allCombos={allCombos}
-          onEdit={() => setModalOpen('select-desayuno')}
-          onDetail={() => setModalOpen('detail-desayuno')}
-          onClear={() => handleMealClear('desayuno')}
-        />
-
-        <MealBlock
-          time="12:00"
-          mealType="comida"
-          meal={todayMeals.comida}
-          rawSlot={currentWeek[slotKey('comida')]}
-          profiles={validProfiles}
-          allIng={allIng}
-          allCombos={allCombos}
-          gramsOverride={comidaOverride}
-          onEdit={() => setModalOpen('select-comida')}
-          onDetail={() => setModalOpen('detail-comida')}
-          onClear={() => handleMealClear('comida')}
-        />
-
-        <MealBlock
-          time="16:30"
-          mealType="merienda"
-          meal={todayMeals.merienda}
-          rawSlot={currentWeek[slotKey('merienda')]}
-          profiles={validProfiles}
-          allIng={allIng}
-          allCombos={allCombos}
-          onEdit={() => setModalOpen('select-merienda')}
-          onDetail={() => setModalOpen('detail-merienda')}
-          onClear={() => handleMealClear('merienda')}
-        />
-
-        <MealBlock
-          time="19:30"
-          mealType="cena"
-          meal={todayMeals.cena}
-          rawSlot={currentWeek[slotKey('cena')]}
-          profiles={validProfiles}
-          allIng={allIng}
-          allCombos={allCombos}
-          onEdit={() => setModalOpen('select-cena')}
-          onDetail={() => setModalOpen('detail-cena')}
-          onClear={() => handleMealClear('cena')}
-        />
-      </div>
-
-      <DailySummary rawSlots={rawSlots} profiles={validProfiles} dayIdx={dayIdx} allIng={allIng} allCombos={allCombos} />
-
-      <div style={{ padding: '0 1.5rem', marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        <PersonalizedDay rawSlots={rawSlots} profiles={validProfiles} dayIdx={dayIdx} allIng={allIng} allCombos={allCombos} />
-        <DailyProgress rawSlots={rawSlots} profiles={validProfiles} dayIdx={dayIdx} allIng={allIng} allCombos={allCombos} />
-      </div>
-
-      {/* Detail modal (when clicking a filled meal) */}
-      {modalType === 'detail' && mealTypeFromModal && (
-        <MealDetailModal
-          mealType={mealTypeFromModal}
-          meal={todayMeals[mealTypeFromModal]}
-          allIng={allIng}
-          allCombos={allCombos}
-          onEdit={() => setModalOpen(`select-${mealTypeFromModal}`)}
-          onClear={() => { handleMealClear(mealTypeFromModal); setModalOpen(null); }}
-          onClose={() => setModalOpen(null)}
-        />
+      {sheetMeal && (
+        <MealSheet mealType={sheetMeal.type} dayLabel={`hoy, ${DAY_LONG[di].toLowerCase()} ${today.getDate()}`} rows={sheetMeal.rows}
+          onClose={() => setSheet(null)}
+          onClear={() => clearMeal(sheetMeal.type)}
+          onChange={() => { const k = sheetMeal.rows.find(r => r.info)?.info.key; setSheet(null); setPicker({ mealType: sheetMeal.type, currentKey: k, who }) }} />
       )}
-
-      {/* Selector modal (when selecting a new meal) */}
-      {modalType === 'select' && mealTypeFromModal && (
-        <MealSelectorModal
-          allIng={allIng}
-          allCombos={allCombos}
-          mealType={mealTypeFromModal}
-          onSelect={(mealData) => handleMealSelect(mealTypeFromModal, mealData)}
-          onClose={() => setModalOpen(null)}
-        />
+      {picker && (
+        <DishPicker weekKey={wk} weekData={week} dayKey={dk} date={today} mealType={picker.mealType}
+          initialWho={picker.who} currentKey={picker.currentKey} onClose={() => setPicker(null)} />
       )}
+      {models && <ModelWeekSheet initialTarget={1} onClose={() => setModels(false)} onLoaded={t => openPlanner(t, 0)} />}
     </div>
   )
 }

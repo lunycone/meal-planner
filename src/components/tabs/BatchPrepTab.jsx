@@ -2,8 +2,10 @@ import { useState, useEffect, useMemo } from 'react'
 import useStore, { selectAllIng, selectAllCombos } from '../../store/useStore'
 import { PROTEIN } from '../../data/proteins'
 import { PREP } from '../../data/combos'
-import { comboScalableKey, personMealScalesTwoPass, personTargetForDay, personDayKcal, slotForPerson, DRY_TO_COOKED as COOK_RATIO } from '../../engine/calc'
-import { getISOWeek, getWeekMonday, formatDateShort } from '../../utils/date'
+import { comboScalableKey, personMealScalesTwoPass, personTargetForDay, slotForPerson, DRY_TO_COOKED as COOK_RATIO } from '../../engine/calc'
+import { getISOWeek } from '../../utils/date'
+import Icon, { MEAL_ICON } from '../ui/Icon'
+import { MEAL_STYLE, PERSON_COLOR, addDays, mondayOf, fmtRange } from '../../lib/mealplan'
 
 // Orden de dias para resolver el indice (0=lun..6=dom) que necesita
 // personTargetForDay/personMealScale — mismo orden que DAY_KEYS en el
@@ -195,12 +197,13 @@ function fmtBaseDry(key, dryGrams) {
   return `${Math.round(dryGrams)}g seco → ~${Math.round(dryGrams * ratio)}g cocido`
 }
 
-function fmtQty({ grams = 0, ml = 0, units = 0 }) {
+function fmtQty({ grams = 0, ml = 0, units = 0, serv = 0 }) {
   const frac = { 0.25: '¼', 0.5: '½', 0.75: '¾' }
   const parts = []
   if (grams > 0) parts.push(`${Math.round(grams)}g`)
   if (ml    > 0) parts.push(`${Math.round(ml)}ml`)
   if (units > 0) parts.push(`${frac[units] ?? units} ud`)
+  if (serv  > 0) parts.push(`×${serv}`)
   return parts.join(' + ') || '—'
 }
 
@@ -290,10 +293,13 @@ function computeBatchMeal(mealType, batchDays, profiles, allIng, allCombos, week
       const peopleToday = dayProfiles.filter(p => slotForPerson(rawSlot, p.id)?.recipeKey === g.meal.recipeKey).length
       if (peopleToday === 0) continue
       const addShared = (k, p) => {
-        if (!g.sharedAcc[k]) g.sharedAcc[k] = { name: allIng[k]?.name ?? k, grams: 0, ml: 0, units: 0 }
+        if (!g.sharedAcc[k]) g.sharedAcc[k] = { name: allIng[k]?.name ?? k, grams: 0, ml: 0, units: 0, serv: 0 }
         g.sharedAcc[k].grams += (p.grams ?? 0) * peopleToday
         g.sharedAcc[k].ml    += (p.ml    ?? 0) * peopleToday
         g.sharedAcc[k].units += (p.units ?? 0) * peopleToday
+        // Ingredientes de precio fijo por racion (p.ej. sardinas ½ lata,
+        // portion {}): sin gramos/ml/ud desaparecian del lote.
+        if (p.grams == null && p.ml == null && p.units == null) g.sharedAcc[k].serv += (p.serv ?? 1) * peopleToday
       }
       // 6 sep 2026 -- BUG: esto excluia el ingrediente "escalable" (auto-
       // detectado por comboScalableKey, corre SIEMPRE, no solo en comida/
@@ -328,7 +334,7 @@ function computeBatchMeal(mealType, batchDays, profiles, allIng, allCombos, week
       personTotals, recipePortionGrams,
       sharedItems: Object.entries(g.sharedAcc)
         .map(([k, v]) => ({ key: k, ...v }))
-        .filter(it => it.grams > 0 || it.ml > 0 || it.units > 0),
+        .filter(it => it.grams > 0 || it.ml > 0 || it.units > 0 || it.serv > 0),
       freshItems: g.freshItems,
       hasBase: !!g.scalableKey && personTotals.some(pt => pt.baseGrams > 0),
       blend: g.comboRef?.blend ?? null,
@@ -336,20 +342,6 @@ function computeBatchMeal(mealType, batchDays, profiles, allIng, allCombos, week
   }).filter(Boolean)
 }
 
-// ─── Daily kcal, per person, via personDayKcal (comida Y cena escaladas) ──────
-function computeDailyKcalPerPerson(weekData, dayKey, dayIdx, batchProfiles, allIng, allCombos) {
-  if (!batchProfiles || batchProfiles.length === 0) return []
-  return batchProfiles.map(person => {
-    const day = Object.fromEntries(
-      MEALS.map(m => [m, slotForPerson(weekData[`${dayKey}-${m}`] ?? null, person.id)])
-    )
-    return {
-      person,
-      kcalDay: personDayKcal(day, person, allIng, allCombos, dayIdx),
-      kcalDayTarget: personTargetForDay(person, dayIdx),
-    }
-  }).filter(p => p.kcalDay > 0)
-}
 
 // ─── THE PLAN ─────────────────────────────────────────────────────────────────
 // Simple by design: gather the cooking jobs (each its own timer), the prep tasks,
@@ -386,7 +378,8 @@ function buildSchedule(mealDataList) {
       const g  = totalPortions > 0 ? Math.round(it.grams / totalPortions) : 0
       const ml = totalPortions > 0 ? Math.round(it.ml    / totalPortions) : 0
       const u  = totalPortions > 0 ? +(it.units / totalPortions).toFixed(2) : 0
-      const qty = g > 0 ? `${g}g` : ml > 0 ? `${ml}ml` : u > 0 ? `${u} ud` : null
+      const sv = totalPortions > 0 ? +((it.serv ?? 0) / totalPortions).toFixed(2) : 0
+      const qty = g > 0 ? `${g}g` : ml > 0 ? `${ml}ml` : u > 0 ? `${u} ud` : sv > 0 ? `×${sv}` : null
       return qty ? { name: it.name, qty } : null
     }).filter(Boolean)
     // 6 sep 2026 -- el usuario, con razon: "229g de masa por tortilla es
@@ -699,7 +692,8 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
             function sharedPerRacion(it) {
               if (totalPersonDays <= 0) return null
               const g = R(it.grams / totalPersonDays), ml = R(it.ml / totalPersonDays), u = +(it.units / totalPersonDays).toFixed(2)
-              return g > 0 ? `${g}g` : ml > 0 ? `${ml}ml` : u > 0 ? `${u} ud` : null
+              const sv = +((it.serv ?? 0) / totalPersonDays).toFixed(2)
+              return g > 0 ? `${g}g` : ml > 0 ? `${ml}ml` : u > 0 ? `${u} ud` : sv > 0 ? `×${sv}` : null
             }
             function desayunoLines() {
               const totalPortions = persons.reduce((s, p) => s + p.recipeServings, 0)
@@ -707,7 +701,8 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
                 const g = totalPortions > 0 ? R(it.grams / totalPortions) : 0
                 const ml = totalPortions > 0 ? R(it.ml / totalPortions) : 0
                 const u = totalPortions > 0 ? +(it.units / totalPortions).toFixed(2) : 0
-                const qty = g > 0 ? `${g}g` : ml > 0 ? `${ml}ml` : u > 0 ? `${u} ud` : null
+                const sv = totalPortions > 0 ? +((it.serv ?? 0) / totalPortions).toFixed(2) : 0
+                const qty = g > 0 ? `${g}g` : ml > 0 ? `${ml}ml` : u > 0 ? `${u} ud` : sv > 0 ? `×${sv}` : null
                 return qty ? { text: `${it.name}: ${qty}` } : null
               }).filter(Boolean)
             }
@@ -1067,90 +1062,6 @@ function CookMode({ schedule, title, onExit }) {
 }
 
 // ─── Batch card (plan view) ──────────────────────────────────────────────────
-function BatchCard({ title, cookLabel, coverDays, mealSections, schedule, kcalSummary, onPlay }) {
-  const hasPlan = schedule.jobs.length > 0 || schedule.prepTasks.length > 0
-
-  return (
-    <div style={{ background: 'var(--t-surface)', border: '1px solid var(--t-border)', borderRadius: '0.75rem', padding: '1.25rem', flex: 1, minWidth: 0 }}>
-      {/* Header */}
-      <div style={{ marginBottom: '1.25rem', paddingBottom: '1rem', borderBottom: '2px solid var(--t-border)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.2rem' }}>
-          <div style={{ fontFamily: 'var(--t-font-display)', fontWeight: 500, fontSize: '1.1rem' }}>{title}</div>
-          {hasPlan && (
-            <button className="btn-primary" onClick={onPlay} style={{ fontSize: '0.78rem', padding: '0.3rem 0.75rem', whiteSpace: 'nowrap' }}>
-              ▶ Cocinar
-            </button>
-          )}
-        </div>
-        <div style={{ fontSize: '0.78rem', color: 'var(--t-text-soft)' }}>
-          🍳 Cocinar: <strong>{cookLabel}</strong> · Cubre: {coverDays.join(' · ')}
-        </div>
-      </div>
-
-      {mealSections}
-
-      {/* Kcal del día */}
-      {kcalSummary.length > 0 && (
-        <div style={{ margin: '0.75rem 0', padding: '0.6rem 0.9rem', background: 'rgba(154,123,67,0.08)', borderRadius: '0.5rem', borderLeft: '3px solid var(--t-accent)' }}>
-          <div style={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--t-text-faint)', fontWeight: 700, marginBottom: '0.3rem' }}>
-            Kcal del día <span style={{ textTransform: 'none', fontWeight: 500, opacity: 0.7 }}>· rango ok ±15%</span>
-          </div>
-          {kcalSummary.map(({ person, kcalDay, kcalDayTarget }) => {
-            const target = kcalDayTarget ?? person.kcalTarget ?? 0
-            const pct = target ? Math.round(kcalDay / target * 100) : null
-            const deficit = target ? Math.max(0, target - kcalDay) : 0
-            const surplus = target ? Math.max(0, kcalDay - target) : 0
-            const inRange = pct !== null && pct >= 85 && pct <= 115
-            // Honest note: small gaps → a splash of oil; big gaps are a menu
-            // problem, not a slider problem — say so instead of dumping oil.
-            let note = null
-            if (deficit > 240) {
-              note = { color: '#b45309', text: `⚠️ Plan corto ~${deficit} kcal — añade un snack o un 2º componente (no lo cierres a base de aceite)` }
-            } else if (deficit > 0) {
-              note = { color: 'var(--t-text-faint)', text: `🫒 +${Math.max(1, Math.round(deficit / 120))} cda AOVE al emplatear y cierras el hueco` }
-            } else if (surplus > target * 0.15) {
-              note = { color: '#b45309', text: `↑ ~${surplus} kcal de más — baja la base o salta el AOVE` }
-            }
-            return (
-              <div key={person.id} style={{ fontSize: '0.82rem', color: 'var(--t-text)', lineHeight: 1.8 }}>
-                <span style={{ fontWeight: 700, color: 'var(--t-accent)' }}>{person.name}</span>
-                {' · '}<span style={{ fontWeight: 600 }}>{kcalDay.toLocaleString()} kcal/día</span>
-                {pct !== null && (
-                  <span style={{ fontSize: '0.72rem', color: inRange ? '#22c55e' : 'var(--t-text-faint)', marginLeft: '0.4rem' }}>
-                    ({pct}%){inRange ? ' ✓ en rango' : ''}
-                  </span>
-                )}
-                {note && (
-                  <span style={{ display: 'block', fontSize: '0.72rem', color: note.color, paddingLeft: '0.5rem' }}>
-                    {note.text}
-                  </span>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {/* Víspera */}
-      {schedule.vispera.length > 0 && (
-        <div className="batch-vispera">
-          <span className="batch-vispera-tag">🌙 La víspera</span>
-          {schedule.vispera.map((v, i) => (
-            <div key={i} style={{ fontSize: '0.78rem', color: 'var(--t-text)', lineHeight: 1.6, marginTop: i === 0 ? '0.4rem' : 0 }}>{v.emoji} {v.text}</div>
-          ))}
-        </div>
-      )}
-
-      {/* Total time — simple, everything en paralelo */}
-      {hasPlan && schedule.totalMin > 0 && (
-        <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--t-border)', fontSize: '0.78rem', color: 'var(--t-text-soft)' }}>
-          ⏱ <strong>~{schedule.totalMin} min</strong> · todo a la vez (lo más largo + emplatar)
-        </div>
-      )}
-    </div>
-  )
-}
-
 // ─── Main component ────────────────────────────────────────────────────────────
 const MEALS    = ['desayuno', 'comida', 'merienda', 'cena']
 // ── Ventana de batch ────────────────────────────────────────────────────────
@@ -1165,83 +1076,194 @@ const MEALS    = ['desayuno', 'comida', 'merienda', 'cena']
 // falta con el batch de jueves (que llegaba hasta el lunes siguiente).
 const WEEKDAY_DAYS = ['lun', 'mar', 'mié', 'jue', 'vie']
 
+const DAY_LETTER = { lun: 'L', mar: 'M', 'mié': 'X', jue: 'J', vie: 'V' }
+const FREEZE_DAYS = new Set(['jue', 'vie'])
+
 export default function BatchPrepTab() {
   const allIng        = useStore(selectAllIng)
   const allCombos     = useStore(selectAllCombos)
   const weekPlan      = useStore(s => s.weekPlan)
   const profiles      = useStore(s => s.profiles)
-  const weekOffset    = useStore(s => s.weekOffset)
-  const setWeekOffset = useStore(s => s.setWeekOffset)
+  const openPlanner   = useStore(s => s.openPlanner)
 
+  // Por defecto, el PRÓXIMO batch (el de esta semana ya se cocinó el domingo
+  // pasado). Estado propio: ya no comparte semana con el Planificador.
+  const [offset, setOffset] = useState(1)
   const [playing, setPlaying] = useState(false)
+  const [detail, setDetail] = useState(false)
 
-  const weekMonday  = useMemo(() => getWeekMonday(weekOffset), [weekOffset])
-  const weekKey     = useMemo(() => getISOWeek(new Date(weekMonday.getTime() + 3 * 86400000)), [weekMonday])
-  const weekSunday  = useMemo(() => new Date(weekMonday.getTime() + 6 * 86400000), [weekMonday])
-
-  // Cook day (no se come de su propio batch, sólo cocina): el domingo
-  // anterior a este lunes.
-  const cookDate = useMemo(() => new Date(weekMonday.getTime() - 1 * 86400000), [weekMonday])
+  const weekMonday  = useMemo(() => addDays(mondayOf(new Date()), offset * 7), [offset])
+  const weekKey     = useMemo(() => getISOWeek(addDays(weekMonday, 3)), [weekMonday])
+  const cookDate    = useMemo(() => addDays(weekMonday, -1), [weekMonday])
 
   const batchDays = useMemo(() => WEEKDAY_DAYS.map((dk, i) => ({
-    dayKey: dk, wk: weekKey,
-    date: new Date(weekMonday.getTime() + i * 86400000),  // lun(0)→vie(4)
+    dayKey: dk, wk: weekKey, date: addDays(weekMonday, i),
   })), [weekMonday, weekKey])
 
   const batchData = useMemo(() => Object.fromEntries(
     MEALS.map(mt => [mt, computeBatchMeal(mt, batchDays, profiles, allIng, allCombos, weekPlan)])
   ), [batchDays, profiles, allIng, allCombos, weekPlan])
 
-  const kcalSummary = useMemo(() => {
-    const rep = batchDays[0]
-    const weekData = weekPlan[rep.wk] ?? {}
-    return computeDailyKcalPerPerson(weekData, rep.dayKey, ALL_DAY_KEYS.indexOf(rep.dayKey), profilesActiveOn(profiles, rep.date), allIng, allCombos)
-  }, [weekPlan, batchDays, profiles, allIng, allCombos])
-
   const schedule = useMemo(() =>
     buildSchedule(MEALS.flatMap(mt => (batchData[mt] || []).map(g => ({ meal: g.meal, batchData: g }))))
   , [batchData])
 
-  // ── COOK MODE ───────────────────────────────────────────────────────────────
+  // Tuppers hechos: en el guardado compartido (lo que llena uno lo ve el otro)
+  const batchTups = useStore(s => s.batchTups)
+  const toggleBatchTup = useStore(s => s.toggleBatchTup)
+  const tups = useMemo(() => new Set(batchTups?.[weekKey] ?? []), [batchTups, weekKey])
+  const toggleTup = id => toggleBatchTup(weekKey, id)
+
+  // Tarjetas: un lote por plato y franja, con sus tuppers día × persona
+  const weekData = weekPlan[weekKey] ?? {}
+  const cards = MEALS.flatMap(mt => (batchData[mt] || []).map(g => {
+    const key = g.meal.recipeKey
+    const tupList = []
+    batchDays.forEach(({ dayKey, date }) => {
+      profilesActiveOn(profiles, date).forEach(person => {
+        if (slotForPerson(weekData[`${dayKey}-${mt}`] ?? null, person.id)?.recipeKey === key) {
+          tupList.push({ id: `${key}-${mt}-${dayKey}-${person.id}`, dayKey, person })
+        }
+      })
+    })
+    const persons = g.personTotals.filter(pt => pt.activeDays > 0)
+    const scaled = (mt === 'comida' || mt === 'cena') && g.hasBase
+    const maxBase = Math.max(1, ...persons.map(pt => pt.baseGrams))
+    const shared = g.sharedItems.slice(0, 5).map(it => `${it.name.split(' (')[0].split(' · ')[0]} ${fmtQty(it)}`)
+    const days = [...new Set(tupList.map(t => t.dayKey))]
+    return { mt, g, key, tupList, persons, scaled, maxBase, shared, days }
+  }))
+  const packable = cards.filter(c => c.mt === 'comida' || c.mt === 'cena')
+  const tupTotal = packable.reduce((s, c) => s + c.tupList.length, 0)
+  const tupDone = packable.reduce((s, c) => s + c.tupList.filter(t => tups.has(t.id)).length, 0)
+  const colorOf = p => PERSON_COLOR[Math.max(0, profiles.findIndex(x => x.id === p.id)) % PERSON_COLOR.length]
+  const hasPlan = schedule.jobs.length > 0 || schedule.prepTasks.length > 0
+  const label = offset === 1 ? 'Próximo batch' : offset === 0 ? 'Batch de esta semana' : offset < 0 ? 'Batch pasado' : 'Batch futuro'
+
   if (playing) {
-    return <CookMode schedule={schedule} title="☀️ Batch Domingo" onExit={() => setPlaying(false)} />
+    return <CookMode schedule={schedule} title={`Batch · domingo ${cookDate.getDate()}`} onExit={() => setPlaying(false)} />
   }
 
   return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-        <div>
-          <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.25rem' }}>
-            Prep Batch
-          </h2>
-          <p style={{ fontSize: '0.82rem', color: 'var(--muted)' }}>
-            {weekKey} · {formatDateShort(weekMonday)} – {formatDateShort(weekSunday)}
-          </p>
-        </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button className="btn-ghost" onClick={() => setWeekOffset(weekOffset - 1)}>← Anterior</button>
-          <button className="btn-ghost" onClick={() => setWeekOffset(0)}>Hoy</button>
-          <button className="btn-ghost" onClick={() => setWeekOffset(weekOffset + 1)}>Siguiente →</button>
-        </div>
-      </div>
+    <div className="bt">
+      <section className="bt-left mp-rise">
+        <span style={{ fontSize: 22, fontWeight: 500, color: 'var(--c-ink-3)' }}>{label} · domingo</span>
+        <span className="hoy-date mp-num">{cookDate.getDate()}</span>
+        <span style={{ fontSize: 15, color: 'var(--c-ink-3)', marginTop: 10 }}>para lun {weekMonday.getDate()} – vie {addDays(weekMonday, 4).getDate()} · {fmtRange(weekMonday, addDays(weekMonday, 4)).split(' ').pop()}</span>
 
-      <div style={{ maxWidth: '960px' }}>
-        <BatchCard
-          title="☀️ Batch Domingo"
-          cookLabel={`dom ${formatDateShort(cookDate)}`}
-          coverDays={['Lun', 'Mar', 'Mié', 'Jue', 'Vie']}
-          schedule={schedule}
-          kcalSummary={kcalSummary}
-          onPlay={() => setPlaying(true)}
-          mealSections={MEALS.flatMap(mt => {
-            const groups = batchData[mt] || []
-            if (groups.length === 0) return [<MealSection key={mt} mealType={mt} batchData={null} />]
-            return groups.map((g, gi) => (
-              <MealSection key={`${mt}-${gi}`} mealType={mt} batchData={g} showMealLabel={gi === 0}
-                groupLabel={groups.length > 1 ? g.personTotals.map(pt => pt.person.initial).join(' y ') : null} />
-            ))
+        <div className="mp-seg" style={{ gap: 0, alignSelf: 'flex-start', marginTop: 16 }}>
+          <button type="button" aria-label="Batch anterior" onClick={() => setOffset(o => o - 1)} style={{ padding: '0 10px' }}><Icon name="left" size={12} stroke={2.6} /></button>
+          <button type="button" onClick={() => setOffset(1)} style={{ fontWeight: 600, color: 'var(--c-ink)' }}>Próximo</button>
+          <button type="button" aria-label="Batch siguiente" onClick={() => setOffset(o => o + 1)} style={{ padding: '0 10px' }}><Icon name="right" size={12} stroke={2.6} /></button>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10, marginTop: 20 }}>
+          <div className="bt-stat mp-rim"><span className="mp-muted" style={{ fontSize: 12 }}>Tiempo</span><span className="mp-num">{schedule.totalMin ? `≈ ${schedule.totalMin}′` : '—'}</span></div>
+          <div className="bt-stat mp-rim"><span className="mp-muted" style={{ fontSize: 12 }}>Tuppers</span><span className="mp-num">{tupDone} / {tupTotal}</span></div>
+        </div>
+
+        {schedule.vispera.length > 0 && (
+          <div className="bt-note mp-rim">
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700 }}>
+              <span className="mp-bubble" style={{ width: 26, height: 26, background: 'rgba(255,255,255,0.85)', color: '#7154DA' }}><Icon name="moon" size={13} stroke={2.2} /></span>
+              Sábado por la noche
+            </span>
+            <ul>
+              {schedule.vispera.map((v, i) => <li key={i}>{v.text}</li>)}
+            </ul>
+          </div>
+        )}
+
+        {hasPlan && (
+          <button className="mp-btn mp-btn-dark" style={{ marginTop: 14, height: 44, alignSelf: 'stretch' }} onClick={() => setPlaying(true)}>
+            <Icon name="play" size={14} fill="currentColor" />Empezar a cocinar
+          </button>
+        )}
+        <span className="mp-muted" style={{ marginTop: 14, fontSize: 12.5, lineHeight: 1.5 }}>
+          Los tuppers de jueves y viernes van al congelador; la sugerencia del miércoles y jueves por la noche te recuerda pasarlos a la nevera.
+        </span>
+      </section>
+
+      <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {cards.length === 0 && (
+          <div className="mp-glass mp-card mp-empty" style={{ padding: '80px 20px' }}>
+            Nada planificado de lunes a viernes en esta semana.<br />
+            <button className="mp-btn mp-btn-dark" style={{ marginTop: 14 }} onClick={() => openPlanner(offset, 0)}><Icon name="cal" size={14} />Planificar la semana</button>
+          </div>
+        )}
+        <section className="bt-cards" aria-label="Platos del batch">
+          {cards.map((c, n) => {
+            const st = MEAL_STYLE[c.mt]
+            const tupsOn = c.tupList.filter(t => tups.has(t.id)).length
+            const packs = c.mt === 'comida' || c.mt === 'cena'
+            return (
+              <article key={`${c.mt}-${c.key}`} className="bt-card mp-rim mp-rise" style={{ animationDelay: `${80 + n * 50}ms` }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                    <span className="mp-bubble" style={{ width: 44, height: 44, background: st.tint, color: st.color, boxShadow: `inset 0 1px 0 #fff, 0 6px 16px ${st.glow}` }}><Icon name={MEAL_ICON[c.mt]} size={20} /></span>
+                    <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+                      <span className="bt-card-name">{c.g.mealName}</span>
+                      <span className="mp-muted" style={{ fontSize: 12.5 }}>{MEAL_LABELS[c.mt]} · {c.days.map(d => DAY_LETTER[d]).join(' ')} · {c.persons.map(pt => pt.person.name).join(' y ')}</span>
+                    </span>
+                  </span>
+                  <span className="mp-tag mp-num" style={{ background: 'rgba(255,255,255,0.85)', color: 'var(--c-ink)', height: 24, fontSize: 12 }}>
+                    {packs ? `${tupsOn}/${c.tupList.length} tuppers` : `${c.tupList.length} raciones`}
+                  </span>
+                </div>
+                {c.shared.length > 0 && <span style={{ fontSize: 12.5, lineHeight: 1.5, color: 'var(--c-ink-2)' }}>{c.shared.join(' · ')}{c.g.sharedItems.length > 5 ? ` · +${c.g.sharedItems.length - 5}` : ''}</span>}
+                {c.scaled && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {c.persons.map(pt => (
+                      <span key={pt.person.id} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12 }}>
+                        <span style={{ width: 90, color: 'var(--c-ink-3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{pt.person.name} · {pt.baseName?.split(' (')[0].toLowerCase()}</span>
+                        <span style={{ flexGrow: 1, height: 7, borderRadius: 4, background: 'rgba(110,80,50,0.10)', overflow: 'hidden' }}><span style={{ display: 'block', height: '100%', width: `${pt.baseGrams / c.maxBase * 100}%`, borderRadius: 4, background: colorOf(pt.person), animation: 'mp-grow 1.2s var(--c-ease) both' }} /></span>
+                        <span className="mp-num" style={{ minWidth: 70, textAlign: 'right', fontWeight: 600 }}>{Math.round(pt.baseGrams)} g</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {packs && (
+                  <div style={{ marginTop: 'auto', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {c.tupList.map(t => {
+                      const on = tups.has(t.id)
+                      const freeze = FREEZE_DAYS.has(t.dayKey)
+                      return (
+                        <button key={t.id} type="button" className={`bt-tup${on ? ' is-on' : ''}${freeze ? ' is-freeze' : ''}`} aria-pressed={on}
+                          title={`${t.person.name} · ${t.dayKey}${freeze ? ' · al congelador' : ''}`} onClick={() => toggleTup(t.id)}>
+                          <span className="bt-tup-check"><Icon name="check" size={8} stroke={4} /></span>
+                          {DAY_LETTER[t.dayKey]} {t.person.initial}
+                          {freeze && <Icon name="snow" size={10} stroke={2.4} />}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </article>
+            )
           })}
-        />
+        </section>
+
+        {cards.length > 0 && (
+          <section className="mp-glass mp-card mp-rise" style={{ animationDelay: '300ms' }}>
+            <button type="button" className="bt-detail-toggle" aria-expanded={detail} onClick={() => setDetail(d => !d)}>
+              <span style={{ fontSize: 15, fontWeight: 700 }}>Cantidades y pasos por plato</span>
+              <span className="mp-muted" style={{ fontSize: 12.5 }}>Lote total, reparto por tupper y cómo se cocina cada cosa</span>
+              <Icon name="right" size={14} stroke={2.4} style={{ marginLeft: 'auto', transform: detail ? 'rotate(90deg)' : 'none', transition: 'transform .35s var(--c-spring)' }} />
+            </button>
+            {detail && (
+              <div style={{ marginTop: 14 }}>
+                {MEALS.flatMap(mt => {
+                  const groups = batchData[mt] || []
+                  if (groups.length === 0) return [<MealSection key={mt} mealType={mt} batchData={null} />]
+                  return groups.map((g, gi) => (
+                    <MealSection key={`${mt}-${gi}`} mealType={mt} batchData={g} showMealLabel={gi === 0}
+                      groupLabel={groups.length > 1 ? g.personTotals.map(pt => pt.person.initial).join(' y ') : null} />
+                  ))
+                })}
+              </div>
+            )}
+          </section>
+        )}
       </div>
     </div>
   )

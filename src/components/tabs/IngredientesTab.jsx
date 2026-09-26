@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import useStore, { selectAllIng, selectAllCats } from '../../store/useStore'
+import Icon from '../ui/Icon'
 import { CAT_ORDER } from '../../data/ingredients'
 import { ING } from '../../data/ingredients'
 import { ingredientUnitType } from '../../engine/calc'
@@ -328,15 +329,30 @@ export default function IngredientesTab() {
   const removeCustomCategory = useStore(s => s.removeCustomCategory)
 
   const [editingKey, setEditingKey] = useState(null)
+  const [q, setQ] = useState('')
+  const needle = q.trim().toLowerCase()
 
   const catOrder = [...CAT_ORDER, ...customCategories.map(c => c.key)]
 
   return (
     <div>
+      <div className="mp-page-head mp-rise">
+        <div className="mp-page-title">
+          <h1>Ingredientes</h1>
+          <span>{Object.keys(allIng).length} ingredientes · precio, pack y nutrientes — cambia uno y se recalcula toda la app</span>
+        </div>
+        <div className="mp-page-tools">
+          <label className="mp-search" style={{ width: 280 }}>
+            <Icon name="search" size={14} stroke={2.4} />
+            <span className="sr-only">Buscar ingrediente</span>
+            <input placeholder="Buscar ingrediente…" value={q} onChange={e => setQ(e.target.value)} />
+          </label>
+        </div>
+      </div>
       <AddIngForm />
 
       {catOrder.map(cat => {
-        const keys = Object.keys(allIng).filter(k => allIng[k].cat === cat && !allIng[k].hideInTable)
+        const keys = Object.keys(allIng).filter(k => allIng[k].cat === cat && !allIng[k].hideInTable && (!needle || allIng[k].name.toLowerCase().includes(needle)))
         if (!keys.length) return null
         const isCustomCat = customCategories.some(c => c.key === cat)
         return (

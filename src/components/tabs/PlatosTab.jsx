@@ -1,5 +1,8 @@
 import { useState, useMemo } from 'react'
 import useStore, { selectAllIng, selectAllCombos } from '../../store/useStore'
+import Icon, { MEAL_ICON } from '../ui/Icon'
+import Segmented from '../ui/Segmented'
+import { MEAL_STYLE, MEAL_LABEL } from '../../lib/mealplan'
 import { ingCost, ingKcal, ingProt, ingFat, comboAgg, fmt, pcosCarbLevel, proteinLevel, kcalLevel, LEVEL_COLOR, ingredientUnitType } from '../../engine/calc'
 import PcosBadge from '../PcosBadge'
 
@@ -42,7 +45,6 @@ function withPortionQty(p, qty) {
 
 const MEAL_ORDER  = ['desayuno', 'comida', 'merienda', 'cena']
 const MEAL_LABELS = { desayuno: 'DESAYUNO', comida: 'COMIDA', merienda: 'MERIENDA', cena: 'CENA' }
-const MEAL_ICONS  = { desayuno: '🍳', comida: '🍽️', merienda: '🥤', cena: '🌙' }
 
 // ─── Recipe detail panel ─────────────────────────────────────────────────────
 function RecipeDetail({ combo, allIng, onClose, onEdit, onDelete }) {
@@ -332,16 +334,14 @@ export default function PlatosTab() {
 
   return (
     <div>
-      <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
-        <div>
-          <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.25rem' }}>
-            Platos
-          </h2>
-          <p style={{ fontSize: '0.82rem', color: 'var(--muted)' }}>
-            Todos los platos ya montados — desayuno, comida, merienda y cena. Haz clic para ver ingredientes, precio y macros.
-          </p>
+      <div className="mp-page-head mp-rise">
+        <div className="mp-page-title">
+          <h1>Platos</h1>
+          <span>{Object.keys(allCombos).length} platos · toca uno para ver ingredientes, precio y macros</span>
         </div>
-        {!creating && <button className="btn-primary" onClick={() => setCreating(true)}>+ Nuevo plato</button>}
+        <div className="mp-page-tools">
+          {!creating && <button className="mp-btn mp-btn-dark" onClick={() => setCreating(true)}><Icon name="plus" size={14} stroke={2.6} />Nuevo plato</button>}
+        </div>
       </div>
 
       {creating && (
@@ -355,43 +355,16 @@ export default function PlatosTab() {
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-        <input
-          className="picker-search"
-          placeholder="Buscar plato…"
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-          style={{ flex: 1, minWidth: '200px' }}
-        />
-        <select
-          value={sortBy}
-          onChange={e => setSortBy(e.target.value)}
-          style={{ padding: '0.5rem 0.75rem', border: '1px solid var(--border)', borderRadius: '0.5rem', background: 'var(--bg-2)', color: 'var(--text)', fontSize: '0.875rem' }}
-        >
-          <option value="name">Nombre A-Z</option>
-          <option value="price">Precio (menor a mayor)</option>
-          <option value="kcal">Kcal (menor a mayor)</option>
-          <option value="prot">Proteína (mayor a menor)</option>
-          <option value="pcos">PCOS (mejor a peor)</option>
-        </select>
-      </div>
-
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-        {[['all', 'Todo', '📌'], ...MEAL_ORDER.map(m => [m, MEAL_LABELS[m], MEAL_ICONS[m]])].map(([key, label, icon]) => (
-          <button
-            key={key}
-            onClick={() => setMealFilter(key)}
-            style={{
-              padding: '0.5rem 1rem',
-              border: `2px solid ${mealFilter === key ? 'var(--text)' : 'var(--border)'}`,
-              background: mealFilter === key ? 'var(--card)' : 'transparent',
-              color: 'var(--text)', borderRadius: '9999px', cursor: 'pointer',
-              fontSize: '0.875rem', fontWeight: mealFilter === key ? 600 : 400, transition: 'all 0.2s',
-            }}
-          >
-            {icon} {label}
-          </button>
-        ))}
+      <div className="mp-rise" style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center', animationDelay: '60ms' }}>
+        <label className="mp-search" style={{ flex: 1, minWidth: 220, maxWidth: 360 }}>
+          <Icon name="search" size={14} stroke={2.4} />
+          <span className="sr-only">Buscar plato</span>
+          <input placeholder="Buscar plato…" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+        </label>
+        <Segmented label="Franja" value={mealFilter} onChange={setMealFilter}
+          options={[{ value: 'all', label: 'Todo' }, ...MEAL_ORDER.map(m => ({ value: m, label: MEAL_LABEL[m] }))]} />
+        <Segmented label="Ordenar" value={sortBy} onChange={setSortBy}
+          options={[{ value: 'name', label: 'A–Z' }, { value: 'price', label: 'Precio' }, { value: 'kcal', label: 'Kcal' }, { value: 'prot', label: 'Proteína' }, { value: 'pcos', label: 'PCOS' }]} />
       </div>
 
       {total === 0 ? (
@@ -401,8 +374,9 @@ export default function PlatosTab() {
       ) : (
         grouped.map(({ meal, items }) => (
           <div key={meal} style={{ marginBottom: '2rem' }}>
-            <h3 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--muted)', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              {MEAL_ICONS[meal]} {MEAL_LABELS[meal]} ({items.length})
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 15, fontWeight: 700, margin: '0 0 10px' }}>
+              <span className="mp-bubble" style={{ width: 28, height: 28, background: MEAL_STYLE[meal].tint, color: MEAL_STYLE[meal].color }}><Icon name={MEAL_ICON[meal]} size={14} stroke={2.2} /></span>
+              {MEAL_LABEL[meal]} <span className="mp-muted" style={{ fontWeight: 500, fontSize: 13 }}>{items.length}</span>
             </h3>
             {items.map(({ key, combo }) => {
               const isSelected = selectedKey === key

@@ -1,53 +1,30 @@
 import { useState, useMemo } from 'react'
-import useStore, { selectAllIng } from '../../store/useStore'
+import useStore, { selectAllIng, selectAllCombos } from '../../store/useStore'
 import { CAT_ORDER, CAT_LABELS } from '../../data/ingredients'
 import { PROTEIN } from '../../data/proteins'
-import { COMBO } from '../../data/combos'
-import { ingCost, ingKcal, ingProt, ingFat, comboAgg, fmt, personLunchScale, comboScalableKey, dayKcal, personMealScalesTwoPass, personTargetForDay, slotForPerson } from '../../engine/calc'
-import { getISOWeek, getWeekMonday } from '../../utils/date'
+import { ingCost, ingKcal, ingProt, ingFat, comboAgg, personLunchScale, comboScalableKey, dayKcal, personMealScalesTwoPass, personTargetForDay, slotForPerson } from '../../engine/calc'
+import Icon from '../ui/Icon'
+import Segmented from '../ui/Segmented'
+import { DAY_KEYS, addDays, mondayOf, weekKeyOf, fmtRange, fmtMoney, activeProfilesOn, startOfDay } from '../../lib/mealplan'
 
 // Orden lun..dom para resolver el indice que personTargetForDay/personMealScalesTwoPass
-// necesitan — mismo orden que en WeeklyMealPlannerTab/BatchPrepTab.
-const ALL_DAY_KEYS = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom']
+// necesitan — mismo orden que en Planificador/BatchPrepTab.
+const ALL_DAY_KEYS = DAY_KEYS
 const MEALS = ['desayuno', 'comida', 'merienda', 'cena']
+const DAY_LETTER = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
 
-// js getDay(): 0=Sun 1=Mon … 6=Sat → app day key
-const DOW_TO_DAYKEY = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
-
-function fmtShortDate(d) {
-  return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
-}
-
-// ─── Batch-window navigation ─────────────────────────────────────────────────
-// 26 sep 2026 -- alineado con BatchPrepTab: ya no se cocina dos veces por
-// semana (Lun/Jue), se cocina UNA vez, el domingo, para lunes-viernes de la
-// MISMA semana. Antes esta tab seguia calculando sobre el patron viejo de
-// dos ventanas alternas -- se quedo desincronizada cuando se corrigio Batch,
-// asi que el titulo/rango de fechas de la lista de la compra ya no
-// coincidia con la rutina real.
-function getBatchWindow(offset) {
-  const monday = getWeekMonday(offset)
-  const friday = new Date(monday.getTime() + 4 * 86400000)
-  const days = 5
-  const windowDates = ['lun', 'mar', 'mié', 'jue', 'vie'].map((dayKey, i) => {
-    const d = new Date(monday.getTime() + i * 86400000)
-    return { date: d, wk: getISOWeek(d), dayKey }
+// ─── Ventanas ────────────────────────────────────────────────────────────────
+// Batch del domingo: se cocina UNA vez (domingo) para lunes-viernes de la
+// semana siguiente. offset 0 = la semana en curso (su batch ya se cocino),
+// 1 = el proximo batch -- el que hay que comprar, y por eso el de por defecto.
+function getWindow(offset, mode) {
+  const monday = addDays(mondayOf(new Date()), offset * 7)
+  const n = mode === 'semana' ? 7 : 5
+  const windowDates = DAY_KEYS.slice(0, n).map((dayKey, i) => {
+    const d = addDays(monday, i)
+    return { date: d, wk: weekKeyOf(monday), dayKey }
   })
-
-  return {
-    start: monday, end: friday, days, windowDates,
-    label: '☀️ Batch Domingo',
-    rangeLabel: `${fmtShortDate(monday)} – ${fmtShortDate(friday)}`,
-  }
-}
-
-// Which profiles are active on a specific Date
-function profilesActiveOn(profiles, date) {
-  return profiles.filter(p => {
-    if (p.validoDesde && new Date(p.validoDesde) > date) return false
-    if (p.validoHasta && new Date(p.validoHasta) <= date) return false
-    return true
-  })
+  return { start: monday, end: addDays(monday, n - 1), days: n, windowDates, rangeLabel: fmtRange(monday, addDays(monday, n - 1)) }
 }
 
 // Helper to extract quantity from portion object
@@ -55,89 +32,70 @@ function getQtyValue(p) {
   if (p.grams != null) return { val: p.grams, unit: 'grams' }
   if (p.units != null) return { val: p.units, unit: 'units' }
   if (p.ml != null) return { val: p.ml, unit: 'ml' }
-  if (p.serv != null) return { val: p.serv, unit: 'serv' }
-  return { val: 0, unit: 'unknown' }
+  // Precio fijo por racion (sardinas ½ lata, portion {}): cuenta como 1 racion
+  return { val: p.serv ?? 1, unit: 'serv' }
 }
 
-// ─── Week (Mon-Sun) navigation ───────────────────────────────────────────────
-function getWeekWindow(offset) {
-  const today = new Date(); today.setHours(0,0,0,0)
-  const dow = today.getDay()
-  const monday = new Date(today)
-  monday.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1) + offset * 7)
-  const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6)
-  const windowDates = []
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(monday); d.setDate(monday.getDate() + i)
-    windowDates.push({ date: d, wk: getISOWeek(d), dayKey: DOW_TO_DAYKEY[d.getDay()] })
-  }
-  return { start: monday, end: sunday, days: 7, windowDates, label: '📅 Semana', rangeLabel: `${fmtShortDate(monday)} – ${fmtShortDate(sunday)}` }
+// Color de la pastilla L-V por categoria (misma leyenda del lateral)
+const CAT_PILL = {
+  carne: '#F2A0AE', proteina: '#F2A0AE', lacteo: '#F5C868', fresco: '#8FD4A8',
+  legumbre: '#B7B0F0', base: '#E6C39A', otro: '#CFC3B5',
+}
+
+// Lo que por defecto se da por «en casa»: especias y básicos de uso suelto
+// (precio plano de céntimos, o $0: sal, comino, AOVE, agua…). Ojo: las
+// sardinas también son precio plano ($1.15 la ½ lata) y SÍ se compran, de ahí
+// el tope. Cada uno se puede mover a mano.
+function defaultAtHome(ing) {
+  return !!ing && ((ing.flat != null && ing.flat <= 0.10) || ing.perML === 0 || ing.per100 === 0)
+}
+
+function Check({ on }) {
+  return (
+    <span className={`mp-check${on ? ' is-on' : ''}`} aria-hidden="true">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+    </span>
+  )
 }
 
 // ─── Main shopping list ──────────────────────────────────────────────────────
 export default function ShoppingListTab() {
   const allIng = useStore(selectAllIng)
-  const allCombos = useStore(s => {
-    const deleted = new Set(s.deletedCombos)
-    const result = {}
-    for (const [k, v] of Object.entries(COMBO)) {
-      if (deleted.has(k)) continue
-      result[k] = s.comboOverrides[k] ? { ...v, ...s.comboOverrides[k] } : v
-    }
-    for (const c of s.customCombos) {
-      const key = 'custom-' + c.id
-      if (!deleted.has(key)) result[key] = { name: c.name, items: c.items, isCustom: true }
-    }
-    return result
-  })
+  const allCombos = useStore(selectAllCombos)
   const weekPlan = useStore(s => s.weekPlan)
   const profiles  = useStore(s => s.profiles)
 
-  const [batchOffset, setBatchOffset] = useState(0)
+  const [batchOffset, setBatchOffset] = useState(1)
   const [viewMode, setViewMode] = useState('batch') // 'batch' | 'semana'
+  const [tab, setTab] = useState('buy')             // 'buy' | 'home'
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy] = useState('category')
-  // Marcado al comprar -- solo en memoria (se pierde al recargar/cambiar de
-  // ventana), no es dato de planificacion, es un tick de "ya lo tengo".
-  const [checked, setChecked] = useState(() => new Set())
-  function toggleChecked(key) {
-    setChecked(prev => {
-      const next = new Set(prev)
-      if (next.has(key)) next.delete(key); else next.add(key)
-      return next
-    })
-  }
+  const [copied, setCopied] = useState(false)
 
-  const batchWindow = useMemo(
-    () => viewMode === 'semana' ? getWeekWindow(batchOffset) : getBatchWindow(batchOffset),
-    [batchOffset, viewMode]
-  )
+  const batchWindow = useMemo(() => getWindow(batchOffset, viewMode), [batchOffset, viewMode])
+
+  // Marcado al comprar (por ventana) y «En casa» (para todas las semanas):
+  // en el guardado compartido, así Julio y María ven lo mismo.
+  const checksKey = `${viewMode}-${weekKeyOf(batchWindow.start)}`
+  const shopChecks = useStore(s => s.shopChecks)
+  const pantry     = useStore(s => s.pantry)
+  const toggleShopCheck = useStore(s => s.toggleShopCheck)
+  const setAtHome  = useStore(s => s.setAtHome)
+  const checked = useMemo(() => new Set(shopChecks?.[checksKey] ?? []), [shopChecks, checksKey])
+  const haveSet = useMemo(() => new Set(pantry?.have ?? []), [pantry])
+  const missSet = useMemo(() => new Set(pantry?.miss ?? []), [pantry])
+  const toggleChecked = key => toggleShopCheck(checksKey, key)
+  const isHome = key => haveSet.has(key) || (defaultAtHome(allIng[key]) && !missSet.has(key))
+  const setHome = (key, home) => setAtHome(key, home)
 
   // Who's active across this batch window
-  const badgeInfo = useMemo(() => {
-    const initialsSet = new Set()
-    let minN = Infinity, maxN = 0
-    batchWindow.windowDates.forEach(({ date }) => {
-      const d = new Date(date); d.setHours(0,0,0,0)
-      const dp = profilesActiveOn(profiles, d)
-      dp.forEach(p => initialsSet.add(p.initial))
-      if (dp.length < minN) minN = dp.length
-      if (dp.length > maxN) maxN = dp.length
-    })
-    if (minN === Infinity) minN = 1
-    if (maxN === 0) maxN = 1
-    // 6 sep 2026 -- esto era "×N" pegado justo despues de "Total: $X" en el
-    // JSX (sin espacio ni separador visual), y el usuario lo leyo como "hay
-    // que multiplicar el total x2" -- el total YA suma a las dos personas
-    // (verificado: Batch Lun $59.49 + Batch Jue $56.20 = $115.69, el mismo
-    // total semanal del Planificador). El badge solo dice CUANTAS personas
-    // entran en esta lista, no un factor sobre el precio -- texto explicito
-    // en vez de "×N" para que no se pueda leer como multiplicacion.
-    return {
-      label: minN === maxN ? `Incluye a ${minN}` : `Incluye a ${minN}→${maxN}`,
-      initials: [...initialsSet].join('+'),
-    }
+  const people = useMemo(() => {
+    const ids = new Map()
+    batchWindow.windowDates.forEach(({ date }) => activeProfilesOn(profiles, startOfDay(date)).forEach(p => ids.set(p.id, p)))
+    return [...ids.values()]
   }, [batchWindow, profiles])
+  // Compat con el bloque de agregado (usa este nombre)
+  const profilesActiveOn = activeProfilesOn
 
   // Aggregate ingredients for the current batch window only.
   // 6 sep 2026 — reescrito para ser CONSCIENTE DE LA PERSONA: cada slot puede
@@ -167,7 +125,7 @@ export default function ShoppingListTab() {
       ps[person.id].grams += pp.grams ?? 0
       ps[person.id].units += pp.units ?? 0
       ps[person.id].ml    += pp.ml    ?? 0
-      ps[person.id].serv  += pp.serv  ?? 0
+      ps[person.id].serv  += pp.serv  ?? (pp.grams == null && pp.ml == null && pp.units == null ? 1 : 0)
       ps[person.id].days  += 1
     }
     // Racion de UNA persona para UNA comida — se suma al agregado y se
@@ -305,257 +263,242 @@ export default function ShoppingListTab() {
     })
   }, [weekPlan, batchWindow, profiles, allCombos, allIng])
 
-  // Group by category and filter
-  const grouped = useMemo(() => {
-    const categories = {}
-
+  // Filas: una por ingrediente, con cantidad a comprar, días en que se usa y
+  // si está «en casa».
+  const items = useMemo(() => {
+    const out = []
     Object.entries(aggregatedItems).forEach(([ingKey, data]) => {
       // allIng covers combos/misc; proteins like lomo/pollo live only in PROTEIN
       const ing = allIng[ingKey]
         ?? (PROTEIN[ingKey] ? { name: PROTEIN[ingKey].name, cat: 'proteina' } : null)
       if (!ing) return
 
-      const cat = ing.cat ?? 'otro'
-      if (!categories[cat]) categories[cat] = []
-
-      // Format quantities
-      // 6 sep 2026 -- ingredientes con unitGrams (banana, ver ingredients.js):
-      // la receta los mide en gramos pero se compran por pieza, no pesados --
-      // aqui se muestran como "~N ud" en vez de gramos sueltos. Redondeo hacia
-      // arriba (Math.ceil): mejor que sobre media banana a que falte una.
+      // Cantidades. unitGrams (banana): se compra por pieza, redondeo hacia
+      // arriba. packSize/packLabel (huevo): en paquete cerrado, decimal exacto.
       let qtyStr = ''
-      if (data.qtyByUnit.grams && ing.unitGrams) {
-        qtyStr += `~${Math.ceil(data.qtyByUnit.grams / ing.unitGrams)} ud `
-      } else if (data.qtyByUnit.grams) {
-        qtyStr += `${Math.round(data.qtyByUnit.grams)}g `
-      }
-      // packSize/packLabel (huevo, ver ingredients.js): se vende en paquete
-      // cerrado (docena), no suelto -- decimal exacto (no redondeado), a
-      // peticion expresa del usuario ("docena=12" confirmado, no de 6 en 6).
-      if (data.qtyByUnit.units && ing.packSize) {
-        qtyStr += `~${(data.qtyByUnit.units / ing.packSize).toFixed(1)} ${ing.packLabel}s `
-      } else if (data.qtyByUnit.units) {
-        qtyStr += `${data.qtyByUnit.units} ud `
-      }
-      if (data.qtyByUnit.ml) qtyStr += `${Math.round(data.qtyByUnit.ml)}ml `
-      if (data.qtyByUnit.serv) qtyStr += `${data.qtyByUnit.serv} porción`
+      if (data.qtyByUnit.grams && ing.unitGrams) qtyStr += `~${Math.ceil(data.qtyByUnit.grams / ing.unitGrams)} ud `
+      else if (data.qtyByUnit.grams) qtyStr += `${Math.round(data.qtyByUnit.grams)} g `
+      if (data.qtyByUnit.units && ing.packSize) qtyStr += `~${(data.qtyByUnit.units / ing.packSize).toFixed(1)} ${ing.packLabel}s `
+      else if (data.qtyByUnit.units) qtyStr += `${data.qtyByUnit.units} ud `
+      if (data.qtyByUnit.ml) qtyStr += `${Math.round(data.qtyByUnit.ml)} ml `
+      if (data.qtyByUnit.serv) qtyStr += `${+data.qtyByUnit.serv.toFixed(1)} ${data.qtyByUnit.serv === 1 ? 'ración' : 'raciones'}`
       qtyStr = qtyStr.trim()
 
-      // Filter by search
-      if (searchTerm && !ing.name.toLowerCase().includes(searchTerm.toLowerCase())) {
-        return
-      }
-
-      // Build per-person breakdown string: "Julio 150g×3d · María 150g×3d"
+      // Desglose por persona: "Julio+María: 150g×3d"
       const personEntries = Object.values(data.persons ?? {})
-      let breakdown = ''
-      if (personEntries.length > 0) {
-        const parts = personEntries.map(ps => {
-          let q = ''
-          if (ps.grams > 0) q = `${Math.round(ps.grams / ps.days)}g`
-          else if (ps.units > 0) q = `${+(ps.units / ps.days).toFixed(1)} ud`
-          else if (ps.ml > 0) q = `${Math.round(ps.ml / ps.days)}ml`
-          else if (ps.serv > 0) q = `${+(ps.serv / ps.days).toFixed(1)} rac`
-          return q ? `${ps.name}: ${q}×${ps.days}d` : null
-        }).filter(Boolean)
-        // Collapse identical entries: "Julio: 150g×3d · María: 150g×3d" → "Julio+María: 150g×3d"
-        const seen = {}
-        parts.forEach(p => { const [, v] = p.split(': '); if (!seen[v]) seen[v] = []; seen[v].push(p.split(': ')[0]) })
-        breakdown = Object.entries(seen).map(([v, names]) => `${names.join('+')}: ${v}`).join(' · ')
-      }
+      const seen = {}
+      personEntries.forEach(ps => {
+        let q = ''
+        if (ps.grams > 0) q = `${Math.round(ps.grams / ps.days)} g`
+        else if (ps.units > 0) q = `${+(ps.units / ps.days).toFixed(1)} ud`
+        else if (ps.ml > 0) q = `${Math.round(ps.ml / ps.days)} ml`
+        else if (ps.serv > 0) q = `${+(ps.serv / ps.days).toFixed(1)} rac`
+        if (!q) return
+        const v = `${q} × ${ps.days}`
+        ;(seen[v] ??= []).push(ps.name)
+      })
+      const breakdown = Object.entries(seen).map(([v, names]) => `${names.join(' y ')}: ${v}`).join(' · ')
 
-      categories[cat].push({
-        key: ingKey,
-        name: ing.name,
-        brand: ing.brand,
-        store: ing.store,
-        qty: qtyStr,
-        cost: data.cost,
-        kcal: data.kcal,
-        prot: data.prot,
-        fat: data.fat,
-        meals: Array.from(data.meals),
-        breakdown,
+      const usedDays = new Set(Array.from(data.meals).map(t => t.split(' ')[0]))
+      out.push({
+        key: ingKey, name: ing.name, brand: ing.brand, store: ing.store, cat: ing.cat ?? 'otro',
+        qty: qtyStr, cost: data.cost, breakdown, usedDays, home: isHome(ingKey),
       })
     })
+    return out
+  }, [aggregatedItems, allIng, haveSet, missSet]) // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Sort items within each category
-    Object.values(categories).forEach(items => {
-      items.sort((a, b) => {
-        if (sortBy === 'cost') return b.cost - a.cost
-        if (sortBy === 'qty') return b.qty.localeCompare(a.qty)
-        return a.name.localeCompare(b.name)
-      })
-    })
+  const q = searchTerm.trim().toLowerCase()
+  const buy = items.filter(i => !i.home)
+  const home = items.filter(i => i.home)
+  const visible = (tab === 'buy' ? buy : home).filter(i => !q || i.name.toLowerCase().includes(q))
+  const sorted = [...visible].sort((a, b) =>
+    sortBy === 'cost' ? b.cost - a.cost
+    : sortBy === 'name' ? a.name.localeCompare(b.name)
+    : (CAT_ORDER.indexOf(a.cat) - CAT_ORDER.indexOf(b.cat)) || a.name.localeCompare(b.name))
 
-    return categories
-  }, [aggregatedItems, allIng, searchTerm, sortBy])
+  const buyTotal = buy.reduce((s, i) => s + i.cost, 0)
+  const done = buy.filter(i => checked.has(i.key))
+  const doneCost = done.reduce((s, i) => s + i.cost, 0)
+  const byCat = CAT_ORDER.map(c => ({ c, cost: buy.filter(i => i.cat === c).reduce((s, i) => s + i.cost, 0) })).filter(x => x.cost > 0.004)
+  const maxCat = Math.max(0.01, ...byCat.map(x => x.cost))
+  const catsPresent = CAT_ORDER.filter(c => buy.some(i => i.cat === c))
+  const freezeMeat = viewMode === 'batch' && buy.some(i => (i.cat === 'carne' || i.cat === 'proteina') && (i.usedDays.has('jue') || i.usedDays.has('vie')))
+  const batchSunday = addDays(batchWindow.start, -1)
+  const dayCols = batchWindow.windowDates.map(w => w.dayKey)
 
-  const totalCost = useMemo(
-    () => Object.values(aggregatedItems).reduce((sum, item) => sum + item.cost, 0),
-    [aggregatedItems]
-  )
-
-  // Copy to clipboard
   function copyToClipboard() {
-    let text = `Lista de la compra - ${batchWindow.label} ${batchWindow.rangeLabel}\n\n`
+    let text = `Compra · ${viewMode === 'batch' ? 'batch' : 'semana'} ${batchWindow.rangeLabel}\n\n`
     CAT_ORDER.forEach(cat => {
-      if (!grouped[cat]) return
-      text += `${CAT_LABELS[cat]?.toUpperCase()}\n`
-      grouped[cat].forEach(item => {
-        text += `  ☐ ${item.name} - ${item.qty} ($${item.cost.toFixed(2)})\n`
-      })
+      const list = buy.filter(i => i.cat === cat)
+      if (!list.length) return
+      text += `${(CAT_LABELS[cat] ?? cat).toUpperCase()}\n`
+      list.forEach(i => { text += `  ☐ ${i.name} — ${i.qty} (${fmtMoney(i.cost)})\n` })
       text += '\n'
     })
-    text += `TOTAL: $${totalCost.toFixed(2)}`
-    navigator.clipboard.writeText(text)
-    alert('Copiado al portapapeles')
+    text += `TOTAL: ${fmtMoney(buyTotal)}`
+    navigator.clipboard?.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1800) }).catch(() => {})
   }
 
+  let lastCat = null
+  const gridCols = `26px minmax(0, 1.1fr) minmax(0, 1.2fr) repeat(${dayCols.length}, 34px) 70px 28px`
+
   return (
-    <div>
-      <div style={{ marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-          <div>
-            <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.25rem' }}>
-              Lista de la compra
-            </h2>
-            <p style={{ fontSize: '0.82rem', color: 'var(--muted)' }}>
-              {batchWindow.label} · {batchWindow.rangeLabel} — Total: ${totalCost.toFixed(2)}
-              {' · '}
-              <span style={{ marginLeft: '0.25rem', background: 'rgba(154,123,67,0.12)', color: 'var(--t-accent)', borderRadius: '99px', padding: '1px 8px', fontSize: '0.75rem', fontWeight: 600 }}>
-                {badgeInfo.label} ({badgeInfo.initials})
-              </span>
-            </p>
+    <div className="compra">
+      <div className="mp-page-head mp-rise">
+        <div className="mp-page-title">
+          <h1>Compra</h1>
+          <span>{viewMode === 'batch' ? `batch del domingo ${batchSunday.getDate()} · lun ${batchWindow.start.getDate()} – vie ${batchWindow.end.getDate()}` : `semana ${batchWindow.rangeLabel}`}{people.length ? ` · ${people.map(p => p.name).join(' y ')}` : ''}</span>
+        </div>
+        <div className="mp-page-tools">
+          <Segmented label="Lista" value={tab} onChange={setTab}
+            options={[{ value: 'buy', label: `Por comprar · ${buy.length}` }, { value: 'home', label: `En casa · ${home.length}` }]} />
+          <Segmented label="Periodo" value={viewMode} onChange={v => setViewMode(v)}
+            options={[{ value: 'batch', label: 'Batch L–V' }, { value: 'semana', label: 'Semana L–D' }]} />
+          <div className="mp-seg" style={{ gap: 0 }}>
+            <button type="button" aria-label="Anterior" onClick={() => setBatchOffset(o => o - 1)} style={{ padding: '0 10px' }}><Icon name="left" size={12} stroke={2.6} /></button>
+            <button type="button" onClick={() => setBatchOffset(1)} style={{ fontWeight: 600, color: 'var(--c-ink)' }} title="El próximo batch">Próximo</button>
+            <button type="button" aria-label="Siguiente" onClick={() => setBatchOffset(o => o + 1)} style={{ padding: '0 10px' }}><Icon name="right" size={12} stroke={2.6} /></button>
           </div>
-          <div className="sl-nav-row">
-            <div className="sl-nav-week">
-              <button className="btn-ghost sl-nav-btn" onClick={() => setBatchOffset(w => w - 1)}>←</button>
-              <button className="btn-ghost sl-nav-btn" onClick={() => setBatchOffset(0)}>Hoy</button>
-              <button className="btn-ghost sl-nav-btn" onClick={() => setBatchOffset(w => w + 1)}>→</button>
+        </div>
+      </div>
+
+      <div className="compra-grid">
+        <section className="compra-list mp-glass mp-rise" style={{ animationDelay: '80ms' }}>
+          <div className="compra-tools">
+            <label className="mp-search" style={{ flex: 1, maxWidth: 320 }}>
+              <Icon name="search" size={14} stroke={2.4} />
+              <span className="sr-only">Buscar ingrediente</span>
+              <input placeholder="Buscar ingrediente…" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+            </label>
+            <Segmented label="Ordenar" value={sortBy} onChange={setSortBy}
+              options={[{ value: 'category', label: 'Categoría' }, { value: 'cost', label: 'Precio' }, { value: 'name', label: 'A–Z' }]} />
+            {tab === 'buy' && <button className="mp-btn mp-btn-glass mp-btn-sm" onClick={copyToClipboard} disabled={!buy.length}><Icon name={copied ? 'check' : 'copy'} size={14} />{copied ? 'Copiada' : 'Copiar lista'}</button>}
+          </div>
+
+          {items.length === 0 && (
+            <div className="mp-empty" style={{ padding: '60px 20px' }}>
+              No hay platos planificados en estos días.<br />
+              <button className="mp-btn mp-btn-dark" style={{ marginTop: 14 }} onClick={() => useStore.getState().openPlanner(batchOffset, 0)}><Icon name="cal" size={14} />Abrir en el Planificador</button>
             </div>
-            <div style={{ display: 'flex', gap: 4 }}>
-              {[['batch', 'Batch'], ['semana', 'Semana']].map(([mode, label]) => (
-                <button
-                  key={mode}
-                  onClick={() => { setViewMode(mode); setBatchOffset(0) }}
-                  style={{
-                    fontSize: '0.72rem', padding: '3px 10px', borderRadius: '99px', cursor: 'pointer',
-                    border: viewMode === mode ? '1px solid var(--t-accent)' : '1px solid var(--t-border)',
-                    background: viewMode === mode ? 'rgba(154,123,67,0.12)' : 'var(--t-surface)',
-                    color: viewMode === mode ? 'var(--t-text)' : 'var(--t-text-soft)',
-                    fontWeight: viewMode === mode ? 600 : 400,
-                  }}
-                >{label}</button>
+          )}
+
+          {tab === 'buy' && sorted.length > 0 && (
+            <>
+              <div className="compra-head" style={{ gridTemplateColumns: gridCols }}>
+                <span /><span>Producto</span><span>Compras</span>
+                {dayCols.map(d => <span key={d} style={{ textAlign: 'center' }}>{DAY_LETTER[DAY_KEYS.indexOf(d)]}</span>)}
+                <span style={{ textAlign: 'right' }}>Precio</span><span />
+              </div>
+              {sorted.map((i, n) => {
+                const on = checked.has(i.key)
+                const header = sortBy === 'category' && i.cat !== lastCat ? (lastCat = i.cat, CAT_LABELS[i.cat] ?? i.cat) : null
+                return (
+                  <div key={i.key}>
+                    {header && <div className="compra-cat">{header}</div>}
+                    <div className={`compra-row mp-in${on ? ' is-done' : ''}`} style={{ gridTemplateColumns: gridCols, animationDelay: `${Math.min(n, 20) * 22}ms` }}>
+                      <button type="button" className="compra-hit" aria-pressed={on} aria-label={`${on ? 'Desmarcar' : 'Marcar'} ${i.name}`} onClick={() => toggleChecked(i.key)} />
+                      <Check on={on} />
+                      <span className="compra-name" title={i.breakdown}>
+                        <span>{i.name}</span>
+                        {(i.brand || i.breakdown) && <small>{i.brand ? `${i.brand}${i.store ? ' · ' + i.store : ''}` : i.breakdown}</small>}
+                      </span>
+                      <span className="compra-qty mp-num">{i.qty}</span>
+                      {dayCols.map(d => (
+                        <span key={d} style={{ display: 'flex', justifyContent: 'center' }}>
+                          <span className="compra-pill" style={i.usedDays.has(d) ? { background: CAT_PILL[i.cat] ?? CAT_PILL.otro, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)' } : undefined} />
+                        </span>
+                      ))}
+                      <span className="mp-num" style={{ textAlign: 'right', fontSize: 13.5, fontWeight: 600 }}>{fmtMoney(i.cost)}</span>
+                      <button type="button" className="compra-mini" title="Ya lo tengo en casa" onClick={() => setHome(i.key, true)}><Icon name="home" size={13} /></button>
+                    </div>
+                  </div>
+                )
+              })}
+            </>
+          )}
+
+          {tab === 'home' && (
+            <>
+              <p className="mp-muted" style={{ margin: '4px 0 12px', fontSize: 13, lineHeight: 1.5 }}>
+                Especias, aceite y lo que ya tienes. No entra en el total; si se acaba, pásalo a «Falta» y vuelve a la lista.
+              </p>
+              <div className="compra-home">
+                {sorted.map((i, n) => (
+                  <div key={i.key} className="compra-home-row mp-in" style={{ animationDelay: `${Math.min(n, 20) * 22}ms` }}>
+                    <span style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+                      <span style={{ fontSize: 14, fontWeight: 600 }}>{i.name}</span>
+                      <span className="mp-muted mp-num" style={{ fontSize: 12 }}>{i.qty} esta {viewMode === 'batch' ? 'tanda' : 'semana'}{i.cost > 0.004 ? ` · ${fmtMoney(i.cost)}` : ''}</span>
+                    </span>
+                    <Segmented label={`${i.name}: en casa`} value="have" onChange={v => v === 'miss' && setHome(i.key, false)}
+                      options={[{ value: 'have', label: 'Hay' }, { value: 'miss', label: 'Falta' }]} />
+                  </div>
+                ))}
+                {sorted.length === 0 && <div className="mp-empty">Nada marcado como en casa.</div>}
+              </div>
+            </>
+          )}
+
+          {tab === 'buy' && batidoAgg.length > 0 && (
+            <div style={{ marginTop: 22, paddingTop: 14, borderTop: '1px dashed var(--c-line-2)' }}>
+              <span className="mp-eyebrow">Batidos de merienda sugeridos · no incluidos arriba</span>
+              {batidoAgg.map(item => (
+                <div key={item.key} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, padding: '8px 0', borderTop: '1px solid var(--c-line)', fontSize: 13.5 }}>
+                  <span>{item.name}</span><span className="mp-muted mp-num">{item.qty} · {fmtMoney(item.cost)}</span>
+                </div>
               ))}
             </div>
-            <button className="btn-primary" onClick={copyToClipboard}>📋 Copiar</button>
-          </div>
-        </div>
+          )}
+        </section>
 
-        <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem' }}>
-          <input
-            className="picker-search"
-            placeholder="Buscar ingrediente…"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            style={{ flex: 1, maxWidth: '300px' }}
-          />
-          <select
-            className="sort-select"
-            value={sortBy}
-            onChange={e => setSortBy(e.target.value)}
-            style={{
-              padding: '0.5rem 0.75rem',
-              border: '1px solid var(--border)',
-              borderRadius: '0.5rem',
-              background: 'var(--bg-2)',
-              color: 'var(--text)',
-              fontSize: '0.875rem',
-            }}
-          >
-            <option value="category">Categoría</option>
-            <option value="cost">Precio (mayor a menor)</option>
-            <option value="qty">Cantidad</option>
-          </select>
-        </div>
-      </div>
-
-      {Object.keys(grouped).length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--muted)' }}>
-          <p>Sin ingredientes en el plan de esta semana</p>
-        </div>
-      ) : (
-        <div>
-          <div className="sl-header-row">
-            <span></span><span>Ingrediente</span><span>Cantidad</span><span>Coste</span>
-          </div>
-          {CAT_ORDER.map(cat => {
-            if (!grouped[cat]) return null
-            return (
-              <div key={cat} style={{ marginBottom: '2rem' }}>
-                <h3 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--muted)', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  {CAT_LABELS[cat] ?? cat}
-                </h3>
-                <div>
-                  {grouped[cat].map(item => (
-                    <div key={item.key} className={`sl-row${checked.has(item.key) ? ' is-checked' : ''}`}>
-                      <input
-                        type="checkbox"
-                        checked={checked.has(item.key)}
-                        onChange={() => toggleChecked(item.key)}
-                        aria-label={`Marcar ${item.name}`}
-                      />
-                      <div className="sl-row-name">
-                        <div className="sl-row-name-title">{item.name}</div>
-                        {item.brand && (
-                          <div style={{ fontSize: '0.72rem', color: 'var(--t-accent)', fontWeight: 600, marginTop: '0.15rem' }}>
-                            {item.brand}
-                            <span style={{ color: 'var(--muted)', fontWeight: 400 }}> · {item.store}</span>
-                          </div>
-                        )}
-                        {item.breakdown && (
-                          <div className="sl-row-breakdown">{item.breakdown}</div>
-                        )}
-                      </div>
-                      <div className="sl-row-qty">{item.qty}</div>
-                      <div className="sl-row-cost">${item.cost.toFixed(2)}</div>
-                    </div>
-                  ))}
-                </div>
+        <aside className="compra-aside">
+          <section className="mp-glass mp-card mp-rise" style={{ animationDelay: '160ms', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <span className="mp-muted" style={{ fontSize: 12, fontWeight: 600 }}>En el carro</span>
+            <span className="mp-num" style={{ fontSize: 34, fontWeight: 700, letterSpacing: '-0.03em' }}>{done.length}<span style={{ fontSize: 16, color: 'var(--c-ink-3)' }}> / {buy.length}</span></span>
+            {buy.length > 0 && buy.length <= 36 ? (
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${buy.length}, minmax(0, 1fr))`, gap: 3 }}>
+                {buy.map(i => <span key={i.key} style={{ height: 8, borderRadius: 4, background: checked.has(i.key) ? 'var(--c-green)' : 'rgba(110,80,50,0.12)', transition: 'background .4s' }} />)}
               </div>
-            )
-          })}
-        </div>
-      )}
+            ) : (
+              <span style={{ height: 8, borderRadius: 4, background: 'rgba(110,80,50,0.12)', overflow: 'hidden' }}><span style={{ display: 'block', height: '100%', width: `${buy.length ? done.length / buy.length * 100 : 0}%`, background: 'var(--c-green)', transition: 'width .4s' }} /></span>
+            )}
+            <span className="mp-muted mp-num" style={{ fontSize: 12.5 }}>{fmtMoney(doneCost)} de {fmtMoney(buyTotal)} en el carro</span>
+          </section>
 
-      <div style={{ marginTop: '2rem', padding: '1rem', background: 'var(--bg-2)', borderRadius: '0.5rem', textAlign: 'right' }}>
-        <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>
-          Total: <span style={{ color: '#4a7a3a' }}>${totalCost.toFixed(2)}</span>
-        </div>
+          {byCat.length > 0 && (
+            <section className="mp-glass mp-card mp-rise" style={{ animationDelay: '220ms', display: 'flex', flexDirection: 'column', gap: 9 }}>
+              <span style={{ fontSize: 15, fontWeight: 700 }}>Dónde va el dinero</span>
+              {byCat.map(({ c, cost }) => (
+                <div key={c} style={{ display: 'grid', gridTemplateColumns: '112px minmax(0, 1fr) 58px', gap: 8, alignItems: 'center', fontSize: 12.5 }}>
+                  <span style={{ color: 'var(--c-ink-2)' }}>{CAT_LABELS[c] ?? c}</span>
+                  <span style={{ height: 7, borderRadius: 4, background: 'rgba(110,80,50,0.08)', overflow: 'hidden' }}><span style={{ display: 'block', height: '100%', width: `${cost / maxCat * 100}%`, borderRadius: 4, background: CAT_PILL[c] ?? CAT_PILL.otro, animation: 'mp-grow 1s var(--c-ease) both' }} /></span>
+                  <span className="mp-num" style={{ textAlign: 'right', fontWeight: 600 }}>{fmtMoney(cost)}</span>
+                </div>
+              ))}
+            </section>
+          )}
+
+          {catsPresent.length > 0 && (
+            <section className="mp-glass mp-card mp-rise" style={{ animationDelay: '280ms', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <span style={{ fontSize: 15, fontWeight: 700 }}>Cuándo se come</span>
+              <span style={{ fontSize: 12.5, lineHeight: 1.5, color: 'var(--c-ink-2)' }}>Cada fila marca los días en que ese producto está en algún plato.</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12.5 }}>
+                {catsPresent.map(c => <span key={c} style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ width: 18, height: 12, borderRadius: 4, background: CAT_PILL[c] ?? CAT_PILL.otro }} />{CAT_LABELS[c] ?? c}</span>)}
+              </div>
+            </section>
+          )}
+
+          {viewMode === 'batch' && (
+            <section className="mp-card mp-rise compra-tip" style={{ animationDelay: '340ms' }}>
+              <span style={{ fontSize: 15, fontWeight: 700 }}>Frescura, resuelta</span>
+              <span style={{ fontSize: 13, lineHeight: 1.5, color: '#3A342D' }}>
+                Todo se cocina el domingo {batchSunday.getDate()}; lo de jueves y viernes va al congelador ya hecho.
+                {freezeMeat ? ' Por eso la carne y el pescado de esos días se pueden comprar con el resto.' : ''}
+              </span>
+            </section>
+          )}
+        </aside>
       </div>
-
-      {batidoAgg.length > 0 && (
-        <div style={{ marginTop: '2rem', borderTop: '2px dashed var(--t-border)', paddingTop: '1.5rem' }}>
-          <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--t-accent)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            🥤 Batidos merienda
-          </h3>
-          <p style={{ fontSize: '0.72rem', color: 'var(--t-text-faint)', marginBottom: '1rem' }}>
-            Ingredientes para las sugerencias de batido del período · no incluidos arriba
-          </p>
-          {batidoAgg.map(item => (
-            <div key={item.key} className="sl-row">
-              <span></span>
-              <div className="sl-row-name-title">{item.name}</div>
-              <div className="sl-row-qty">{item.qty}</div>
-              <div className="sl-row-cost">${item.cost.toFixed(2)}</div>
-            </div>
-          ))}
-          <div style={{ marginTop: '0.75rem', textAlign: 'right', fontSize: '0.85rem', color: 'var(--t-text-faint)' }}>
-            Total batidos: <strong style={{ color: 'var(--t-accent)' }}>${batidoAgg.reduce((s, i) => s + i.cost, 0).toFixed(2)}</strong>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

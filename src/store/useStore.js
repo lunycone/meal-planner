@@ -3,6 +3,7 @@ import { persist }  from 'zustand/middleware'
 import { ING, CAT_LABELS } from '../data/ingredients'
 import { COMBO }            from '../data/combos'
 import { STORAGE_KEY, createStorageAdapter } from './storage'
+import { migrateWeekKeys } from '../utils/date'
 
 import { PLAN as PLAN_COMIDA   } from '../data/plans/comida'
 import { PLAN as PLAN_DESAYUNO } from '../data/plans/desayuno'
@@ -41,6 +42,15 @@ function readStoredView() {
 }
 const initialView = readStoredView()
 
+// Añade/quita `item` de la lista map[key]; conserva solo las 8 claves más
+// recientes (orden de inserción) para que las marcas viejas no se acumulen.
+function toggleIn(map, key, item) {
+  const cur = new Set(map?.[key] ?? [])
+  if (cur.has(item)) cur.delete(item); else cur.add(item)
+  const rest = Object.entries(map ?? {}).filter(([k]) => k !== key).slice(-7)
+  return Object.fromEntries([...rest, [key, [...cur]]])
+}
+
 // ─── Store ───────────────────────────────────────────────────────────────────
 
 const useStore = create(
@@ -52,6 +62,15 @@ const useStore = create(
       activeMeal: initialView.activeMeal,
       weekOffset: 0,
       setWeekOffset(offset) { set({ weekOffset: offset }) },
+      // Día desplegado en el Planificador (0 = lunes). null = hoy si cae en
+      // la semana visible, si no el lunes.
+      plannerDay: null,
+      setPlannerDay(idx) { set({ plannerDay: idx }) },
+      // Abrir el Planificador en una semana/día concretos (desde Hoy).
+      openPlanner(offset, dayIdx = null) {
+        get().setView('planificador')
+        set({ weekOffset: offset, plannerDay: dayIdx })
+      },
 
       setView(view, meal = null) {
         set({ activeView: view, activeMeal: meal })
@@ -69,9 +88,12 @@ const useStore = create(
         // Julio) — usado por personMealScale/personLunchScale en vez del
         // kcalTarget plano cuando esta presente. kcalTarget se queda como
         // media/fallback para el scoreboard y para perfiles sin variacion.
-        { id: 'julio',   name: 'Julio', initial: 'J', kcalTarget: 3100, proteinTarget: 100,
+        // digestive: aplica las reglas de semana de engine/weekRules.js (SII-M).
+        // pcos / protCap: avisos del panel de sugerencias (engine/insights.js);
+        // 130 g = 2,23 g/kg a 58,4 kg (ver modelWeeks.js).
+        { id: 'julio',   name: 'Julio', initial: 'J', kcalTarget: 3100, proteinTarget: 100, digestive: true,
           kcalByDay: [3150, 3150, 3100, 3300, 3000, 3300, 3000] },
-        { id: 'maria',   name: 'María', initial: 'M', kcalTarget: 2600, proteinTarget: 100,
+        { id: 'maria',   name: 'María', initial: 'M', kcalTarget: 2600, proteinTarget: 100, pcos: true, protCap: 130,
           kcalByDay: [2500, 2900, 2500, 2750, 2500, 2750, 2500] },
         { id: 'carla',   name: 'Carla', initial: 'C', kcalTarget: 2000, proteinTarget: 90, validoDesde: '2026-06-26', validoHasta: '2026-07-08T17:00:00' },
       ],
@@ -369,6 +391,28 @@ const useStore = create(
         }))
       },
 
+      // ── MARCAS COMPARTIDAS (Compra / Batch) ────────────────────────────
+      // Van en el guardado compartido (Supabase) para que lo que marca uno
+      // en el súper o al llenar tuppers lo vea el otro. Se guardan solo las
+      // últimas ventanas para que el estado no crezca sin fin.
+      shopChecks: {},                 // { 'batch-2026-W40': [ingKey, …] }
+      pantry:     { have: [], miss: [] }, // «En casa» marcado a mano (vale para todas las semanas)
+      batchTups:  {},                 // { '2026-W40': [tupperId, …] }
+
+      toggleShopCheck(windowKey, ingKey) {
+        set(s => ({ shopChecks: toggleIn(s.shopChecks, windowKey, ingKey) }))
+      },
+      setAtHome(ingKey, home) {
+        set(s => {
+          const have = new Set(s.pantry?.have ?? []), miss = new Set(s.pantry?.miss ?? [])
+          if (home) { have.add(ingKey); miss.delete(ingKey) } else { have.delete(ingKey); miss.add(ingKey) }
+          return { pantry: { have: [...have], miss: [...miss] } }
+        })
+      },
+      toggleBatchTup(weekKey, tupId) {
+        set(s => ({ batchTups: toggleIn(s.batchTups, weekKey, tupId) }))
+      },
+
       // Como setMealSlots, pero sustituye la semana ENTERA (no fusiona) --
       // para "Limpiar", "Cargar semana modelo", "Generar barato" y "Repetir
       // anterior", que primero querian borrar los huecos viejos y luego
@@ -387,6 +431,13 @@ const useStore = create(
     {
       name:    STORAGE_KEY,
       storage: createStorageAdapter(),
+      // v1 (26 sep 2026): getISOWeek corregido — las claves de weekPlan
+      // guardadas con la formula vieja se renumeran una sola vez.
+      version: 1,
+      migrate(state, version) {
+        if (version < 1 && state?.weekPlan) return { ...state, weekPlan: migrateWeekKeys(state.weekPlan) }
+        return state
+      },
       skipHydration: true,
       partialize: s => ({
         priceOverrides:      s.priceOverrides,
@@ -403,6 +454,9 @@ const useStore = create(
         mealDeletedBatches:  s.mealDeletedBatches,
         mealCustomWeeks:     s.mealCustomWeeks,
         weekPlan:            s.weekPlan,
+        shopChecks:          s.shopChecks,
+        pantry:              s.pantry,
+        batchTups:           s.batchTups,
         // activeView / activeMeal NOT persisted → always start at home
       }),
     }
