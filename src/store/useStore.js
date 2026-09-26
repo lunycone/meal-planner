@@ -404,7 +404,7 @@ export function selectAllCombos(s) {
   }
   for (const c of s.customCombos) {
     const key = 'custom-' + c.id
-    if (!deleted.has(key)) result[key] = { name: c.name, items: c.items, isCustom: true, customId: c.id, desayuno: c.desayuno ?? false }
+    if (!deleted.has(key)) result[key] = { name: c.name, items: c.items, meals: c.meals ?? [], isCustom: true, customId: c.id }
   }
   return result
 }
