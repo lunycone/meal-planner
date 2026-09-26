@@ -150,15 +150,17 @@
 .m-sub .mp-seg { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
 
 /* Hoy */
-.mh { position: relative; min-height: calc(100dvh - 128px); display: flex; flex-direction: column; }
+.mh { position: relative; min-height: calc(100dvh - 150px); padding-top: 22px; display: flex; flex-direction: column; }
 .mh-top { display: flex; justify-content: space-between; align-items: flex-start; padding: 0 4px; }
 .mh-day { font-size: 17px; font-weight: 600; color: var(--c-ink-3); }
 .mh-num { font-size: 86px; font-weight: 200; letter-spacing: -0.06em; line-height: 0.9; background: linear-gradient(180deg, var(--c-ink) 30%, rgba(31,27,22,0.3)); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .mh-kline { padding: 12px 4px 0; font-size: 13px; color: var(--c-ink-3); }
-.mh-deck { position: relative; flex: 1; min-height: 410px; margin: 6px -16px 0; perspective: 1200px; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+/* Tarjeta + puntos + días forman un bloque centrado en el espacio bajo la cabecera */
+.mh-deck { position: relative; min-height: 320px; margin: auto -16px 0; display: grid; place-items: center; padding: 18px 0 12px; perspective: 1200px; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
 .mh-card {
-  position: absolute; left: 50%; top: 8px; bottom: 10px; width: min(290px, calc(100vw - 100px)); max-height: 390px; transform-origin: center;
-  margin-left: calc(min(290px, calc(100vw - 100px)) / -2); box-sizing: border-box; padding: 20px; border-radius: 32px;
+  /* Todas las tarjetas en la misma celda: altura según contenido y centradas en el hueco libre */
+  grid-area: 1 / 1; position: relative; min-height: 300px; width: min(290px, calc(100vw - 100px)); transform-origin: center;
+  box-sizing: border-box; padding: 20px; border-radius: 32px;
   background: linear-gradient(165deg, rgba(255,255,255,0.97), rgba(255,255,255,0.78)); box-shadow: 0 26px 56px rgba(110,80,50,0.16);
   display: flex; flex-direction: column; gap: 12px; cursor: pointer; -webkit-tap-highlight-color: transparent;
   transition: transform .7s cubic-bezier(.2,.9,.25,1.08), opacity .5s;
@@ -166,7 +168,7 @@
 .mh-name { font-size: 23px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.15; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .mh-dots { display: flex; justify-content: center; gap: 8px; padding: 4px 0 12px; }
 .mh-dots button { height: 8px; padding: 0; border: 0; border-radius: 4px; cursor: pointer; transition: width .5s var(--c-spring), background .3s; }
-.mh-strip { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; }
+.mh-strip { margin-bottom: auto; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; }
 .mh-strip button {
   height: 52px; border: 0; border-radius: 16px; background: rgba(255,255,255,0.6); color: var(--c-ink); cursor: pointer;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; -webkit-tap-highlight-color: transparent;

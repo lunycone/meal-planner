@@ -63,7 +63,6 @@ export default function MHoy({ unseen, onIdeas }) {
 
   const totals = Object.fromEntries(people.map(p => [p.id, dayTotals(dayForPerson(week, dk, p.id), p, day, allIng, allCombos)]))
   const rings = Object.fromEntries(people.map(p => [p.id, totals[p.id].target ? totals[p.id].kcal / totals[p.id].target * 100 : 0]))
-  const kLine = focus.map(p => `${p.name} ${totals[p.id].kcal} / ${totals[p.id].target}`).join(' · ') + ' kcal'
 
   const eff = Math.max(-0.4, Math.min(MEALS.length - 0.6, sel - dx / STEP))
   const isToday = day === todayIdx
@@ -113,7 +112,6 @@ export default function MHoy({ unseen, onIdeas }) {
           <Bulb unseen={unseen} onOpen={onIdeas} />
         </div>
       </section>
-      <span className="mh-kline mp-num">{kLine}</span>
 
       <section className="mh-deck" aria-label="Comidas del día · desliza" onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
         {meals.map((m, i) => {
@@ -139,7 +137,7 @@ export default function MHoy({ unseen, onIdeas }) {
                 <>
                   <span className="mh-name">{main.name}</span>
                   {others.map(r => <span key={r.person.id} className="mp-muted" style={{ fontSize: 13, marginTop: -6 }}>{r.person.name}: {r.info.name}</span>)}
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 'auto' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 4 }}>
                     <span style={{ position: 'relative', width: 72, height: 72, flexShrink: 0, borderRadius: '50%', background: `conic-gradient(#2E9BD6 0 ${pp}%, #E0A21B ${pp}% ${pp + cp}%, #8B6FE8 ${pp + cp}% 100%)` }}>
                       <span style={{ position: 'absolute', inset: 10, borderRadius: '50%', background: '#FBF8F3', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                         <span className="mp-num" style={{ fontSize: 14, fontWeight: 700 }}>{main.prot} g</span><span className="mp-muted" style={{ fontSize: 9.5 }}>prot</span>
