@@ -97,6 +97,16 @@ export default function ShoppingListTab() {
   const [viewMode, setViewMode] = useState('batch') // 'batch' | 'semana'
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy] = useState('category')
+  // Marcado al comprar -- solo en memoria (se pierde al recargar/cambiar de
+  // ventana), no es dato de planificacion, es un tick de "ya lo tengo".
+  const [checked, setChecked] = useState(() => new Set())
+  function toggleChecked(key) {
+    setChecked(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key); else next.add(key)
+      return next
+    })
+  }
 
   const batchWindow = useMemo(
     () => viewMode === 'semana' ? getWeekWindow(batchOffset) : getBatchWindow(batchOffset),
@@ -477,6 +487,9 @@ export default function ShoppingListTab() {
         </div>
       ) : (
         <div>
+          <div className="sl-header-row">
+            <span></span><span>Ingrediente</span><span>Cantidad</span><span>Coste</span>
+          </div>
           {CAT_ORDER.map(cat => {
             if (!grouped[cat]) return null
             return (
@@ -486,9 +499,15 @@ export default function ShoppingListTab() {
                 </h3>
                 <div>
                   {grouped[cat].map(item => (
-                    <div key={item.key} className="sl-row">
+                    <div key={item.key} className={`sl-row${checked.has(item.key) ? ' is-checked' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={checked.has(item.key)}
+                        onChange={() => toggleChecked(item.key)}
+                        aria-label={`Marcar ${item.name}`}
+                      />
                       <div className="sl-row-name">
-                        <div style={{ fontWeight: 500 }}>{item.name}</div>
+                        <div className="sl-row-name-title">{item.name}</div>
                         {item.brand && (
                           <div style={{ fontSize: '0.72rem', color: 'var(--t-accent)', fontWeight: 600, marginTop: '0.15rem' }}>
                             {item.brand}
@@ -496,17 +515,11 @@ export default function ShoppingListTab() {
                           </div>
                         )}
                         {item.breakdown && (
-                          <div style={{ fontSize: '0.75rem', color: 'var(--t-accent)', fontWeight: 600, marginTop: '0.15rem' }}>
-                            {item.breakdown}
-                          </div>
+                          <div className="sl-row-breakdown">{item.breakdown}</div>
                         )}
-                        <div style={{ fontSize: '0.72rem', color: 'var(--muted)', marginTop: '0.1rem' }}>
-                          {item.meals.join(', ')}
-                        </div>
                       </div>
                       <div className="sl-row-qty">{item.qty}</div>
                       <div className="sl-row-cost">${item.cost.toFixed(2)}</div>
-                      <div className="sl-row-prot">{Math.round(item.prot)}g prot</div>
                     </div>
                   ))}
                 </div>
@@ -532,7 +545,8 @@ export default function ShoppingListTab() {
           </p>
           {batidoAgg.map(item => (
             <div key={item.key} className="sl-row">
-              <div className="sl-row-name" style={{ fontWeight: 500 }}>{item.name}</div>
+              <span></span>
+              <div className="sl-row-name-title">{item.name}</div>
               <div className="sl-row-qty">{item.qty}</div>
               <div className="sl-row-cost">${item.cost.toFixed(2)}</div>
             </div>
