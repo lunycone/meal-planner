@@ -60,6 +60,7 @@ export const ING = {
   jalapeno:          { name: 'Jalapeño',           cat: 'fresco',   per100: 1.10,  kc: 29,  fib: 1.9, pack: 'ud ~40g · CA$11.00/kg', per: 'ud → $0.44 · 12 kcal' },
   'green-beans':     { name: 'Ejotes / Green beans', cat: 'fresco', per100: 0.60,  kc: 31,  fib: 3.4, pack: 'bunch ~0.08kg · $0.48', per: '80g → $0.48 · 25 kcal' },
   arandanos:         { name: 'Arándanos congelados (Farm Boy)', cat: 'fresco', per100: 0.977, kc: 57, prot: 0.7, fat: 0.3, fib: 2.4, fibSol: 0.5, gi: 53, pack: '2.25 kg · $21.99', per: '40g → $0.39 · 23 kcal' },
+  'fresas-organic':  { name: 'Fresas laminadas orgánicas congeladas (Costco)', cat: 'fresco', per100: 0.75, kc: 33, prot: 0.7, fat: 0.3, fib: 2.0, fibSol: 0.6, gi: 40, pack: '2 kg (Costco) · $15.00', per: '80g → $0.60 · 26 kcal', organic: true, est: true },
   // unitGrams (6 sep 2026): las recetas la miden en gramos (portion:{grams}),
   // pero en la tienda se compra por pieza, no pesada -- la lista de la compra
   // usa esto para mostrar "~N ud" en vez de gramos sueltos.
