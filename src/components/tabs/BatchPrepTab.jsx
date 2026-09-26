@@ -1116,17 +1116,17 @@ function BatchCard({ title, cookLabel, coverDays, mealSections, schedule, kcalSu
 
 // ─── Main component ────────────────────────────────────────────────────────────
 const MEALS    = ['desayuno', 'comida', 'merienda', 'cena']
-// ── Ventanas de batch (partición limpia de la semana) ──────────────────────────
-// 6 sep 2026 (2) -- corregido de nuevo: el ciclo real del usuario NO empieza
-// en lunes, empieza en MARTES. El lunes es el ultimo dia del batch de jueves
-// de la semana ANTERIOR (vie·sáb·dom·LUN), no el primer dia de un batch
-// nuevo -- por eso ya no cocina nada ese dia, solo come lo que sobro.
-// Batch Martes: cocinas el mar, comes mar→mié→jue (3 días, misma semana ISO).
-// Batch Jueves: cocinas el jue, comes vie→sáb→dom→LUN SIGUIENTE (4 días).
-// Ese lunes cae en la semana ISO SIGUIENTE, con su propio weekKey -- por eso
-// no es un elemento mas de THU_DAYS con el mismo wk (ver thuBatchDays).
-const TUE_DAYS = ['mar', 'mié', 'jue']
-const THU_DAYS = ['vie', 'sáb', 'dom']
+// ── Ventana de batch ────────────────────────────────────────────────────────
+// 26 sep 2026 -- cambio de rutina real del usuario: ya no se cocina dos veces
+// por semana (martes/jueves). Ahora se cocina UNA sola vez, el domingo, y
+// cubre de lunes a viernes (5 dias) de la MISMA semana que se muestra --
+// el fin de semana (sab/dom) queda fuera del batch. El domingo en el que se
+// cocina es el anterior a este lunes (weekMonday - 1 dia), no el domingo que
+// cierra la semana mostrada (ese seria el que cocina para la semana
+// SIGUIENTE). Como los 5 dias caen todos en la misma semana ISO que
+// weekMonday, ya no hace falta el manejo de "cruce de semana" que si hacia
+// falta con el batch de jueves (que llegaba hasta el lunes siguiente).
+const WEEKDAY_DAYS = ['lun', 'mar', 'mié', 'jue', 'vie']
 
 export default function BatchPrepTab() {
   const allIng        = useStore(selectAllIng)
@@ -1136,70 +1136,38 @@ export default function BatchPrepTab() {
   const weekOffset    = useStore(s => s.weekOffset)
   const setWeekOffset = useStore(s => s.setWeekOffset)
 
-  const [playBatch, setPlayBatch] = useState(null) // 'tue' | 'thu' | null
+  const [playing, setPlaying] = useState(false)
 
   const weekMonday  = useMemo(() => getWeekMonday(weekOffset), [weekOffset])
   const weekKey     = useMemo(() => getISOWeek(new Date(weekMonday.getTime() + 3 * 86400000)), [weekMonday])
   const weekSunday  = useMemo(() => new Date(weekMonday.getTime() + 6 * 86400000), [weekMonday])
 
-  // Cook days (no se comen de su propio batch, sólo cocinan).
-  const tueCookDate = useMemo(() => new Date(weekMonday.getTime() + 1 * 86400000), [weekMonday]) // mar
-  const thuCookDate = useMemo(() => new Date(weekMonday.getTime() + 3 * 86400000), [weekMonday]) // jue
+  // Cook day (no se come de su propio batch, sólo cocina): el domingo
+  // anterior a este lunes.
+  const cookDate = useMemo(() => new Date(weekMonday.getTime() - 1 * 86400000), [weekMonday])
 
-  const tueBatchDays = useMemo(() => TUE_DAYS.map((dk, i) => ({
+  const batchDays = useMemo(() => WEEKDAY_DAYS.map((dk, i) => ({
     dayKey: dk, wk: weekKey,
-    date: new Date(weekMonday.getTime() + (1 + i) * 86400000),  // mar(1)→jue(3)
+    date: new Date(weekMonday.getTime() + i * 86400000),  // lun(0)→vie(4)
   })), [weekMonday, weekKey])
 
-  // El lunes siguiente cae en la semana ISO SIGUIENTE (weekKey propio, no el
-  // de esta semana) -- por eso no es un elemento mas de THU_DAYS con el
-  // mismo wk, necesita su fecha y su weekKey calculados aparte.
-  const nextMonday = useMemo(() => new Date(weekMonday.getTime() + 7 * 86400000), [weekMonday])
-  const nextWeekKey = useMemo(() => getISOWeek(nextMonday), [nextMonday])
+  const batchData = useMemo(() => Object.fromEntries(
+    MEALS.map(mt => [mt, computeBatchMeal(mt, batchDays, profiles, allIng, allCombos, weekPlan)])
+  ), [batchDays, profiles, allIng, allCombos, weekPlan])
 
-  const thuBatchDays = useMemo(() => [
-    ...THU_DAYS.map((dk, i) => ({
-      dayKey: dk, wk: weekKey,
-      date: new Date(weekMonday.getTime() + (4 + i) * 86400000), // vie(4)→dom(6)
-    })),
-    { dayKey: 'lun', wk: nextWeekKey, date: nextMonday },
-  ], [weekMonday, weekKey, nextWeekKey, nextMonday])
-
-  // 6 sep 2026: batchDetect (uniforme/variado) ya no hace falta -- cada grupo
-  // de computeBatchMeal se maneja nativamente, difieran o no por persona.
-  const tueData = useMemo(() => Object.fromEntries(
-    MEALS.map(mt => [mt, computeBatchMeal(mt, tueBatchDays, profiles, allIng, allCombos, weekPlan)])
-  ), [tueBatchDays, profiles, allIng, allCombos, weekPlan])
-
-  const thuData = useMemo(() => Object.fromEntries(
-    MEALS.map(mt => [mt, computeBatchMeal(mt, thuBatchDays, profiles, allIng, allCombos, weekPlan)])
-  ), [thuBatchDays, profiles, allIng, allCombos, weekPlan])
-
-  const tueKcalSummary = useMemo(() => {
-    const rep = tueBatchDays[0]
+  const kcalSummary = useMemo(() => {
+    const rep = batchDays[0]
     const weekData = weekPlan[rep.wk] ?? {}
     return computeDailyKcalPerPerson(weekData, rep.dayKey, ALL_DAY_KEYS.indexOf(rep.dayKey), profilesActiveOn(profiles, rep.date), allIng, allCombos)
-  }, [weekPlan, tueBatchDays, profiles, allIng, allCombos])
+  }, [weekPlan, batchDays, profiles, allIng, allCombos])
 
-  const thuKcalSummary = useMemo(() => {
-    const rep = thuBatchDays[0]
-    const weekData = weekPlan[rep.wk] ?? {}
-    return computeDailyKcalPerPerson(weekData, rep.dayKey, ALL_DAY_KEYS.indexOf(rep.dayKey), profilesActiveOn(profiles, rep.date), allIng, allCombos)
-  }, [weekPlan, thuBatchDays, profiles, allIng, allCombos])
-
-  const tueSchedule = useMemo(() =>
-    buildSchedule(MEALS.flatMap(mt => (tueData[mt] || []).map(g => ({ meal: g.meal, batchData: g }))))
-  , [tueData])
-
-  const thuSchedule = useMemo(() =>
-    buildSchedule(MEALS.flatMap(mt => (thuData[mt] || []).map(g => ({ meal: g.meal, batchData: g }))))
-  , [thuData])
+  const schedule = useMemo(() =>
+    buildSchedule(MEALS.flatMap(mt => (batchData[mt] || []).map(g => ({ meal: g.meal, batchData: g }))))
+  , [batchData])
 
   // ── COOK MODE ───────────────────────────────────────────────────────────────
-  if (playBatch) {
-    const schedule = playBatch === 'tue' ? tueSchedule : thuSchedule
-    const title    = playBatch === 'tue' ? '🌙 Batch Martes' : '☀️ Batch Jueves'
-    return <CookMode schedule={schedule} title={title} onExit={() => setPlayBatch(null)} />
+  if (playing) {
+    return <CookMode schedule={schedule} title="☀️ Batch Domingo" onExit={() => setPlaying(false)} />
   }
 
   return (
@@ -1220,32 +1188,16 @@ export default function BatchPrepTab() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start' }}>
+      <div style={{ maxWidth: '640px' }}>
         <BatchCard
-          title="🌙 Batch Martes"
-          cookLabel={`mar ${formatDateShort(tueCookDate)}`}
-          coverDays={['Mar', 'Mié', 'Jue']}
-          schedule={tueSchedule}
-          kcalSummary={tueKcalSummary}
-          onPlay={() => setPlayBatch('tue')}
+          title="☀️ Batch Domingo"
+          cookLabel={`dom ${formatDateShort(cookDate)}`}
+          coverDays={['Lun', 'Mar', 'Mié', 'Jue', 'Vie']}
+          schedule={schedule}
+          kcalSummary={kcalSummary}
+          onPlay={() => setPlaying(true)}
           mealSections={MEALS.flatMap(mt => {
-            const groups = tueData[mt] || []
-            if (groups.length === 0) return [<MealSection key={mt} mealType={mt} batchData={null} />]
-            return groups.map((g, gi) => (
-              <MealSection key={`${mt}-${gi}`} mealType={mt} batchData={g} showMealLabel={gi === 0}
-                groupLabel={groups.length > 1 ? g.personTotals.map(pt => pt.person.initial).join(' y ') : null} />
-            ))
-          })}
-        />
-        <BatchCard
-          title="☀️ Batch Jueves"
-          cookLabel={`jue ${formatDateShort(thuCookDate)}`}
-          coverDays={['Vie', 'Sáb', 'Dom', 'Lun →']}
-          schedule={thuSchedule}
-          kcalSummary={thuKcalSummary}
-          onPlay={() => setPlayBatch('thu')}
-          mealSections={MEALS.flatMap(mt => {
-            const groups = thuData[mt] || []
+            const groups = batchData[mt] || []
             if (groups.length === 0) return [<MealSection key={mt} mealType={mt} batchData={null} />]
             return groups.map((g, gi) => (
               <MealSection key={`${mt}-${gi}`} mealType={mt} batchData={g} showMealLabel={gi === 0}
