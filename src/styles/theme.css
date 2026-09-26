@@ -94,7 +94,8 @@ button, input, select, textarea { font-family: var(--c-font); color: inherit; }
 }
 .mp-rim { position: relative; isolation: isolate; }
 
-@keyframes mp-rise { from { opacity: 0; transform: translateY(18px) scale(.985); filter: blur(8px); } }
+/* Solo opacidad y transform: animar filter:blur en muchas tarjetas a la vez da tirones */
+@keyframes mp-rise { from { opacity: 0; transform: translateY(18px) scale(.985); } }
 @keyframes mp-in   { from { opacity: 0; transform: translateX(-8px); } }
 @keyframes mp-fade { from { opacity: 0; } }
 @keyframes mp-pop  { from { opacity: 0; transform: translateY(-10px) scale(.96); filter: blur(8px); } }

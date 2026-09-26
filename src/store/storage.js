@@ -63,6 +63,12 @@ let lastSyncError = null
   let writing = false
   let pendingValue = null
   let hasPending = false
+  // 26 sep 2026 -- relectura periodica (ver startSharedRefresh en main.jsx):
+  // writeSeq cuenta los cambios locales; si hubo alguno mientras la lectura
+  // estaba en vuelo, esa lectura ya es vieja y se descarta. lastRaw evita
+  // re-renderizar todo cuando el servidor no ha cambiado nada.
+  let writeSeq = 0
+  let lastRaw = null
 
   async function flushLoop() {
     writing = true
@@ -112,6 +118,9 @@ let lastSyncError = null
     // el dia de mañana una fila duplicada (manual, o de otra fuente) rompa
     // la lectura por completo.
     async getItem(_name) {
+      const isRefresh = hydrated
+      if (isRefresh && (writing || hasPending)) return null
+      const seqAtStart = writeSeq
       const { data, error } = await supabase
         .from('plan_state')
         .select('data')
@@ -127,6 +136,15 @@ let lastSyncError = null
 
       const raw = data?.[0]?.data ?? null
       if (raw === null) { hydrated = true; return null }
+      if (isRefresh) {
+        // Cambios locales durante la lectura, o nada nuevo: no tocar el estado
+        if (seqAtStart !== writeSeq || writing || hasPending) return null
+        const rawStr = typeof raw === 'string' ? raw : JSON.stringify(raw)
+        if (rawStr === lastRaw) return null
+        lastRaw = rawStr
+      } else {
+        lastRaw = typeof raw === 'string' ? raw : JSON.stringify(raw)
+      }
 
       let parsed
       if (typeof raw === 'string') {
@@ -142,6 +160,8 @@ let lastSyncError = null
     async setItem(_name, value) {
       if (!hydrated) return
 
+      writeSeq++
+      lastRaw = JSON.stringify(value)
       pendingValue = value
       hasPending = true
       if (!writing) flushLoop()  // fire-and-forget: zustand no espera el resultado de setItem

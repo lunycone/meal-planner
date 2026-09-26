@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import useStore, { selectAllIng, selectAllCombos } from '../../store/useStore'
 import { CAT_ORDER, CAT_LABELS } from '../../data/ingredients'
 import { PROTEIN } from '../../data/proteins'
@@ -32,8 +32,8 @@ function getQtyValue(p) {
   if (p.grams != null) return { val: p.grams, unit: 'grams' }
   if (p.units != null) return { val: p.units, unit: 'units' }
   if (p.ml != null) return { val: p.ml, unit: 'ml' }
-  if (p.serv != null) return { val: p.serv, unit: 'serv' }
-  return { val: 0, unit: 'unknown' }
+  // Precio fijo por racion (sardinas ½ lata, portion {}): cuenta como 1 racion
+  return { val: p.serv ?? 1, unit: 'serv' }
 }
 
 // Color de la pastilla L-V por categoria (misma leyenda del lateral)
@@ -43,16 +43,11 @@ const CAT_PILL = {
 }
 
 // Lo que por defecto se da por «en casa»: especias y básicos de uso suelto
-// (precio plano o $0, ver ingredients.js). Cada uno se puede mover a mano.
+// (precio plano de céntimos, o $0: sal, comino, AOVE, agua…). Ojo: las
+// sardinas también son precio plano ($1.15 la ½ lata) y SÍ se compran, de ahí
+// el tope. Cada uno se puede mover a mano.
 function defaultAtHome(ing) {
-  return ing && (ing.flat != null || ing.perML === 0 || ing.per100 === 0)
-}
-
-function readSet(key) {
-  try { return new Set(JSON.parse(localStorage.getItem(key) ?? '[]')) } catch { return new Set() }
-}
-function writeSet(key, set) {
-  try { localStorage.setItem(key, JSON.stringify([...set])) } catch {}
+  return !!ing && ((ing.flat != null && ing.flat <= 0.10) || ing.perML === 0 || ing.per100 === 0)
 }
 
 function Check({ on }) {
@@ -79,28 +74,19 @@ export default function ShoppingListTab() {
 
   const batchWindow = useMemo(() => getWindow(batchOffset, viewMode), [batchOffset, viewMode])
 
-  // Marcado al comprar: por dispositivo y por ventana (cada batch empieza
-  // limpio). «En casa» es por dispositivo y vale para todas las semanas.
-  const checksKey = `mp-compra-checks-${viewMode}-${weekKeyOf(batchWindow.start)}`
-  const [checked, setChecked] = useState(() => readSet(checksKey))
-  useEffect(() => { setChecked(readSet(checksKey)) }, [checksKey])
-  const [haveSet, setHaveSet] = useState(() => readSet('mp-compra-have'))
-  const [missSet, setMissSet] = useState(() => readSet('mp-compra-miss'))
-
-  function toggleChecked(key) {
-    setChecked(prev => {
-      const next = new Set(prev)
-      if (next.has(key)) next.delete(key); else next.add(key)
-      writeSet(checksKey, next)
-      return next
-    })
-  }
+  // Marcado al comprar (por ventana) y «En casa» (para todas las semanas):
+  // en el guardado compartido, así Julio y María ven lo mismo.
+  const checksKey = `${viewMode}-${weekKeyOf(batchWindow.start)}`
+  const shopChecks = useStore(s => s.shopChecks)
+  const pantry     = useStore(s => s.pantry)
+  const toggleShopCheck = useStore(s => s.toggleShopCheck)
+  const setAtHome  = useStore(s => s.setAtHome)
+  const checked = useMemo(() => new Set(shopChecks?.[checksKey] ?? []), [shopChecks, checksKey])
+  const haveSet = useMemo(() => new Set(pantry?.have ?? []), [pantry])
+  const missSet = useMemo(() => new Set(pantry?.miss ?? []), [pantry])
+  const toggleChecked = key => toggleShopCheck(checksKey, key)
   const isHome = key => haveSet.has(key) || (defaultAtHome(allIng[key]) && !missSet.has(key))
-  function setHome(key, home) {
-    const h = new Set(haveSet), m = new Set(missSet)
-    if (home) { h.add(key); m.delete(key) } else { h.delete(key); m.add(key) }
-    setHaveSet(h); setMissSet(m); writeSet('mp-compra-have', h); writeSet('mp-compra-miss', m)
-  }
+  const setHome = (key, home) => setAtHome(key, home)
 
   // Who's active across this batch window
   const people = useMemo(() => {
@@ -139,7 +125,7 @@ export default function ShoppingListTab() {
       ps[person.id].grams += pp.grams ?? 0
       ps[person.id].units += pp.units ?? 0
       ps[person.id].ml    += pp.ml    ?? 0
-      ps[person.id].serv  += pp.serv  ?? 0
+      ps[person.id].serv  += pp.serv  ?? (pp.grams == null && pp.ml == null && pp.units == null ? 1 : 0)
       ps[person.id].days  += 1
     }
     // Racion de UNA persona para UNA comida — se suma al agregado y se
@@ -295,7 +281,7 @@ export default function ShoppingListTab() {
       if (data.qtyByUnit.units && ing.packSize) qtyStr += `~${(data.qtyByUnit.units / ing.packSize).toFixed(1)} ${ing.packLabel}s `
       else if (data.qtyByUnit.units) qtyStr += `${data.qtyByUnit.units} ud `
       if (data.qtyByUnit.ml) qtyStr += `${Math.round(data.qtyByUnit.ml)} ml `
-      if (data.qtyByUnit.serv) qtyStr += `${data.qtyByUnit.serv} porción`
+      if (data.qtyByUnit.serv) qtyStr += `${+data.qtyByUnit.serv.toFixed(1)} ${data.qtyByUnit.serv === 1 ? 'ración' : 'raciones'}`
       qtyStr = qtyStr.trim()
 
       // Desglose por persona: "Julio+María: 150g×3d"

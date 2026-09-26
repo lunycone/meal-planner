@@ -8,7 +8,30 @@ export function getISOWeek(date) {
   const dayNum = d.getUTCDay() || 7
   d.setUTCDate(d.getUTCDate() + 4 - dayNum)
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
-  return `${d.getUTCFullYear()}-W${String(Math.ceil((d - yearStart) / 86400000 / 7)).padStart(2, '0')}`
+  // 26 sep 2026 -- faltaba el +1 (dia del año empieza en 1): en los años
+  // cuyo 1 de enero cae en jueves (2026) TODAS las semanas salian una por
+  // debajo de la ISO real (W39 para la semana 40). Los datos guardados con
+  // la formula vieja se renumeran una vez, ver migrateWeekKeys.
+  return `${d.getUTCFullYear()}-W${String(Math.ceil(((d - yearStart) / 86400000 + 1) / 7)).padStart(2, '0')}`
+}
+
+/** Clave de semana guardada con la formula vieja → clave ISO correcta. Solo
+ *  cambia en los años cuyo 1 de enero es jueves (la vieja daba una menos,
+ *  empezando en W00); en el resto las dos formulas coinciden. */
+export function fixLegacyWeekKey(key) {
+  const m = /^(\d{4})-W(\d{2})$/.exec(key)
+  if (!m) return key
+  const year = +m[1]
+  if (new Date(Date.UTC(year, 0, 1)).getUTCDay() !== 4) return key
+  return `${year}-W${String(+m[2] + 1).padStart(2, '0')}`
+}
+
+/** weekPlan con todas sus claves renumeradas (ver fixLegacyWeekKey). */
+export function migrateWeekKeys(weekPlan) {
+  if (!weekPlan) return weekPlan
+  const out = {}
+  for (const [k, v] of Object.entries(weekPlan)) out[fixLegacyWeekKey(k)] = v
+  return out
 }
 
 /** Lunes de la semana en weekOffset semanas desde hoy (0 = esta semana). */

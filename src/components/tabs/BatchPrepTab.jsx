@@ -5,7 +5,7 @@ import { PREP } from '../../data/combos'
 import { comboScalableKey, personMealScalesTwoPass, personTargetForDay, slotForPerson, DRY_TO_COOKED as COOK_RATIO } from '../../engine/calc'
 import { getISOWeek } from '../../utils/date'
 import Icon, { MEAL_ICON } from '../ui/Icon'
-import { MEAL_STYLE, PERSON_COLOR, addDays, mondayOf, fmtRange, shortName } from '../../lib/mealplan'
+import { MEAL_STYLE, PERSON_COLOR, addDays, mondayOf, fmtRange } from '../../lib/mealplan'
 
 // Orden de dias para resolver el indice (0=lun..6=dom) que necesita
 // personTargetForDay/personMealScale — mismo orden que DAY_KEYS en el
@@ -197,12 +197,13 @@ function fmtBaseDry(key, dryGrams) {
   return `${Math.round(dryGrams)}g seco → ~${Math.round(dryGrams * ratio)}g cocido`
 }
 
-function fmtQty({ grams = 0, ml = 0, units = 0 }) {
+function fmtQty({ grams = 0, ml = 0, units = 0, serv = 0 }) {
   const frac = { 0.25: '¼', 0.5: '½', 0.75: '¾' }
   const parts = []
   if (grams > 0) parts.push(`${Math.round(grams)}g`)
   if (ml    > 0) parts.push(`${Math.round(ml)}ml`)
   if (units > 0) parts.push(`${frac[units] ?? units} ud`)
+  if (serv  > 0) parts.push(`×${serv}`)
   return parts.join(' + ') || '—'
 }
 
@@ -292,10 +293,13 @@ function computeBatchMeal(mealType, batchDays, profiles, allIng, allCombos, week
       const peopleToday = dayProfiles.filter(p => slotForPerson(rawSlot, p.id)?.recipeKey === g.meal.recipeKey).length
       if (peopleToday === 0) continue
       const addShared = (k, p) => {
-        if (!g.sharedAcc[k]) g.sharedAcc[k] = { name: allIng[k]?.name ?? k, grams: 0, ml: 0, units: 0 }
+        if (!g.sharedAcc[k]) g.sharedAcc[k] = { name: allIng[k]?.name ?? k, grams: 0, ml: 0, units: 0, serv: 0 }
         g.sharedAcc[k].grams += (p.grams ?? 0) * peopleToday
         g.sharedAcc[k].ml    += (p.ml    ?? 0) * peopleToday
         g.sharedAcc[k].units += (p.units ?? 0) * peopleToday
+        // Ingredientes de precio fijo por racion (p.ej. sardinas ½ lata,
+        // portion {}): sin gramos/ml/ud desaparecian del lote.
+        if (p.grams == null && p.ml == null && p.units == null) g.sharedAcc[k].serv += (p.serv ?? 1) * peopleToday
       }
       // 6 sep 2026 -- BUG: esto excluia el ingrediente "escalable" (auto-
       // detectado por comboScalableKey, corre SIEMPRE, no solo en comida/
@@ -330,7 +334,7 @@ function computeBatchMeal(mealType, batchDays, profiles, allIng, allCombos, week
       personTotals, recipePortionGrams,
       sharedItems: Object.entries(g.sharedAcc)
         .map(([k, v]) => ({ key: k, ...v }))
-        .filter(it => it.grams > 0 || it.ml > 0 || it.units > 0),
+        .filter(it => it.grams > 0 || it.ml > 0 || it.units > 0 || it.serv > 0),
       freshItems: g.freshItems,
       hasBase: !!g.scalableKey && personTotals.some(pt => pt.baseGrams > 0),
       blend: g.comboRef?.blend ?? null,
@@ -374,7 +378,8 @@ function buildSchedule(mealDataList) {
       const g  = totalPortions > 0 ? Math.round(it.grams / totalPortions) : 0
       const ml = totalPortions > 0 ? Math.round(it.ml    / totalPortions) : 0
       const u  = totalPortions > 0 ? +(it.units / totalPortions).toFixed(2) : 0
-      const qty = g > 0 ? `${g}g` : ml > 0 ? `${ml}ml` : u > 0 ? `${u} ud` : null
+      const sv = totalPortions > 0 ? +((it.serv ?? 0) / totalPortions).toFixed(2) : 0
+      const qty = g > 0 ? `${g}g` : ml > 0 ? `${ml}ml` : u > 0 ? `${u} ud` : sv > 0 ? `×${sv}` : null
       return qty ? { name: it.name, qty } : null
     }).filter(Boolean)
     // 6 sep 2026 -- el usuario, con razon: "229g de masa por tortilla es
@@ -687,7 +692,8 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
             function sharedPerRacion(it) {
               if (totalPersonDays <= 0) return null
               const g = R(it.grams / totalPersonDays), ml = R(it.ml / totalPersonDays), u = +(it.units / totalPersonDays).toFixed(2)
-              return g > 0 ? `${g}g` : ml > 0 ? `${ml}ml` : u > 0 ? `${u} ud` : null
+              const sv = +((it.serv ?? 0) / totalPersonDays).toFixed(2)
+              return g > 0 ? `${g}g` : ml > 0 ? `${ml}ml` : u > 0 ? `${u} ud` : sv > 0 ? `×${sv}` : null
             }
             function desayunoLines() {
               const totalPortions = persons.reduce((s, p) => s + p.recipeServings, 0)
@@ -695,7 +701,8 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
                 const g = totalPortions > 0 ? R(it.grams / totalPortions) : 0
                 const ml = totalPortions > 0 ? R(it.ml / totalPortions) : 0
                 const u = totalPortions > 0 ? +(it.units / totalPortions).toFixed(2) : 0
-                const qty = g > 0 ? `${g}g` : ml > 0 ? `${ml}ml` : u > 0 ? `${u} ud` : null
+                const sv = totalPortions > 0 ? +((it.serv ?? 0) / totalPortions).toFixed(2) : 0
+                const qty = g > 0 ? `${g}g` : ml > 0 ? `${ml}ml` : u > 0 ? `${u} ud` : sv > 0 ? `×${sv}` : null
                 return qty ? { text: `${it.name}: ${qty}` } : null
               }).filter(Boolean)
             }
@@ -1072,10 +1079,6 @@ const WEEKDAY_DAYS = ['lun', 'mar', 'mié', 'jue', 'vie']
 const DAY_LETTER = { lun: 'L', mar: 'M', 'mié': 'X', jue: 'J', vie: 'V' }
 const FREEZE_DAYS = new Set(['jue', 'vie'])
 
-function readTups(key) {
-  try { return new Set(JSON.parse(localStorage.getItem(key) ?? '[]')) } catch { return new Set() }
-}
-
 export default function BatchPrepTab() {
   const allIng        = useStore(selectAllIng)
   const allCombos     = useStore(selectAllCombos)
@@ -1105,18 +1108,11 @@ export default function BatchPrepTab() {
     buildSchedule(MEALS.flatMap(mt => (batchData[mt] || []).map(g => ({ meal: g.meal, batchData: g }))))
   , [batchData])
 
-  // Tuppers marcados como hechos (por dispositivo y por batch)
-  const tupKey = `mp-batch-tups-${weekKey}`
-  const [tups, setTups] = useState(() => readTups(tupKey))
-  useEffect(() => { setTups(readTups(tupKey)) }, [tupKey])
-  function toggleTup(id) {
-    setTups(prev => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id); else next.add(id)
-      try { localStorage.setItem(tupKey, JSON.stringify([...next])) } catch {}
-      return next
-    })
-  }
+  // Tuppers hechos: en el guardado compartido (lo que llena uno lo ve el otro)
+  const batchTups = useStore(s => s.batchTups)
+  const toggleBatchTup = useStore(s => s.toggleBatchTup)
+  const tups = useMemo(() => new Set(batchTups?.[weekKey] ?? []), [batchTups, weekKey])
+  const toggleTup = id => toggleBatchTup(weekKey, id)
 
   // Tarjetas: un lote por plato y franja, con sus tuppers día × persona
   const weekData = weekPlan[weekKey] ?? {}
@@ -1166,12 +1162,17 @@ export default function BatchPrepTab() {
           <div className="bt-stat mp-rim"><span className="mp-muted" style={{ fontSize: 12 }}>Tuppers</span><span className="mp-num">{tupDone} / {tupTotal}</span></div>
         </div>
 
-        {schedule.vispera.map((v, i) => (
-          <div key={i} className="bt-note mp-rim" style={{ background: 'rgba(201,184,245,0.26)' }}>
-            <span className="mp-bubble" style={{ width: 26, height: 26, background: 'rgba(255,255,255,0.85)', color: '#7154DA' }}><Icon name="moon" size={13} stroke={2.2} /></span>
-            <span style={{ fontSize: 13, lineHeight: 1.4 }}><strong>Sábado noche · </strong>{v.text}</span>
+        {schedule.vispera.length > 0 && (
+          <div className="bt-note mp-rim">
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700 }}>
+              <span className="mp-bubble" style={{ width: 26, height: 26, background: 'rgba(255,255,255,0.85)', color: '#7154DA' }}><Icon name="moon" size={13} stroke={2.2} /></span>
+              Sábado por la noche
+            </span>
+            <ul>
+              {schedule.vispera.map((v, i) => <li key={i}>{v.text}</li>)}
+            </ul>
           </div>
-        ))}
+        )}
 
         {hasPlan && (
           <button className="mp-btn mp-btn-dark" style={{ marginTop: 14, height: 44, alignSelf: 'stretch' }} onClick={() => setPlaying(true)}>
@@ -1196,12 +1197,12 @@ export default function BatchPrepTab() {
             const tupsOn = c.tupList.filter(t => tups.has(t.id)).length
             const packs = c.mt === 'comida' || c.mt === 'cena'
             return (
-              <article key={`${c.mt}-${c.key}`} className="batch-card mp-glass mp-rise" style={{ animationDelay: `${80 + n * 50}ms` }}>
+              <article key={`${c.mt}-${c.key}`} className="bt-card mp-rim mp-rise" style={{ animationDelay: `${80 + n * 50}ms` }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
                     <span className="mp-bubble" style={{ width: 44, height: 44, background: st.tint, color: st.color, boxShadow: `inset 0 1px 0 #fff, 0 6px 16px ${st.glow}` }}><Icon name={MEAL_ICON[c.mt]} size={20} /></span>
                     <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
-                      <span style={{ fontSize: 18, fontWeight: 600, letterSpacing: '-0.02em', lineHeight: 1.2 }}>{shortName(c.g.mealName)}</span>
+                      <span className="bt-card-name">{c.g.mealName}</span>
                       <span className="mp-muted" style={{ fontSize: 12.5 }}>{MEAL_LABELS[c.mt]} · {c.days.map(d => DAY_LETTER[d]).join(' ')} · {c.persons.map(pt => pt.person.name).join(' y ')}</span>
                     </span>
                   </span>
