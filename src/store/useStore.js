@@ -23,7 +23,7 @@ const emptyPerMeal = (val) => Object.fromEntries(MEAL_KEYS.map(k => [k, val()]))
 // Vistas validas para restaurar desde localStorage -- si un dia cambian los
 // ids de tab y localStorage tiene guardado uno viejo, mejor caer a 'home'
 // que dejar la pantalla en blanco (activeConfigTab/activeView sin match).
-const VALID_VIEWS = ['home', 'meal', 'platos', 'ingredientes', 'planificador', 'compra', 'batch']
+const VALID_VIEWS = ['home', 'meal', 'platos', 'ingredientes', 'planificador', 'compra', 'batch', 'mas']
 
 // 26 sep 2026 -- la tab activa se guarda SOLO en localStorage (por
 // dispositivo), nunca en el guardado compartido de Supabase: si fuera

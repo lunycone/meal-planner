@@ -4,6 +4,7 @@ import App from './App.jsx'
 import './App.css'
 import './styles/theme.css'
 import './styles/views.css'
+import './styles/mobile.css'
 import useStore from './store/useStore.js'
 import { supabase } from './store/storage.js'
 

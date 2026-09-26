@@ -59,7 +59,7 @@ export default function DishPicker({ weekKey, weekData, dayKey, date, mealType, 
 
   return (
     <Overlay onClose={onClose}>
-      <div className="mp-sheet" style={{ maxWidth: 920, height: 'min(760px, calc(100vh - 48px))' }} onClick={e => e.stopPropagation()} role="dialog" aria-label={`Elegir ${MEAL_LABEL[mealType].toLowerCase()}`}>
+      <div className="mp-sheet dp-sheet" style={{ maxWidth: 920, height: 'min(760px, calc(100vh - 48px))' }} onClick={e => e.stopPropagation()} role="dialog" aria-label={`Elegir ${MEAL_LABEL[mealType].toLowerCase()}`}>
         <div className="mp-sheet-head">
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span className="mp-bubble" style={{ width: 42, height: 42, background: st.tint, color: st.color, boxShadow: `inset 0 1px 0 #fff, 0 6px 16px ${st.glow}` }}><Icon name={MEAL_ICON[mealType]} size={20} /></span>
@@ -71,7 +71,7 @@ export default function DishPicker({ weekKey, weekData, dayKey, date, mealType, 
           <button className="mp-icon-btn" style={{ width: 32, height: 32 }} aria-label="Cerrar" onClick={onClose}><Icon name="x" size={12} stroke={3} /></button>
         </div>
 
-        <div style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 340px', gap: 16, padding: '0 24px 16px' }}>
+        <div className="dp-grid" style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 340px', gap: 16, padding: '0 24px 16px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minHeight: 0 }}>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
               <label className="mp-search" style={{ flex: 1, minWidth: 180 }}>

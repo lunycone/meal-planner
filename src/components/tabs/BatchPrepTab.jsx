@@ -197,7 +197,7 @@ function fmtBaseDry(key, dryGrams) {
   return `${Math.round(dryGrams)}g seco → ~${Math.round(dryGrams * ratio)}g cocido`
 }
 
-function fmtQty({ grams = 0, ml = 0, units = 0, serv = 0 }) {
+export function fmtQty({ grams = 0, ml = 0, units = 0, serv = 0 }) {
   const frac = { 0.25: '¼', 0.5: '½', 0.75: '¾' }
   const parts = []
   if (grams > 0) parts.push(`${Math.round(grams)}g`)
@@ -222,7 +222,7 @@ function fmtMMSS(sec) {
 // Devuelve un ARRAY de grupos (antes devolvia un unico objeto o null).
 // El tipo legacy 'plato' (proteina+combo por separado) ya no se soporta aqui
 // -- el planificador lo auto-limpia en cuanto lo ve, ver WeeklyMealPlannerTab.
-function computeBatchMeal(mealType, batchDays, profiles, allIng, allCombos, weekPlan) {
+export function computeBatchMeal(mealType, batchDays, profiles, allIng, allCombos, weekPlan) {
   const groups = {} // recipeKey -> { comboRef, scalableKey, meal, personMap, sharedAcc, freshSeen, freshItems }
 
   for (const { dayKey, date, wk } of batchDays) {
@@ -348,7 +348,7 @@ function computeBatchMeal(mealType, batchDays, profiles, allIng, allCombos, week
 // the night-before reminders and the no-cook notes. Everything runs in parallel —
 // in practice most dishes share one tray/pot — so there is no oven-contention
 // modelling. Total time ≈ the longest timer + a plating buffer.
-function buildSchedule(mealDataList) {
+export function buildSchedule(mealDataList) {
   const jobs      = []   // cooking jobs { key, name, emoji, cookMin, qtyLabel, split, ... }
   const prepTasks = []   // active human prep { key, emoji, name, action, prepMin, qty }
   const vispera   = []   // night-before tasks { emoji, text }
@@ -1074,7 +1074,7 @@ const MEALS    = ['desayuno', 'comida', 'merienda', 'cena']
 // SIGUIENTE). Como los 5 dias caen todos en la misma semana ISO que
 // weekMonday, ya no hace falta el manejo de "cruce de semana" que si hacia
 // falta con el batch de jueves (que llegaba hasta el lunes siguiente).
-const WEEKDAY_DAYS = ['lun', 'mar', 'mié', 'jue', 'vie']
+export const WEEKDAY_DAYS = ['lun', 'mar', 'mié', 'jue', 'vie']
 
 const DAY_LETTER = { lun: 'L', mar: 'M', 'mié': 'X', jue: 'J', vie: 'V' }
 
