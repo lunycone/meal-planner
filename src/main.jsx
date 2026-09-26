@@ -2,6 +2,8 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './App.css'
+import './styles/theme.css'
+import './styles/views.css'
 import useStore from './store/useStore.js'
 
 // Hydrate from async storage (Supabase) before first render

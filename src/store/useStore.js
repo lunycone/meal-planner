@@ -52,6 +52,15 @@ const useStore = create(
       activeMeal: initialView.activeMeal,
       weekOffset: 0,
       setWeekOffset(offset) { set({ weekOffset: offset }) },
+      // Día desplegado en el Planificador (0 = lunes). null = hoy si cae en
+      // la semana visible, si no el lunes.
+      plannerDay: null,
+      setPlannerDay(idx) { set({ plannerDay: idx }) },
+      // Abrir el Planificador en una semana/día concretos (desde Hoy).
+      openPlanner(offset, dayIdx = null) {
+        get().setView('planificador')
+        set({ weekOffset: offset, plannerDay: dayIdx })
+      },
 
       setView(view, meal = null) {
         set({ activeView: view, activeMeal: meal })
@@ -69,9 +78,12 @@ const useStore = create(
         // Julio) — usado por personMealScale/personLunchScale en vez del
         // kcalTarget plano cuando esta presente. kcalTarget se queda como
         // media/fallback para el scoreboard y para perfiles sin variacion.
-        { id: 'julio',   name: 'Julio', initial: 'J', kcalTarget: 3100, proteinTarget: 100,
+        // digestive: aplica las reglas de semana de engine/weekRules.js (SII-M).
+        // pcos / protCap: avisos del panel de sugerencias (engine/insights.js);
+        // 130 g = 2,23 g/kg a 58,4 kg (ver modelWeeks.js).
+        { id: 'julio',   name: 'Julio', initial: 'J', kcalTarget: 3100, proteinTarget: 100, digestive: true,
           kcalByDay: [3150, 3150, 3100, 3300, 3000, 3300, 3000] },
-        { id: 'maria',   name: 'María', initial: 'M', kcalTarget: 2600, proteinTarget: 100,
+        { id: 'maria',   name: 'María', initial: 'M', kcalTarget: 2600, proteinTarget: 100, pcos: true, protCap: 130,
           kcalByDay: [2500, 2900, 2500, 2750, 2500, 2750, 2500] },
         { id: 'carla',   name: 'Carla', initial: 'C', kcalTarget: 2000, proteinTarget: 90, validoDesde: '2026-06-26', validoHasta: '2026-07-08T17:00:00' },
       ],
