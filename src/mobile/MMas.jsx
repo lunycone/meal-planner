@@ -19,21 +19,21 @@ export default function MMas({ unseen, onIdeas, sub, onSub, onBack, onLogout }) 
   if (sub === 'platos' || sub === 'ingredientes') {
     return (
       <div className="m-page m-sub">
-        <button type="button" className="m-back" onClick={onBack}><Icon name="left" size={14} stroke={2.6} />Más</button>
+        <button type="button" className="m-back" onClick={onBack}><Icon name="left" size={14} stroke={2.6} />More</button>
         {sub === 'platos' ? <PlatosTab /> : <IngredientesTab />}
       </div>
     )
   }
 
   const rows = [
-    { l: 'Platos', v: Object.keys(allCombos).length, icon: 'plate', c: '#2585BC', tint: 'rgba(46,155,214,0.15)', go: () => onSub('platos') },
-    { l: 'Ingredientes', v: Object.keys(allIng).length, icon: 'leaf', c: '#2F9E5B', tint: 'rgba(47,158,91,0.14)', go: () => onSub('ingredientes') },
-    { l: 'Semanas modelo', v: 13 + customWeeks.length, icon: 'layers', c: '#7154DA', tint: 'rgba(139,111,232,0.15)', go: () => setModels(true) },
-    { l: 'Sugerencias', v: unseen || '', icon: 'bulb', c: '#C1850C', tint: 'rgba(224,162,27,0.16)', go: onIdeas },
+    { l: 'Dishes', v: Object.keys(allCombos).length, icon: 'plate', c: '#2585BC', tint: 'rgba(46,155,214,0.15)', go: () => onSub('platos') },
+    { l: 'Ingredients', v: Object.keys(allIng).length, icon: 'leaf', c: '#2F9E5B', tint: 'rgba(47,158,91,0.14)', go: () => onSub('ingredientes') },
+    { l: 'Model weeks', v: 13 + customWeeks.length, icon: 'layers', c: '#7154DA', tint: 'rgba(139,111,232,0.15)', go: () => setModels(true) },
+    { l: 'Suggestions', v: unseen || '', icon: 'bulb', c: '#C1850C', tint: 'rgba(224,162,27,0.16)', go: onIdeas },
   ]
   return (
     <div className="m-page">
-      <MHeader title="Más" unseen={unseen} onIdeas={onIdeas} />
+      <MHeader title="More" unseen={unseen} onIdeas={onIdeas} />
       <section className="mm-list">
         {rows.map(r => (
           <button key={r.l} type="button" onClick={r.go}>
@@ -44,7 +44,7 @@ export default function MMas({ unseen, onIdeas, sub, onSub, onBack, onLogout }) 
           </button>
         ))}
       </section>
-      {onLogout && <button type="button" className="mm-logout" onClick={onLogout}><Icon name="logout" size={16} />Cerrar sesión</button>}
+      {onLogout && <button type="button" className="mm-logout" onClick={onLogout}><Icon name="logout" size={16} />Sign out</button>}
       {models && <ModelWeekSheet initialTarget={1} onClose={() => setModels(false)} onLoaded={t => openPlanner(t, 0)} />}
     </div>
   )

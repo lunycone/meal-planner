@@ -18,7 +18,7 @@ const FRESH_KEYS = new Set([
   'apio', 'nachos', 'cheddar', 'sour-cream',
   'feta-vaca', 'feta-oveja',
 ])
-const YOGUR_FRESH_IN_PLATO = new Set(['yogur-cabra', 'yogur-cabra-plain'])
+const YOGUR_FRESH_IN_PLATO = new Set(['yogur-cabra', 'yogur-cabra-plain', 'yogur-vaca', 'yogur-griego', 'yogur-oveja'])
 
 // ─── Puré: que ingredientes se machacan CON la patata, no aparte ─────────────
 // 6 sep 2026 -- el usuario, con razon: en "Pollo pierna + puré patata-
@@ -84,70 +84,70 @@ const unitToGrams = (key, units) => Math.round((UNIT_GRAMS[key] ?? 100) * units)
 // model; we only need cookMin (the timer), a label and an emoji. The `resource`/
 // `temp` fields are legacy metadata, kept for reference but no longer used.
 const PROTEIN_COOK = {
-  'carne-picada':   { resource: 'stove',    cookMin: 20, label: 'Sartén',          emoji: '🍳' },
-  'cerdo-picado':   { resource: 'stove',    cookMin: 20, label: 'Sartén',          emoji: '🍳' },
-  'pollo':          { resource: 'oven', temp: 200, cookMin: 40, label: 'Horno 200°', emoji: '🫕' },
-  'bacalao':        { resource: 'oven', temp: 200, cookMin: 25, label: 'Horno 200° + salsa', emoji: '🫕' },
-  'lamb':           { resource: 'oven', temp: 200, cookMin: 45, label: 'Horno 200°', emoji: '🫕' },
-  'lomo':           { resource: 'oven', temp: 180, cookMin: 35, label: 'Horno 180°', emoji: '🫕' },
-  'higado-vaca':    { resource: 'stove',    cookMin: 15, label: 'Sartén',          emoji: '🍳' },
-  'higado-bacalao': { resource: 'none',     cookMin: 0,  label: 'Lata (sin cocción)', emoji: '🥫' },
-  'sardinas':       { resource: 'none',     cookMin: 0,  label: 'Lata (sin cocción)', emoji: '🥫' },
-  'caballa':        { resource: 'none',     cookMin: 0,  label: 'Lata (sin cocción)', emoji: '🥫' },
-  'calamares':      { resource: 'stove',    cookMin: 10, label: 'Plancha',         emoji: '🍳' },
-  'mejillones':     { resource: 'stove',    cookMin: 10, label: 'Vapor',           emoji: '♨️' },
-  'pollock':        { resource: 'oven', temp: 200, cookMin: 25, label: 'Horno 200°', emoji: '🫕' },
-  'langosta':       { resource: 'stove',    cookMin: 10, label: 'Sartén',          emoji: '🍳' },
-  'ostras':         { resource: 'none',     cookMin: 0,  label: 'Crudo',           emoji: '🦪' },
-  'huevos':         { resource: 'stove',    cookMin: 8,  label: 'Sartén',          emoji: '🍳' },
+  'carne-picada':   { resource: 'stove',    cookMin: 20, label: 'Pan',          emoji: '🍳' },
+  'cerdo-picado':   { resource: 'stove',    cookMin: 20, label: 'Pan',          emoji: '🍳' },
+  'pollo':          { resource: 'oven', temp: 200, cookMin: 40, label: 'Oven 200°', emoji: '🫕' },
+  'bacalao':        { resource: 'oven', temp: 200, cookMin: 25, label: 'Oven 200° + sauce', emoji: '🫕' },
+  'lamb':           { resource: 'oven', temp: 200, cookMin: 45, label: 'Oven 200°', emoji: '🫕' },
+  'lomo':           { resource: 'oven', temp: 180, cookMin: 35, label: 'Oven 180°', emoji: '🫕' },
+  'higado-vaca':    { resource: 'stove',    cookMin: 15, label: 'Pan',          emoji: '🍳' },
+  'higado-bacalao': { resource: 'none',     cookMin: 0,  label: 'Can (no cooking)', emoji: '🥫' },
+  'sardinas':       { resource: 'none',     cookMin: 0,  label: 'Can (no cooking)', emoji: '🥫' },
+  'caballa':        { resource: 'none',     cookMin: 0,  label: 'Can (no cooking)', emoji: '🥫' },
+  'calamares':      { resource: 'stove',    cookMin: 10, label: 'Griddle',         emoji: '🍳' },
+  'mejillones':     { resource: 'stove',    cookMin: 10, label: 'Steam',           emoji: '♨️' },
+  'pollock':        { resource: 'oven', temp: 200, cookMin: 25, label: 'Oven 200°', emoji: '🫕' },
+  'langosta':       { resource: 'stove',    cookMin: 10, label: 'Pan',          emoji: '🍳' },
+  'ostras':         { resource: 'none',     cookMin: 0,  label: 'Raw',           emoji: '🦪' },
+  'huevos':         { resource: 'stove',    cookMin: 8,  label: 'Pan',          emoji: '🍳' },
 }
 
 const BASE_COOK = {
-  'arroz':           { resource: 'stove',    cookMin: 18, label: 'Olla 18 min',     emoji: '🍚' },
-  'pasta':           { resource: 'none', alMomento: true, cookMin: 0, label: 'Cocer al servir (10 min)', emoji: '⚡' },
-  'patata':          { resource: 'oven', temp: 200, cookMin: 30, label: 'Horno 200°', emoji: '🥔' },
-  'garbanzos':       { resource: 'pressure', cookMin: 30, label: 'Olla presión',    emoji: '⚗️', soak: true },
-  'black-beans':     { resource: 'pressure', cookMin: 35, label: 'Olla presión',    emoji: '⚗️', soak: true },
-  'lentejas-rojas':  { resource: 'stove',    cookMin: 15, label: 'Olla 15 min',     emoji: '🍲' },
-  'lentejas-verdes': { resource: 'stove',    cookMin: 20, label: 'Olla 20 min',     emoji: '🍲' },
-  'avena':           { resource: 'none', overnight: true, cookMin: 0, label: 'Nevera (noche anterior)', emoji: '❄️' },
-  'maiz':            { resource: 'stove',    cookMin: 10, label: 'Olla/sartén',     emoji: '🌽' },
-  'alubias-blancas': { resource: 'pressure', cookMin: 35, label: 'Olla presión',    emoji: '⚗️', soak: true },
-  'cranberry-beans': { resource: 'pressure', cookMin: 35, label: 'Olla presión',    emoji: '⚗️', soak: true },
-  'alubias-rojas':   { resource: 'pressure', cookMin: 35, label: 'Olla presión',    emoji: '⚗️', soak: true },
+  'arroz':           { resource: 'stove',    cookMin: 18, label: 'Pot 18 min',     emoji: '🍚' },
+  'pasta':           { resource: 'none', alMomento: true, cookMin: 0, label: 'Cook when serving (10 min)', emoji: '⚡' },
+  'patata':          { resource: 'oven', temp: 200, cookMin: 30, label: 'Oven 200°', emoji: '🥔' },
+  'garbanzos':       { resource: 'pressure', cookMin: 30, label: 'Pressure cooker',    emoji: '⚗️', soak: true },
+  'black-beans':     { resource: 'pressure', cookMin: 35, label: 'Pressure cooker',    emoji: '⚗️', soak: true },
+  'lentejas-rojas':  { resource: 'stove',    cookMin: 15, label: 'Pot 15 min',     emoji: '🍲' },
+  'lentejas-verdes': { resource: 'stove',    cookMin: 20, label: 'Pot 20 min',     emoji: '🍲' },
+  'avena':           { resource: 'none', overnight: true, cookMin: 0, label: 'Fridge (night before)', emoji: '❄️' },
+  'maiz':            { resource: 'stove',    cookMin: 10, label: 'Pot/pan',     emoji: '🌽' },
+  'alubias-blancas': { resource: 'pressure', cookMin: 35, label: 'Pressure cooker',    emoji: '⚗️', soak: true },
+  'cranberry-beans': { resource: 'pressure', cookMin: 35, label: 'Pressure cooker',    emoji: '⚗️', soak: true },
+  'alubias-rojas':   { resource: 'pressure', cookMin: 35, label: 'Pressure cooker',    emoji: '⚗️', soak: true },
 }
 
 // ─── Per-ingredient prep actions for the prep queue ──────────────────────────
 const ING_PREP_ACTION = {
-  'cebolla-amarilla':   { emoji: '🧅', action: 'Pela y pica finamente',           prepMin: 5  },
-  'cebolla-roja':       { emoji: '🧅', action: 'Pela y pica en juliana',          prepMin: 5  },
-  'cebolla-blanca':     { emoji: '🧅', action: 'Pela y pica finamente',           prepMin: 5  },
-  'zanahoria':          { emoji: '🥕', action: 'Pela y trocea en dados',          prepMin: 5  },
-  'puerro':             { emoji: '🌿', action: 'Limpia y corta en rodajas',       prepMin: 4  },
-  'ajo':                { emoji: '🧄', action: 'Pela y lamina (o pica fino)',     prepMin: 3  },
-  'pimiento-rojo':      { emoji: '🫑', action: 'Limpia, retira semillas y trocea', prepMin: 4 },
-  'pimiento-verde':     { emoji: '🫑', action: 'Limpia, retira semillas y trocea', prepMin: 4 },
-  'pimiento-amarillo':  { emoji: '🫑', action: 'Limpia, retira semillas y trocea', prepMin: 4 },
-  'tomate':             { emoji: '🍅', action: 'Lava y trocea',                   prepMin: 4  },
-  'tomate-triturado':   { emoji: '🍅', action: 'Abre la lata y reserva',         prepMin: 1  },
-  'tomate-cherry':      { emoji: '🍅', action: 'Lava y parte por la mitad',      prepMin: 3  },
-  'patata':             { emoji: '🥔', action: 'Pela y trocea en gajos',         prepMin: 8  },
-  'boniato':            { emoji: '🍠', action: 'Pela y trocea en dados',         prepMin: 6  },
-  'coliflor':           { emoji: '🥦', action: 'Lava y separa en ramitos',       prepMin: 5  },
-  'brocoli':            { emoji: '🥦', action: 'Lava y separa en ramitos',       prepMin: 4  },
-  'champiñon':          { emoji: '🍄', action: 'Limpia con papel húmedo y lamina', prepMin: 6 },
-  'champiñones':        { emoji: '🍄', action: 'Limpia con papel húmedo y lamina', prepMin: 6 },
-  'espinacas':          { emoji: '🥬', action: 'Lava bien las hojas',            prepMin: 3  },
-  'kale':               { emoji: '🥬', action: 'Lava y retira el tallo central', prepMin: 4  },
-  'apio':               { emoji: '🥬', action: 'Lava y corta en rodajas',        prepMin: 3  },
-  'caldo-verduras':     { emoji: '🥣', action: 'Calienta o prepara el caldo',    prepMin: 5  },
-  'caldo-pollo':        { emoji: '🥣', action: 'Calienta o prepara el caldo',    prepMin: 5  },
-  'aceite-oliva':       { emoji: '🫒', action: 'Reserva para el sofrito',        prepMin: 1  },
-  'pimiento-asado':     { emoji: '🫑', action: 'Abre la lata y escurre',        prepMin: 2  },
-  'jengibre':           { emoji: '🫚', action: 'Pela y ralla',                   prepMin: 3  },
-  'calabacin':          { emoji: '🥒', action: 'Lava y trocea en dados',         prepMin: 4  },
-  'berenjena':          { emoji: '🍆', action: 'Lava, trocea y sala (30 min)',   prepMin: 5  },
-  'limon':              { emoji: '🍋', action: 'Exprime',                         prepMin: 2  },
+  'cebolla-amarilla':   { emoji: '🧅', action: 'Peel and finely chop',           prepMin: 5  },
+  'cebolla-roja':       { emoji: '🧅', action: 'Peel and slice thinly',          prepMin: 5  },
+  'cebolla-blanca':     { emoji: '🧅', action: 'Peel and finely chop',           prepMin: 5  },
+  'zanahoria':          { emoji: '🥕', action: 'Peel and dice',          prepMin: 5  },
+  'puerro':             { emoji: '🌿', action: 'Clean and slice',       prepMin: 4  },
+  'ajo':                { emoji: '🧄', action: 'Peel and slice (or mince)',     prepMin: 3  },
+  'pimiento-rojo':      { emoji: '🫑', action: 'Clean, deseed and chop', prepMin: 4 },
+  'pimiento-verde':     { emoji: '🫑', action: 'Clean, deseed and chop', prepMin: 4 },
+  'pimiento-amarillo':  { emoji: '🫑', action: 'Clean, deseed and chop', prepMin: 4 },
+  'tomate':             { emoji: '🍅', action: 'Wash and chop',                   prepMin: 4  },
+  'tomate-triturado':   { emoji: '🍅', action: 'Open the can and set aside',         prepMin: 1  },
+  'tomate-cherry':      { emoji: '🍅', action: 'Wash and halve',      prepMin: 3  },
+  'patata':             { emoji: '🥔', action: 'Peel and cut into wedges',         prepMin: 8  },
+  'boniato':            { emoji: '🍠', action: 'Peel and dice',         prepMin: 6  },
+  'coliflor':           { emoji: '🥦', action: 'Wash and cut into florets',       prepMin: 5  },
+  'brocoli':            { emoji: '🥦', action: 'Wash and cut into florets',       prepMin: 4  },
+  'champiñon':          { emoji: '🍄', action: 'Wipe with a damp towel and slice', prepMin: 6 },
+  'champiñones':        { emoji: '🍄', action: 'Wipe with a damp towel and slice', prepMin: 6 },
+  'espinacas':          { emoji: '🥬', action: 'Wash the leaves well',            prepMin: 3  },
+  'kale':               { emoji: '🥬', action: 'Wash and remove the stem', prepMin: 4  },
+  'apio':               { emoji: '🥬', action: 'Wash and slice',        prepMin: 3  },
+  'caldo-verduras':     { emoji: '🥣', action: 'Heat or make the stock',    prepMin: 5  },
+  'caldo-pollo':        { emoji: '🥣', action: 'Heat or make the stock',    prepMin: 5  },
+  'aceite-oliva':       { emoji: '🫒', action: 'Set aside for the sofrito',        prepMin: 1  },
+  'pimiento-asado':     { emoji: '🫑', action: 'Open the can and drain',        prepMin: 2  },
+  'jengibre':           { emoji: '🫚', action: 'Peel and grate',                   prepMin: 3  },
+  'calabacin':          { emoji: '🥒', action: 'Wash and dice',         prepMin: 4  },
+  'berenjena':          { emoji: '🍆', action: 'Wash, chop and salt (30 min)',   prepMin: 5  },
+  'limon':              { emoji: '🍋', action: 'Squeeze',                         prepMin: 2  },
 }
 
 // ─── Scheduling constants ────────────────────────────────────────────────────
@@ -158,8 +158,8 @@ const PLATE_MIN = 12  // rough buffer for portioning + packing at the end
 // Overnight oats live in the fridge; yogur bowls & batidos need no cooking.
 function desayunoMethod(name = '', keys = []) {
   const n = name.toLowerCase()
-  if (/overnight|noche anterior|nevera/.test(n) || keys.includes('avena')) {
-    return { mode: 'nevera', cookMin: 0, emoji: '❄️', label: 'Nevera (víspera)' }
+  if (/overnight|noche anterior|nevera|fridge/.test(n) || keys.includes('avena')) {
+    return { mode: 'nevera', cookMin: 0, emoji: '❄️', label: 'Fridge (night before)' }
   }
   // 6 sep 2026 -- masa harina nixtamalizada (maiz, key 'masa-harina') caia
   // por las rendijas: no es 'harina' (harina de trigo, cae en "baked" de
@@ -169,16 +169,16 @@ function desayunoMethod(name = '', keys = []) {
   // revuelve APARTE (no se mezcla crudo con la masa) y se pone dentro del
   // burrito ya hecho. El usuario, con razon: "obviamente van separados".
   if (keys.includes('masa-harina')) {
-    return { mode: 'griddle', cookMin: 10, emoji: '🫓', label: 'Comal/plancha la masa — huevo revuelto aparte, no se mezcla crudo' }
+    return { mode: 'griddle', cookMin: 10, emoji: '🫓', label: 'Cook the dough on a griddle — scramble the egg separately, do not mix it in raw' }
   }
-  const baked = /cheesecake|brownie|magdalena|muffin|waffle|gofre|pizza|shakshuka|tortilla de patata|al horno|bizcocho|bread|pan |frittata/.test(n)
+  const baked = /cheesecake|brownie|magdalena|muffin|waffle|gofre|pizza|shakshuka|tortilla de patata|al horno|bizcocho|\bbread\b|pan |frittata|baked/.test(n)
     || keys.includes('harina')
-  if (baked) return { mode: 'oven', cookMin: 25, emoji: '🫕', label: 'Hornear 175°' }
-  if (/tortilla|huevo|revuelto|scramble/.test(n)) {
-    return { mode: 'stove', cookMin: 8, emoji: '🍳', label: 'Sartén' }
+  if (baked) return { mode: 'oven', cookMin: 25, emoji: '🫕', label: 'Bake 175°' }
+  if (/tortilla|huevo|revuelto|scramble|\beggs?\b|omelette/.test(n)) {
+    return { mode: 'stove', cookMin: 8, emoji: '🍳', label: 'Pan' }
   }
   // yogur bowls, batidos, fruta… — just mix
-  return { mode: 'nocook', cookMin: 0, emoji: '🥣', label: 'Solo mezclar (sin cocción)' }
+  return { mode: 'nocook', cookMin: 0, emoji: '🥣', label: 'Just mix (no cooking)' }
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -194,7 +194,7 @@ function profilesActiveOn(profiles, date) {
 function fmtBaseDry(key, dryGrams) {
   const ratio = COOK_RATIO[key]
   if (!ratio || dryGrams <= 0) return `${Math.round(dryGrams)}g`
-  return `${Math.round(dryGrams)}g seco → ~${Math.round(dryGrams * ratio)}g cocido`
+  return `${Math.round(dryGrams)}g dry → ~${Math.round(dryGrams * ratio)}g cooked`
 }
 
 export function fmtQty({ grams = 0, ml = 0, units = 0, serv = 0 }) {
@@ -202,7 +202,7 @@ export function fmtQty({ grams = 0, ml = 0, units = 0, serv = 0 }) {
   const parts = []
   if (grams > 0) parts.push(`${Math.round(grams)}g`)
   if (ml    > 0) parts.push(`${Math.round(ml)}ml`)
-  if (units > 0) parts.push(`${frac[units] ?? units} ud`)
+  if (units > 0) parts.push(`${frac[units] ?? units} pcs`)
   if (serv  > 0) parts.push(`×${serv}`)
   return parts.join(' + ') || '—'
 }
@@ -361,8 +361,8 @@ export function buildSchedule(mealDataList) {
     .filter(pt => pt.proteinGrams > 0 || pt.proteinUnits > 0 || pt.proteinServings > 0)
     .map(pt => ({ name: pt.person.name, label:
       pt.proteinGrams > 0 ? `${Math.round(pt.proteinGrams)}g`
-      : pt.proteinUnits > 0 ? `${pt.proteinUnits} ud`
-      : `${pt.proteinServings} rac.` }))
+      : pt.proteinUnits > 0 ? `${pt.proteinUnits} pcs`
+      : `${pt.proteinServings} serv.` }))
 
   const baseSplit = (bd, baseKey) => {
     const ratio = COOK_RATIO[baseKey]
@@ -379,7 +379,7 @@ export function buildSchedule(mealDataList) {
       const ml = totalPortions > 0 ? Math.round(it.ml    / totalPortions) : 0
       const u  = totalPortions > 0 ? +(it.units / totalPortions).toFixed(2) : 0
       const sv = totalPortions > 0 ? +((it.serv ?? 0) / totalPortions).toFixed(2) : 0
-      const qty = g > 0 ? `${g}g` : ml > 0 ? `${ml}ml` : u > 0 ? `${u} ud` : sv > 0 ? `×${sv}` : null
+      const qty = g > 0 ? `${g}g` : ml > 0 ? `${ml}ml` : u > 0 ? `${u} pcs` : sv > 0 ? `×${sv}` : null
       return qty ? { name: it.name, qty } : null
     }).filter(Boolean)
     // 6 sep 2026 -- el usuario, con razon: "229g de masa por tortilla es
@@ -391,10 +391,10 @@ export function buildSchedule(mealDataList) {
     const isMasa = bd.sharedItems.some(it => it.key === 'masa-harina')
     return bd.personTotals.filter(pt => pt.recipeServings > 0)
       .map(pt => {
-        let label = `${pt.recipeServings} tupper${pt.recipeServings > 1 ? 's' : ''}${W > 0 ? ` (~${Math.round(W)}g c/u)` : ''}`
+        let label = `${pt.recipeServings} container${pt.recipeServings > 1 ? 's' : ''}${W > 0 ? ` (~${Math.round(W)}g each)` : ''}`
         if (isMasa && W > 75) {
           const n = Math.max(2, Math.round(W / 75))
-          label += ` → ${n} tortillas de ~${Math.round(W / n)}g (no una sola)`
+          label += ` → ${n} tortillas of ~${Math.round(W / n)}g (not one big one)`
         }
         return { name: pt.person.name, label, items: perTupperItems }
       })
@@ -428,7 +428,7 @@ export function buildSchedule(mealDataList) {
           noCook.push({ emoji: pc.emoji, text: `${batchData.proteinName}: ${pc.label}${qtyLabel ? ` · ${qtyLabel}` : ''}`, split: proteinSplit(batchData) })
         } else if (batchData.proteinName) {
           // Unknown protein → don't drop it, just tell the cook to use their usual method
-          noCook.push({ emoji: '🍽️', text: `${batchData.proteinName}: cocina a tu método habitual${qtyLabel ? ` · ${qtyLabel}` : ''}`, split: proteinSplit(batchData) })
+          noCook.push({ emoji: '🍽️', text: `${batchData.proteinName}: cook your usual way${qtyLabel ? ` · ${qtyLabel}` : ''}`, split: proteinSplit(batchData) })
         }
       }
 
@@ -441,16 +441,16 @@ export function buildSchedule(mealDataList) {
           const bc = BASE_COOK[baseKey]
           const totalDry = Math.round(batchData.personTotals.reduce((s, p) => s + p.baseGrams, 0))
           const cooked   = COOK_RATIO[baseKey] ? Math.round(totalDry * COOK_RATIO[baseKey]) : null
-          const qtyLabel = cooked ? `${totalDry}g seco → ~${cooked}g cocido` : `${totalDry}g`
-          if (bc?.soak)      vispera.push({ emoji: '💧', text: `Pon en remojo ${totalDry}g de ${baseName} — cubre con agua abundante 8–12 h.` })
-          if (bc?.overnight) vispera.push({ emoji: '❄️', text: `Deja ${baseName} en la nevera la noche anterior (${qtyLabel}).` })
+          const qtyLabel = cooked ? `${totalDry}g dry → ~${cooked}g cooked` : `${totalDry}g`
+          if (bc?.soak)      vispera.push({ emoji: '💧', text: `Soak ${totalDry}g of ${baseName} — cover with plenty of water for 8–12 h.` })
+          if (bc?.overnight) vispera.push({ emoji: '❄️', text: `Leave ${baseName} in the fridge the night before (${qtyLabel}).` })
           if (bc && bc.cookMin > 0) {
             jobs.push({ key: 'b-' + baseKey, name: baseName, emoji: bc.emoji, cookMin: bc.cookMin, label: bc.label, qtyLabel, split: baseSplit(batchData, baseKey) })
           } else if (bc?.alMomento) {
             noCook.push({ emoji: bc.emoji, text: `${baseName}: ${bc.label} (${qtyLabel})`, split: baseSplit(batchData, baseKey) })
           } else if (!bc) {
             // Unknown base → tell the cook to cook per package
-            noCook.push({ emoji: '🍚', text: `${baseName}: cuece según el paquete (${qtyLabel})`, split: baseSplit(batchData, baseKey) })
+            noCook.push({ emoji: '🍚', text: `${baseName}: cook as per the package (${qtyLabel})`, split: baseSplit(batchData, baseKey) })
           }
         }
       }
@@ -485,21 +485,21 @@ export function buildSchedule(mealDataList) {
           // ~294, para no duplicar la cantidad ya escalada). El usuario:
           // "y la patata?? q cojones esta pasando" -- con razon, estaba ahi
           // pero invisible. Ahora el nombre de la base va delante del gramaje.
-          const qtyLabel = `${baseName}: ${totalDry}g` + (cooked ? ` seco → ~${cooked}g cocido` : '')
-          if (bc?.soak)      vispera.push({ emoji: '💧', text: `Pon en remojo ${totalDry}g de ${baseName} — cubre con agua abundante 8–12 h.` })
-          if (bc?.overnight) vispera.push({ emoji: '❄️', text: `Deja ${baseName} en la nevera la noche anterior (${qtyLabel}).` })
+          const qtyLabel = `${baseName}: ${totalDry}g` + (cooked ? ` dry → ~${cooked}g cooked` : '')
+          if (bc?.soak)      vispera.push({ emoji: '💧', text: `Soak ${totalDry}g of ${baseName} — cover with plenty of water for 8–12 h.` })
+          if (bc?.overnight) vispera.push({ emoji: '❄️', text: `Leave ${baseName} in the fridge the night before (${qtyLabel}).` })
           if (bc && bc.cookMin > 0) {
             jobs.push({ key: 'b-' + meal.recipeKey, name: batchData.mealName, emoji: bc.emoji, cookMin: bc.cookMin, label: bc.label, qtyLabel, split: baseSplit(batchData, baseKey) })
           } else if (bc?.alMomento) {
             noCook.push({ emoji: bc.emoji, text: `${batchData.mealName} — ${bc.label} (${qtyLabel})`, split: baseSplit(batchData, baseKey) })
           } else {
-            noCook.push({ emoji: '🍚', text: `${batchData.mealName} — cuece según el paquete (${qtyLabel})`, split: baseSplit(batchData, baseKey) })
+            noCook.push({ emoji: '🍚', text: `${batchData.mealName} — cook as per the package (${qtyLabel})`, split: baseSplit(batchData, baseKey) })
           }
         }
       } else if (!seenJob.has('m-' + meal.recipeKey)) {
         // Sin base escalable (p.ej. pescado sin patata): nota simple, sin timer.
         seenJob.add('m-' + meal.recipeKey)
-        noCook.push({ emoji: '🍽️', text: `${batchData.mealName}: cocina a tu método habitual` })
+        noCook.push({ emoji: '🍽️', text: `${batchData.mealName}: cook your usual way` })
       }
       pushPrep(batchData.sharedItems)
     } else if (meal.type === 'desayuno') {
@@ -509,11 +509,11 @@ export function buildSchedule(mealDataList) {
         const keys = batchData.sharedItems.map(it => it.key)
         const m    = desayunoMethod(batchData.mealName, keys)
         if (m.cookMin > 0) {
-          jobs.push({ key: 'd-' + meal.recipeKey, name: batchData.mealName, emoji: m.emoji, cookMin: m.cookMin, label: m.label, qtyLabel: `${totalPortions} porciones`, split: desayunoSplit(batchData) })
+          jobs.push({ key: 'd-' + meal.recipeKey, name: batchData.mealName, emoji: m.emoji, cookMin: m.cookMin, label: m.label, qtyLabel: `${totalPortions} portions`, split: desayunoSplit(batchData) })
         } else {
           // No-timer desayuno (overnight oats, batidos, yogur bowls): just mix & repartir
-          if (m.mode === 'nevera') vispera.push({ emoji: '❄️', text: `Prepara ${batchData.mealName} la noche anterior y déjalo en la nevera.` })
-          jobs.push({ key: 'd-' + meal.recipeKey, name: batchData.mealName, emoji: m.emoji, cookMin: 0, label: m.label, qtyLabel: `${totalPortions} porciones`, split: desayunoSplit(batchData), methodNote: m.label })
+          if (m.mode === 'nevera') vispera.push({ emoji: '❄️', text: `Make ${batchData.mealName} the night before and leave it in the fridge.` })
+          jobs.push({ key: 'd-' + meal.recipeKey, name: batchData.mealName, emoji: m.emoji, cookMin: 0, label: m.label, qtyLabel: `${totalPortions} portions`, split: desayunoSplit(batchData), methodNote: m.label })
         }
       }
       pushPrep(batchData.sharedItems)
@@ -536,8 +536,8 @@ export function buildSchedule(mealDataList) {
         const keys = batchData.sharedItems.map(it => it.key)
         const isMasaHuevo = keys.includes('masa-harina') && keys.includes('huevo')
         jobs[jobsBefore].ingredientsLabel = isMasaHuevo
-          ? 'Masa+agua (huevo aparte, revuelto)'
-          : (meal.type === 'desayuno' && !isMealSlot) ? 'Mezcla todo' : 'Lleva'
+          ? 'Dough + water (egg separate, scrambled)'
+          : (meal.type === 'desayuno' && !isMealSlot) ? 'Mix everything' : 'Contains'
       }
     }
   }
@@ -553,7 +553,7 @@ export function buildSchedule(mealDataList) {
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
-const MEAL_LABELS = { desayuno: 'Desayuno', comida: 'Comida', merienda: 'Merienda', cena: 'Cena' }
+const MEAL_LABELS = { desayuno: 'Breakfast', comida: 'Lunch', merienda: 'Snack', cena: 'Dinner' }
 const MEAL_TIMES  = { desayuno: '9:00 am', comida: '12–1 pm', merienda: '4:30 pm', cena: '7:30 pm' }
 
 // Agrupa la lista plana de lineas {header|total|text} (que ya calculaban
@@ -616,7 +616,7 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
 
       {!batchData ? (
         <div className="batch-dish-card" style={{ color: 'var(--t-text-faint)', fontStyle: 'italic', fontSize: '0.8rem' }}>
-          Sin planificar
+          Not planned
         </div>
       ) : (
         <div className="batch-dish-card">
@@ -646,8 +646,8 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
             const proteinLines = []
             if (batchData.proteinName) {
               if (pg  > 0) proteinLines.push(`${batchData.proteinName}: ${R(pg)}g`)
-              if (pu  > 0) proteinLines.push(`${batchData.proteinName}: ${pu} ud`)
-              if (psv > 0) proteinLines.push(`${batchData.proteinName}: ${psv} raciones`)
+              if (pu  > 0) proteinLines.push(`${batchData.proteinName}: ${pu} pcs`)
+              if (psv > 0) proteinLines.push(`${batchData.proteinName}: ${psv} servings`)
             }
             // base
             let baseName = null, baseQty = null, baseTotalG = 0
@@ -660,7 +660,7 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
               // arroz o las lentejas) -- el usuario, riendose: "Patata: 250g
               // seco... no tiene sentido". Solo decir "seco" cuando de verdad
               // hay ratio seco->cocido (arroz, legumbre); si no, gramaje llano.
-              baseQty = `${R(baseTotalG)}g${ratio ? ` seco → ~${R(baseTotalG * ratio)}g cocido` : ''}`
+              baseQty = `${R(baseTotalG)}g${ratio ? ` dry → ~${R(baseTotalG * ratio)}g cooked` : ''}`
             }
             // 6 sep 2026 -- ver PUREE_COMPANION_KEYS/splitPureeItems arriba: el
             // usuario, con razon, "la mantequilla y la leche la mezclo con el
@@ -671,15 +671,15 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
             // indicador real de que hay pure), se agrupan visualmente.
             const { isPuree, pureeItems, restItems } = splitPureeItems(batchData.sharedItems, baseName, baseQty)
             if (isPuree) {
-              cookLines.push({ header: true, text: '🥔 Puré — machacar todo junto' })
+              cookLines.push({ header: true, text: '🥔 Mash — mash everything together' })
               pureeItems.forEach(it => cookLines.push({ text: `${it.name}: ${it.key === 'base' ? it.qty : fmtQty(it)}` }))
               // 6 sep 2026 -- el usuario, con razon: "sigues sin decirme el
               // total" -- listar cada ingrediente por separado no dice cuanto
               // pure sale en total. Suma grams+ml (1ml de leche ~ 1g, buena
               // aproximacion para saber cuanto ocupa/pesa el pure ya mezclado).
               const pureeTotalG = baseTotalG + pureeItems.reduce((s, it) => s + (it.key === 'base' ? 0 : (it.grams ?? 0) + (it.ml ?? 0)), 0)
-              if (pureeTotalG > 0) cookLines.push({ text: `→ Total puré: ~${R(pureeTotalG)}g`, total: true })
-              if (proteinLines.length || restItems.length) cookLines.push({ header: true, text: '🍗 Aparte' })
+              if (pureeTotalG > 0) cookLines.push({ text: `→ Total mash: ~${R(pureeTotalG)}g`, total: true })
+              if (proteinLines.length || restItems.length) cookLines.push({ header: true, text: '🍗 Separately' })
               proteinLines.forEach(l => cookLines.push({ text: l }))
               restItems.forEach(it => cookLines.push({ text: `${it.name}: ${fmtQty(it)}` }))
             } else {
@@ -693,7 +693,7 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
               if (totalPersonDays <= 0) return null
               const g = R(it.grams / totalPersonDays), ml = R(it.ml / totalPersonDays), u = +(it.units / totalPersonDays).toFixed(2)
               const sv = +((it.serv ?? 0) / totalPersonDays).toFixed(2)
-              return g > 0 ? `${g}g` : ml > 0 ? `${ml}ml` : u > 0 ? `${u} ud` : sv > 0 ? `×${sv}` : null
+              return g > 0 ? `${g}g` : ml > 0 ? `${ml}ml` : u > 0 ? `${u} pcs` : sv > 0 ? `×${sv}` : null
             }
             function desayunoLines() {
               const totalPortions = persons.reduce((s, p) => s + p.recipeServings, 0)
@@ -702,7 +702,7 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
                 const ml = totalPortions > 0 ? R(it.ml / totalPortions) : 0
                 const u = totalPortions > 0 ? +(it.units / totalPortions).toFixed(2) : 0
                 const sv = totalPortions > 0 ? +((it.serv ?? 0) / totalPortions).toFixed(2) : 0
-                const qty = g > 0 ? `${g}g` : ml > 0 ? `${ml}ml` : u > 0 ? `${u} ud` : sv > 0 ? `×${sv}` : null
+                const qty = g > 0 ? `${g}g` : ml > 0 ? `${ml}ml` : u > 0 ? `${u} pcs` : sv > 0 ? `×${sv}` : null
                 return qty ? { text: `${it.name}: ${qty}` } : null
               }).filter(Boolean)
             }
@@ -713,13 +713,13 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
               if (pt.proteinGrams > 0) {
                 const rawG = R(pt.proteinGrams / pt.activeDays)
                 if (yield_) {
-                  proteinLines.push(`${batchData.proteinName}: ~${R(rawG * yield_)}g cocinado (desde ${rawG}g crudo)`)
+                  proteinLines.push(`${batchData.proteinName}: ~${R(rawG * yield_)}g cooked (from ${rawG}g raw)`)
                 } else {
                   proteinLines.push(`${batchData.proteinName}: ${rawG}g`)
                 }
               }
-              if (pt.proteinUnits > 0)     proteinLines.push(`${batchData.proteinName}: ${R(pt.proteinUnits / pt.activeDays)} ud`)
-              if (pt.proteinServings > 0)  proteinLines.push(`${batchData.proteinName}: 1 ración`)
+              if (pt.proteinUnits > 0)     proteinLines.push(`${batchData.proteinName}: ${R(pt.proteinUnits / pt.activeDays)} pcs`)
+              if (pt.proteinServings > 0)  proteinLines.push(`${batchData.proteinName}: 1 serving`)
               let blendGrams = 0
               let baseName_ = null, baseQty_ = null, baseGramsPerDay = 0
               if (pt.baseGrams > 0) {
@@ -728,7 +728,7 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
                 else {
                   const ratio = COOK_RATIO[baseKey]
                   baseName_ = pt.baseName
-                  baseQty_ = `${gPerDay}g${ratio ? ` seco (~${R(gPerDay * ratio)}g cocido)` : ''}`
+                  baseQty_ = `${gPerDay}g${ratio ? ` dry (~${R(gPerDay * ratio)}g cooked)` : ''}`
                   baseGramsPerDay = gPerDay
                 }
               }
@@ -752,7 +752,7 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
               })
               if (blend) {
                 const lines = [...proteinLines]
-                if (blendGrams > 0) lines.push(`🫕 ${blend.label} (batido): ~${blendGrams}g`)
+                if (blendGrams > 0) lines.push(`🫕 ${blend.label} (blended): ~${blendGrams}g`)
                 return lines.map(text => ({ text }))
               }
               // 6 sep 2026 -- mismo agrupado de pure que en "Cocinar" (ver
@@ -766,10 +766,10 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
                 // sale en total por raciоn. Suma grams+ml (1ml de leche ~ 1g).
                 const pureeTotalG = baseGramsPerDay + pureeItems.reduce((s, it) => s + (it.grams ?? 0) + (it.ml ?? 0), 0)
                 if (baseName_) pureeItems.unshift({ name: baseName_, qty: baseQty_ })
-                const lines = [{ header: true, text: '🥔 Puré — machacar todo junto' }]
+                const lines = [{ header: true, text: '🥔 Mash — mash everything together' }]
                 pureeItems.forEach(it => lines.push({ text: `${it.name}: ${it.qty}` }))
-                if (pureeTotalG > 0) lines.push({ text: `→ Total puré: ~${R(pureeTotalG)}g`, total: true })
-                if (proteinLines.length || restItems.length) lines.push({ header: true, text: '🍗 Aparte' })
+                if (pureeTotalG > 0) lines.push({ text: `→ Total mash: ~${R(pureeTotalG)}g`, total: true })
+                if (proteinLines.length || restItems.length) lines.push({ header: true, text: '🍗 Separately' })
                 proteinLines.forEach(l => lines.push({ text: l }))
                 restItems.forEach(it => lines.push({ text: `${it.name}: ${it.qty}` }))
                 return lines
@@ -808,16 +808,16 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
                 <div className="batch-body">
                   {/* ── COCINAR ── */}
                   <div>
-                    <div className="batch-col-label">🍳 Cocinar — total del batch</div>
+                    <div className="batch-col-label">🍳 Cook — batch total</div>
                     <StatBoxes lines={cookLines} />
                     {isDesayuno && (() => {
                       const totalPortions = persons.reduce((s, p) => s + p.recipeServings, 0)
                       const W = batchData.recipePortionGrams || 0
                       const dm = desayunoMethod(batchData.mealName, batchData.sharedItems.map(it => it.key))
-                      const verb = dm.mode === 'oven' ? 'hornear y cortar' : dm.mode === 'stove' ? 'cuajar y cortar' : 'mezclar y repartir'
+                      const verb = dm.mode === 'oven' ? 'bake and slice' : dm.mode === 'stove' ? 'set and slice' : 'mix and portion'
                       return (
                         <div className="batch-note">
-                          → {verb} en {totalPortions} tuppers{W > 0 ? ` de ~${R(W)}g` : ''}
+                          → {verb} into {totalPortions} containers{W > 0 ? ` of ~${R(W)}g` : ''}
                         </div>
                       )
                     })()}
@@ -825,14 +825,14 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
 
                   {/* ── TUPPER ── */}
                   <div>
-                    <div className="batch-col-label">🥡 Tuppers</div>
+                    <div className="batch-col-label">🥡 Containers</div>
                     {groups.map((g, gi) => (
                       <div key={gi} className="batch-tupper-card">
                         <div className="batch-tupper-head">
                           {g.names.map(n => <span key={n} className="batch-avatar batch-avatar-sm">{n.charAt(0)}</span>)}
                           <span className="batch-tupper-name">
-                            {g.names.join(' y ')}{g.names.length > 1 ? ' (igual)' : ''}
-                            {' — '}{g.tuppers} tupper{g.tuppers > 1 ? 's' : ''}
+                            {g.names.join(' & ')}{g.names.length > 1 ? ' (same)' : ''}
+                            {' — '}{g.tuppers} container{g.tuppers > 1 ? 's' : ''}
                           </span>
                         </div>
                         <StatBoxes lines={g.lines} />
@@ -846,13 +846,13 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
 
           {batchData.freshItems.length > 0 && (
             <div className="batch-fresh">
-              <div className="batch-col-label" style={{ color: '#b45309' }}>🥑 Al momento — añadir al servir (×ración)</div>
+              <div className="batch-col-label" style={{ color: '#b45309' }}>🥑 Fresh — add when serving (per portion)</div>
               {batchData.freshItems.map(it => (
                 <div key={it.ingKey} className="batch-fresh-row">
                   {it.name}
                   {(it.portion.grams || it.portion.ml || it.portion.units)
                     ? `: ${fmtQty({ grams: it.portion.grams ?? 0, ml: it.portion.ml ?? 0, units: it.portion.units ?? 0 })}`
-                    : ' (al gusto)'}
+                    : ' (to taste)'}
                 </div>
               ))}
             </div>
@@ -908,14 +908,14 @@ function CookMode({ schedule, title, onExit }) {
     <div style={{ maxWidth: '760px', margin: '0 auto' }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-        <div style={{ fontWeight: 700, fontSize: '1.05rem' }}>{title} — Modo cocina</div>
-        <button className="btn-ghost" onClick={onExit} style={{ fontSize: '0.8rem' }}>✕ Salir</button>
+        <div style={{ fontWeight: 700, fontSize: '1.05rem' }}>{title} — Cook mode</div>
+        <button className="btn-ghost" onClick={onExit} style={{ fontSize: '0.8rem' }}>✕ Exit</button>
       </div>
 
       {/* Víspera reminder */}
       {vispera.length > 0 && (
         <div className="batch-vispera" style={{ marginBottom: '1rem' }}>
-          <span className="batch-vispera-tag">🌙 Anoche (la víspera)</span>
+          <span className="batch-vispera-tag">🌙 Last night (the night before)</span>
           {vispera.map((v, i) => (
             <div key={i} style={{ fontSize: '0.8rem', color: 'var(--t-text)', lineHeight: 1.6, marginTop: i === 0 ? '0.4rem' : 0 }}>{v.emoji} {v.text}</div>
           ))}
@@ -924,7 +924,7 @@ function CookMode({ schedule, title, onExit }) {
 
       {/* Instruction */}
       <div style={{ fontSize: '0.78rem', color: 'var(--t-text-soft)', marginBottom: '0.75rem' }}>
-        Arranca de la <strong>más larga a la más corta</strong>. Toca <strong>▶</strong> al cargar cada máquina — los timers corren <strong>a la vez</strong>. Mientras, ve haciendo la prep de abajo.
+        Start from the <strong>longest to the shortest</strong>. Tap <strong>▶</strong> as you load each appliance — the timers run <strong>at the same time</strong>. Meanwhile, do the prep below.
       </div>
 
       {/* Timer rack — concurrent */}
@@ -944,7 +944,7 @@ function CookMode({ schedule, title, onExit }) {
                 {t.ingredients.length > 0 && (
                   <div style={{ border: '1px dashed var(--t-border)', borderRadius: '0.4rem', padding: '0.35rem 0.5rem', marginBottom: '0.5rem' }}>
                     <div style={{ fontSize: '0.58rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--t-text-faint)', fontWeight: 700, marginBottom: '0.15rem' }}>
-                      {t.ingredientsLabel ?? 'Ingredientes'}
+                      {t.ingredientsLabel ?? 'Ingredients'}
                     </div>
                     {t.ingredients.map((it, i) => (
                       <div key={i} style={{ fontSize: '0.72rem', lineHeight: 1.5 }}>
@@ -957,7 +957,7 @@ function CookMode({ schedule, title, onExit }) {
                 {t.split.length > 0 && (
                   <div style={{ background: 'rgba(154,123,67,0.1)', borderRadius: '0.4rem', padding: '0.35rem 0.5rem', marginBottom: '0.5rem' }}>
                     <div style={{ fontSize: '0.58rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--t-text-faint)', fontWeight: 700, marginBottom: '0.25rem' }}>
-                      Repartir
+                      Split
                     </div>
                     {t.split.map((s, i) => (
                       <div key={i} style={{ marginBottom: s.items?.length ? '0.4rem' : 0 }}>
@@ -978,36 +978,36 @@ function CookMode({ schedule, title, onExit }) {
                 {t.noTimer ? (
                   <>
                     <div style={{ fontSize: '0.78rem', fontWeight: 600, color: t.status === 'collected' ? '#22c55e' : 'var(--t-text-soft)', lineHeight: 1.3, marginBottom: '0.5rem' }}>
-                      {t.status === 'collected' ? '✓ Hecho' : (t.methodNote || t.label)}
+                      {t.status === 'collected' ? '✓ Done' : (t.methodNote || t.label)}
                     </div>
                     {t.status === 'collected'
-                      ? <button className="btn-ghost" onClick={() => setStatus(t.key, 'idle')} style={{ fontSize: '0.72rem', width: '100%' }}>↺ Deshacer</button>
-                      : <button className="btn-primary" onClick={() => setStatus(t.key, 'collected')} style={{ fontSize: '0.78rem', width: '100%' }}>✓ Hecho</button>}
+                      ? <button className="btn-ghost" onClick={() => setStatus(t.key, 'idle')} style={{ fontSize: '0.72rem', width: '100%' }}>↺ Undo</button>
+                      : <button className="btn-primary" onClick={() => setStatus(t.key, 'collected')} style={{ fontSize: '0.78rem', width: '100%' }}>✓ Done</button>}
                   </>
                 ) : (
                   <>
                     <div style={{ fontSize: '1.8rem', fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: t.status === 'running' ? '#ef4444' : t.status === 'done' ? '#eab308' : 'var(--t-text-soft)', lineHeight: 1.1, marginBottom: '0.5rem' }}>
-                      {t.status === 'collected' ? '✓ Hecho' : fmtMMSS(t.remainingSec)}
+                      {t.status === 'collected' ? '✓ Done' : fmtMMSS(t.remainingSec)}
                     </div>
 
                     {t.status === 'idle' && (
                       <button className="btn-primary" onClick={() => setStatus(t.key, 'running')} style={{ fontSize: '0.78rem', width: '100%' }}>
-                        ▶ Arrancar ({Math.round(t.totalSec / 60)} min)
+                        ▶ Start ({Math.round(t.totalSec / 60)} min)
                       </button>
                     )}
                     {t.status === 'running' && (
                       <div style={{ display: 'flex', gap: '0.4rem' }}>
-                        <button className="btn-ghost" onClick={() => setStatus(t.key, 'idle')} style={{ fontSize: '0.74rem', flex: 1 }}>⏸ Pausa</button>
-                        <button className="btn-ghost" onClick={() => setStatus(t.key, 'collected')} style={{ fontSize: '0.74rem', flex: 1 }}>✓ Sacar ya</button>
+                        <button className="btn-ghost" onClick={() => setStatus(t.key, 'idle')} style={{ fontSize: '0.74rem', flex: 1 }}>⏸ Pause</button>
+                        <button className="btn-ghost" onClick={() => setStatus(t.key, 'collected')} style={{ fontSize: '0.74rem', flex: 1 }}>✓ Take out now</button>
                       </div>
                     )}
                     {t.status === 'done' && (
                       <button className="btn-primary" onClick={() => setStatus(t.key, 'collected')} style={{ fontSize: '0.78rem', width: '100%', background: '#22c55e' }}>
-                        ✅ ¡Listo! Sacar y reservar
+                        ✅ Ready! Take out and set aside
                       </button>
                     )}
                     {t.status === 'collected' && (
-                      <button className="btn-ghost" onClick={() => setStatus(t.key, 'idle', { remainingSec: t.totalSec })} style={{ fontSize: '0.72rem', width: '100%' }}>↺ Reiniciar</button>
+                      <button className="btn-ghost" onClick={() => setStatus(t.key, 'idle', { remainingSec: t.totalSec })} style={{ fontSize: '0.72rem', width: '100%' }}>↺ Restart</button>
                     )}
                   </>
                 )}
@@ -1028,7 +1028,7 @@ function CookMode({ schedule, title, onExit }) {
       {prepTasks.length > 0 && (
         <div>
           <div style={{ fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--t-text-faint)', fontWeight: 700, marginBottom: '0.5rem' }}>
-            🔪 Mientras se cocina — prep ({donePrep.size}/{prepTasks.length})
+            🔪 While it cooks — prep ({donePrep.size}/{prepTasks.length})
           </div>
           {prepTasks.map(pt => {
             const done = donePrep.has(pt.key)
@@ -1050,11 +1050,11 @@ function CookMode({ schedule, title, onExit }) {
       {allDone && (
         <div style={{ marginTop: '1.25rem', padding: '1rem', textAlign: 'center', background: 'rgba(34,197,94,0.1)', border: '2px solid #22c55e', borderRadius: '0.75rem' }}>
           <div style={{ fontSize: '2rem' }}>🎉</div>
-          <div style={{ fontWeight: 700, marginTop: '0.25rem' }}>¡Batch completado!</div>
+          <div style={{ fontWeight: 700, marginTop: '0.25rem' }}>Batch complete!</div>
           <div style={{ fontSize: '0.8rem', color: 'var(--t-text-soft)', marginTop: '0.25rem' }}>
-            Reparte en fiambreras por persona y día. Etiqueta con la fecha. Nevera ≤ 4 días · congelador ≤ 3 meses.
+            Split into containers per person and day. Label with the date. Fridge ≤ 4 days · freezer ≤ 3 months.
           </div>
-          <button className="btn-primary" onClick={onExit} style={{ marginTop: '0.75rem' }}>✓ Finalizar</button>
+          <button className="btn-primary" onClick={onExit} style={{ marginTop: '0.75rem' }}>✓ Finish</button>
         </div>
       )}
     </div>
@@ -1076,7 +1076,8 @@ const MEALS    = ['desayuno', 'comida', 'merienda', 'cena']
 // falta con el batch de jueves (que llegaba hasta el lunes siguiente).
 export const WEEKDAY_DAYS = ['lun', 'mar', 'mié', 'jue', 'vie']
 
-const DAY_LETTER = { lun: 'L', mar: 'M', 'mié': 'X', jue: 'J', vie: 'V' }
+const DAY_LETTER = { lun: 'M', mar: 'T', 'mié': 'W', jue: 'T', vie: 'F' }
+const DAY_NAME = { lun: 'Monday', mar: 'Tuesday', 'mié': 'Wednesday', jue: 'Thursday', vie: 'Friday' }
 
 export default function BatchPrepTab() {
   const allIng        = useStore(selectAllIng)
@@ -1137,35 +1138,35 @@ export default function BatchPrepTab() {
   const tupDone = packable.reduce((s, c) => s + c.tupList.filter(t => tups.has(t.id)).length, 0)
   const colorOf = p => PERSON_COLOR[Math.max(0, profiles.findIndex(x => x.id === p.id)) % PERSON_COLOR.length]
   const hasPlan = schedule.jobs.length > 0 || schedule.prepTasks.length > 0
-  const label = offset === 1 ? 'Próximo batch' : offset === 0 ? 'Batch de esta semana' : offset < 0 ? 'Batch pasado' : 'Batch futuro'
+  const label = offset === 1 ? 'Next batch' : offset === 0 ? "This week's batch" : offset < 0 ? 'Past batch' : 'Future batch'
 
   if (playing) {
-    return <CookMode schedule={schedule} title={`Batch · domingo ${cookDate.getDate()}`} onExit={() => setPlaying(false)} />
+    return <CookMode schedule={schedule} title={`Batch · Sunday ${cookDate.getDate()}`} onExit={() => setPlaying(false)} />
   }
 
   return (
     <div className="bt">
       <section className="bt-left mp-rise">
-        <span style={{ fontSize: 22, fontWeight: 500, color: 'var(--c-ink-3)' }}>{label} · domingo</span>
+        <span style={{ fontSize: 22, fontWeight: 500, color: 'var(--c-ink-3)' }}>{label} · Sunday</span>
         <span className="hoy-date mp-num">{cookDate.getDate()}</span>
-        <span style={{ fontSize: 15, color: 'var(--c-ink-3)', marginTop: 10 }}>para lun {weekMonday.getDate()} – vie {addDays(weekMonday, 4).getDate()} · {fmtRange(weekMonday, addDays(weekMonday, 4)).split(' ').pop()}</span>
+        <span style={{ fontSize: 15, color: 'var(--c-ink-3)', marginTop: 10 }}>for Mon–Fri · {fmtRange(weekMonday, addDays(weekMonday, 4))}</span>
 
         <div className="mp-seg" style={{ gap: 0, alignSelf: 'flex-start', marginTop: 16 }}>
-          <button type="button" aria-label="Batch anterior" onClick={() => setOffset(o => o - 1)} style={{ padding: '0 10px' }}><Icon name="left" size={12} stroke={2.6} /></button>
-          <button type="button" onClick={() => setOffset(1)} style={{ fontWeight: 600, color: 'var(--c-ink)' }}>Próximo</button>
-          <button type="button" aria-label="Batch siguiente" onClick={() => setOffset(o => o + 1)} style={{ padding: '0 10px' }}><Icon name="right" size={12} stroke={2.6} /></button>
+          <button type="button" aria-label="Previous batch" onClick={() => setOffset(o => o - 1)} style={{ padding: '0 10px' }}><Icon name="left" size={12} stroke={2.6} /></button>
+          <button type="button" onClick={() => setOffset(1)} style={{ fontWeight: 600, color: 'var(--c-ink)' }}>Next</button>
+          <button type="button" aria-label="Following batch" onClick={() => setOffset(o => o + 1)} style={{ padding: '0 10px' }}><Icon name="right" size={12} stroke={2.6} /></button>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10, marginTop: 20 }}>
-          <div className="bt-stat mp-rim"><span className="mp-muted" style={{ fontSize: 12 }}>Tiempo</span><span className="mp-num">{schedule.totalMin ? `≈ ${schedule.totalMin}′` : '—'}</span></div>
-          <div className="bt-stat mp-rim"><span className="mp-muted" style={{ fontSize: 12 }}>Tuppers</span><span className="mp-num">{tupDone} / {tupTotal}</span></div>
+          <div className="bt-stat mp-rim"><span className="mp-muted" style={{ fontSize: 12 }}>Time</span><span className="mp-num">{schedule.totalMin ? `≈ ${schedule.totalMin}′` : '—'}</span></div>
+          <div className="bt-stat mp-rim"><span className="mp-muted" style={{ fontSize: 12 }}>Containers</span><span className="mp-num">{tupDone} / {tupTotal}</span></div>
         </div>
 
         {schedule.vispera.length > 0 && (
           <div className="bt-note mp-rim">
             <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700 }}>
               <span className="mp-bubble" style={{ width: 26, height: 26, background: 'rgba(255,255,255,0.85)', color: '#7154DA' }}><Icon name="moon" size={13} stroke={2.2} /></span>
-              Sábado por la noche
+              Saturday night
             </span>
             <ul>
               {schedule.vispera.map((v, i) => <li key={i}>{v.text}</li>)}
@@ -1175,7 +1176,7 @@ export default function BatchPrepTab() {
 
         {hasPlan && (
           <button className="mp-btn mp-btn-dark" style={{ marginTop: 14, height: 44, alignSelf: 'stretch' }} onClick={() => setPlaying(true)}>
-            <Icon name="play" size={14} fill="currentColor" />Empezar a cocinar
+            <Icon name="play" size={14} fill="currentColor" />Start cooking
           </button>
         )}
       </section>
@@ -1183,11 +1184,11 @@ export default function BatchPrepTab() {
       <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
         {cards.length === 0 && (
           <div className="mp-glass mp-card mp-empty" style={{ padding: '80px 20px' }}>
-            Nada planificado de lunes a viernes en esta semana.<br />
-            <button className="mp-btn mp-btn-dark" style={{ marginTop: 14 }} onClick={() => openPlanner(offset, 0)}><Icon name="cal" size={14} />Planificar la semana</button>
+            Nothing planned Monday to Friday this week.<br />
+            <button className="mp-btn mp-btn-dark" style={{ marginTop: 14 }} onClick={() => openPlanner(offset, 0)}><Icon name="cal" size={14} />Plan the week</button>
           </div>
         )}
-        <section className="bt-cards" aria-label="Platos del batch">
+        <section className="bt-cards" aria-label="Batch dishes">
           {cards.map((c, n) => {
             const st = MEAL_STYLE[c.mt]
             const tupsOn = c.tupList.filter(t => tups.has(t.id)).length
@@ -1199,11 +1200,11 @@ export default function BatchPrepTab() {
                     <span className="mp-bubble" style={{ width: 44, height: 44, background: st.tint, color: st.color, boxShadow: `inset 0 1px 0 #fff, 0 6px 16px ${st.glow}` }}><Icon name={MEAL_ICON[c.mt]} size={20} /></span>
                     <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
                       <span className="bt-card-name">{c.g.mealName}</span>
-                      <span className="mp-muted" style={{ fontSize: 12.5 }}>{MEAL_LABELS[c.mt]} · {c.days.map(d => DAY_LETTER[d]).join(' ')} · {c.persons.map(pt => pt.person.name).join(' y ')}</span>
+                      <span className="mp-muted" style={{ fontSize: 12.5 }}>{MEAL_LABELS[c.mt]} · {c.days.map(d => DAY_LETTER[d]).join(' ')} · {c.persons.map(pt => pt.person.name).join(' & ')}</span>
                     </span>
                   </span>
                   <span className="mp-tag mp-num" style={{ background: 'rgba(255,255,255,0.85)', color: 'var(--c-ink)', height: 24, fontSize: 12 }}>
-                    {packs ? `${tupsOn}/${c.tupList.length} tuppers` : `${c.tupList.length} raciones`}
+                    {packs ? `${tupsOn}/${c.tupList.length} containers` : `${c.tupList.length} servings`}
                   </span>
                 </div>
                 {c.shared.length > 0 && <span style={{ fontSize: 12.5, lineHeight: 1.5, color: 'var(--c-ink-2)' }}>{c.shared.join(' · ')}{c.g.sharedItems.length > 5 ? ` · +${c.g.sharedItems.length - 5}` : ''}</span>}
@@ -1224,7 +1225,7 @@ export default function BatchPrepTab() {
                       const on = tups.has(t.id)
                       return (
                         <button key={t.id} type="button" className={`bt-tup${on ? ' is-on' : ''}`} aria-pressed={on}
-                          title={`${t.person.name} · ${t.dayKey}`} onClick={() => toggleTup(t.id)}>
+                          title={`${t.person.name} · ${DAY_NAME[t.dayKey]}`} onClick={() => toggleTup(t.id)}>
                           <span className="bt-tup-check"><Icon name="check" size={8} stroke={4} /></span>
                           {DAY_LETTER[t.dayKey]} {t.person.initial}
                         </button>
@@ -1240,8 +1241,8 @@ export default function BatchPrepTab() {
         {cards.length > 0 && (
           <section className="mp-glass mp-card mp-rise" style={{ animationDelay: '300ms' }}>
             <button type="button" className="bt-detail-toggle" aria-expanded={detail} onClick={() => setDetail(d => !d)}>
-              <span style={{ fontSize: 15, fontWeight: 700 }}>Cantidades y pasos por plato</span>
-              <span className="mp-muted" style={{ fontSize: 12.5 }}>Lote total, reparto por tupper y cómo se cocina cada cosa</span>
+              <span style={{ fontSize: 15, fontWeight: 700 }}>Quantities and steps per dish</span>
+              <span className="mp-muted" style={{ fontSize: 12.5 }}>Batch total, split per container and how to cook each thing</span>
               <Icon name="right" size={14} stroke={2.4} style={{ marginLeft: 'auto', transform: detail ? 'rotate(90deg)' : 'none', transition: 'transform .35s var(--c-spring)' }} />
             </button>
             {detail && (
@@ -1251,7 +1252,7 @@ export default function BatchPrepTab() {
                   if (groups.length === 0) return [<MealSection key={mt} mealType={mt} batchData={null} />]
                   return groups.map((g, gi) => (
                     <MealSection key={`${mt}-${gi}`} mealType={mt} batchData={g} showMealLabel={gi === 0}
-                      groupLabel={groups.length > 1 ? g.personTotals.map(pt => pt.person.initial).join(' y ') : null} />
+                      groupLabel={groups.length > 1 ? g.personTotals.map(pt => pt.person.initial).join(' & ') : null} />
                   ))
                 })}
               </div>

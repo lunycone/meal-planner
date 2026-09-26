@@ -20,15 +20,15 @@ function PlatoRow({ combo, mealType, agg, inPlan, modified, onOpen }) {
       <span className="pl-row-name">
         <span>{combo.name}</span>
         {pcosLevel && <PcosBadge level={pcosLevel} />}
-        {combo.isCustom && <span className="mp-tag" style={{ background: 'rgba(139,111,232,0.14)', color: '#5B3FC4' }}>Tuyo</span>}
-        {modified && <span className="mp-tag" style={{ background: 'rgba(224,162,27,0.16)', color: '#8A5E08' }}>Modificado</span>}
-        {inPlan && <span className="mp-tag" style={{ background: 'rgba(47,158,91,0.13)', color: '#1F7A45' }}>En el plan</span>}
+        {combo.isCustom && <span className="mp-tag" style={{ background: 'rgba(139,111,232,0.14)', color: '#5B3FC4' }}>Yours</span>}
+        {modified && <span className="mp-tag" style={{ background: 'rgba(224,162,27,0.16)', color: '#8A5E08' }}>Modified</span>}
+        {inPlan && <span className="mp-tag" style={{ background: 'rgba(47,158,91,0.13)', color: '#1F7A45' }}>In the plan</span>}
       </span>
       <span className="pl-row-stats mp-num">
         <span style={{ fontWeight: 650 }}>{fmtMoney(agg.cost)}</span>
         <span style={{ color: LEVEL_COLOR[kLevel] }}>{Math.round(agg.kcal)} kcal</span>
         <span style={{ color: LEVEL_COLOR[pLevel] }}>{Math.round(agg.prot)} g prot</span>
-        <span className="mp-muted">{Math.round(agg.fat)} g grasa</span>
+        <span className="mp-muted">{Math.round(agg.fat)} g fat</span>
       </span>
       <Icon name="right" size={13} stroke={2.4} color="var(--c-ink-3)" />
     </button>
@@ -91,28 +91,28 @@ export default function PlatosTab() {
     <div>
       <div className="mp-page-head mp-rise">
         <div className="mp-page-title">
-          <h1>Platos</h1>
-          <span>{Object.keys(allCombos).length} platos · {inPlan.size} en el plan de esta semana o la próxima</span>
+          <h1>Dishes</h1>
+          <span>{Object.keys(allCombos).length} dishes · {inPlan.size} in this or next week's plan</span>
         </div>
         <div className="mp-page-tools">
-          <button className="mp-btn mp-btn-dark" onClick={() => setOpen(null)}><Icon name="plus" size={14} stroke={2.6} />Nuevo plato</button>
+          <button className="mp-btn mp-btn-dark" onClick={() => setOpen(null)}><Icon name="plus" size={14} stroke={2.6} />New dish</button>
         </div>
       </div>
 
       <div className="mp-rise" style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center', animationDelay: '60ms' }}>
         <label className="mp-search" style={{ flex: 1, minWidth: 220, maxWidth: 360 }}>
           <Icon name="search" size={14} stroke={2.4} />
-          <span className="sr-only">Buscar plato o ingrediente</span>
-          <input placeholder="Buscar plato o ingrediente…" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+          <span className="sr-only">Search dish or ingredient</span>
+          <input placeholder="Search dish or ingredient…" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </label>
-        <Segmented label="Franja" value={mealFilter} onChange={setMealFilter}
-          options={[{ value: 'all', label: 'Todo' }, ...MEAL_ORDER.map(m => ({ value: m, label: MEAL_LABEL[m] }))]} />
-        <Segmented label="Ordenar" value={sortBy} onChange={setSortBy}
-          options={[{ value: 'name', label: 'A–Z' }, { value: 'price', label: 'Precio' }, { value: 'kcal', label: 'Kcal' }, { value: 'prot', label: 'Proteína' }, { value: 'pcos', label: 'PCOS' }]} />
+        <Segmented label="Meal" value={mealFilter} onChange={setMealFilter}
+          options={[{ value: 'all', label: 'All' }, ...MEAL_ORDER.map(m => ({ value: m, label: MEAL_LABEL[m] }))]} />
+        <Segmented label="Sort" value={sortBy} onChange={setSortBy}
+          options={[{ value: 'name', label: 'A–Z' }, { value: 'price', label: 'Price' }, { value: 'kcal', label: 'Kcal' }, { value: 'prot', label: 'Protein' }, { value: 'pcos', label: 'PCOS' }]} />
       </div>
 
       {total === 0 ? (
-        <div className="mp-empty" style={{ padding: 40 }}>No hay platos que coincidan con tu búsqueda.</div>
+        <div className="mp-empty" style={{ padding: 40 }}>No dishes match your search.</div>
       ) : (
         grouped.map(({ meal, items }) => (
           <section key={meal} style={{ marginBottom: 26 }}>

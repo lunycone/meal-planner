@@ -17,6 +17,7 @@ import {
 export const CADENCE_MAX_DAYS = 4      // de 7, por franja horaria
 export const SOLUBLE_FIBER_DAILY_MIN = 8   // g/dia
 export const PROTEIN_DAILY_MAX_G_PER_KG = 2.2
+const SLOT_EN = { desayuno: 'breakfast', comida: 'lunch', merienda: 'snack', cena: 'dinner' }
 
 // week = [{ desayuno, comida, merienda, cena }, ...] con combos ya resueltos.
 // Devuelve la lista de infracciones de semana, vacia si todo correcto.
@@ -31,19 +32,19 @@ export function weekViolations(week, allIng, person = {}) {
     const gosDays = combos.filter(dishHasGOS).length
     if (gosDays > CADENCE_MAX_DAYS) out.push({
       rule: 'cadencia-gos', slot, days: gosDays,
-      msg: `Legumbre o harina de legumbre en ${slot} ${gosDays}/7 dias (max ${CADENCE_MAX_DAYS}).`,
+      msg: `Legumes or legume flour at ${SLOT_EN[slot] ?? slot} ${gosDays}/7 days (max ${CADENCE_MAX_DAYS}).`,
     })
 
     const fructanDays = combos.filter(dishHasAllium).length
     if (fructanDays > CADENCE_MAX_DAYS) out.push({
       rule: 'cadencia-fructanos', slot, days: fructanDays,
-      msg: `Cebolla, ajo, puerro o alcachofa en ${slot} ${fructanDays}/7 dias (max ${CADENCE_MAX_DAYS}).`,
+      msg: `Onion, garlic, leek or artichoke at ${SLOT_EN[slot] ?? slot} ${fructanDays}/7 days (max ${CADENCE_MAX_DAYS}).`,
     })
 
     const insolDays = combos.filter(dishHasInsolubleFiber).length
     if (insolDays > CADENCE_MAX_DAYS) out.push({
       rule: 'cadencia-insoluble', slot, days: insolDays,
-      msg: `Fibra insoluble en ${slot} ${insolDays}/7 dias (max ${CADENCE_MAX_DAYS}).`,
+      msg: `Insoluble fiber at ${SLOT_EN[slot] ?? slot} ${insolDays}/7 days (max ${CADENCE_MAX_DAYS}).`,
     })
 
     // Dos dias seguidos con legumbre en la MISMA franja: prohibido en cena,
@@ -52,7 +53,7 @@ export function weekViolations(week, allIng, person = {}) {
       if (dishHasGOS(combos[i]) && dishHasGOS(combos[i - 1])) {
         out.push({
           rule: 'gos-consecutivo', slot, day: i,
-          msg: `Legumbre en ${slot} dos dias seguidos (dias ${i} y ${i + 1}).`,
+          msg: `Legumes at ${SLOT_EN[slot] ?? slot} two days in a row (days ${i} and ${i + 1}).`,
         })
         break
       }
@@ -67,7 +68,7 @@ export function weekViolations(week, allIng, person = {}) {
     const sol = slots.reduce((s, k) => s + (day?.[k] ? comboFibSol(day[k], allIng) : 0), 0)
     if (sol < SOLUBLE_FIBER_DAILY_MIN) out.push({
       rule: 'fibra-soluble-baja', day: i, value: Math.round(sol * 10) / 10,
-      msg: `Dia ${i + 1}: ${sol.toFixed(1)} g de fibra soluble (min ${SOLUBLE_FIBER_DAILY_MIN}).`,
+      msg: `Day ${i + 1}: ${sol.toFixed(1)} g soluble fiber (min ${SOLUBLE_FIBER_DAILY_MIN}).`,
     })
   })
 
@@ -83,7 +84,7 @@ export function weekViolations(week, allIng, person = {}) {
       const prot = slots.reduce((s, k) => s + (day?.[k] ? comboAgg(day[k], allIng).prot : 0), 0)
       if (prot > cap) out.push({
         rule: 'proteina-excesiva', day: i, value: Math.round(prot),
-        msg: `Dia ${i + 1}: ${Math.round(prot)} g de proteina (techo ${Math.round(cap)} g a ${person.weightKg} kg).`,
+        msg: `Day ${i + 1}: ${Math.round(prot)} g protein (ceiling ${Math.round(cap)} g at ${person.weightKg} kg).`,
       })
     })
   }

@@ -36,50 +36,50 @@ export default function MealSheet({ mealType, dayLabel, rows, onChange, onClear,
               <span style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.025em', lineHeight: 1.2 }}>{info.name}</span>
             </div>
           </div>
-          <button className="mp-icon-btn" style={{ width: 32, height: 32, flexShrink: 0 }} aria-label="Cerrar" onClick={onClose}><Icon name="x" size={12} stroke={3} /></button>
+          <button className="mp-icon-btn" style={{ width: 32, height: 32, flexShrink: 0 }} aria-label="Close" onClick={onClose}><Icon name="x" size={12} stroke={3} /></button>
         </div>
 
         <div className="mp-sheet-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
             {withInfo.length > 1 ? (
-              <Segmented label="Persona" value={focus} onChange={setFocus}
-                options={withInfo.map((r, i) => ({ value: i, label: r.info.key === withInfo[0].info.key ? r.person.name : `${r.person.name} · otro plato` }))} />
+              <Segmented label="Person" value={focus} onChange={setFocus}
+                options={withInfo.map((r, i) => ({ value: i, label: r.info.key === withInfo[0].info.key ? r.person.name : `${r.person.name} · other dish` }))} />
             ) : <span />}
-            {hasCycle && <Segmented label="Vista" value={tab} onChange={setTab} options={[{ value: 'nutricion', label: 'Nutrición' }, { value: 'ciclo', label: 'Ciclo' }]} />}
+            {hasCycle && <Segmented label="View" value={tab} onChange={setTab} options={[{ value: 'nutricion', label: 'Nutrition' }, { value: 'ciclo', label: 'Cycle' }]} />}
           </div>
 
           {tab === 'nutricion' && (
             <>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8 }}>
-                {[['kcal', info.kcal], ['proteína', info.prot + ' g'], ['coste', fmtMoney(info.cost)], ['ración', info.portion]].map(([l, v]) => (
+                {[['kcal', info.kcal], ['protein', info.prot + ' g'], ['cost', fmtMoney(info.cost)], ['portion', info.portion]].map(([l, v]) => (
                   <div key={l} style={{ padding: '12px', borderRadius: 16, background: 'rgba(255,255,255,0.8)' }}>
-                    <div className="mp-num" style={{ fontSize: l === 'ración' ? 14 : 20, fontWeight: 650, letterSpacing: '-0.02em', lineHeight: 1.2 }}>{v}</div>
+                    <div className="mp-num" style={{ fontSize: l === 'portion' ? 14 : 20, fontWeight: 650, letterSpacing: '-0.02em', lineHeight: 1.2 }}>{v}</div>
                     <div className="mp-muted" style={{ fontSize: 11.5, marginTop: 2 }}>{l}</div>
                   </div>
                 ))}
               </div>
               {info.scaled?.factor != null && (
                 <div style={{ fontSize: 13, lineHeight: 1.5, padding: '10px 12px', borderRadius: 14, background: 'rgba(46,155,214,0.10)', color: '#1F5E86' }}>
-                  El motor sirve a {cur.person.name} el {Math.round(info.scaled.factor * 100)} % de la receta para no pasarse de su objetivo del día. Receta base: {info.baseKcal} kcal.
+                  {cur.person.name} gets {Math.round(info.scaled.factor * 100)}% of the recipe so the day stays on target. Base recipe: {info.baseKcal} kcal.
                 </div>
               )}
               {info.scaled && info.scaled.grams == null && info.scaled.oilMl > 0 && (
                 <div style={{ fontSize: 13, lineHeight: 1.5, padding: '10px 12px', borderRadius: 14, background: 'rgba(46,155,214,0.10)', color: '#1F5E86' }}>
-                  El plato no tiene base que escalar: el motor cierra el día de {cur.person.name} con {info.scaled.oilMl} ml de AOVE. Receta base: {info.baseKcal} kcal.
+                  This dish has no base to scale: {cur.person.name}'s day is topped up with {info.scaled.oilMl} ml of EVOO. Base recipe: {info.baseKcal} kcal.
                 </div>
               )}
               {info.scaled?.grams != null && (
                 <div style={{ fontSize: 13, lineHeight: 1.5, padding: '10px 12px', borderRadius: 14, background: 'rgba(46,155,214,0.10)', color: '#1F5E86' }}>
-                  El motor ajusta la ración de {cur.person.name}: {info.scaled.ingName.toLowerCase()} {info.scaled.defaultGrams} → {info.scaled.grams} g
-                  {info.scaled.oilMl > 0 ? ` y ${info.scaled.oilMl} ml de AOVE para cerrar el día.` : '.'} Receta base: {info.baseKcal} kcal.
+                  {cur.person.name}'s portion is adjusted: {info.scaled.ingName.toLowerCase()} {info.scaled.defaultGrams} → {info.scaled.grams} g
+                  {info.scaled.oilMl > 0 ? ` plus ${info.scaled.oilMl} ml of EVOO to top up the day.` : '.'} Base recipe: {info.baseKcal} kcal.
                 </div>
               )}
               {info.pcos && cur.person.pcos && (
                 <span className="mp-chip" style={{ alignSelf: 'flex-start', color: PCOS_STYLE[info.pcos].color }}><span className="mp-dot" style={{ background: PCOS_STYLE[info.pcos].color }} />{PCOS_STYLE[info.pcos].long}</span>
               )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-                <span className="mp-eyebrow">Macronutrientes · receta base</span>
-                {[['Proteína', info.prot, pp, '#2585BC'], ['Carbohidrato', info.carbs, cp, '#C1850C'], ['Grasa', info.fat, fp, '#7154DA']].map(([l, g, pc, c]) => (
+                <span className="mp-eyebrow">Macros · base recipe</span>
+                {[['Protein', info.prot, pp, '#2585BC'], ['Carbs', info.carbs, cp, '#C1850C'], ['Fat', info.fat, fp, '#7154DA']].map(([l, g, pc, c]) => (
                   <div key={l} style={{ display: 'grid', gridTemplateColumns: '100px minmax(0, 1fr) 90px', gap: 10, alignItems: 'center', fontSize: 13 }}>
                     <span className="mp-muted">{l}</span>
                     <span style={{ height: 7, borderRadius: 4, background: 'rgba(110,80,50,0.10)', overflow: 'hidden' }}><span style={{ display: 'block', height: '100%', width: `${g / maxG * 100}%`, background: c, borderRadius: 4, animation: 'mp-grow 1s var(--c-ease) both' }} /></span>
@@ -88,21 +88,21 @@ export default function MealSheet({ mealType, dayLabel, rows, onChange, onClear,
                 ))}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span className="mp-eyebrow" style={{ paddingBottom: 6 }}>Ingredientes</span>
+                <span className="mp-eyebrow" style={{ paddingBottom: 6 }}>Ingredients</span>
                 {(info.combo.items ?? []).map((it, i) => {
                   const isScaled = scaledKey && (allIng[it.k]?.name === scaledKey)
                   const p = isScaled ? { ...it.p, grams: info.scaled.grams } : it.p
                   const extraOil = it.k === 'aove' && info.scaled?.oilMl > 0 ? info.scaled.oilMl : 0
                   return (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '8px 0', borderTop: '1px solid var(--c-line)', fontSize: 13.5 }}>
-                      <span style={{ fontWeight: isScaled || extraOil ? 650 : 400 }}>{allIng[it.k]?.name ?? it.k}{isScaled || extraOil ? ' · ajustado' : ''}</span>
+                      <span style={{ fontWeight: isScaled || extraOil ? 650 : 400 }}>{allIng[it.k]?.name ?? it.k}{isScaled || extraOil ? ' · adjusted' : ''}</span>
                       <span className="mp-muted mp-num">{fmtPortion(p)}{extraOil ? ` + ${extraOil} ml` : ''}{ingKcal(it.k, p, allIng) > 0 ? ` · ${Math.round(ingKcal(it.k, p, allIng))} kcal` : ''}</span>
                     </div>
                   )
                 })}
                 {info.scaled?.oilMl > 0 && !(info.combo.items ?? []).some(it => it.k === 'aove') && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '8px 0', borderTop: '1px solid var(--c-line)', fontSize: 13.5 }}>
-                    <span style={{ fontWeight: 650 }}>AOVE · cierre del día</span>
+                    <span style={{ fontWeight: 650 }}>EVOO · day top-up</span>
                     <span className="mp-muted mp-num">{info.scaled.oilMl} ml</span>
                   </div>
                 )}
@@ -112,7 +112,7 @@ export default function MealSheet({ mealType, dayLabel, rows, onChange, onClear,
 
           {tab === 'ciclo' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <span className="mp-muted" style={{ fontSize: 13 }}>Cómo encaja este plato en cada fase del ciclo.</span>
+              <span className="mp-muted" style={{ fontSize: 13 }}>How this dish fits each phase of the cycle.</span>
               {CYCLE_PHASES.map(ph => {
                 const x = phase[ph.id]
                 return (
@@ -130,8 +130,8 @@ export default function MealSheet({ mealType, dayLabel, rows, onChange, onClear,
         </div>
 
         <div className="mp-sheet-foot">
-          {onClear && <button className="mp-btn mp-btn-danger" onClick={() => { onClear(); onClose() }}><Icon name="trash" size={14} />Quitar</button>}
-          {onChange && <button className="mp-btn mp-btn-dark" onClick={onChange}><Icon name="repeat" size={14} />Cambiar plato</button>}
+          {onClear && <button className="mp-btn mp-btn-danger" onClick={() => { onClear(); onClose() }}><Icon name="trash" size={14} />Remove</button>}
+          {onChange && <button className="mp-btn mp-btn-dark" onClick={onChange}><Icon name="repeat" size={14} />Change dish</button>}
         </div>
       </div>
     </Overlay>

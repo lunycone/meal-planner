@@ -101,7 +101,7 @@ export default function MHoy({ unseen, onIdeas }) {
     <div className="mh">
       <section className="mh-top">
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span className="mh-day">{DAY_LONG[day]}{isToday ? ' · hoy' : ''}</span>
+          <span className="mh-day">{DAY_LONG[day]}{isToday ? ' · today' : ''}</span>
           <span style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
             <span className="mh-num mp-num">{date.getDate()}</span>
             <span className="mp-muted" style={{ fontSize: 14 }}>{MONTHS_SHORT[date.getMonth()]}</span>
@@ -113,7 +113,7 @@ export default function MHoy({ unseen, onIdeas }) {
         </div>
       </section>
 
-      <section className="mh-deck" aria-label="Comidas del día · desliza" onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
+      <section className="mh-deck" aria-label="Meals of the day · swipe" onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
         {meals.map((m, i) => {
           const p = i - eff, a = Math.abs(p), on = Math.round(eff) === i
           const st = MEAL_STYLE[m.type]
@@ -130,8 +130,8 @@ export default function MHoy({ unseen, onIdeas }) {
                   <span className="mp-bubble" style={{ width: 42, height: 42, background: st.tint, color: st.color, boxShadow: `inset 0 1px 0 #fff, 0 6px 16px ${st.glow}` }}><Icon name={MEAL_ICON[m.type]} size={20} /></span>
                   <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}><span style={{ fontSize: 14, fontWeight: 600 }}>{MEAL_LABEL[m.type]}</span><span className="mp-muted" style={{ fontSize: 12 }}>{MEAL_TIME[m.type]}</span></span>
                 </span>
-                {isToday && i === nextIdx && <span className="mp-tag" style={{ background: 'var(--c-ink)', color: '#fff', height: 24, fontSize: 11 }}>Siguiente</span>}
-                {isToday && i < nextIdx && main && <span className="mp-tag" style={{ background: 'rgba(47,158,91,0.14)', color: '#1F7A45', height: 24, fontSize: 11 }}>Hecha</span>}
+                {isToday && i === nextIdx && <span className="mp-tag" style={{ background: 'var(--c-ink)', color: '#fff', height: 24, fontSize: 11 }}>Next</span>}
+                {isToday && i < nextIdx && main && <span className="mp-tag" style={{ background: 'rgba(47,158,91,0.14)', color: '#1F7A45', height: 24, fontSize: 11 }}>Done</span>}
               </span>
               {main ? (
                 <>
@@ -144,7 +144,7 @@ export default function MHoy({ unseen, onIdeas }) {
                       </span>
                     </span>
                     <span style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 11.5, color: 'var(--c-ink-2)' }}>
-                      {[['Proteína', pp, '#2E9BD6'], ['Carbo', cp, '#E0A21B'], ['Grasa', fp, '#8B6FE8']].map(([l, v, c]) => <span key={l}><span style={{ color: c }}>●</span> {l} {v}%</span>)}
+                      {[['Protein', pp, '#2E9BD6'], ['Carbs', cp, '#E0A21B'], ['Fat', fp, '#8B6FE8']].map(([l, v, c]) => <span key={l}><span style={{ color: c }}>●</span> {l} {v}%</span>)}
                     </span>
                   </span>
                   <span style={{ display: 'grid', gridTemplateColumns: `repeat(${m.rows.length}, minmax(0, 1fr))`, gap: 8 }}>
@@ -153,7 +153,7 @@ export default function MHoy({ unseen, onIdeas }) {
                         <span className="mp-muted" style={{ fontSize: 11 }}>{r.person.name}</span>
                         <span className="mp-num" style={{ fontSize: 16, fontWeight: 700 }}>{r.info ? `${r.info.kcal} kcal` : '—'}</span>
                         <span style={{ fontSize: 10.5, color: r.info?.pcos && r.person.pcos ? PCOS_STYLE[r.info.pcos].color : 'var(--c-ink-3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {!r.info ? 'Sin plato' : r.person.pcos && r.info.pcos ? PCOS_STYLE[r.info.pcos].label : r.info.portion}
+                          {!r.info ? 'No dish' : r.person.pcos && r.info.pcos ? PCOS_STYLE[r.info.pcos].label : r.info.portion}
                         </span>
                       </span>
                     ))}
@@ -161,8 +161,8 @@ export default function MHoy({ unseen, onIdeas }) {
                 </>
               ) : (
                 <span style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
-                  <span className="mp-muted" style={{ fontSize: 15 }}>Sin plato</span>
-                  <span className="mp-btn mp-btn-dark"><Icon name="plus" size={14} stroke={2.6} />Elegir plato</span>
+                  <span className="mp-muted" style={{ fontSize: 15 }}>No dish</span>
+                  <span className="mp-btn mp-btn-dark"><Icon name="plus" size={14} stroke={2.6} />Choose dish</span>
                 </span>
               )}
             </article>
@@ -175,7 +175,7 @@ export default function MHoy({ unseen, onIdeas }) {
             style={{ width: Math.round(eff) === i ? 26 : 8, background: Math.round(eff) === i ? MEAL_STYLE[m.type].color : 'rgba(31,27,22,0.2)' }} />
         ))}
       </div>
-      <nav className="mh-strip" aria-label="Días">
+      <nav className="mh-strip" aria-label="Days">
         {DAY_KEYS.map((d, i) => {
           const on = i === day
           return (
@@ -188,7 +188,7 @@ export default function MHoy({ unseen, onIdeas }) {
       </nav>
 
       {sheetMeal && (
-        <MealSheet mealType={sheetMeal.type} dayLabel={`${isToday ? 'hoy, ' : ''}${DAY_LONG[day].toLowerCase()} ${date.getDate()}`} rows={sheetMeal.rows}
+        <MealSheet mealType={sheetMeal.type} dayLabel={`${isToday ? 'today, ' : ''}${DAY_LONG[day]} ${date.getDate()}`} rows={sheetMeal.rows}
           onClose={() => setSheet(null)} onClear={() => clearMeal(sheetMeal.type)}
           onChange={() => { const k = sheetMeal.rows.find(r => r.info)?.info.key; setSheet(null); setPicker({ mealType: sheetMeal.type, currentKey: k }) }} />
       )}

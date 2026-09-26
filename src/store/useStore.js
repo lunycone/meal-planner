@@ -107,7 +107,7 @@ const useStore = create(
             (!p.validoDesde  || new Date(p.validoDesde)  <= today) &&
             (!p.validoHasta  || new Date(p.validoHasta)  >  today)
           )
-          return { id: 'all', name: 'Todos', initial: 'T', kcalTarget: valid.reduce((sum, p) => sum + p.kcalTarget, 0), proteinTarget: valid.reduce((sum, p) => sum + (p.proteinTarget || 0), 0) }
+          return { id: 'all', name: 'Everyone', initial: 'E', kcalTarget: valid.reduce((sum, p) => sum + p.kcalTarget, 0), proteinTarget: valid.reduce((sum, p) => sum + (p.proteinTarget || 0), 0) }
         }
         return s.profiles.find(p => p.id === s.activeProfileId) || s.profiles[0]
       },
@@ -275,7 +275,7 @@ const useStore = create(
         const weekNum = baseCount + existing.length + 1
         const week = {
           id: `w-custom-${Date.now()}`,
-          label: `Semana ${weekNum}`,
+          label: `Week ${weekNum}`,
           isCustom: true,
           dayOverrides: {},
           batches: [],

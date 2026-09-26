@@ -17,12 +17,12 @@ import useIsMobile from './mobile/useIsMobile'
 import { PERSON_COLOR, activeProfilesOn } from './lib/mealplan'
 
 const TABS = [
-  { value: 'home',         label: 'Hoy',          Component: HomeView },
-  { value: 'planificador', label: 'Planificador', Component: PlannerView },
-  { value: 'compra',       label: 'Compra',       Component: ShoppingListTab },
+  { value: 'home',         label: 'Today',        Component: HomeView },
+  { value: 'planificador', label: 'Planner',      Component: PlannerView },
+  { value: 'compra',       label: 'Shopping',     Component: ShoppingListTab },
   { value: 'batch',        label: 'Batch',        Component: BatchPrepTab },
-  { value: 'platos',       label: 'Platos',       Component: PlatosTab },
-  { value: 'ingredientes', label: 'Ingredientes', Component: IngredientesTab },
+  { value: 'platos',       label: 'Dishes',       Component: PlatosTab },
+  { value: 'ingredientes', label: 'Ingredients',  Component: IngredientesTab },
 ]
 
 function PeopleToggle() {
@@ -31,14 +31,14 @@ function PeopleToggle() {
   const setActive       = useStore(s => s.setActiveProfile)
   const people = activeProfilesOn(profiles, new Date())
   return (
-    <div className="mp-people" role="group" aria-label="Ver por persona">
+    <div className="mp-people" role="group" aria-label="View by person">
       {people.map((p, i) => {
         const on = activeProfileId === p.id
         const dim = activeProfileId !== 'all' && !on
         return (
           <button key={p.id} type="button" className={`mp-avatar${on ? ' is-on' : ''}${dim ? ' is-dim' : ''}`}
             style={{ background: `linear-gradient(135deg, ${PERSON_COLOR[i % PERSON_COLOR.length]}CC, ${PERSON_COLOR[i % PERSON_COLOR.length]})` }}
-            aria-pressed={on} title={on ? `Viendo solo a ${p.name} · pulsa para ver a todos` : `Ver solo a ${p.name}`}
+            aria-pressed={on} title={on ? `Showing only ${p.name} · click to show everyone` : `Show only ${p.name}`}
             onClick={() => setActive(on ? 'all' : p.id)}>
             {p.initial}
           </button>
@@ -67,21 +67,21 @@ function IdeasPanel({ ideas, hiddenCount, onClose, onPick, onDismiss, onRestore 
     setTimeout(() => { onDismiss(i); if (go && i.view) onPick(i.view) }, go && i.view ? 180 : 280)
   }
   return (
-    <aside className="mp-ideas" aria-label="Sugerencias">
+    <aside className="mp-ideas" aria-label="Suggestions">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '2px 4px 10px' }}>
-        <span style={{ fontSize: 17, fontWeight: 700 }}>Sugerencias</span>
-        <button className="mp-icon-btn" style={{ width: 30, height: 30 }} aria-label="Cerrar" onClick={onClose}><Icon name="x" size={12} stroke={3} /></button>
+        <span style={{ fontSize: 17, fontWeight: 700 }}>Suggestions</span>
+        <button className="mp-icon-btn" style={{ width: 30, height: 30 }} aria-label="Close" onClick={onClose}><Icon name="x" size={12} stroke={3} /></button>
       </div>
       {ideas.length === 0 && (
         <div className="mp-empty" style={{ padding: '26px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
           <span className="mp-bubble" style={{ width: 38, height: 38, background: 'rgba(47,158,91,0.14)', color: 'var(--c-green)' }}><Icon name="check" size={18} stroke={2.6} /></span>
-          Todo al día.
+          All caught up.
         </div>
       )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {ideas.map((i, n) => (
           <div key={i.id} className={`mp-idea mp-in${leaving.has(i.id) ? ' is-leaving' : ''}`} style={{ animationDelay: `${60 + n * 60}ms` }}>
-            <button type="button" className="mp-idea-main" onClick={() => leave(i, true)} title={i.view ? 'Abrir y quitar de la lista' : 'Hecho: quitar de la lista'}>
+            <button type="button" className="mp-idea-main" onClick={() => leave(i, true)} title={i.view ? 'Open and remove from the list' : 'Done: remove from the list'}>
               <span className="mp-bubble" style={{ width: 32, height: 32, background: i.tint, color: i.color }}><Icon name={i.icon} size={16} stroke={2.2} /></span>
               <span style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
                 <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--c-ink-3)' }}>{i.when}</span>
@@ -89,12 +89,12 @@ function IdeasPanel({ ideas, hiddenCount, onClose, onPick, onDismiss, onRestore 
                 <span style={{ fontSize: 12.5, lineHeight: 1.45, color: 'var(--c-ink-2)' }}>{i.detail}</span>
               </span>
             </button>
-            <button type="button" className="mp-idea-x" aria-label={`Descartar: ${i.title}`} onClick={() => leave(i, false)}><Icon name="x" size={10} stroke={3} /></button>
+            <button type="button" className="mp-idea-x" aria-label={`Dismiss: ${i.title}`} onClick={() => leave(i, false)}><Icon name="x" size={10} stroke={3} /></button>
           </div>
         ))}
       </div>
       {hiddenCount > 0 && (
-        <button type="button" className="mp-idea-restore" onClick={onRestore}>Mostrar las {hiddenCount} descartadas hoy</button>
+        <button type="button" className="mp-idea-restore" onClick={onRestore}>Show the {hiddenCount} dismissed today</button>
       )}
     </aside>
   )
@@ -156,19 +156,19 @@ function AppShell() {
       <div className="mp-bg" aria-hidden="true" />
       <header className="mp-top">
         <div className="mp-brand"><span className="mp-orb" aria-hidden="true" />meal planner</div>
-        <Segmented className="mp-nav" thumbClass="mp-nav-lens" label="Secciones"
+        <Segmented className="mp-nav" thumbClass="mp-nav-lens" label="Sections"
           options={TABS.map(t => ({ value: t.value, label: t.label }))}
           value={view.value} onChange={v => { setView(v); setIdeasOpen(false) }} />
         <div className="mp-top-right">
           <SyncStatus />
           <PeopleToggle />
-          <button type="button" className={`mp-icon-btn${ideasOpen ? ' is-on' : ''}`} aria-label="Sugerencias" aria-expanded={ideasOpen}
+          <button type="button" className={`mp-icon-btn${ideasOpen ? ' is-on' : ''}`} aria-label="Suggestions" aria-expanded={ideasOpen}
             onClick={() => setIdeasOpen(o => !o)} style={{ position: 'relative' }}>
             <Icon name="bulb" size={18} />
             {unseen > 0 && !ideasOpen && <span className="mp-badge">{unseen}</span>}
           </button>
           {supabase && (
-            <button type="button" className="mp-icon-btn" aria-label="Cerrar sesión" title="Cerrar sesión" onClick={() => supabase.auth.signOut()}>
+            <button type="button" className="mp-icon-btn" aria-label="Sign out" title="Sign out" onClick={() => supabase.auth.signOut()}>
               <Icon name="logout" size={16} />
             </button>
           )}

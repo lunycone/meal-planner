@@ -23,9 +23,9 @@ const LEVEL_GRADIENT = {
   red:    ['#e0897b', '#b8453a'],
 }
 const LEVEL_TITLE = {
-  green:  'PCOS-friendly (bajo en carbo)',
-  yellow: 'PCOS: carbo medio',
-  red:    'PCOS: alto en carbo',
+  green:  'PCOS-friendly (low carb)',
+  yellow: 'PCOS: mid carb',
+  red:    'PCOS: high carb',
 }
 
 let uid = 0

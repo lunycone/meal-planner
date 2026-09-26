@@ -59,7 +59,7 @@ export default function MSemana({ unseen, onIdeas }) {
 
   const planned = days.reduce((s, d) => s + d.planned, 0)
   const weekCost = days.reduce((s, d) => s + d.cost, 0)
-  const title = weekOffset === 0 ? 'Esta semana' : weekOffset === 1 ? 'Semana que viene' : weekOffset === -1 ? 'Semana pasada' : 'Semana'
+  const title = weekOffset === 0 ? 'This week' : weekOffset === 1 ? 'Next week' : weekOffset === -1 ? 'Last week' : 'Week'
 
   function openSlot(i, m) {
     if (days[i].meals[m].some(r => r.info)) setSheet({ i, m })
@@ -76,30 +76,30 @@ export default function MSemana({ unseen, onIdeas }) {
     <div className="m-page">
       <MHeader title={title} sub={`${fmtRange(monday, addDays(monday, 6))} · ${planned}/28 · ${fmtMoney(weekCost)}`} unseen={unseen} onIdeas={onIdeas} />
       <div className="ms-nav">
-        <button type="button" aria-label="Semana anterior" onClick={() => { setWeekOffset(weekOffset - 1); setOpen(0) }}><Icon name="left" size={14} stroke={2.6} /></button>
-        <button type="button" onClick={() => { setWeekOffset(0); setOpen(dayIndexOf(today)) }} disabled={weekOffset === 0}>Hoy</button>
-        <button type="button" aria-label="Semana siguiente" onClick={() => { setWeekOffset(weekOffset + 1); setOpen(0) }}><Icon name="right" size={14} stroke={2.6} /></button>
+        <button type="button" aria-label="Previous week" onClick={() => { setWeekOffset(weekOffset - 1); setOpen(0) }}><Icon name="left" size={14} stroke={2.6} /></button>
+        <button type="button" onClick={() => { setWeekOffset(0); setOpen(dayIndexOf(today)) }} disabled={weekOffset === 0}>Today</button>
+        <button type="button" aria-label="Next week" onClick={() => { setWeekOffset(weekOffset + 1); setOpen(0) }}><Icon name="right" size={14} stroke={2.6} /></button>
       </div>
       <div className="ms-actions">
-        <button type="button" onClick={() => setModels(true)}><Icon name="layers" size={16} color="#7154DA" />Semanas modelo</button>
-        <button type="button" onClick={() => setSaving(true)} disabled={!planned}><Icon name="sparkle" size={16} />Guardar semana</button>
+        <button type="button" onClick={() => setModels(true)}><Icon name="layers" size={16} color="#7154DA" />Model weeks</button>
+        <button type="button" onClick={() => setSaving(true)} disabled={!planned}><Icon name="sparkle" size={16} />Save week</button>
       </div>
 
       {days.map(d => {
         const isOpen = open === d.i, isToday = d.i === todayIdx
-        const tag = isToday ? 'Hoy' : d.i === 6 ? 'Batch' : null
+        const tag = isToday ? 'Today' : d.i === 6 ? 'Batch' : null
         return (
           <div key={d.dk} className={`ms-day mp-in${isOpen ? ' is-open' : ''}`} style={{ opacity: todayIdx >= 0 && d.i < todayIdx && !isOpen ? 0.62 : 1, animationDelay: `${d.i * 35}ms` }}>
             <button type="button" className="ms-day-head" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? -1 : d.i)}>
               <span className="ms-date"><span style={{ color: isToday ? '#D9486A' : undefined }}>{DAY_SHORT[d.i]}</span><strong className="mp-num">{d.date.getDate()}</strong></span>
               <span style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
                 {['comida', 'cena'].map(m => (
-                  <span key={m} className="ms-line"><span className="mp-dot" style={{ background: MEAL_STYLE[m].color }} />{shortOf(d, m) ?? <span className="mp-muted" style={{ fontWeight: 400 }}>Sin plato</span>}</span>
+                  <span key={m} className="ms-line"><span className="mp-dot" style={{ background: MEAL_STYLE[m].color }} />{shortOf(d, m) ?? <span className="mp-muted" style={{ fontWeight: 400 }}>No dish</span>}</span>
                 ))}
               </span>
               <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-                {tag && <span className="mp-tag" style={tag === 'Hoy' ? { background: 'var(--c-ink)', color: '#fff' } : { background: 'rgba(232,98,124,0.16)', color: '#B0344F' }}>{tag}</span>}
-                <span className="mp-num" style={{ fontSize: 12, fontWeight: 600, color: 'var(--c-ink-2)' }}>{d.planned ? fmtMoney(d.cost) : 'Vacío'}</span>
+                {tag && <span className="mp-tag" style={tag === 'Today' ? { background: 'var(--c-ink)', color: '#fff' } : { background: 'rgba(232,98,124,0.16)', color: '#B0344F' }}>{tag}</span>}
+                <span className="mp-num" style={{ fontSize: 12, fontWeight: 600, color: 'var(--c-ink-2)' }}>{d.planned ? fmtMoney(d.cost) : 'Empty'}</span>
               </span>
             </button>
             {isOpen && (
@@ -113,7 +113,7 @@ export default function MSemana({ unseen, onIdeas }) {
                       <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
                         <span className="mp-muted" style={{ fontSize: 11 }}>{MEAL_LABEL[m]}</span>
                         {main ? <span style={{ fontSize: 13.5, fontWeight: 600, lineHeight: 1.25 }}>{main.name}</span>
-                          : <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13.5, fontWeight: 600, color: 'var(--c-ink-3)' }}><Icon name="plus" size={12} stroke={2.6} />Añadir</span>}
+                          : <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13.5, fontWeight: 600, color: 'var(--c-ink-3)' }}><Icon name="plus" size={12} stroke={2.6} />Add</span>}
                         {others.map(r => <span key={r.person.id} style={{ fontSize: 12, color: 'var(--c-ink-2)' }}>{r.person.name}: {r.info.name}</span>)}
                       </span>
                       {main && <span className="mp-num" style={{ fontSize: 11.5, color: 'var(--c-ink-2)', whiteSpace: 'nowrap' }}>{rows.map(r => r.info ? `${r.person.initial} ${r.info.kcal}` : '').filter(Boolean).join(' · ')}</span>}
@@ -135,7 +135,7 @@ export default function MSemana({ unseen, onIdeas }) {
       })}
 
       {sd && (
-        <MealSheet mealType={sheet.m} dayLabel={`${DAY_LONG[sd.i].toLowerCase()} ${sd.date.getDate()}`} rows={sd.meals[sheet.m]}
+        <MealSheet mealType={sheet.m} dayLabel={`${DAY_LONG[sd.i]} ${sd.date.getDate()}`} rows={sd.meals[sheet.m]}
           onClose={() => setSheet(null)} onClear={() => clearSlot(sd.i, sheet.m)}
           onChange={() => { const k = sd.meals[sheet.m].find(r => r.info)?.info.key; setPicker({ i: sd.i, m: sheet.m, currentKey: k }); setSheet(null) }} />
       )}

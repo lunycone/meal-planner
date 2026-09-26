@@ -14,11 +14,11 @@ import { storeOf, storeColor, storesIn } from '../../lib/stores'
 // Campos por tipo de precio: [clave precio, etiqueta, factor para mostrar]
 // y los de nutrientes [kcal, prot, grasa] con el mismo factor.
 const UNIT = {
-  per100:     { price: 'per100', label: '$ / 100 g', f: 1, nut: ['kc', 'prot', 'fat'], per: 'por 100 g' },
-  perUnit:    { price: 'perUnit', label: '$ / ud', f: 1, nut: ['kcu', 'protu', 'fatu'], per: 'por unidad' },
-  perML:      { price: 'perML', label: '$ / 100 ml', f: 100, nut: ['kcml', null, 'fatml'], per: 'por 100 ml' },
-  perServing: { price: 'perServing', label: '$ / plato', f: 1, nut: ['kcs', null, null], per: 'por plato' },
-  flat:       { price: 'flat', label: '$ por uso', f: 1, nut: ['kcf', 'protf', 'fatf'], per: 'por uso' },
+  per100:     { price: 'per100', label: '$ / 100 g', f: 1, nut: ['kc', 'prot', 'fat'], per: 'per 100 g' },
+  perUnit:    { price: 'perUnit', label: '$ / unit', f: 1, nut: ['kcu', 'protu', 'fatu'], per: 'per unit' },
+  perML:      { price: 'perML', label: '$ / 100 ml', f: 100, nut: ['kcml', null, 'fatml'], per: 'per 100 ml' },
+  perServing: { price: 'perServing', label: '$ / serving', f: 1, nut: ['kcs', null, null], per: 'per serving' },
+  flat:       { price: 'flat', label: '$ per use', f: 1, nut: ['kcf', 'protf', 'fatf'], per: 'per use' },
 }
 const num = v => { const n = parseFloat(String(v).replace(',', '.')); return isNaN(n) ? null : n }
 const show = (v, f = 1) => v == null ? '' : String(Math.round(v * f * 10000) / 10000)
@@ -111,26 +111,26 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
 
   return (
     <Overlay onClose={tryClose}>
-      <div className="mp-sheet ig-sheet" onClick={e => e.stopPropagation()} role="dialog" aria-label={draft.name || 'Nuevo ingrediente'}>
+      <div className="mp-sheet ig-sheet" onClick={e => e.stopPropagation()} role="dialog" aria-label={draft.name || 'New ingredient'}>
         <div className="mp-sheet-head" style={{ paddingBottom: 12 }}>
           <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', flex: 1, minWidth: 0 }}>
             <span className="mp-bubble" style={{ width: 46, height: 46, background: sc + '22', color: sc, transition: 'background .3s, color .3s' }}><Icon name="bag" size={20} /></span>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minWidth: 0 }}>
-              <input className="pl-title" value={draft.name} placeholder="Nombre del ingrediente" aria-label="Nombre" autoFocus={isNew} onChange={e => set('name', e.target.value)} />
+              <input className="pl-title" value={draft.name} placeholder="Ingredient name" aria-label="Name" autoFocus={isNew} onChange={e => set('name', e.target.value)} />
               <span className="mp-muted" style={{ fontSize: 12.5 }}>
-                {draft.store || 'Sin tienda'} · {allCats[draft.cat] ?? draft.cat}{draft.organic ? ' · orgánico' : ''}
-                {modified && <span className="mp-tag" style={{ marginLeft: 8, background: 'rgba(224,162,27,0.16)', color: '#8A5E08' }}>Modificado</span>}
-                {ing?.isCustom && <span className="mp-tag" style={{ marginLeft: 8, background: 'rgba(139,111,232,0.14)', color: '#5B3FC4' }}>Tuyo</span>}
+                {draft.store || 'No store'} · {allCats[draft.cat] ?? draft.cat}{draft.organic ? ' · organic' : ''}
+                {modified && <span className="mp-tag" style={{ marginLeft: 8, background: 'rgba(224,162,27,0.16)', color: '#8A5E08' }}>Modified</span>}
+                {ing?.isCustom && <span className="mp-tag" style={{ marginLeft: 8, background: 'rgba(139,111,232,0.14)', color: '#5B3FC4' }}>Yours</span>}
               </span>
             </div>
           </div>
-          <button className="mp-icon-btn" style={{ width: 32, height: 32, flexShrink: 0 }} aria-label="Cerrar" onClick={tryClose}><Icon name="x" size={12} stroke={3} /></button>
+          <button className="mp-icon-btn" style={{ width: 32, height: 32, flexShrink: 0 }} aria-label="Close" onClick={tryClose}><Icon name="x" size={12} stroke={3} /></button>
         </div>
 
         <div className="ig-body">
           <section style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
             <div className="ig-field">
-              <span className="mp-eyebrow">Dónde se compra</span>
+              <span className="mp-eyebrow">Where to buy</span>
               <div className="ig-chips">
                 {storeNames.map(s => {
                   const on = draft.store === s, c = storeColor(s)
@@ -142,54 +142,54 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
                   )
                 })}
                 <button type="button" className={`ig-chip${!draft.store ? ' is-on' : ''}`} aria-pressed={!draft.store} onClick={() => set('store', '')}
-                  style={!draft.store ? { background: 'var(--c-ink)', color: '#fff' } : undefined}>Sin tienda</button>
+                  style={!draft.store ? { background: 'var(--c-ink)', color: '#fff' } : undefined}>No store</button>
                 {newStore == null
-                  ? <button type="button" className="ig-chip ig-chip-add" onClick={() => setNewStore('')}><Icon name="plus" size={12} stroke={2.6} />Otra</button>
-                  : <input className="ig-chip-input" autoFocus placeholder="Nombre de la tienda" value={newStore} onChange={e => setNewStore(e.target.value)}
+                  ? <button type="button" className="ig-chip ig-chip-add" onClick={() => setNewStore('')}><Icon name="plus" size={12} stroke={2.6} />Other</button>
+                  : <input className="ig-chip-input" autoFocus placeholder="Store name" value={newStore} onChange={e => setNewStore(e.target.value)}
                       onBlur={commitStore} onKeyDown={e => { if (e.key === 'Enter') commitStore(); if (e.key === 'Escape') { e.stopPropagation(); setNewStore(null) } }} />}
               </div>
             </div>
 
             <div className="ig-field">
-              <span className="mp-eyebrow">Categoría</span>
+              <span className="mp-eyebrow">Category</span>
               <div className="ig-chips">
                 {cats.map(k => {
                   const on = draft.cat === k
                   return <button key={k} type="button" className={`ig-chip${on ? ' is-on' : ''}`} aria-pressed={on} onClick={() => set('cat', k)} style={on ? { background: 'var(--c-ink)', color: '#fff' } : undefined}>{allCats[k] ?? k}</button>
                 })}
                 {newCat == null
-                  ? <button type="button" className="ig-chip ig-chip-add" onClick={() => setNewCat('')}><Icon name="plus" size={12} stroke={2.6} />Nueva</button>
-                  : <input className="ig-chip-input" autoFocus placeholder="Nueva categoría" value={newCat} onChange={e => setNewCat(e.target.value)}
+                  ? <button type="button" className="ig-chip ig-chip-add" onClick={() => setNewCat('')}><Icon name="plus" size={12} stroke={2.6} />New</button>
+                  : <input className="ig-chip-input" autoFocus placeholder="New category" value={newCat} onChange={e => setNewCat(e.target.value)}
                       onBlur={commitCat} onKeyDown={e => { if (e.key === 'Enter') commitCat(); if (e.key === 'Escape') { e.stopPropagation(); setNewCat(null) } }} />}
               </div>
             </div>
 
             <div className="ig-field">
               <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
-                <span className="mp-eyebrow">Precio y pack</span>
-                {isNew && <Segmented label="Cómo se cobra" value={unit} onChange={u => { setUnit(u); setDraft(d => ({ ...d, price: '', kc: '', prot: '', fat: '' })) }}
-                  options={[{ value: 'per100', label: 'Por peso' }, { value: 'perUnit', label: 'Por unidad' }, { value: 'perML', label: 'Por volumen' }]} />}
+                <span className="mp-eyebrow">Price and pack</span>
+                {isNew && <Segmented label="Priced by" value={unit} onChange={u => { setUnit(u); setDraft(d => ({ ...d, price: '', kc: '', prot: '', fat: '' })) }}
+                  options={[{ value: 'per100', label: 'By weight' }, { value: 'perUnit', label: 'By unit' }, { value: 'perML', label: 'By volume' }]} />}
               </span>
               <div className="ig-grid2">
                 <label className="ig-input"><span>{U.label}</span><input inputMode="decimal" value={draft.price} onChange={e => set('price', e.target.value)} placeholder="0.00" /></label>
-                <label className="ig-input"><span>Pack que compras</span><input value={draft.pack} onChange={e => set('pack', e.target.value)} placeholder="2.5 kg · $11.49" /></label>
+                <label className="ig-input"><span>Pack you buy</span><input value={draft.pack} onChange={e => set('pack', e.target.value)} placeholder="2.5 kg · $11.49" /></label>
               </div>
             </div>
 
             <div className="ig-field">
-              <span className="mp-eyebrow">Nutrientes · {U.per}</span>
+              <span className="mp-eyebrow">Nutrition · {U.per}</span>
               <div className="ig-grid3">
                 <label className="ig-input"><span>kcal</span><input inputMode="decimal" value={draft.kc} onChange={e => set('kc', e.target.value)} placeholder="0" /></label>
-                {U.nut[1] && <label className="ig-input"><span>Proteína (g)</span><input inputMode="decimal" value={draft.prot} onChange={e => set('prot', e.target.value)} placeholder="0" /></label>}
-                {U.nut[2] && <label className="ig-input"><span>Grasa (g)</span><input inputMode="decimal" value={draft.fat} onChange={e => set('fat', e.target.value)} placeholder="0" /></label>}
+                {U.nut[1] && <label className="ig-input"><span>Protein (g)</span><input inputMode="decimal" value={draft.prot} onChange={e => set('prot', e.target.value)} placeholder="0" /></label>}
+                {U.nut[2] && <label className="ig-input"><span>Fat (g)</span><input inputMode="decimal" value={draft.fat} onChange={e => set('fat', e.target.value)} placeholder="0" /></label>}
               </div>
             </div>
 
             <div className="ig-grid2" style={{ alignItems: 'end' }}>
-              <label className="ig-input"><span>Nota de ración</span><input value={draft.per} onChange={e => set('per', e.target.value)} placeholder="80 g → $0.37 · 65 kcal" /></label>
+              <label className="ig-input"><span>Portion note</span><input value={draft.per} onChange={e => set('per', e.target.value)} placeholder="80 g → $0.37 · 65 kcal" /></label>
               <button type="button" className={`ig-chip${draft.organic ? ' is-on' : ''}`} aria-pressed={draft.organic} onClick={() => set('organic', !draft.organic)}
                 style={{ height: 44, justifyContent: 'center', ...(draft.organic ? { background: '#2F9E5B', color: '#fff' } : {}) }}>
-                <Icon name="leaf" size={14} />Orgánico
+                <Icon name="leaf" size={14} />Organic
               </button>
             </div>
           </section>
@@ -197,22 +197,22 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
           <aside style={{ display: 'flex', flexDirection: 'column', gap: 10, minHeight: 0, overflowY: 'auto' }}>
             {!isNew && (
               <div className="pl-card" style={{ gap: 6 }}>
-                <span className="mp-eyebrow">Se usa en {usedIn.length} {usedIn.length === 1 ? 'plato' : 'platos'}</span>
-                {usedIn.length === 0 && <span className="mp-muted" style={{ fontSize: 12.5 }}>Ningún plato lo lleva todavía.</span>}
+                <span className="mp-eyebrow">Used in {usedIn.length} {usedIn.length === 1 ? 'dish' : 'dishes'}</span>
+                {usedIn.length === 0 && <span className="mp-muted" style={{ fontSize: 12.5 }}>No dish uses it yet.</span>}
                 {usedIn.slice(0, 8).map(u => <span key={u.k} style={{ fontSize: 12.5, lineHeight: 1.35 }}>{u.name}</span>)}
-                {usedIn.length > 8 && <span className="mp-muted" style={{ fontSize: 12 }}>y {usedIn.length - 8} más</span>}
-                {dirty && usedIn.length > 0 && num(draft.price) != null && <span style={{ fontSize: 11.5, color: '#8A5E08', lineHeight: 1.4 }}>Al guardar se recalcula el coste de estos platos, la compra y el batch.</span>}
+                {usedIn.length > 8 && <span className="mp-muted" style={{ fontSize: 12 }}>and {usedIn.length - 8} more</span>}
+                {dirty && usedIn.length > 0 && num(draft.price) != null && <span style={{ fontSize: 11.5, color: '#8A5E08', lineHeight: 1.4 }}>Saving recalculates the cost of these dishes, the shopping and the batch.</span>}
               </div>
             )}
             {!isNew && ing?.brand && (
               <div className="pl-card" style={{ gap: 4 }}>
-                <span className="mp-eyebrow">Marca</span>
+                <span className="mp-eyebrow">Brand</span>
                 <span style={{ fontSize: 13 }}>{ing.brand}</span>
               </div>
             )}
             {isBase && modified && !dirty && (
               <button type="button" className="mp-btn mp-btn-glass mp-btn-sm" onClick={() => { resetIngredientOverride(ingKey); resetPrice(ingKey); onClose() }}>
-                <Icon name="repeat" size={13} />Volver a los datos originales
+                <Icon name="repeat" size={13} />Back to the original data
               </button>
             )}
           </aside>
@@ -221,30 +221,30 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
         <div className="mp-sheet-foot" style={{ justifyContent: 'space-between' }}>
           {askClose ? (
             <>
-              <span style={{ fontSize: 13, fontWeight: 600 }}>Tienes cambios sin guardar.</span>
+              <span style={{ fontSize: 13, fontWeight: 600 }}>You have unsaved changes.</span>
               <span style={{ display: 'flex', gap: 8 }}>
-                <button className="mp-btn mp-btn-glass" onClick={onClose}>Descartar</button>
-                <button className="mp-btn mp-btn-glass" onClick={() => setAskClose(false)}>Seguir editando</button>
-                <button className="mp-btn mp-btn-dark" disabled={!draft.name.trim()} onClick={save}>Guardar</button>
+                <button className="mp-btn mp-btn-glass" onClick={onClose}>Discard</button>
+                <button className="mp-btn mp-btn-glass" onClick={() => setAskClose(false)}>Keep editing</button>
+                <button className="mp-btn mp-btn-dark" disabled={!draft.name.trim()} onClick={save}>Save</button>
               </span>
             </>
           ) : askDelete ? (
             <>
-              <span style={{ fontSize: 13, fontWeight: 600 }}>¿{isBase ? 'Ocultar' : 'Eliminar'} «{ing.name}»?{usedIn.length ? ` Lo llevan ${usedIn.length} platos.` : ''}</span>
+              <span style={{ fontSize: 13, fontWeight: 600 }}>{isBase ? 'Hide' : 'Delete'} “{ing.name}”?{usedIn.length ? ` Used in ${usedIn.length} dishes.` : ''}</span>
               <span style={{ display: 'flex', gap: 8 }}>
                 <button className="mp-btn mp-btn-glass" onClick={() => setAskDelete(false)}>No</button>
-                <button className="mp-btn mp-btn-danger" onClick={remove}>{isBase ? 'Ocultar' : 'Eliminar'}</button>
+                <button className="mp-btn mp-btn-danger" onClick={remove}>{isBase ? 'Hide' : 'Delete'}</button>
               </span>
             </>
           ) : (
             <>
-              <span>{!isNew && <button className="mp-btn mp-btn-sm pl-del" onClick={() => setAskDelete(true)}><Icon name="trash" size={13} />{isBase ? 'Ocultar' : 'Eliminar'}</button>}</span>
+              <span>{!isNew && <button className="mp-btn mp-btn-sm pl-del" onClick={() => setAskDelete(true)}><Icon name="trash" size={13} />{isBase ? 'Hide' : 'Delete'}</button>}</span>
               <span style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                {isNew && !draft.name.trim() && <span className="mp-muted" style={{ fontSize: 12.5 }}>Falta el nombre</span>}
-                {dirty && !isNew && <button className="mp-btn mp-btn-glass" onClick={() => setDraft(initial)}>Descartar</button>}
+                {isNew && !draft.name.trim() && <span className="mp-muted" style={{ fontSize: 12.5 }}>Name missing</span>}
+                {dirty && !isNew && <button className="mp-btn mp-btn-glass" onClick={() => setDraft(initial)}>Discard</button>}
                 {(dirty || isNew)
-                  ? <button className="mp-btn mp-btn-dark" disabled={!draft.name.trim()} onClick={save}>{isNew ? 'Añadir ingrediente' : 'Guardar cambios'}</button>
-                  : <button className="mp-btn mp-btn-dark" onClick={onClose}>Hecho</button>}
+                  ? <button className="mp-btn mp-btn-dark" disabled={!draft.name.trim()} onClick={save}>{isNew ? 'Add ingredient' : 'Save changes'}</button>
+                  : <button className="mp-btn mp-btn-dark" onClick={onClose}>Done</button>}
               </span>
             </>
           )}
