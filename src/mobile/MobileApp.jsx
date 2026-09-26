@@ -15,11 +15,11 @@ import MMas from './MMas'
 // (modo cocina) y Más. Barra de pestañas abajo.
 
 const TABS = [
-  { id: 'home', label: 'Hoy', icon: 'sun' },
-  { id: 'planificador', label: 'Semana', icon: 'cal' },
-  { id: 'compra', label: 'Compra', icon: 'bag' },
+  { id: 'home', label: 'Today', icon: 'sun' },
+  { id: 'planificador', label: 'Week', icon: 'cal' },
+  { id: 'compra', label: 'Shop', icon: 'bag' },
   { id: 'batch', label: 'Batch', icon: 'pot' },
-  { id: 'mas', label: 'Más', icon: 'more' },
+  { id: 'mas', label: 'More', icon: 'more' },
 ]
 const tabOf = v => (v === 'platos' || v === 'ingredientes' || v === 'mas') ? 'mas' : (TABS.some(t => t.id === v) ? v : 'home')
 
@@ -29,14 +29,14 @@ export function People({ rings }) {
   const setActive = useStore(s => s.setActiveProfile)
   const people = activeProfilesOn(profiles, new Date())
   return (
-    <div className="m-people" role="group" aria-label="Ver por persona">
+    <div className="m-people" role="group" aria-label="View by person">
       {people.map((p, i) => {
         const on = activeProfileId === p.id, dim = activeProfileId !== 'all' && !on
         const c = PERSON_COLOR[i % PERSON_COLOR.length]
         const pct = rings?.[p.id]
         return (
           <button key={p.id} type="button" className={`m-avatar${on ? ' is-on' : ''}${dim ? ' is-dim' : ''}${pct != null ? ' has-ring' : ''}`} aria-pressed={on}
-            aria-label={on ? `Viendo solo a ${p.name}` : `Ver solo a ${p.name}`} onClick={() => setActive(on ? 'all' : p.id)}
+            aria-label={on ? `Showing only ${p.name}` : `Show only ${p.name}`} onClick={() => setActive(on ? 'all' : p.id)}
             style={pct != null ? { background: `conic-gradient(${c} 0 ${Math.min(100, pct)}%, rgba(110,80,50,0.14) ${Math.min(100, pct)}% 100%)` } : undefined}>
             <span style={{ background: `linear-gradient(135deg, ${c}CC, ${c})` }}>{p.initial}</span>
           </button>
@@ -48,7 +48,7 @@ export function People({ rings }) {
 
 export function Bulb({ unseen, onOpen }) {
   return (
-    <button type="button" className="m-bulb" aria-label="Sugerencias" onClick={onOpen}>
+    <button type="button" className="m-bulb" aria-label="Suggestions" onClick={onOpen}>
       <Icon name="bulb" size={18} />
       {unseen > 0 && <span className="mp-badge">{unseen}</span>}
     </button>
@@ -94,7 +94,7 @@ export default function MobileApp({ unseen, setIdeasOpen, ideasPanel }) {
       <main className="m-scroll" ref={scroller} key={tab}>
         {screen}
       </main>
-      <nav className="m-tabs" aria-label="Secciones">
+      <nav className="m-tabs" aria-label="Sections">
         <span className="m-tabs-lens" aria-hidden="true" style={{ left: `calc(6px + ${idx} * (100% - 12px) / ${TABS.length})` }} />
         {TABS.map(t => (
           <button key={t.id} type="button" aria-current={tab === t.id ? 'page' : undefined}

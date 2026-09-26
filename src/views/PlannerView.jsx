@@ -9,7 +9,7 @@ import SaveWeekSheet from '../components/meal/SaveWeekSheet'
 import { clearFor, weekWith, cleanWeek } from '../lib/planActions'
 import {
   DAY_KEYS, DAY_SHORT, DAY_LONG, MONTHS, MEALS, MEAL_LABEL, MEAL_TIME, MEAL_STYLE, PCOS_STYLE, PERSON_COLOR,
-  BATCH_DAYS, addDays, mondayOf, weekKeyOf, dayIndexOf, sameDay, startOfDay, fmtMoney, fmtRange,
+  BATCH_DAYS, addDays, mondayOf, weekKeyOf, dayIndexOf, sameDay, startOfDay, fmtMoney, fmtRange, fmtShortDate,
   activeProfilesOn, dayForPerson, mealInfo, dayTotals, shortName,
 } from '../lib/mealplan'
 
@@ -44,7 +44,7 @@ function MealRow({ type, rows, pcosPerson, onOpen, delay }) {
             </span>
           </>
         ) : (
-          <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13.5, fontWeight: 600, color: 'var(--c-ink-3)' }}><Icon name="plus" size={13} stroke={2.6} />Añadir {MEAL_LABEL[type].toLowerCase()}</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13.5, fontWeight: 600, color: 'var(--c-ink-3)' }}><Icon name="plus" size={13} stroke={2.6} />Add {MEAL_LABEL[type].toLowerCase()}</span>
         )}
       </span>
     </button>
@@ -67,7 +67,7 @@ function DayTotals({ totals, colorOf }) {
               <span style={{ display: 'block', height: '100%', width: `${pct}%`, borderRadius: 3, background: colorOf(p), animation: 'mp-grow 1.2s var(--c-ease) both' }} />
             </span>
             <span className="mp-num" style={{ fontSize: 11.5, color: t.planned === 0 ? 'var(--c-ink-3)' : ok ? 'var(--c-green)' : 'var(--c-ink-3)' }}>
-              {t.planned === 0 ? 'Sin comidas' : ok ? 'En objetivo' : diff > 0 ? `+${diff} kcal` : `faltan ${-diff}`} · {t.prot} g{p.protCap && t.prot > p.protCap ? ` (techo ${p.protCap})` : ''} · {fmtMoney(t.cost)}
+              {t.planned === 0 ? 'No meals' : ok ? 'On target' : diff > 0 ? `+${diff} kcal` : `${-diff} to go`} · {t.prot} g{p.protCap && t.prot > p.protCap ? ` (cap ${p.protCap})` : ''} · {fmtMoney(t.cost)}
             </span>
           </div>
         )
@@ -83,7 +83,7 @@ function MonthView({ monthDate, weekPlan, shown, allCombos, today, onPick }) {
   const weeks = Math.ceil((dayIndexOf(first) + last.getDate()) / 7)
   const cells = Array.from({ length: weeks * 7 }, (_, i) => addDays(start, i))
   return (
-    <section className="plan-month mp-glass mp-rise" aria-label="Mes" style={{ gridTemplateRows: `26px repeat(${weeks}, minmax(112px, 1fr))` }}>
+    <section className="plan-month mp-glass mp-rise" aria-label="Month" style={{ gridTemplateRows: `26px repeat(${weeks}, minmax(112px, 1fr))` }}>
       {DAY_SHORT.map(d => <span key={d} style={{ paddingLeft: 8, fontSize: 12, fontWeight: 600, color: 'var(--c-ink-3)' }}>{d}</span>)}
       {cells.map((date, i) => {
         const inMonth = date.getMonth() === monthDate.getMonth()
@@ -208,10 +208,10 @@ export default function PlannerView() {
   }
 
   const title = mode === 'month'
-    ? `${MONTHS[monthDate.getMonth()].charAt(0).toUpperCase() + MONTHS[monthDate.getMonth()].slice(1)} ${monthDate.getFullYear()}`
-    : weekOffset === 0 ? 'Esta semana' : weekOffset === 1 ? 'Semana que viene' : weekOffset === -1 ? 'Semana pasada' : `Semana del ${monday.getDate()}`
-  const sub = mode === 'month' ? 'Toca un día para abrirlo en la semana'
-    : `${fmtRange(monday, addDays(monday, 6))} · ${planned}/28 comidas · ${fmtMoney(weekCost)}`
+    ? `${MONTHS[monthDate.getMonth()]} ${monthDate.getFullYear()}`
+    : weekOffset === 0 ? 'This week' : weekOffset === 1 ? 'Next week' : weekOffset === -1 ? 'Last week' : `Week of ${fmtShortDate(monday)}`
+  const sub = mode === 'month' ? 'Tap a day to open it in the week view'
+    : `${fmtRange(monday, addDays(monday, 6))} · ${planned}/28 meals · ${fmtMoney(weekCost)}`
 
   const sheetDay = sheet ? days[sheet.dayIdx] : null
   const pickDay = picker ? days[picker.dayIdx] : null
@@ -222,15 +222,15 @@ export default function PlannerView() {
         <div className="mp-page-title"><h1>{title}</h1><span>{sub}</span></div>
         <div className="mp-page-tools">
           <Segmented label="Vista" value={mode} onChange={m => { setMode(m); if (m === 'month') setMonthDate(addDays(monday, 3)) }}
-            options={[{ value: 'week', label: 'Semana' }, { value: 'month', label: 'Mes' }]} />
+            options={[{ value: 'week', label: 'Week' }, { value: 'month', label: 'Month' }]} />
           {people.length > 1 && (
-            <Segmented label="Persona" value={activeProfileId === 'all' ? 'all' : activeProfileId} onChange={setActiveProfile}
-              options={[{ value: 'all', label: 'Todos' }, ...people.map(p => ({ value: p.id, label: p.name }))]} />
+            <Segmented label="Person" value={activeProfileId === 'all' ? 'all' : activeProfileId} onChange={setActiveProfile}
+              options={[{ value: 'all', label: 'Everyone' }, ...people.map(p => ({ value: p.id, label: p.name }))]} />
           )}
           <div className="mp-seg" style={{ gap: 0 }}>
-            <button type="button" aria-label="Anterior" onClick={() => nav(-1)} style={{ padding: '0 10px' }}><Icon name="left" size={12} stroke={2.6} /></button>
-            <button type="button" onClick={goToday} style={{ fontWeight: 600, color: 'var(--c-ink)' }}>Hoy</button>
-            <button type="button" aria-label="Siguiente" onClick={() => nav(1)} style={{ padding: '0 10px' }}><Icon name="right" size={12} stroke={2.6} /></button>
+            <button type="button" aria-label="Previous" onClick={() => nav(-1)} style={{ padding: '0 10px' }}><Icon name="left" size={12} stroke={2.6} /></button>
+            <button type="button" onClick={goToday} style={{ fontWeight: 600, color: 'var(--c-ink)' }}>Today</button>
+            <button type="button" aria-label="Next" onClick={() => nav(1)} style={{ padding: '0 10px' }}><Icon name="right" size={12} stroke={2.6} /></button>
           </div>
         </div>
       </div>
@@ -238,23 +238,23 @@ export default function PlannerView() {
       {mode === 'week' && (
         <>
           <div className="plan-actions mp-rise" style={{ animationDelay: '60ms' }}>
-            <button className="mp-btn mp-btn-glass mp-btn-sm" onClick={() => setModels(true)}><Icon name="layers" size={14} />Cargar semana modelo</button>
-            <button className="mp-btn mp-btn-glass mp-btn-sm" disabled={!planned} onClick={() => setSaving(true)} title={planned ? 'Guardarla con nombre para volver a cargarla' : 'La semana está vacía'}>
-              <Icon name="sparkle" size={14} />{linked ? `Guardar cambios en «${linked.name.length > 20 ? linked.name.slice(0, 18) + '…' : linked.name}»` : 'Guardar semana'}
+            <button className="mp-btn mp-btn-glass mp-btn-sm" onClick={() => setModels(true)}><Icon name="layers" size={14} />Load model week</button>
+            <button className="mp-btn mp-btn-glass mp-btn-sm" disabled={!planned} onClick={() => setSaving(true)} title={planned ? 'Save it with a name to load it again later' : 'The week is empty'}>
+              <Icon name="sparkle" size={14} />{linked ? `Save changes to “${linked.name.length > 20 ? linked.name.slice(0, 18) + '…' : linked.name}”` : 'Save week'}
             </button>
-            <button className="mp-btn mp-btn-glass mp-btn-sm" disabled={!hasPrev} onClick={() => replaceWeek(wk, { ...(weekPlan[prevKey] ?? {}) })} title={hasPrev ? 'Copia las 28 comidas de la semana anterior' : 'La semana anterior está vacía'}><Icon name="repeat" size={14} />Repetir semana anterior</button>
+            <button className="mp-btn mp-btn-glass mp-btn-sm" disabled={!hasPrev} onClick={() => replaceWeek(wk, { ...(weekPlan[prevKey] ?? {}) })} title={hasPrev ? 'Copies all 28 meals from last week' : 'Last week is empty'}><Icon name="repeat" size={14} />Repeat last week</button>
             {planned > 0 && (confirmClear
               ? <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                  <span className="mp-muted" style={{ fontSize: 12.5 }}>¿Vaciar las {planned} comidas?</span>
-                  <button className="mp-btn mp-btn-danger mp-btn-sm" onClick={() => { replaceWeek(wk, {}); setConfirmClear(false) }}>Vaciar</button>
+                  <span className="mp-muted" style={{ fontSize: 12.5 }}>Clear all {planned} meals?</span>
+                  <button className="mp-btn mp-btn-danger mp-btn-sm" onClick={() => { replaceWeek(wk, {}); setConfirmClear(false) }}>Clear</button>
                   <button className="mp-btn mp-btn-glass mp-btn-sm" onClick={() => setConfirmClear(false)}>No</button>
                 </span>
-              : <button className="mp-btn mp-btn-glass mp-btn-sm" onClick={() => setConfirmClear(true)}><Icon name="trash" size={14} />Vaciar semana</button>)}
-            {savedName && <span className="mp-chip mp-in" style={{ color: 'var(--c-green)' }}><Icon name="check" size={13} stroke={2.6} />Guardada como «{savedName}»</span>}
+              : <button className="mp-btn mp-btn-glass mp-btn-sm" onClick={() => setConfirmClear(true)}><Icon name="trash" size={14} />Clear week</button>)}
+            {savedName && <span className="mp-chip mp-in" style={{ color: 'var(--c-green)' }}><Icon name="check" size={13} stroke={2.6} />Saved as “{savedName}”</span>}
             {!savedName && linked && (
-              <span className="mp-chip" style={{ color: '#5B3FC4' }} title="Los cambios que hagas aquí se pueden guardar en esa semana modelo">
-                Editando «{linked.name}»
-                <button type="button" aria-label="Dejar de editar" onClick={() => setEditingWeek(null)} style={{ border: 0, background: 'transparent', cursor: 'pointer', color: 'inherit', display: 'flex', padding: 0, marginLeft: 2 }}><Icon name="x" size={10} stroke={3} /></button>
+              <span className="mp-chip" style={{ color: '#5B3FC4' }} title="Changes you make here can be saved to that model week">
+                Editing “{linked.name}”
+                <button type="button" aria-label="Stop editing" onClick={() => setEditingWeek(null)} style={{ border: 0, background: 'transparent', cursor: 'pointer', color: 'inherit', display: 'flex', padding: 0, marginLeft: 2 }}><Icon name="x" size={10} stroke={3} /></button>
               </span>
             )}
           </div>
@@ -264,7 +264,7 @@ export default function PlannerView() {
               const big = d.i === sel
               const isToday = d.i === todayIdx
               const past = todayIdx >= 0 && d.i < todayIdx
-              const tag = isToday ? 'Hoy' : d.i === 6 ? 'Batch' : null
+              const tag = isToday ? 'Today' : d.i === 6 ? 'Batch' : null
               return (
                 <article key={d.dk} className={`plan-day mp-glass mp-rise${big ? ' is-big' : ''}`}
                   style={{ animationDelay: `${80 + d.i * 40}ms`, opacity: past && !big ? 0.62 : 1 }}
@@ -276,7 +276,7 @@ export default function PlannerView() {
                       <span className="mp-num" style={{ fontSize: big ? 34 : 22, fontWeight: 700, letterSpacing: '-0.03em', transition: 'font-size .5s var(--c-ease)' }}>{d.date.getDate()}</span>
                     </span>
                     {tag && (
-                      <span className="mp-tag" style={tag === 'Hoy' ? { background: 'var(--c-ink)', color: '#fff' } : { background: 'rgba(232,98,124,0.14)', color: '#C2375A' }}>
+                      <span className="mp-tag" style={tag === 'Today' ? { background: 'var(--c-ink)', color: '#fff' } : { background: 'rgba(232,98,124,0.14)', color: '#C2375A' }}>
                         {tag}
                       </span>
                     )}
@@ -305,7 +305,7 @@ export default function PlannerView() {
                           </div>
                         )
                       })}
-                      <span className="mp-num" style={{ marginTop: 'auto', fontSize: 12, fontWeight: 600, color: 'var(--c-ink-2)' }}>{d.planned ? fmtMoney(d.cost) : 'Vacío'}</span>
+                      <span className="mp-num" style={{ marginTop: 'auto', fontSize: 12, fontWeight: 600, color: 'var(--c-ink-2)' }}>{d.planned ? fmtMoney(d.cost) : 'Empty'}</span>
                     </div>
                   )}
                 </article>
@@ -320,7 +320,7 @@ export default function PlannerView() {
       )}
 
       {sheetDay && (
-        <MealSheet mealType={sheet.mealType} dayLabel={`${DAY_LONG[sheetDay.i].toLowerCase()} ${sheetDay.date.getDate()}`} rows={sheetDay.meals[sheet.mealType]}
+        <MealSheet mealType={sheet.mealType} dayLabel={`${DAY_LONG[sheetDay.i]} ${sheetDay.date.getDate()}`} rows={sheetDay.meals[sheet.mealType]}
           onClose={() => setSheet(null)}
           onClear={() => clearSlot(sheetDay.i, sheet.mealType)}
           onChange={() => {

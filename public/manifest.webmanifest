@@ -1,7 +1,7 @@
 {
   "name": "Meal Planner",
   "short_name": "Meal Planner",
-  "lang": "es",
+  "lang": "en",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

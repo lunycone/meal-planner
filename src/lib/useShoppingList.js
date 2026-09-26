@@ -11,7 +11,7 @@ import { DAY_KEYS, addDays, mondayOf, weekKeyOf, fmtRange, activeProfilesOn, sta
 // necesitan — mismo orden que en Planificador/BatchPrepTab.
 const ALL_DAY_KEYS = DAY_KEYS
 const MEALS = ['desayuno', 'comida', 'merienda', 'cena']
-const DAY_LETTER = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
+const DAY_LETTER = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
 // ─── Ventanas ────────────────────────────────────────────────────────────────
 // Batch del domingo: se cocina UNA vez (domingo) para lunes-viernes de la
@@ -243,7 +243,7 @@ export default function useShoppingList(batchOffset, viewMode) {
       const parts = []
       if (v.grams > 0) parts.push(`${Math.round(v.grams)}g`)
       if (v.ml    > 0) parts.push(`${Math.round(v.ml)}ml`)
-      if (v.units > 0) parts.push(`${+v.units.toFixed(1)} ud`)
+      if (v.units > 0) parts.push(`${+v.units.toFixed(1)} pcs`)
       return { key: k, name: v.name, qty: parts.join(' + '), cost: v.cost }
     })
   }, [weekPlan, batchWindow, profiles, allCombos, allIng])
@@ -261,12 +261,12 @@ export default function useShoppingList(batchOffset, viewMode) {
       // Cantidades. unitGrams (banana): se compra por pieza, redondeo hacia
       // arriba. packSize/packLabel (huevo): en paquete cerrado, decimal exacto.
       let qtyStr = ''
-      if (data.qtyByUnit.grams && ing.unitGrams) qtyStr += `~${Math.ceil(data.qtyByUnit.grams / ing.unitGrams)} ud `
+      if (data.qtyByUnit.grams && ing.unitGrams) qtyStr += `~${Math.ceil(data.qtyByUnit.grams / ing.unitGrams)} pcs `
       else if (data.qtyByUnit.grams) qtyStr += `${Math.round(data.qtyByUnit.grams)} g `
       if (data.qtyByUnit.units && ing.packSize) qtyStr += `~${(data.qtyByUnit.units / ing.packSize).toFixed(1)} ${ing.packLabel}s `
-      else if (data.qtyByUnit.units) qtyStr += `${data.qtyByUnit.units} ud `
+      else if (data.qtyByUnit.units) qtyStr += `${data.qtyByUnit.units} pcs `
       if (data.qtyByUnit.ml) qtyStr += `${Math.round(data.qtyByUnit.ml)} ml `
-      if (data.qtyByUnit.serv) qtyStr += `${+data.qtyByUnit.serv.toFixed(1)} ${data.qtyByUnit.serv === 1 ? 'ración' : 'raciones'}`
+      if (data.qtyByUnit.serv) qtyStr += `${+data.qtyByUnit.serv.toFixed(1)} ${data.qtyByUnit.serv === 1 ? 'serving' : 'servings'}`
       qtyStr = qtyStr.trim()
 
       // Desglose por persona: "Julio+María: 150g×3d"
@@ -275,14 +275,14 @@ export default function useShoppingList(batchOffset, viewMode) {
       personEntries.forEach(ps => {
         let q = ''
         if (ps.grams > 0) q = `${Math.round(ps.grams / ps.days)} g`
-        else if (ps.units > 0) q = `${+(ps.units / ps.days).toFixed(1)} ud`
+        else if (ps.units > 0) q = `${+(ps.units / ps.days).toFixed(1)} pcs`
         else if (ps.ml > 0) q = `${Math.round(ps.ml / ps.days)} ml`
-        else if (ps.serv > 0) q = `${+(ps.serv / ps.days).toFixed(1)} rac`
+        else if (ps.serv > 0) q = `${+(ps.serv / ps.days).toFixed(1)} serv`
         if (!q) return
         const v = `${q} × ${ps.days}`
         ;(seen[v] ??= []).push(ps.name)
       })
-      const breakdown = Object.entries(seen).map(([v, names]) => `${names.join(' y ')}: ${v}`).join(' · ')
+      const breakdown = Object.entries(seen).map(([v, names]) => `${names.join(' & ')}: ${v}`).join(' · ')
 
       const usedDays = new Set(Array.from(data.meals).map(t => t.split(' ')[0]))
       out.push({

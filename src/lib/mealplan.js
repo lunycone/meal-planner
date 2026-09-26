@@ -10,12 +10,12 @@ import {
 import { getISOWeek } from '../utils/date'
 
 export const DAY_KEYS   = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom']
-export const DAY_SHORT  = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
-export const DAY_LONG   = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
-export const MONTHS     = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
-export const MONTHS_SHORT = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+export const DAY_SHORT  = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+export const DAY_LONG   = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+export const MONTHS     = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+export const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 export const MEALS      = ['desayuno', 'comida', 'merienda', 'cena']
-export const MEAL_LABEL = { desayuno: 'Desayuno', comida: 'Comida', merienda: 'Merienda', cena: 'Cena' }
+export const MEAL_LABEL = { desayuno: 'Breakfast', comida: 'Lunch', merienda: 'Snack', cena: 'Dinner' }
 export const MEAL_TIME  = { desayuno: '9:00', comida: '12:00', merienda: '16:30', cena: '19:30' }
 
 // Batch del domingo: se cocina UNA vez (domingo) para lunes-viernes de la
@@ -63,10 +63,10 @@ export function nextBatchMonday(today = new Date()) {
 }
 
 export function fmtMoney(n) { return '$' + (n ?? 0).toFixed(2) }
-export function fmtShortDate(d) { return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}` }
+export function fmtShortDate(d) { return `${MONTHS_SHORT[d.getMonth()]} ${d.getDate()}` }
 export function fmtRange(a, b) {
   return a.getMonth() === b.getMonth()
-    ? `${a.getDate()} – ${b.getDate()} ${MONTHS_SHORT[b.getMonth()]}`
+    ? `${MONTHS_SHORT[a.getMonth()]} ${a.getDate()} – ${b.getDate()}`
     : `${fmtShortDate(a)} – ${fmtShortDate(b)}`
 }
 
@@ -98,7 +98,7 @@ export function mealInfo(day, mealType, person, dayIdx, allIng, allCombos) {
   if (!combo) return null
   const agg = comboAgg(combo, allIng, meal.comboVariants || {}, {}, meal.comboOptionals || [])
   let kcal = agg.kcal, cost = agg.cost, prot = agg.prot ?? 0, fat = agg.fat ?? 0
-  let portion = 'Ración base', scaled = null
+  let portion = 'Base portion', scaled = null
   if (mealType === 'comida' || mealType === 'cena') {
     const tp = personMealScalesTwoPass(day, person, allIng, allCombos, personTargetForDay(person, dayIdx))
     const sc = tp[mealType]
@@ -112,10 +112,10 @@ export function mealInfo(day, mealType, person, dayIdx, allIng, allCombos) {
         scaled = { ingName: sc.ingName, grams: sc.grams, defaultGrams: sc.defaultGrams, oilMl: sc.oilMlApplied ?? 0 }
       } else if (sc.wholeDishFactor != null && sc.wholeDishFactor < 0.995) {
         prot = comboAggScaled(combo, allIng, sc.wholeDishFactor).prot ?? prot
-        portion = `Ración ×${sc.wholeDishFactor.toFixed(2)}`
+        portion = `Portion ×${sc.wholeDishFactor.toFixed(2)}`
         scaled = { factor: sc.wholeDishFactor }
       } else if ((sc.oilMlApplied ?? 0) > 0) {
-        portion = `Ración base + ${sc.oilMlApplied} ml AOVE`
+        portion = `Base portion + ${sc.oilMlApplied} ml EVOO`
         scaled = { oilMl: sc.oilMlApplied }
       }
     }
@@ -163,9 +163,9 @@ export const MEAL_STYLE = {
 export const PERSON_COLOR = ['#E97B2E', '#C9489F', '#2E8B6E', '#3B6FD8']
 
 export const PCOS_STYLE = {
-  green:  { color: '#2F9E5B', label: 'PCOS bajo',  long: 'Carbo bajo (PCOS)' },
-  yellow: { color: '#B7791F', label: 'PCOS medio', long: 'Carbo medio (PCOS)' },
-  red:    { color: '#D64545', label: 'PCOS alto',  long: 'Carbo alto (PCOS)' },
+  green:  { color: '#2F9E5B', label: 'PCOS low',  long: 'Low carb (PCOS)' },
+  yellow: { color: '#B7791F', label: 'PCOS mid', long: 'Mid carb (PCOS)' },
+  red:    { color: '#D64545', label: 'PCOS high',  long: 'High carb (PCOS)' },
 }
 
 /** Lunes de una clave de semana ISO ('2026-W40' → lun 28 sep 2026). */

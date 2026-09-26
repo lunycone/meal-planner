@@ -25,7 +25,7 @@ function SupabaseLoginGate({ onAuth }) {
     setLoading(false)
     if (err) {
       // Mensaje generico -- no confirmar si el email existe o no.
-      setError('Email o contraseña incorrectos')
+      setError('Wrong email or password')
       setShake(true)
       setPassword('')
       setTimeout(() => setShake(false), 500)
@@ -54,14 +54,14 @@ function SupabaseLoginGate({ onAuth }) {
           <input
             type="password"
             className={`auth-input${error ? ' auth-input-error' : ''}`}
-            placeholder="Contraseña"
+            placeholder="Password"
             value={password}
             onChange={e => { setPassword(e.target.value); setError(null) }}
             autoComplete="current-password"
           />
           {error && <p className="auth-error">{error}</p>}
           <button type="submit" className="auth-btn" disabled={!email || !password || loading}>
-            {loading ? 'Entrando…' : 'Entrar'}
+            {loading ? 'Signing in…' : 'Sign in'}
           </button>
         </form>
       </div>
@@ -101,15 +101,15 @@ function PasswordGate({ onAuth }) {
             ref={inputRef}
             type="password"
             className={`auth-input${error ? ' auth-input-error' : ''}`}
-            placeholder="Contraseña"
+            placeholder="Password"
             value={value}
             onChange={e => { setValue(e.target.value); setError(false) }}
             autoFocus
             autoComplete="current-password"
           />
-          {error && <p className="auth-error">Contraseña incorrecta</p>}
+          {error && <p className="auth-error">Wrong password</p>}
           <button type="submit" className="auth-btn" disabled={!value}>
-            {value ? 'Entrar' : 'Escribe la contraseña'}
+            {value ? 'Sign in' : 'Enter the password'}
           </button>
         </form>
       </div>

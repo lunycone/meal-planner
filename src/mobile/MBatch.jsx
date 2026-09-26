@@ -13,12 +13,13 @@ import { MHeader } from './MobileApp'
 // tuppers). El modo cocina va paso a paso con temporizadores grandes que
 // siguen corriendo aunque cambies de paso, y mantiene la pantalla encendida.
 
-const LET = { lun: 'L', mar: 'M', 'mié': 'X', jue: 'J', vie: 'V' }
-// «Prepara X la noche anterior y déjalo en la nevera» ×N → una sola frase
+const LET = { lun: 'M', mar: 'T', 'mié': 'W', jue: 'T', vie: 'F' }
+const DAY3 = { lun: 'Mon', mar: 'Tue', 'mié': 'Wed', jue: 'Thu', vie: 'Fri' }
+// «Make X the night before and leave it in the fridge» ×N → one sentence
 function visperaLine(list) {
   const fridge = [], rest = []
-  list.forEach(v => { const m = /^Prepara (.+) la noche anterior/.exec(v.text); if (m) fridge.push(m[1]); else rest.push(v.text.replace(/\.$/, '')) })
-  return [fridge.length ? `deja preparado en la nevera ${fridge.join(', ')}` : null, ...rest].filter(Boolean).join(' · ') + '.'
+  list.forEach(v => { const m = /^Make (.+) the night before/.exec(v.text); if (m) fridge.push(m[1]); else rest.push(v.text.replace(/\.$/, '')) })
+  return [fridge.length ? `have ready in the fridge: ${fridge.join(', ')}` : null, ...rest].filter(Boolean).join(' · ') + '.'
 }
 const fmtT = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
 
@@ -61,13 +62,13 @@ function CookMode({ steps, onExit, onTuppers }) {
   const last = i === steps.length - 1
 
   return createPortal(
-    <section className="mk" aria-label="Modo cocina">
+    <section className="mk" aria-label="Cook mode">
       <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ fontSize: 14, fontWeight: 600, opacity: 0.7 }}>Paso {i + 1} de {steps.length}</span>
-        <button type="button" className="mk-x" aria-label="Salir del modo cocina" onClick={onExit}><Icon name="x" size={13} stroke={3} /></button>
+        <span style={{ fontSize: 14, fontWeight: 600, opacity: 0.7 }}>Step {i + 1} of {steps.length}</span>
+        <button type="button" className="mk-x" aria-label="Exit cook mode" onClick={onExit}><Icon name="x" size={13} stroke={3} /></button>
       </span>
       <span className="mk-segs" style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}>
-        {steps.map((_, k) => <button key={k} type="button" aria-label={`Paso ${k + 1}`} onClick={() => setI(k)}
+        {steps.map((_, k) => <button key={k} type="button" aria-label={`Step ${k + 1}`} onClick={() => setI(k)}
           style={{ background: k < i ? '#fff' : k === i ? '#F7D98A' : timers[k]?.running ? '#E0A21B' : 'rgba(255,255,255,0.18)' }} />)}
       </span>
       {running.length > 0 && (
@@ -80,17 +81,17 @@ function CookMode({ steps, onExit, onTuppers }) {
       {st.list && <ul className="mk-list">{st.list.map((x, k) => <li key={k}>{x}</li>)}</ul>}
       {st.split?.length > 0 && <span className="mk-split">{st.split.map(s => `${s.name} ${s.label}`).join(' · ')}</span>}
       {st.min > 0 && (
-        <button type="button" className="mk-timer" onClick={toggle} aria-label={t.running ? 'Pausar' : 'Empezar'}
+        <button type="button" className="mk-timer" onClick={toggle} aria-label={t.running ? 'Pause' : 'Start'}
           style={{ background: `conic-gradient(#F7D98A 0 ${frac * 100}%, rgba(255,255,255,0.12) ${frac * 100}% 100%)` }}>
           <span>
             <strong className="mp-num">{fmtT(t.left)}</strong>
-            <small><Icon name={t.running ? 'pause' : 'play'} size={11} fill="currentColor" />{t.done ? '¡Listo!' : t.running ? 'Pausar' : 'Tocar para empezar'}</small>
+            <small><Icon name={t.running ? 'pause' : 'play'} size={11} fill="currentColor" />{t.done ? 'Ready!' : t.running ? 'Pause' : 'Tap to start'}</small>
           </span>
         </button>
       )}
       <span className="mk-nav">
-        <button type="button" onClick={() => setI(Math.max(0, i - 1))} disabled={i === 0}>Atrás</button>
-        <button type="button" className="is-main" onClick={() => last ? onTuppers() : setI(i + 1)}>{last ? 'Ver tuppers' : 'Siguiente paso'}</button>
+        <button type="button" onClick={() => setI(Math.max(0, i - 1))} disabled={i === 0}>Back</button>
+        <button type="button" className="is-main" onClick={() => last ? onTuppers() : setI(i + 1)}>{last ? 'See containers' : 'Next step'}</button>
       </span>
     </section>,
     document.body
@@ -136,39 +137,39 @@ export default function MBatch({ unseen, onIdeas }) {
 
   const steps = useMemo(() => {
     const out = []
-    if (schedule.prepTasks.length) out.push({ title: 'Prepara los ingredientes', list: schedule.prepTasks.map(t => `${t.name}: ${t.action}${t.qty ? ` (${t.qty})` : ''}`) })
+    if (schedule.prepTasks.length) out.push({ title: 'Prep the ingredients', list: schedule.prepTasks.map(t => `${t.name}: ${t.action}${t.qty ? ` (${t.qty})` : ''}`) })
     ;[...schedule.jobs].sort((a, b) => (b.cookMin || 0) - (a.cookMin || 0)).forEach(j => out.push({
       title: j.name, sub: [j.label, j.qtyLabel].filter(Boolean).join(' · '), min: j.cookMin || 0, split: j.split,
       list: (j.ingredients ?? []).length ? j.ingredients.map(x => `${x.name}${x.qty ? `: ${x.qty}` : ''}`) : null,
     }))
-    if (schedule.noCook.length) out.push({ title: 'Sin fuego', list: schedule.noCook.map(n => n.text) })
-    out.push({ title: 'Reparte en tuppers', sub: `${total} tuppers de comida y cena, por persona y día. La ración de cada uno ya está calculada.` })
+    if (schedule.noCook.length) out.push({ title: 'No heat', list: schedule.noCook.map(n => n.text) })
+    out.push({ title: 'Split into containers', sub: `${total} lunch and dinner containers, per person and day. Each person's portion is already calculated.` })
     return out
   }, [schedule, total])
 
   return (
     <div className="m-page">
-      <MHeader title={`Domingo ${cookDate.getDate()}`} sub={`batch para lun ${monday.getDate()} – vie ${addDays(monday, 4).getDate()}`} unseen={unseen} onIdeas={onIdeas} />
+      <MHeader title={`Sunday ${cookDate.getDate()}`} sub={`batch for Mon ${monday.getDate()} – Fri ${addDays(monday, 4).getDate()}`} unseen={unseen} onIdeas={onIdeas} />
       <div className="ms-nav">
-        <button type="button" aria-label="Batch anterior" onClick={() => setOffset(o => o - 1)}><Icon name="left" size={14} stroke={2.6} /></button>
-        <button type="button" onClick={() => setOffset(1)} disabled={offset === 1}>Próximo batch</button>
-        <button type="button" aria-label="Batch siguiente" onClick={() => setOffset(o => o + 1)}><Icon name="right" size={14} stroke={2.6} /></button>
+        <button type="button" aria-label="Previous batch" onClick={() => setOffset(o => o - 1)}><Icon name="left" size={14} stroke={2.6} /></button>
+        <button type="button" onClick={() => setOffset(1)} disabled={offset === 1}>Next batch</button>
+        <button type="button" aria-label="Following batch" onClick={() => setOffset(o => o + 1)}><Icon name="right" size={14} stroke={2.6} /></button>
       </div>
 
       {rows.length === 0 ? (
-        <div className="mp-empty" style={{ padding: '40px 10px' }}>Nada planificado de lunes a viernes esa semana.</div>
+        <div className="mp-empty" style={{ padding: '40px 10px' }}>Nothing planned Monday to Friday that week.</div>
       ) : (
         <>
           <section className="mc-progress">
             <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-              <span className="mp-muted" style={{ fontSize: 13 }}><strong className="mp-num" style={{ fontSize: 22, color: 'var(--c-ink)' }}>{done}</strong> / {total} tuppers</span>
-              <span className="mp-muted" style={{ fontSize: 13 }}>{schedule.totalMin ? `≈ ${schedule.totalMin}′ · ` : ''}{rows.length} platos</span>
+              <span className="mp-muted" style={{ fontSize: 13 }}><strong className="mp-num" style={{ fontSize: 22, color: 'var(--c-ink)' }}>{done}</strong> / {total} containers</span>
+              <span className="mp-muted" style={{ fontSize: 13 }}>{schedule.totalMin ? `≈ ${schedule.totalMin}′ · ` : ''}{rows.length} dishes</span>
             </span>
             <span className="mc-bar"><span style={{ width: `${total ? done / total * 100 : 0}%` }} /></span>
           </section>
-          <button type="button" className="mb-cook" onClick={() => setCooking(true)}><Icon name="play" size={14} fill="currentColor" />Empezar a cocinar</button>
+          <button type="button" className="mb-cook" onClick={() => setCooking(true)}><Icon name="play" size={14} fill="currentColor" />Start cooking</button>
           {schedule.vispera.length > 0 && (
-            <span className="mb-vispera"><Icon name="moon" size={16} color="#7154DA" style={{ flexShrink: 0, marginTop: 1 }} /><span><strong>La víspera:</strong> {visperaLine(schedule.vispera)}</span></span>
+            <span className="mb-vispera"><Icon name="moon" size={16} color="#7154DA" style={{ flexShrink: 0, marginTop: 1 }} /><span><strong>Night before:</strong> {visperaLine(schedule.vispera)}</span></span>
           )}
           <section className="mb-list" ref={listRef}>
             {rows.map((r, n) => {
@@ -186,14 +187,14 @@ export default function MBatch({ unseen, onIdeas }) {
                     </span>
                     {r.packs
                       ? <span className="mb-ring" style={{ background: `conic-gradient(var(--c-green) 0 ${pct}%, rgba(110,80,50,0.12) ${pct}% 100%)` }}><span className="mp-num">{k}/{r.list.length}</span></span>
-                      : <span className="mp-muted mp-num" style={{ fontSize: 12 }}>{r.list.length} rac.</span>}
+                      : <span className="mp-muted mp-num" style={{ fontSize: 12 }}>{r.list.length} serv.</span>}
                   </button>
                   {isOpen && (
                     <div className="mb-body mp-in">
                       {r.g.sharedItems.length > 0 && <span style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--c-ink-2)' }}>{r.g.sharedItems.map(it => `${it.name.split(' (')[0]} ${fmtQty(it)}`).join(' · ')}</span>}
                       {r.packs && r.g.hasBase && (
                         <span style={{ fontSize: 12.5, color: 'var(--c-ink-2)' }}>
-                          {r.persons.map((pt, j) => <span key={pt.person.id}>{j ? ' · ' : ''}<strong style={{ color: colorOf(pt.person) }}>{pt.person.name}</strong> {Math.round(pt.baseGrams)} g</span>)} de {r.persons[0]?.baseName?.split(' (')[0].toLowerCase()}
+                          {r.persons.map((pt, j) => <span key={pt.person.id}>{j ? ' · ' : ''}<strong style={{ color: colorOf(pt.person) }}>{pt.person.name}</strong> {Math.round(pt.baseGrams)} g</span>)} of {r.persons[0]?.baseName?.split(' (')[0].toLowerCase()}
                         </span>
                       )}
                       {r.packs && (
@@ -202,7 +203,7 @@ export default function MBatch({ unseen, onIdeas }) {
                             const on = tups.has(t.id)
                             return (
                               <button key={t.id} type="button" aria-pressed={on} className={on ? 'is-on' : ''} onClick={() => toggleBatchTup(wk, t.id)}>
-                                <span className="mb-tick"><Icon name="check" size={9} stroke={4} /></span>{t.dayKey.charAt(0).toUpperCase() + t.dayKey.slice(1)} · {t.person.name}
+                                <span className="mb-tick"><Icon name="check" size={9} stroke={4} /></span>{DAY3[t.dayKey]} · {t.person.name}
                               </button>
                             )
                           })}

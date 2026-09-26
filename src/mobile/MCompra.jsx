@@ -26,36 +26,36 @@ export default function MCompra({ unseen, onIdeas }) {
   const order = Object.keys(byStore).filter(Boolean)
     .sort((a, b) => byStore[b].reduce((s, i) => s + i.cost, 0) - byStore[a].reduce((s, i) => s + i.cost, 0))
     .concat(byStore[''] ? [''] : [])
-  const groups = order.map(k => ({ k, label: k || 'Sin tienda', color: k ? storeColor(k) : 'rgba(110,80,50,0.35)', rows: byStore[k].sort((a, b) => a.name.localeCompare(b.name)) }))
-  if (done.length) groups.push({ k: '__done', label: 'En el carro', color: 'var(--c-green)', rows: done })
+  const groups = order.map(k => ({ k, label: k || 'No store', color: k ? storeColor(k) : 'rgba(110,80,50,0.35)', rows: byStore[k].sort((a, b) => a.name.localeCompare(b.name)) }))
+  if (done.length) groups.push({ k: '__done', label: 'In the cart', color: 'var(--c-green)', rows: done })
 
   const sunday = addDays(batchWindow.start, -1)
   const days = batchWindow.windowDates.map(w => w.dayKey)
-  const sub = `batch del domingo ${sunday.getDate()} · lun ${batchWindow.start.getDate()} – vie ${batchWindow.end.getDate()}`
+  const sub = `Sunday ${sunday.getDate()} batch · Mon ${batchWindow.start.getDate()} – Fri ${batchWindow.end.getDate()}`
 
   return (
     <div className="m-page">
-      <MHeader title="Compra" sub={sub} unseen={unseen} onIdeas={onIdeas} />
+      <MHeader title="Shopping" sub={sub} unseen={unseen} onIdeas={onIdeas} />
       <div className="ms-nav">
-        <button type="button" aria-label="Batch anterior" onClick={() => setOffset(o => o - 1)}><Icon name="left" size={14} stroke={2.6} /></button>
-        <button type="button" onClick={() => setOffset(1)} disabled={offset === 1}>Próximo batch</button>
-        <button type="button" aria-label="Batch siguiente" onClick={() => setOffset(o => o + 1)}><Icon name="right" size={14} stroke={2.6} /></button>
+        <button type="button" aria-label="Previous batch" onClick={() => setOffset(o => o - 1)}><Icon name="left" size={14} stroke={2.6} /></button>
+        <button type="button" onClick={() => setOffset(1)} disabled={offset === 1}>Next batch</button>
+        <button type="button" aria-label="Following batch" onClick={() => setOffset(o => o + 1)}><Icon name="right" size={14} stroke={2.6} /></button>
       </div>
 
       <section className="mc-progress">
         <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-          <span className="mp-muted" style={{ fontSize: 13 }}>En el carro <strong className="mp-num" style={{ fontSize: 22, color: 'var(--c-ink)' }}>{done.length}</strong> / {buy.length}</span>
-          <span className="mp-muted mp-num" style={{ fontSize: 13 }}><strong style={{ color: 'var(--c-ink)' }}>{fmtMoney(doneCost)}</strong> de {fmtMoney(total)}</span>
+          <span className="mp-muted" style={{ fontSize: 13 }}>In the cart <strong className="mp-num" style={{ fontSize: 22, color: 'var(--c-ink)' }}>{done.length}</strong> / {buy.length}</span>
+          <span className="mp-muted mp-num" style={{ fontSize: 13 }}><strong style={{ color: 'var(--c-ink)' }}>{fmtMoney(doneCost)}</strong> of {fmtMoney(total)}</span>
         </span>
         <span className="mc-bar"><span style={{ width: `${buy.length ? done.length / buy.length * 100 : 0}%` }} /></span>
-        <div className="mc-seg" role="group" aria-label="Lista">
+        <div className="mc-seg" role="group" aria-label="List">
           <span aria-hidden="true" style={{ left: tab === 'buy' ? 3 : '50%' }} />
-          <button type="button" aria-pressed={tab === 'buy'} onClick={() => setTab('buy')}>Por comprar · {pending.length}</button>
-          <button type="button" aria-pressed={tab === 'home'} onClick={() => setTab('home')}>En casa · {home.length}</button>
+          <button type="button" aria-pressed={tab === 'buy'} onClick={() => setTab('buy')}>To buy · {pending.length}</button>
+          <button type="button" aria-pressed={tab === 'home'} onClick={() => setTab('home')}>At home · {home.length}</button>
         </div>
       </section>
 
-      {items.length === 0 && <div className="mp-empty" style={{ padding: '40px 10px' }}>No hay platos planificados para esos días.</div>}
+      {items.length === 0 && <div className="mp-empty" style={{ padding: '40px 10px' }}>No dishes planned for those days.</div>}
 
       {tab === 'buy' && groups.map(g => (
         <section key={g.k} className="mc-group">
@@ -84,14 +84,14 @@ export default function MCompra({ unseen, onIdeas }) {
 
       {tab === 'home' && (
         <section className="mc-group">
-          <span className="mp-muted" style={{ fontSize: 12.5, lineHeight: 1.45, padding: '0 4px' }}>Lo que ya tenéis. Si algo se acaba, márcalo como «Falta» y vuelve a la lista.</span>
+          <span className="mp-muted" style={{ fontSize: 12.5, lineHeight: 1.45, padding: '0 4px' }}>What you already have. If something runs out, mark it “Missing” and it goes back on the list.</span>
           {home.map(i => (
             <div key={i.key} className="mc-home">
               <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <span style={{ fontSize: 15, fontWeight: 600 }}>{i.name}</span>
-                <span className="mp-muted mp-num" style={{ fontSize: 12 }}>{i.qty} esta tanda</span>
+                <span className="mp-muted mp-num" style={{ fontSize: 12 }}>{i.qty} this batch</span>
               </span>
-              <button type="button" className="mc-miss" onClick={() => setHome(i.key, false)}>Falta</button>
+              <button type="button" className="mc-miss" onClick={() => setHome(i.key, false)}>Missing</button>
             </div>
           ))}
         </section>

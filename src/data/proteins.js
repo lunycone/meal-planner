@@ -2,8 +2,8 @@
 // every dish in `dishes.js` is self-contained. Kept exported (empty) so any
 // remaining import doesn't crash; safe to delete once nothing references it.
 export const COOK_FAT = {
-  cooked:  [{ name: 'Grasa cocción (vaca/coco)', kc: 115 }, { name: 'Aceite oliva por encima', kc: 120 }],
-  drizzle: [{ name: 'Aceite oliva por encima', kc: 120 }],
+  cooked:  [{ name: 'Cooking fat (beef/coconut)', kc: 115 }, { name: 'Olive oil drizzle', kc: 120 }],
+  drizzle: [{ name: 'Olive oil drizzle', kc: 120 }],
 }
 
 export const PROTEIN = {}

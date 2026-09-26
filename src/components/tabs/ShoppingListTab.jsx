@@ -7,7 +7,7 @@ import { storeColor } from '../../lib/stores'
 import { DAY_KEYS, addDays, fmtMoney } from '../../lib/mealplan'
 import useShoppingList, { CAT_PILL } from '../../lib/useShoppingList'
 
-const DAY_LETTER = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
+const DAY_LETTER = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
 function Check({ on }) {
   return (
@@ -56,9 +56,9 @@ export default function ShoppingListTab() {
   const dayCols = batchWindow.windowDates.map(w => w.dayKey)
 
   function copyToClipboard() {
-    let text = `Compra · ${viewMode === 'batch' ? 'batch' : 'semana'} ${batchWindow.rangeLabel}\n\n`
+    let text = `Shopping · ${viewMode === 'batch' ? 'batch' : 'week'} ${batchWindow.rangeLabel}\n\n`
     const groupsForCopy = sortBy === 'store'
-      ? storeOrder.map(k => [k || 'Sin tienda', buy.filter(i => (i.store ?? '') === k)])
+      ? storeOrder.map(k => [k || 'No store', buy.filter(i => (i.store ?? '') === k)])
       : CAT_ORDER.map(c => [CAT_LABELS[c] ?? c, buy.filter(i => i.cat === c)])
     groupsForCopy.forEach(([label, list]) => {
       if (!list.length) return
@@ -77,18 +77,18 @@ export default function ShoppingListTab() {
     <div className="compra">
       <div className="mp-page-head mp-rise">
         <div className="mp-page-title">
-          <h1>Compra</h1>
-          <span>{viewMode === 'batch' ? `batch del domingo ${batchSunday.getDate()} · lun ${batchWindow.start.getDate()} – vie ${batchWindow.end.getDate()}` : `semana ${batchWindow.rangeLabel}`}{people.length ? ` · ${people.map(p => p.name).join(' y ')}` : ''}</span>
+          <h1>Shopping</h1>
+          <span>{viewMode === 'batch' ? `Sunday ${batchSunday.getDate()} batch · Mon ${batchWindow.start.getDate()} – Fri ${batchWindow.end.getDate()}` : `week ${batchWindow.rangeLabel}`}{people.length ? ` · ${people.map(p => p.name).join(' & ')}` : ''}</span>
         </div>
         <div className="mp-page-tools">
-          <Segmented label="Lista" value={tab} onChange={setTab}
-            options={[{ value: 'buy', label: `Por comprar · ${buy.length}` }, { value: 'home', label: `En casa · ${home.length}` }]} />
-          <Segmented label="Periodo" value={viewMode} onChange={v => setViewMode(v)}
-            options={[{ value: 'batch', label: 'Batch L–V' }, { value: 'semana', label: 'Semana L–D' }]} />
+          <Segmented label="List" value={tab} onChange={setTab}
+            options={[{ value: 'buy', label: `To buy · ${buy.length}` }, { value: 'home', label: `At home · ${home.length}` }]} />
+          <Segmented label="Period" value={viewMode} onChange={v => setViewMode(v)}
+            options={[{ value: 'batch', label: 'Batch Mon–Fri' }, { value: 'semana', label: 'Week Mon–Sun' }]} />
           <div className="mp-seg" style={{ gap: 0 }}>
-            <button type="button" aria-label="Anterior" onClick={() => setBatchOffset(o => o - 1)} style={{ padding: '0 10px' }}><Icon name="left" size={12} stroke={2.6} /></button>
-            <button type="button" onClick={() => setBatchOffset(1)} style={{ fontWeight: 600, color: 'var(--c-ink)' }} title="El próximo batch">Próximo</button>
-            <button type="button" aria-label="Siguiente" onClick={() => setBatchOffset(o => o + 1)} style={{ padding: '0 10px' }}><Icon name="right" size={12} stroke={2.6} /></button>
+            <button type="button" aria-label="Previous" onClick={() => setBatchOffset(o => o - 1)} style={{ padding: '0 10px' }}><Icon name="left" size={12} stroke={2.6} /></button>
+            <button type="button" onClick={() => setBatchOffset(1)} style={{ fontWeight: 600, color: 'var(--c-ink)' }} title="The next batch">Next</button>
+            <button type="button" aria-label="Following" onClick={() => setBatchOffset(o => o + 1)} style={{ padding: '0 10px' }}><Icon name="right" size={12} stroke={2.6} /></button>
           </div>
         </div>
       </div>
@@ -98,27 +98,27 @@ export default function ShoppingListTab() {
           <div className="compra-tools">
             <label className="mp-search" style={{ flex: 1, maxWidth: 320 }}>
               <Icon name="search" size={14} stroke={2.4} />
-              <span className="sr-only">Buscar ingrediente</span>
-              <input placeholder="Buscar ingrediente…" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+              <span className="sr-only">Search ingredient</span>
+              <input placeholder="Search ingredient…" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
             </label>
-            <Segmented label="Ordenar" value={sortBy} onChange={setSortBy}
-              options={[{ value: 'store', label: 'Tienda' }, { value: 'category', label: 'Categoría' }, { value: 'cost', label: 'Precio' }, { value: 'name', label: 'A–Z' }]} />
-            {tab === 'buy' && <button className="mp-btn mp-btn-glass mp-btn-sm" onClick={copyToClipboard} disabled={!buy.length}><Icon name={copied ? 'check' : 'copy'} size={14} />{copied ? 'Copiada' : 'Copiar lista'}</button>}
+            <Segmented label="Sort" value={sortBy} onChange={setSortBy}
+              options={[{ value: 'store', label: 'Store' }, { value: 'category', label: 'Category' }, { value: 'cost', label: 'Price' }, { value: 'name', label: 'A–Z' }]} />
+            {tab === 'buy' && <button className="mp-btn mp-btn-glass mp-btn-sm" onClick={copyToClipboard} disabled={!buy.length}><Icon name={copied ? 'check' : 'copy'} size={14} />{copied ? 'Copied' : 'Copy list'}</button>}
           </div>
 
           {items.length === 0 && (
             <div className="mp-empty" style={{ padding: '60px 20px' }}>
-              No hay platos planificados en estos días.<br />
-              <button className="mp-btn mp-btn-dark" style={{ marginTop: 14 }} onClick={() => useStore.getState().openPlanner(batchOffset, 0)}><Icon name="cal" size={14} />Abrir en el Planificador</button>
+              No dishes planned for these days.<br />
+              <button className="mp-btn mp-btn-dark" style={{ marginTop: 14 }} onClick={() => useStore.getState().openPlanner(batchOffset, 0)}><Icon name="cal" size={14} />Open in the Planner</button>
             </div>
           )}
 
           {tab === 'buy' && sorted.length > 0 && (
             <>
               <div className="compra-head" style={{ gridTemplateColumns: gridCols }}>
-                <span /><span>Producto</span><span>Compras</span>
+                <span /><span>Product</span><span>To buy</span>
                 {dayCols.map(d => <span key={d} style={{ textAlign: 'center' }}>{DAY_LETTER[DAY_KEYS.indexOf(d)]}</span>)}
-                <span style={{ textAlign: 'right' }}>Precio</span><span />
+                <span style={{ textAlign: 'right' }}>Price</span><span />
               </div>
               {sorted.map((i, n) => {
                 const on = checked.has(i.key)
@@ -131,12 +131,12 @@ export default function ShoppingListTab() {
                     {header && sortBy === 'store' && (
                       <div className="compra-cat compra-store">
                         <span className="mp-dot" style={{ width: 10, height: 10, background: i.store ? storeColor(i.store) : 'rgba(110,80,50,0.35)' }} />
-                        {i.store ?? 'Sin tienda'}
+                        {i.store ?? 'No store'}
                         <span className="mp-muted mp-num" style={{ fontWeight: 500 }}>{st ? `${st.n} · ${fmtMoney(st.cost)}` : ''}</span>
                       </div>
                     )}
                     <div className={`compra-row mp-in${on ? ' is-done' : ''}`} style={{ gridTemplateColumns: gridCols, animationDelay: `${Math.min(n, 20) * 22}ms` }}>
-                      <button type="button" className="compra-hit" aria-pressed={on} aria-label={`${on ? 'Desmarcar' : 'Marcar'} ${i.name}`} onClick={() => toggleChecked(i.key)} />
+                      <button type="button" className="compra-hit" aria-pressed={on} aria-label={`${on ? 'Uncheck' : 'Check'} ${i.name}`} onClick={() => toggleChecked(i.key)} />
                       <Check on={on} />
                       <span className="compra-name" title={i.breakdown}>
                         <span>{i.name}</span>
@@ -149,7 +149,7 @@ export default function ShoppingListTab() {
                         </span>
                       ))}
                       <span className="mp-num" style={{ textAlign: 'right', fontSize: 13.5, fontWeight: 600 }}>{fmtMoney(i.cost)}</span>
-                      <button type="button" className="compra-mini" title="Ya lo tengo en casa" onClick={() => setHome(i.key, true)}><Icon name="home" size={13} /></button>
+                      <button type="button" className="compra-mini" title="Already have it at home" onClick={() => setHome(i.key, true)}><Icon name="home" size={13} /></button>
                     </div>
                   </div>
                 )
@@ -160,27 +160,27 @@ export default function ShoppingListTab() {
           {tab === 'home' && (
             <>
               <p className="mp-muted" style={{ margin: '4px 0 12px', fontSize: 13, lineHeight: 1.5 }}>
-                Especias, aceite y lo que ya tienes. No entra en el total; si se acaba, pásalo a «Falta» y vuelve a la lista.
+                Spices, oil and what you already have. Not in the total; if it runs out, switch it to “Missing” and it goes back on the list.
               </p>
               <div className="compra-home">
                 {sorted.map((i, n) => (
                   <div key={i.key} className="compra-home-row mp-in" style={{ animationDelay: `${Math.min(n, 20) * 22}ms` }}>
                     <span style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
                       <span style={{ fontSize: 14, fontWeight: 600 }}>{i.name}</span>
-                      <span className="mp-muted mp-num" style={{ fontSize: 12 }}>{i.qty} esta {viewMode === 'batch' ? 'tanda' : 'semana'}{i.cost > 0.004 ? ` · ${fmtMoney(i.cost)}` : ''}</span>
+                      <span className="mp-muted mp-num" style={{ fontSize: 12 }}>{i.qty} this {viewMode === 'batch' ? 'batch' : 'week'}{i.cost > 0.004 ? ` · ${fmtMoney(i.cost)}` : ''}</span>
                     </span>
-                    <Segmented label={`${i.name}: en casa`} value="have" onChange={v => v === 'miss' && setHome(i.key, false)}
-                      options={[{ value: 'have', label: 'Hay' }, { value: 'miss', label: 'Falta' }]} />
+                    <Segmented label={`${i.name}: at home`} value="have" onChange={v => v === 'miss' && setHome(i.key, false)}
+                      options={[{ value: 'have', label: 'Have' }, { value: 'miss', label: 'Missing' }]} />
                   </div>
                 ))}
-                {sorted.length === 0 && <div className="mp-empty">Nada marcado como en casa.</div>}
+                {sorted.length === 0 && <div className="mp-empty">Nothing marked as at home.</div>}
               </div>
             </>
           )}
 
           {tab === 'buy' && batidoAgg.length > 0 && (
             <div style={{ marginTop: 22, paddingTop: 14, borderTop: '1px dashed var(--c-line-2)' }}>
-              <span className="mp-eyebrow">Batidos de merienda sugeridos · no incluidos arriba</span>
+              <span className="mp-eyebrow">Suggested snack shakes · not included above</span>
               {batidoAgg.map(item => (
                 <div key={item.key} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, padding: '8px 0', borderTop: '1px solid var(--c-line)', fontSize: 13.5 }}>
                   <span>{item.name}</span><span className="mp-muted mp-num">{item.qty} · {fmtMoney(item.cost)}</span>
@@ -192,7 +192,7 @@ export default function ShoppingListTab() {
 
         <aside className="compra-aside">
           <section className="mp-glass mp-card mp-rise" style={{ animationDelay: '160ms', display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <span className="mp-muted" style={{ fontSize: 12, fontWeight: 600 }}>En el carro</span>
+            <span className="mp-muted" style={{ fontSize: 12, fontWeight: 600 }}>In the cart</span>
             <span className="mp-num" style={{ fontSize: 34, fontWeight: 700, letterSpacing: '-0.03em' }}>{done.length}<span style={{ fontSize: 16, color: 'var(--c-ink-3)' }}> / {buy.length}</span></span>
             {buy.length > 0 && buy.length <= 36 ? (
               <div style={{ display: 'grid', gridTemplateColumns: `repeat(${buy.length}, minmax(0, 1fr))`, gap: 3 }}>
@@ -201,26 +201,26 @@ export default function ShoppingListTab() {
             ) : (
               <span style={{ height: 8, borderRadius: 4, background: 'rgba(110,80,50,0.12)', overflow: 'hidden' }}><span style={{ display: 'block', height: '100%', width: `${buy.length ? done.length / buy.length * 100 : 0}%`, background: 'var(--c-green)', transition: 'width .4s' }} /></span>
             )}
-            <span className="mp-muted mp-num" style={{ fontSize: 12.5 }}>{fmtMoney(doneCost)} de {fmtMoney(buyTotal)} en el carro</span>
+            <span className="mp-muted mp-num" style={{ fontSize: 12.5 }}>{fmtMoney(doneCost)} of {fmtMoney(buyTotal)} in the cart</span>
           </section>
 
           {sortBy === 'store' && storeOrder.length > 0 && (
             <section className="mp-glass mp-card mp-rise" style={{ animationDelay: '220ms', display: 'flex', flexDirection: 'column', gap: 9 }}>
-              <span style={{ fontSize: 15, fontWeight: 700 }}>Por tienda</span>
+              <span style={{ fontSize: 15, fontWeight: 700 }}>By store</span>
               {storeOrder.map(k => (
                 <div key={k || 'none'} style={{ display: 'grid', gridTemplateColumns: '12px minmax(0, 1fr) auto', gap: 9, alignItems: 'center', fontSize: 13 }}>
                   <span className="mp-dot" style={{ width: 9, height: 9, background: k ? storeColor(k) : 'rgba(110,80,50,0.35)' }} />
-                  <span style={{ color: 'var(--c-ink-2)' }}>{k || 'Sin tienda'} <span className="mp-muted">· {storeTotals[k].n}</span></span>
+                  <span style={{ color: 'var(--c-ink-2)' }}>{k || 'No store'} <span className="mp-muted">· {storeTotals[k].n}</span></span>
                   <span className="mp-num" style={{ fontWeight: 650 }}>{fmtMoney(storeTotals[k].cost)}</span>
                 </div>
               ))}
-              {storeTotals[''] && <span className="mp-muted" style={{ fontSize: 12, lineHeight: 1.45 }}>Asigna tienda a lo que falta en Ingredientes: un toque en su etiqueta.</span>}
+              {storeTotals[''] && <span className="mp-muted" style={{ fontSize: 12, lineHeight: 1.45 }}>Assign a store to the rest in Ingredients: one tap on its label.</span>}
             </section>
           )}
 
           {sortBy !== 'store' && byCat.length > 0 && (
             <section className="mp-glass mp-card mp-rise" style={{ animationDelay: '220ms', display: 'flex', flexDirection: 'column', gap: 9 }}>
-              <span style={{ fontSize: 15, fontWeight: 700 }}>Dónde va el dinero</span>
+              <span style={{ fontSize: 15, fontWeight: 700 }}>Where the money goes</span>
               {byCat.map(({ c, cost }) => (
                 <div key={c} style={{ display: 'grid', gridTemplateColumns: '112px minmax(0, 1fr) 58px', gap: 8, alignItems: 'center', fontSize: 12.5 }}>
                   <span style={{ color: 'var(--c-ink-2)' }}>{CAT_LABELS[c] ?? c}</span>
@@ -233,8 +233,8 @@ export default function ShoppingListTab() {
 
           {catsPresent.length > 0 && (
             <section className="mp-glass mp-card mp-rise" style={{ animationDelay: '280ms', display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <span style={{ fontSize: 15, fontWeight: 700 }}>Cuándo se come</span>
-              <span style={{ fontSize: 12.5, lineHeight: 1.5, color: 'var(--c-ink-2)' }}>Cada fila marca los días en que ese producto está en algún plato.</span>
+              <span style={{ fontSize: 15, fontWeight: 700 }}>When it's eaten</span>
+              <span style={{ fontSize: 12.5, lineHeight: 1.5, color: 'var(--c-ink-2)' }}>Each row marks the days that product is in some dish.</span>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12.5 }}>
                 {catsPresent.map(c => <span key={c} style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ width: 18, height: 12, borderRadius: 4, background: CAT_PILL[c] ?? CAT_PILL.otro }} />{CAT_LABELS[c] ?? c}</span>)}
               </div>

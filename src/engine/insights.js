@@ -49,12 +49,12 @@ export function computeInsights({ weekPlan, profiles, allIng, allCombos, today =
     })
     const list = Object.entries(overnight).map(([n, c]) => `${n} ×${c}`)
     if (list.length) out.push({
-      id: 'vispera', when: 'Esta noche', icon: 'moon', color: '#7154DA', tint: 'rgba(139,111,232,0.15)',
-      title: 'Deja en la nevera lo que lleva avena', detail: list.join(' · ') + '. Necesita la noche anterior al batch.',
+      id: 'vispera', when: 'Tonight', icon: 'moon', color: '#7154DA', tint: 'rgba(139,111,232,0.15)',
+      title: 'Put the oat dishes in the fridge', detail: list.join(' · ') + '. They need the night before the batch.',
     })
     if (soak.size) out.push({
-      id: 'remojo', when: 'Esta noche', icon: 'moon', color: '#2585BC', tint: 'rgba(46,155,214,0.15)',
-      title: 'Legumbre en remojo', detail: `${[...soak].join(', ')}: 8–12 h en agua para el batch de mañana.`,
+      id: 'remojo', when: 'Tonight', icon: 'moon', color: '#2585BC', tint: 'rgba(46,155,214,0.15)',
+      title: 'Soak the legumes', detail: `${[...soak].join(', ')}: 8–12 h in water for tomorrow's batch.`,
     })
   }
 
@@ -62,8 +62,8 @@ export function computeInsights({ weekPlan, profiles, allIng, allCombos, today =
   if ((dow === 6 || dow === 0) && nextSlots.length) {
     const n = nextSlots.filter(s => (s.dayKey === 'jue' || s.dayKey === 'vie') && (s.mealType === 'comida' || s.mealType === 'cena')).length
     if (n) out.push({
-      id: 'congelar', when: dow === 0 ? 'Hoy, al terminar el batch' : 'Mañana, en el batch', icon: 'snow', color: '#2585BC', tint: 'rgba(46,155,214,0.15)',
-      title: `Congela los ${n} tuppers de jueves y viernes`, detail: 'Cocinados el domingo serían 4–5 días en nevera.', view: 'batch',
+      id: 'congelar', when: dow === 0 ? 'Today, after the batch' : 'Tomorrow, at the batch', icon: 'snow', color: '#2585BC', tint: 'rgba(46,155,214,0.15)',
+      title: `Freeze the ${n} Thursday and Friday containers`, detail: 'Cooked on Sunday they would be 4–5 days in the fridge.', view: 'batch',
     })
   }
   if (dow === 3 || dow === 4) {
@@ -71,8 +71,8 @@ export function computeInsights({ weekPlan, profiles, allIng, allCombos, today =
     const week = weekPlan[weekKeyOf(mondayOf(t))] ?? {}
     const has = ['comida', 'cena'].some(m => week[`${tomorrow}-${m}`])
     if (has) out.push({
-      id: 'descongelar', when: 'Esta noche', icon: 'snow', color: '#2585BC', tint: 'rgba(46,155,214,0.15)',
-      title: `Pasa a la nevera los tuppers del ${tomorrow === 'jue' ? 'jueves' : 'viernes'}`, detail: 'Así mañana están listos para calentar.',
+      id: 'descongelar', when: 'Tonight', icon: 'snow', color: '#2585BC', tint: 'rgba(46,155,214,0.15)',
+      title: `Move ${tomorrow === 'jue' ? "Thursday's" : "Friday's"} containers to the fridge`, detail: "So they're ready to reheat tomorrow.",
     })
   }
 
@@ -81,8 +81,8 @@ export function computeInsights({ weekPlan, profiles, allIng, allCombos, today =
     const ings = new Set()
     nextSlots.forEach(s => s.combo.items.forEach(it => ings.add(it.k)))
     if (ings.size) out.push({
-      id: 'compra', when: dow === 0 ? 'Hoy' : 'Antes del domingo', icon: 'bag', color: '#C1850C', tint: 'rgba(224,162,27,0.16)',
-      title: `Compra del batch: ${ings.size} ingredientes`, detail: `Para ${range}.`, view: 'compra',
+      id: 'compra', when: dow === 0 ? 'Today' : 'Before Sunday', icon: 'bag', color: '#C1850C', tint: 'rgba(224,162,27,0.16)',
+      title: `Batch shopping: ${ings.size} ingredients`, detail: `For ${range}.`, view: 'compra',
     })
   }
 
@@ -92,9 +92,9 @@ export function computeInsights({ weekPlan, profiles, allIng, allCombos, today =
     const week = weekPlan[wk] ?? {}
     const missing = DAY_KEYS.length * MEALS.length - DAY_KEYS.reduce((s, dk) => s + MEALS.filter(m => week[`${dk}-${m}`]).length, 0)
     if (missing > 0 && (dow >= 4 || dow === 0)) out.push({
-      id: 'planificar', when: 'Semana que viene', icon: 'cal', color: '#1F1B16', tint: 'rgba(31,27,22,0.08)',
-      title: missing === 28 ? 'La semana que viene está sin planificar' : `Faltan ${missing} comidas por planificar`,
-      detail: `Semana del ${fmtRange(nextMon, addDays(nextMon, 6))}. Puedes cargar una semana modelo.`, view: 'planificador',
+      id: 'planificar', when: 'Next week', icon: 'cal', color: '#1F1B16', tint: 'rgba(31,27,22,0.08)',
+      title: missing === 28 ? 'Next week is not planned yet' : `${missing} meals still to plan`,
+      detail: `Week of ${fmtRange(nextMon, addDays(nextMon, 6))}. You can load a model week.`, view: 'planificador',
     })
   }
 
@@ -106,11 +106,11 @@ export function computeInsights({ weekPlan, profiles, allIng, allCombos, today =
       const date = addDays(mon, i)
       if (date < t || !activeProfilesOn([person], date).length) return
       const tot = dayTotals(dayForPerson(week, dk, person.id), person, i, allIng, allCombos)
-      if (tot.prot > person.protCap) over.push(`${DAY_LONG[i].toLowerCase()} ${tot.prot} g`)
+      if (tot.prot > person.protCap) over.push(`${DAY_LONG[i]} ${tot.prot} g`)
     })
     if (over.length) out.push({
-      id: 'prot-' + person.id, when: `Proteína · ${person.name}`, icon: 'flame', color: '#B7791F', tint: 'rgba(183,121,31,0.14)',
-      title: `Pasa su techo de ${person.protCap} g`, detail: over.join(' · ') + '.', view: 'planificador',
+      id: 'prot-' + person.id, when: `Protein · ${person.name}`, icon: 'flame', color: '#B7791F', tint: 'rgba(183,121,31,0.14)',
+      title: `Over their ${person.protCap} g ceiling`, detail: over.join(' · ') + '.', view: 'planificador',
     })
   })
 
@@ -123,8 +123,8 @@ export function computeInsights({ weekPlan, profiles, allIng, allCombos, today =
     })
     const v = weekViolations(days, allIng, {}).filter(x => x.rule.startsWith('cadencia') || x.rule === 'gos-consecutivo')
     if (v.length) out.push({
-      id: 'dig-' + person.id, when: `Digestión · ${person.name}`, icon: 'leaf', color: '#2F9E5B', tint: 'rgba(47,158,91,0.14)',
-      title: 'La semana repite demasiado un grupo', detail: v.slice(0, 2).map(x => x.msg.replace(/dias/g, 'días')).join(' '), view: 'planificador',
+      id: 'dig-' + person.id, when: `Digestion · ${person.name}`, icon: 'leaf', color: '#2F9E5B', tint: 'rgba(47,158,91,0.14)',
+      title: 'The week repeats one food group too often', detail: v.slice(0, 2).map(x => x.msg).join(' '), view: 'planificador',
     })
   })
 

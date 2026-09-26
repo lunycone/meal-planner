@@ -43,11 +43,11 @@ export default function DishPicker({ weekKey, weekData, dayKey, date, mealType, 
   const isWeekday = BATCH_DAYS.includes(dayKey)
   const dayName = DAY_LONG[DAY_KEYS.indexOf(dayKey)]
   const scopeOptions = [
-    { value: 'day', label: `Solo ${dayName.toLowerCase()}` },
-    isWeekday ? { value: 'batch', label: 'Lunes a viernes · batch' } : { value: 'weekend', label: 'Sábado y domingo' },
+    { value: 'day', label: `Only ${dayName}` },
+    isWeekday ? { value: 'batch', label: 'Monday to Friday · batch' } : { value: 'weekend', label: 'Saturday and Sunday' },
   ]
-  const whoOptions = [{ value: 'all', label: 'Los dos' }, ...people.map(p => ({ value: p.id, label: p.name }))]
-  if (people.length > 2) whoOptions[0].label = 'Todos'
+  const whoOptions = [{ value: 'all', label: 'Both' }, ...people.map(p => ({ value: p.id, label: p.name }))]
+  if (people.length > 2) whoOptions[0].label = 'Everyone'
 
   function confirm() {
     if (!selKey) return
@@ -59,16 +59,16 @@ export default function DishPicker({ weekKey, weekData, dayKey, date, mealType, 
 
   return (
     <Overlay onClose={onClose}>
-      <div className="mp-sheet dp-sheet" style={{ maxWidth: 920, height: 'min(760px, calc(100vh - 48px))' }} onClick={e => e.stopPropagation()} role="dialog" aria-label={`Elegir ${MEAL_LABEL[mealType].toLowerCase()}`}>
+      <div className="mp-sheet dp-sheet" style={{ maxWidth: 920, height: 'min(760px, calc(100vh - 48px))' }} onClick={e => e.stopPropagation()} role="dialog" aria-label={`Choose ${MEAL_LABEL[mealType].toLowerCase()}`}>
         <div className="mp-sheet-head">
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span className="mp-bubble" style={{ width: 42, height: 42, background: st.tint, color: st.color, boxShadow: `inset 0 1px 0 #fff, 0 6px 16px ${st.glow}` }}><Icon name={MEAL_ICON[mealType]} size={20} /></span>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.02em' }}>Elegir {MEAL_LABEL[mealType].toLowerCase()}</span>
-              <span className="mp-muted" style={{ fontSize: 13 }}>{dayName}{date ? ` ${date.getDate()}` : ''} · {dishes.length} platos</span>
+              <span style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.02em' }}>Choose {MEAL_LABEL[mealType].toLowerCase()}</span>
+              <span className="mp-muted" style={{ fontSize: 13 }}>{dayName}{date ? ` ${date.getDate()}` : ''} · {dishes.length} dishes</span>
             </div>
           </div>
-          <button className="mp-icon-btn" style={{ width: 32, height: 32 }} aria-label="Cerrar" onClick={onClose}><Icon name="x" size={12} stroke={3} /></button>
+          <button className="mp-icon-btn" style={{ width: 32, height: 32 }} aria-label="Close" onClick={onClose}><Icon name="x" size={12} stroke={3} /></button>
         </div>
 
         <div className="dp-grid" style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 340px', gap: 16, padding: '0 24px 16px' }}>
@@ -76,20 +76,20 @@ export default function DishPicker({ weekKey, weekData, dayKey, date, mealType, 
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
               <label className="mp-search" style={{ flex: 1, minWidth: 180 }}>
                 <Icon name="search" size={14} stroke={2.4} />
-                <span className="sr-only">Buscar plato</span>
-                <input autoFocus placeholder="Buscar plato…" value={q} onChange={e => setQ(e.target.value)} />
+                <span className="sr-only">Search dishes</span>
+                <input autoFocus={!window.matchMedia?.("(max-width: 760px)").matches} placeholder="Search dishes…" value={q} onChange={e => setQ(e.target.value)} />
               </label>
-              <Segmented label="Ordenar" value={sort} onChange={setSort}
-                options={[{ value: 'name', label: 'A–Z' }, { value: 'price', label: 'Precio' }, { value: 'kcal', label: 'Kcal' }, { value: 'prot', label: 'Proteína' }]} />
+              <Segmented label="Sort" value={sort} onChange={setSort}
+                options={[{ value: 'name', label: 'A–Z' }, { value: 'price', label: 'Price' }, { value: 'kcal', label: 'Kcal' }, { value: 'prot', label: 'Protein' }]} />
             </div>
             {tracksPcos && (
               <button type="button" className="mp-chip" onClick={() => setOnlyGreen(v => !v)} aria-pressed={onlyGreen}
                 style={{ alignSelf: 'flex-start', border: 0, cursor: 'pointer', background: onlyGreen ? 'rgba(47,158,91,0.16)' : 'rgba(255,255,255,0.78)', color: onlyGreen ? '#1F7A45' : 'var(--c-ink-2)' }}>
-                <span className="mp-dot" style={{ background: PCOS_STYLE.green.color }} />Solo PCOS bajo ({pcosPerson.name})
+                <span className="mp-dot" style={{ background: PCOS_STYLE.green.color }} />PCOS low only ({pcosPerson.name})
               </button>
             )}
             <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4, paddingRight: 4 }}>
-              {dishes.length === 0 && <div className="mp-empty">No hay platos con ese filtro.</div>}
+              {dishes.length === 0 && <div className="mp-empty">No dishes match that filter.</div>}
               {dishes.map(d => {
                 const on = d.key === selKey
                 return (
@@ -97,7 +97,7 @@ export default function DishPicker({ weekKey, weekData, dayKey, date, mealType, 
                     style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', border: 0, cursor: 'pointer', textAlign: 'left', background: on ? '#FFFFFF' : 'transparent', boxShadow: on ? '0 8px 20px rgba(110,80,50,0.12)' : 'none' }}>
                     <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
                       <span style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.3 }}>{d.c.name}</span>
-                      <span className="mp-muted mp-num" style={{ fontSize: 12 }}>{Math.round(d.agg.kcal)} kcal · {Math.round(d.agg.prot)} g prot · {fmtMoney(d.agg.cost)}{d.key === currentKey ? ' · actual' : ''}</span>
+                      <span className="mp-muted mp-num" style={{ fontSize: 12 }}>{Math.round(d.agg.kcal)} kcal · {Math.round(d.agg.prot)} g prot · {fmtMoney(d.agg.cost)}{d.key === currentKey ? ' · current' : ''}</span>
                     </span>
                     {tracksPcos && d.pcos && <span className="mp-dot" title={PCOS_STYLE[d.pcos].long} style={{ background: PCOS_STYLE[d.pcos].color, width: 9, height: 9 }} />}
                     {on && <Icon name="check" size={16} stroke={2.6} color="var(--c-green)" />}
@@ -108,19 +108,19 @@ export default function DishPicker({ weekKey, weekData, dayKey, date, mealType, 
           </div>
 
           <div className="mp-glass" style={{ borderRadius: 24, padding: 18, display: 'flex', flexDirection: 'column', gap: 12, minHeight: 0, overflowY: 'auto' }}>
-            {!sel && <div className="mp-empty" style={{ padding: '60px 10px' }}>Elige un plato de la lista para ver su ficha.</div>}
+            {!sel && <div className="mp-empty" style={{ padding: '60px 10px' }}>Pick a dish from the list to see its details.</div>}
             {sel && (
               <>
                 <span style={{ fontSize: 17, fontWeight: 650, letterSpacing: '-0.02em', lineHeight: 1.25 }}>{sel.name}</span>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
-                  {[['kcal', Math.round(selAgg.kcal)], ['proteína', Math.round(selAgg.prot) + ' g'], ['coste', fmtMoney(selAgg.cost)]].map(([l, v]) => (
+                  {[['kcal', Math.round(selAgg.kcal)], ['protein', Math.round(selAgg.prot) + ' g'], ['cost', fmtMoney(selAgg.cost)]].map(([l, v]) => (
                     <div key={l} style={{ padding: '10px 10px', borderRadius: 14, background: 'rgba(255,255,255,0.8)' }}>
                       <div className="mp-num" style={{ fontSize: 17, fontWeight: 650 }}>{v}</div>
                       <div className="mp-muted" style={{ fontSize: 11.5 }}>{l}</div>
                     </div>
                   ))}
                 </div>
-                <span className="mp-muted" style={{ fontSize: 11.5 }}>Receta base. Comida y cena se ajustan después a cada persona.</span>
+                <span className="mp-muted" style={{ fontSize: 11.5 }}>Base recipe. Lunch and dinner are then adjusted to each person.</span>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   {(sel.items ?? []).map((it, i) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, padding: '7px 0', borderTop: i ? '1px solid var(--c-line)' : 0, fontSize: 13 }}>
@@ -131,7 +131,7 @@ export default function DishPicker({ weekKey, weekData, dayKey, date, mealType, 
                 </div>
                 {(sel.optionalItems ?? []).length > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <span className="mp-eyebrow">Extras opcionales</span>
+                    <span className="mp-eyebrow">Optional extras</span>
                     {sel.optionalItems.map(oi => {
                       const on = optionals.includes(oi.k)
                       return (
@@ -154,23 +154,23 @@ export default function DishPicker({ weekKey, weekData, dayKey, date, mealType, 
         <div className="mp-sheet-foot" style={{ justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <span className="mp-eyebrow">Aplicar a</span>
-              <Segmented label="Aplicar a" value={scope} onChange={setScope} options={scopeOptions} />
+              <span className="mp-eyebrow">Apply to</span>
+              <Segmented label="Apply to" value={scope} onChange={setScope} options={scopeOptions} />
             </div>
             {(mealType === 'desayuno' || mealType === 'merienda') && people.length > 1 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <span className="mp-eyebrow">Para</span>
-                <Segmented label="Para" value={who} onChange={setWho} options={whoOptions} />
+                <span className="mp-eyebrow">For</span>
+                <Segmented label="For" value={who} onChange={setWho} options={whoOptions} />
               </div>
             )}
             {(mealType === 'comida' || mealType === 'cena') && (
-              <span className="mp-muted" style={{ fontSize: 12, maxWidth: 230, lineHeight: 1.4 }}>Comida y cena: mismo plato para todos; la ración se ajusta sola a cada persona.</span>
+              <span className="mp-muted" style={{ fontSize: 12, maxWidth: 230, lineHeight: 1.4 }}>Lunch and dinner: same dish for everyone; portions adjust to each person.</span>
             )}
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className="mp-btn mp-btn-glass" onClick={onClose}>Cancelar</button>
+            <button className="mp-btn mp-btn-glass" onClick={onClose}>Cancel</button>
             <button className="mp-btn mp-btn-dark" disabled={!selKey} onClick={confirm}>
-              {scope === 'batch' ? 'Poner de lunes a viernes' : scope === 'weekend' ? 'Poner sábado y domingo' : 'Poner este día'}
+              {scope === 'batch' ? 'Set Monday to Friday' : scope === 'weekend' ? 'Set Saturday and Sunday' : 'Set this day'}
             </button>
           </div>
         </div>

@@ -7,7 +7,8 @@ import Segmented from '../ui/Segmented'
 import { buildModelWeekSlots } from '../../lib/planActions'
 import { addDays, mondayOf, weekKeyOf, fmtRange, fmtMoney, activeProfilesOn, weekStats } from '../../lib/mealplan'
 
-const pretty = t => t.charAt(0) + t.slice(1).toLowerCase()
+// Titles shout in CAPS ('WEIGHT GAIN — …'): calm them down, keep acronyms.
+const pretty = t => { const s = t.replace(/\b[A-Z]{3,}\b/g, w => w === 'PCOS' ? w : w.toLowerCase()); return s.charAt(0).toUpperCase() + s.slice(1) }
 
 // Semanas modelo: las tuyas (guardadas con «Guardar semana») arriba y las de
 // fábrica debajo. Cualquiera se carga, se renombra, se edita (se carga en la
@@ -42,7 +43,7 @@ export default function ModelWeekSheet({ initialTarget = 1, onClose, onLoaded })
   const rows = useMemo(() => {
     const mine = [...customWeeks]
       .sort((a, b) => (b.savedAt ?? '').localeCompare(a.savedAt ?? ''))
-      .map(w => ({ key: `c:${w.id}`, kind: 'custom', id: w.id, name: w.name, slots: w.slots, badge: 'Tuya' }))
+      .map(w => ({ key: `c:${w.id}`, kind: 'custom', id: w.id, name: w.name, slots: w.slots, badge: 'Yours' }))
     const factory = MODEL_WEEKS.filter(w => !hidden.includes(w.n))
       .map(w => ({ key: `m:${w.n}`, kind: 'model', id: w.n, num: w.n, name: names[w.n] ?? pretty(w.title), slots: modelSlots[w.n], note: w.note, extrema: !!w.extrema }))
     return [...mine, ...factory].map(r => ({ ...r, stats: weekStats(r.slots, people, allIng, allCombos) }))
@@ -69,40 +70,40 @@ export default function ModelWeekSheet({ initialTarget = 1, onClose, onLoaded })
   const thisMon = mondayOf(new Date())
   const targetLabel = o => {
     const m = addDays(thisMon, o * 7), r = fmtRange(m, addDays(m, 6))
-    return o === 0 ? `Esta semana · ${r}` : o === 1 ? `Próximo batch · ${r}` : `Semana ${r}`
+    return o === 0 ? `This week · ${r}` : o === 1 ? `Next batch · ${r}` : `Week ${r}`
   }
   const targetOptions = [...new Set([0, 1, initialTarget])].sort((a, b) => a - b).map(o => ({ value: o, label: targetLabel(o) }))
 
   return (
     <Overlay onClose={onClose}>
-      <div className="mp-sheet" style={{ maxWidth: 860, height: 'min(780px, calc(100dvh - 48px))' }} onClick={e => e.stopPropagation()} role="dialog" aria-label="Semanas modelo">
+      <div className="mp-sheet" style={{ maxWidth: 860, height: 'min(780px, calc(100dvh - 48px))' }} onClick={e => e.stopPropagation()} role="dialog" aria-label="Model weeks">
         <div className="mp-sheet-head">
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span className="mp-bubble" style={{ width: 42, height: 42, background: 'rgba(139,111,232,0.15)', color: '#7154DA' }}><Icon name="layers" size={20} /></span>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.02em' }}>Semanas modelo</span>
-              <span className="mp-muted" style={{ fontSize: 13 }}>Rellena las 28 comidas de una vez, con las raciones ya ajustadas.</span>
+              <span style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.02em' }}>Model weeks</span>
+              <span className="mp-muted" style={{ fontSize: 13 }}>Fills all 28 meals at once, with portions already adjusted.</span>
             </div>
           </div>
-          <button className="mp-icon-btn" style={{ width: 32, height: 32 }} aria-label="Cerrar" onClick={onClose}><Icon name="x" size={12} stroke={3} /></button>
+          <button className="mp-icon-btn" style={{ width: 32, height: 32 }} aria-label="Close" onClick={onClose}><Icon name="x" size={12} stroke={3} /></button>
         </div>
 
         <div style={{ padding: '0 24px 12px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <Segmented label="Semana destino" value={target} onChange={setTarget} options={targetOptions} />
-          {existing > 0 && <span className="mp-chip" style={{ color: '#B7791F' }}><Icon name="warn" size={13} />Sustituye {existing} de 28 comidas ya puestas</span>}
+          <Segmented label="Target week" value={target} onChange={setTarget} options={targetOptions} />
+          {existing > 0 && <span className="mp-chip" style={{ color: '#B7791F' }}><Icon name="warn" size={13} />Replaces {existing} of 28 meals already planned</span>}
         </div>
 
         <div className="mp-sheet-body" style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 0 }}>
           {rows.map((r, idx) => {
             const on = sel === r.key
-            const header = idx === 0 && mineCount ? 'Tus semanas' : idx === mineCount ? 'De fábrica' : null
+            const header = idx === 0 && mineCount ? 'Your weeks' : idx === mineCount ? 'Built-in' : null
             const isRen = renaming?.key === r.key
             const isDel = confirmDel === r.key
             return (
               <div key={r.key}>
                 {header && <div className="mp-eyebrow" style={{ padding: idx ? '14px 2px 6px' : '2px 2px 6px' }}>{header}</div>}
                 <div className={`mw-row${on ? ' is-on' : ''}`}>
-                  {!isRen && <button type="button" className="mw-hit" aria-pressed={on} aria-label={`Elegir ${r.name}`}
+                  {!isRen && <button type="button" className="mw-hit" aria-pressed={on} aria-label={`Choose ${r.name}`}
                     onClick={() => setSel(r.key)} onDoubleClick={() => load(r)} />}
                   <span className="mp-bubble mp-num mw-num" style={{ background: on ? 'var(--c-ink)' : r.kind === 'custom' ? 'rgba(139,111,232,0.15)' : 'rgba(31,27,22,0.07)', color: on ? '#fff' : r.kind === 'custom' ? '#5B3FC4' : 'var(--c-ink)' }}>
                     {r.kind === 'custom' ? <Icon name="sparkle" size={15} stroke={2.2} /> : r.num}
@@ -116,11 +117,11 @@ export default function ModelWeekSheet({ initialTarget = 1, onClose, onLoaded })
                     ) : (
                       <span style={{ fontSize: 14.5, fontWeight: 650, lineHeight: 1.3 }}>
                         {r.name}
-                        {r.extrema && <span className="mp-tag" style={{ marginLeft: 8, background: 'rgba(214,69,69,0.12)', color: '#B53333' }}>solo referencia</span>}
+                        {r.extrema && <span className="mp-tag" style={{ marginLeft: 8, background: 'rgba(214,69,69,0.12)', color: '#B53333' }}>reference only</span>}
                       </span>
                     )}
                     <span className="mp-muted" style={{ fontSize: 12.5, lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {r.stats.comida.length ? `Comidas: ${r.stats.comida.join(' · ')}` : 'Sin comidas'}{r.stats.planned < 28 ? ` · ${r.stats.planned}/28` : ''}
+                      {r.stats.comida.length ? `Lunches: ${r.stats.comida.join(' · ')}` : 'No lunches'}{r.stats.planned < 28 ? ` · ${r.stats.planned}/28` : ''}
                     </span>
                     <span style={{ display: 'flex', gap: 12, fontSize: 12, color: 'var(--c-ink-2)' }} className="mp-num">
                       {r.stats.perPerson.map(x => <span key={x.p.id}>{x.p.name} {x.kcal} / {x.target} kcal</span>)}
@@ -128,20 +129,20 @@ export default function ModelWeekSheet({ initialTarget = 1, onClose, onLoaded })
                   </span>
                   {isDel ? (
                     <span className="mw-confirm">
-                      <span style={{ fontSize: 12.5, fontWeight: 600 }}>{r.kind === 'custom' ? '¿Eliminar?' : '¿Ocultar?'}</span>
+                      <span style={{ fontSize: 12.5, fontWeight: 600 }}>{r.kind === 'custom' ? 'Delete?' : 'Hide?'}</span>
                       <button className="mp-btn mp-btn-glass mp-btn-sm" onClick={() => setConfirmDel(null)}>No</button>
-                      <button className="mp-btn mp-btn-danger mp-btn-sm" onClick={() => { deleteWeek(r.kind, r.id); setConfirmDel(null); if (sel === r.key) setSel(null) }}>Sí</button>
+                      <button className="mp-btn mp-btn-danger mp-btn-sm" onClick={() => { deleteWeek(r.kind, r.id); setConfirmDel(null); if (sel === r.key) setSel(null) }}>Yes</button>
                     </span>
                   ) : (
                     <span className="mw-side">
                       <span className="mw-actions">
-                        <button type="button" className="mw-act" title="Renombrar" aria-label={`Renombrar ${r.name}`} onClick={() => setRenaming({ key: r.key, value: r.name })}><Icon name="edit" size={13} /></button>
-                        <button type="button" className="mw-act" title="Editar sus platos en el Planificador" aria-label={`Editar ${r.name}`} onClick={() => load(r, true)}><Icon name="cal" size={13} /></button>
-                        <button type="button" className="mw-act is-danger" title={r.kind === 'custom' ? 'Eliminar' : 'Ocultar'} aria-label={`Eliminar ${r.name}`} onClick={() => setConfirmDel(r.key)}><Icon name="trash" size={13} /></button>
+                        <button type="button" className="mw-act" title="Rename" aria-label={`Rename ${r.name}`} onClick={() => setRenaming({ key: r.key, value: r.name })}><Icon name="edit" size={13} /></button>
+                        <button type="button" className="mw-act" title="Edit its dishes in the Planner" aria-label={`Edit ${r.name}`} onClick={() => load(r, true)}><Icon name="cal" size={13} /></button>
+                        <button type="button" className="mw-act is-danger" title={r.kind === 'custom' ? 'Delete' : 'Hide'} aria-label={`Delete ${r.name}`} onClick={() => setConfirmDel(r.key)}><Icon name="trash" size={13} /></button>
                       </span>
                       <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
                         <span className="mp-num" style={{ fontSize: 17, fontWeight: 650 }}>{fmtMoney(r.stats.cost)}</span>
-                        <span className="mp-muted mp-num" style={{ fontSize: 11.5 }}>{r.stats.hit}/{r.stats.n} días ±5 %</span>
+                        <span className="mp-muted mp-num" style={{ fontSize: 11.5 }}>{r.stats.hit}/{r.stats.n} days ±5%</span>
                       </span>
                     </span>
                   )}
@@ -150,17 +151,17 @@ export default function ModelWeekSheet({ initialTarget = 1, onClose, onLoaded })
             )
           })}
           {hidden.length > 0 && (
-            <button type="button" className="mp-idea-restore" onClick={restoreModelWeeks}>Restaurar {hidden.length === 1 ? 'la semana de fábrica oculta' : `las ${hidden.length} semanas de fábrica ocultas`}</button>
+            <button type="button" className="mp-idea-restore" onClick={restoreModelWeeks}>Restore {hidden.length === 1 ? 'the hidden built-in week' : `the ${hidden.length} hidden built-in weeks`}</button>
           )}
         </div>
 
         <div className="mp-sheet-foot" style={{ justifyContent: 'space-between' }}>
           <span className="mp-muted" style={{ fontSize: 12.5, maxWidth: 440, lineHeight: 1.4 }}>
-            {selRow?.note ? (selRow.note.split('.')[0] + '.') : selRow ? 'Doble clic en una semana para cargarla directamente.' : `Coste de la semana entera para ${people.map(p => p.name).join(' y ')}.`}
+            {selRow?.note ? (selRow.note.split('.')[0] + '.') : selRow ? 'Double-click a week to load it directly.' : `Whole-week cost for ${people.map(p => p.name).join(' and ')}.`}
           </span>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className="mp-btn mp-btn-glass" onClick={onClose}>Cancelar</button>
-            <button className="mp-btn mp-btn-dark" disabled={!selRow} onClick={() => load()}>{selRow ? `Cargar «${selRow.name.length > 28 ? selRow.name.slice(0, 26) + '…' : selRow.name}»` : 'Cargar semana'}</button>
+            <button className="mp-btn mp-btn-glass" onClick={onClose}>Cancel</button>
+            <button className="mp-btn mp-btn-dark" disabled={!selRow} onClick={() => load()}>{selRow ? `Load “${selRow.name.length > 28 ? selRow.name.slice(0, 26) + '…' : selRow.name}”` : 'Load week'}</button>
           </div>
         </div>
       </div>

@@ -8,15 +8,15 @@ export const DISHES = {
   // del usuario ("que sean fieles al nombre aunque no cumplan las reglas").
   // No se han forzado a cumplir grasa<=15g ni ningun otro techo digestivo.
   'd-huevos-tostada-madre-miel': {
-    name: 'Huevos + tostada masa madre + miel', meals: ['desayuno'],
+    name: 'Eggs + sourdough toast + honey', meals: ['desayuno'],
     items: [{ k: 'huevo', p: { units: 2 } }, { k: 'pan-masa-madre', p: { grams: 40 } }, { k: 'miel', p: { grams: 15 } }],
   },
   'd-huevos-tostada-miel': {
-    name: 'Huevos + tostada + miel', meals: ['desayuno'],
+    name: 'Eggs + toast + honey', meals: ['desayuno'],
     items: [{ k: 'huevo', p: { units: 2 } }, { k: 'pan-masa-madre', p: { grams: 35 } }, { k: 'miel', p: { grams: 10 } }],
   },
   'd-tostada-2huevos': {
-    name: 'Tostada + 2 huevos', meals: ['desayuno'],
+    name: 'Toast + 2 eggs', meals: ['desayuno'],
     items: [{ k: 'huevo', p: { units: 2 } }, { k: 'pan-masa-madre', p: { grams: 35 } }],
   },
   'd-avena-leche-desnatada-miel': {
@@ -26,14 +26,14 @@ export const DISHES = {
     // los dos) -- mismo ingrediente que ya llevaba, solo mas cantidad; la
     // leche desnatada apenas sube grasa (0.1g/100g), asi que no toca el
     // techo de grasa del desayuno.
-    name: 'Avena con leche desnatada y miel', meals: ['desayuno'],
+    name: 'Oats with skim milk and honey', meals: ['desayuno'],
     items: [{ k: 'avena', p: { grams: 70 } }, { k: 'leche-desnatada', p: { grams: 400 } }, { k: 'miel', p: { grams: 15 } }], scalable: 'avena',
   },
   'd-tostada-madre-miel-platano': {
     // Mismo objetivo que el de arriba, con otra base (pan en vez de avena)
     // para dar variedad real sin repetir ingrediente principal.
     // 6 sep 2026 (2): pan 100->140g a peticion (+3-5g prot).
-    name: 'Tostada de masa madre con miel y plátano', meals: ['desayuno'],
+    name: 'Sourdough toast with honey and banana', meals: ['desayuno'],
     items: [{ k: 'pan-masa-madre', p: { grams: 140 } }, { k: 'banana', p: { grams: 120 } }, { k: 'miel', p: { grams: 15 } }],
   },
   'd-huevos-tostada-madre-miel-reforzado': {
@@ -41,7 +41,7 @@ export const DISHES = {
     // proteina (avena+leche desnatada ya daba 22g) pero sin huevo la sensacion
     // era de "no hay proteina real". Este la deja explicita: 20g, con huevo.
     // 6 sep 2026 (2): huevo 2->2.5 unidades a peticion (+3-5g prot).
-    name: 'Huevos revueltos con tostada de masa madre y miel', meals: ['desayuno'],
+    name: 'Scrambled eggs with sourdough toast and honey', meals: ['desayuno'],
     items: [{ k: 'huevo', p: { units: 2.5 } }, { k: 'pan-masa-madre', p: { grams: 90 } }, { k: 'miel', p: { grams: 10 } }], scalable: 'pan-masa-madre',
   },
   // Semana 12 (astringente) — variantes SIN miel de los dos platos de
@@ -52,7 +52,7 @@ export const DISHES = {
   // bastante mas baja para empezar).
   // 6 sep 2026 (2): pan 100->135g a peticion (+3-5g prot).
   'd-tostada-platano-aove-sal': {
-    name: 'Tostada de masa madre con plátano, AOVE y sal', meals: ['desayuno'],
+    name: 'Sourdough toast with banana, EVOO and salt', meals: ['desayuno'],
     items: [{ k: 'pan-masa-madre', p: { grams: 135 } }, { k: 'banana', p: { grams: 120 } }, { k: 'aove', p: { ml: 10 } }, { k: 'sal', p: {} }],
   },
   // 6 sep 2026 (2): este plato YA estaba a 20g de grasa (huevo+AOVE), por
@@ -61,7 +61,7 @@ export const DISHES = {
   // (sin grasa) 90->125g: mismos +3g de proteina, sin empeorar lo que ya
   // estaba roto.
   'd-huevos-tostada-aove': {
-    name: 'Huevos revueltos con tostada de masa madre y AOVE', meals: ['desayuno'],
+    name: 'Scrambled eggs with sourdough toast and EVOO', meals: ['desayuno'],
     items: [{ k: 'huevo', p: { units: 2 } }, { k: 'pan-masa-madre', p: { grams: 125 } }, { k: 'aove', p: { ml: 10 } }], scalable: 'pan-masa-madre',
   },
   // d-avena-huevo-platano RETIRADO (6 sep 2026): "vomitina", descartado por
@@ -73,40 +73,40 @@ export const DISHES = {
   // (bacon, cheddar, aguacate). La salida es proteina en polvo + base lactea:
   // no es almidon (no sube IG) y aporta kcal sin apenas grasa.
   'd-batido-proteico-desayuno': {
-    name: 'Batido proteico de desayuno', meals: ['desayuno'],
+    name: 'Breakfast protein shake', meals: ['desayuno'],
     items: [{ k: 'proteina-polvo', p: { grams: 60 } }, { k: 'leche-desnatada', p: { grams: 400 } }, { k: 'banana', p: { grams: 40 } }],
   },
   'd-batido-proteico-cacao': {
-    name: 'Batido proteico de cacao', meals: ['desayuno'],
+    name: 'Cocoa protein shake', meals: ['desayuno'],
     items: [{ k: 'proteina-polvo', p: { grams: 65 } }, { k: 'leche-desnatada', p: { grams: 400 } }, { k: 'cacao', p: { grams: 10 } }],
   },
   'd-yogur-vaca-proteico-melon': {
-    name: 'Yogur de vaca proteico con melón', meals: ['desayuno'],
+    name: 'High-protein cow yogurt with melon', meals: ['desayuno'],
     items: [{ k: 'yogur-vaca', p: { grams: 350 } }, { k: 'proteina-polvo', p: { grams: 35 } }, { k: 'melon-cantalupo', p: { grams: 150 } }],
   },
   'd-yogur-cabra-proteico-mandarina': {
-    name: 'Yogur de cabra proteico con mandarina', meals: ['desayuno'],
+    name: 'High-protein goat yogurt with mandarin', meals: ['desayuno'],
     items: [{ k: 'yogur-cabra', p: { grams: 350 } }, { k: 'proteina-polvo', p: { grams: 35 } }, { k: 'mandarina', p: { units: 1 } }],
   },
   'd-yogur-platano-avena': {
-    name: 'Yogur + plátano + avena', meals: ['desayuno'],
+    name: 'Yogurt + banana + oats', meals: ['desayuno'],
     items: [{ k: 'yogur-vaca', p: { grams: 150 } }, { k: 'banana', p: { grams: 80 } }, { k: 'avena', p: { grams: 30 } }],
   },
   'd-arroz-leche-simple': {
-    name: 'Arroz con leche simple', meals: ['desayuno'],
+    name: 'Simple rice pudding', meals: ['desayuno'],
     items: [{ k: 'arroz', p: { grams: 40 } }, { k: 'leche', p: { grams: 250 } }],
   },
   // 6 sep 2026 (2): cheddar 20->32g a peticion (+3-5g prot).
   'd-tortilla-cheddar-aguacate': {
-    name: 'Tortilla + cheddar + aguacate', meals: ['desayuno', 'cena'],
+    name: 'Omelette + cheddar + avocado', meals: ['desayuno', 'cena'],
     items: [{ k: 'huevo', p: { units: 3 } }, { k: 'cheddar', p: { grams: 32 } }, { k: 'aguacate', p: { units: 0.5 } }, { k: 'aove', p: { ml: 10 } }],
   },
   'd-sardinas-huevo-cheddar': {
-    name: 'Sardinas + huevo + cheddar', meals: ['desayuno', 'cena'],
+    name: 'Sardines + egg + cheddar', meals: ['desayuno', 'cena'],
     items: [{ k: 'sardina-media', p: {} }, { k: 'huevo', p: { units: 1 } }, { k: 'cheddar', p: { grams: 15 } }, { k: 'aove', p: { ml: 10 } }],
   },
   'd-burrito-maiz': {
-    name: 'Burrito 100% maíz', meals: ['desayuno', 'cena'],
+    name: '100% corn burrito', meals: ['desayuno', 'cena'],
     // AJUSTADO 3 sep 2026: era 60g masa + 3 huevos = 17,4 g de grasa, por
     // encima del techo de 15 g del desayuno. Se cambia un huevo por 20 g de
     // masa: misma kcal, misma funcion, 13 g de grasa y +72 kcal. La regla no
@@ -123,132 +123,132 @@ export const DISHES = {
     items: [{ k: 'masa-harina', p: { grams: 110 } }, { k: 'agua', p: { grams: 119 } }, { k: 'huevo', p: { units: 2 } }],
   },
   'd-burrito-maiz-cheddar': {
-    name: 'Burrito maíz + cheddar', meals: ['desayuno', 'cena'],
+    name: 'Corn burrito + cheddar', meals: ['desayuno', 'cena'],
     items: [{ k: 'masa-harina', p: { grams: 60 } }, { k: 'agua', p: { grams: 65 } }, { k: 'huevo', p: { units: 3 } }, { k: 'cheddar', p: { grams: 10 } }],
   },
   // 6 sep 2026 (2): harina de garbanzo 30->45g a peticion (+3-5g prot).
   // 6 sep 2026 (3): agua para las dos harinas juntas (ver comentario en
   // d-burrito-maiz).
   'd-burrito-5050': {
-    name: 'Burrito 50/50 (maíz + garbanzo)', meals: ['desayuno', 'cena'],
+    name: '50/50 burrito (corn + chickpea)', meals: ['desayuno', 'cena'],
     items: [{ k: 'masa-harina', p: { grams: 30 } }, { k: 'harina-garbanzo', p: { grams: 45 } }, { k: 'agua', p: { grams: 81 } }, { k: 'huevo', p: { units: 3 } }],
   },
   'd-burrito-5050-cheddar': {
-    name: 'Burrito 50/50 + cheddar', meals: ['desayuno', 'cena'],
+    name: '50/50 burrito + cheddar', meals: ['desayuno', 'cena'],
     items: [{ k: 'masa-harina', p: { grams: 30 } }, { k: 'harina-garbanzo', p: { grams: 30 } }, { k: 'agua', p: { grams: 65 } }, { k: 'huevo', p: { units: 3 } }, { k: 'cheddar', p: { grams: 10 } }],
   },
   'd-pan-huevos-aguacate': {
-    name: 'Pan + huevos + aguacate', meals: ['desayuno', 'cena'],
+    name: 'Bread + eggs + avocado', meals: ['desayuno', 'cena'],
     items: [{ k: 'pan-masa-madre', p: { grams: 60 } }, { k: 'huevo', p: { units: 2 } }, { k: 'aguacate', p: { units: 0.5 } }, { k: 'aove', p: { ml: 10 } }],
   },
   'd-yogur-almendra-pumpkin-choco': {
-    name: 'Yogur, almendras, pumpkin, chocolate', meals: ['desayuno'],
+    name: 'Yogurt, almonds, pumpkin seeds, chocolate', meals: ['desayuno'],
     items: [{ k: 'yogur-cabra', p: { grams: 150 } }, { k: 'almendras', p: { grams: 20 } }, { k: 'pumpkin-seeds', p: { grams: 20 } }, { k: 'chocolate-negro', p: { grams: 15 } }, { k: 'canela', p: {} }],
   },
   'd-socca-garbanzo-feta-huevos': {
-    name: 'Socca de garbanzo con feta y huevos', meals: ['desayuno'],
+    name: 'Chickpea socca with feta and eggs', meals: ['desayuno'],
     items: [{ k: 'harina-garbanzo', p: { grams: 60 } }, { k: 'feta-vaca', p: { grams: 30 } }, { k: 'huevo', p: { units: 2 } }, { k: 'aove', p: { ml: 20 } }],
   },
   'd-bacon-huevos': {
-    name: 'Bacon y huevos', meals: ['desayuno'],
+    name: 'Bacon and eggs', meals: ['desayuno'],
     items: [{ k: 'bacon', p: { grams: 40 } }, { k: 'huevo', p: { units: 2 } }, { k: 'aove', p: { ml: 10 } }],
   },
   'd-bacon-generoso-huevo': {
-    name: 'Bacon generoso + 1 huevo', meals: ['desayuno'],
+    name: 'Generous bacon + 1 egg', meals: ['desayuno'],
     items: [{ k: 'bacon', p: { grams: 60 } }, { k: 'huevo', p: { units: 1 } }, { k: 'aove', p: { ml: 10 } }],
   },
   'd-burrito-bacon': {
-    name: 'Burrito con bacon', meals: ['desayuno'],
+    name: 'Bacon burrito', meals: ['desayuno'],
     items: [{ k: 'harina', p: { grams: 55 } }, { k: 'bacon', p: { grams: 40 } }, { k: 'huevo', p: { units: 2 } }, { k: 'aove', p: { ml: 10 } }],
   },
   'd-overnight-oats-chocolate': {
-    name: 'Overnight oats de chocolate', meals: ['desayuno'],
+    name: 'Chocolate overnight oats', meals: ['desayuno'],
     items: [{ k: 'avena', p: { grams: 45 } }, { k: 'yogur-cabra', p: { grams: 120 } }, { k: 'leche', p: { grams: 120 } }, { k: 'chia', p: { grams: 12 } }, { k: 'cacao', p: { grams: 8 } }, { k: 'miel', p: { grams: 10 } }],
   },
   // 6 sep 2026 (2): harina 60->75g a peticion (+3-5g prot) -- nombre
   // actualizado a "75g" para que siga diciendo la cantidad real (la key
   // 'd-torta-garbanzo-60' se queda igual, la referencian otras semanas).
   'd-torta-garbanzo-60': {
-    name: 'Torta de garbanzo (75g) + AOVE', meals: ['desayuno'],
+    name: 'Chickpea flatbread (75g) + EVOO', meals: ['desayuno'],
     items: [{ k: 'harina-garbanzo', p: { grams: 75 } }, { k: 'aove', p: { ml: 20 } }],
   },
   'd-torta-garbanzo-80': {
-    name: 'Torta de garbanzo (80g) + AOVE', meals: ['desayuno'],
+    name: 'Chickpea flatbread (80g) + EVOO', meals: ['desayuno'],
     items: [{ k: 'harina-garbanzo', p: { grams: 80 } }, { k: 'aove', p: { ml: 25 } }],
   },
   'd-torta-garbanzo-100': {
-    name: 'Torta de garbanzo (100g) + AOVE', meals: ['desayuno'],
+    name: 'Chickpea flatbread (100g) + EVOO', meals: ['desayuno'],
     items: [{ k: 'harina-garbanzo', p: { grams: 100 } }, { k: 'aove', p: { ml: 25 } }],
   },
   'd-torta-garbanzo-50-huevo': {
-    name: 'Torta de garbanzo (50g) + 1 huevo + AOVE', meals: ['desayuno'],
+    name: 'Chickpea flatbread (50g) + 1 egg + EVOO', meals: ['desayuno'],
     items: [{ k: 'harina-garbanzo', p: { grams: 50 } }, { k: 'huevo', p: { units: 1 } }, { k: 'aove', p: { ml: 20 } }],
   },
   'd-torta-garbanzo-100-huevo': {
-    name: 'Torta de garbanzo (100g) + 1 huevo + AOVE', meals: ['desayuno'],
+    name: 'Chickpea flatbread (100g) + 1 egg + EVOO', meals: ['desayuno'],
     items: [{ k: 'harina-garbanzo', p: { grams: 100 } }, { k: 'huevo', p: { units: 1 } }, { k: 'aove', p: { ml: 20 } }],
   },
   'd-torta-garbanzo-120-huevo': {
-    name: 'Torta de garbanzo (120g) + 1 huevo + AOVE', meals: ['desayuno'],
+    name: 'Chickpea flatbread (120g) + 1 egg + EVOO', meals: ['desayuno'],
     items: [{ k: 'harina-garbanzo', p: { grams: 120 } }, { k: 'huevo', p: { units: 1 } }, { k: 'aove', p: { ml: 20 } }],
   },
   'd-torta-garbanzo-extrema': {
-    name: 'Torta de garbanzo extrema (60-70g proteína)', meals: ['desayuno'],
+    name: 'Extreme chickpea flatbread (60-70g protein)', meals: ['desayuno'],
     items: [{ k: 'harina-garbanzo', p: { grams: 120 } }, { k: 'huevo', p: { units: 5 } }, { k: 'cheddar', p: { grams: 30 } }, { k: 'aove', p: { ml: 25 } }],
   },
   'c-lomo-arroz-afgano': {
-    name: 'Lomo cerdo + arroz afgano', meals: ['comida'],
+    name: 'Pork loin + Afghan rice', meals: ['comida'],
     items: [{ k: 'lomo-cerdo', p: { grams: 150 } }, { k: 'arroz', p: { grams: 75 } }, { k: 'comino', p: {} }, { k: 'canela', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'arroz',
   },
   'c-mejillones-paella': {
-    name: 'Mejillones modo paella', meals: ['comida'],
+    name: 'Paella-style mussels', meals: ['comida'],
     items: [{ k: 'mejillones', p: { grams: 150 } }, { k: 'arroz', p: { grams: 75 } }, { k: 'cebolla-amarilla', p: { grams: 60 } }, { k: 'pimiento-verde', p: { grams: 60 } }, { k: 'tomate-conserva', p: { grams: 50 } }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 30 } }], scalable: 'arroz',
   },
   'c-turkey-glaseado': {
-    name: 'Turkey drumstick + glaseado agridulce', meals: ['comida'],
+    name: 'Turkey drumstick + sweet & sour glaze', meals: ['comida'],
     items: [{ k: 'turkey-drumstick', p: { grams: 150 } }, { k: 'arroz', p: { grams: 75 } }, { k: 'zanahoria', p: { grams: 80 } }, { k: 'miel', p: { grams: 10 } }, { k: 'pimenton', p: {} }, { k: 'vinagre', p: { ml: 10 } }, { k: 'aove', p: { ml: 20 } }], scalable: 'arroz',
   },
   'c-pollo-arroz-afgano-cebolla-limon': {
-    name: 'Pollo pierna + arroz afgano + cebolla y limón', meals: ['comida'],
+    name: 'Chicken leg + Afghan rice + onion and lemon', meals: ['comida'],
     items: [{ k: 'pollo-pierna-generic', p: { grams: 150 } }, { k: 'arroz', p: { grams: 75 } }, { k: 'cebolla-amarilla', p: { grams: 60 } }, { k: 'limon', p: { units: 0.5 } }, { k: 'comino', p: {} }, { k: 'canela', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'arroz',
   },
   'c-lomo-patata-adobo': {
-    name: 'Lomo cerdo + patata asada + adobo pimentón', meals: ['comida'],
+    name: 'Pork loin + roast potato + paprika marinade', meals: ['comida'],
     items: [{ k: 'lomo-cerdo', p: { grams: 150 } }, { k: 'patata', p: { grams: 250 } }, { k: 'pimenton', p: {} }, { k: 'ajo', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'patata',
   },
   'c-turkey-cebolla-mostaza': {
-    name: 'Turkey + cebolla caramelizada + salsa de mostaza', meals: ['comida'],
+    name: 'Turkey + caramelized onion + mustard sauce', meals: ['comida'],
     items: [{ k: 'turkey-drumstick', p: { grams: 150 } }, { k: 'patata', p: { grams: 200 } }, { k: 'cebolla-amarilla', p: { grams: 100 } }, { k: 'mostaza', p: { grams: 15 } }, { k: 'miel', p: { grams: 10 } }, { k: 'aove', p: { ml: 20 } }], scalable: 'patata',
   },
   'c-pollo-muslito-garbanzos-marroqui': {
-    name: 'Pollo muslito (Beretta) + garbanzos + marroquí', meals: ['comida'],
+    name: 'Chicken drumstick (Beretta) + chickpeas + Moroccan spices', meals: ['comida'],
     items: [{ k: 'pollo-muslito', p: { grams: 150 } }, { k: 'garbanzos', p: { grams: 80 } }, { k: 'tomate-conserva', p: { grams: 60 } }, { k: 'comino', p: {} }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'garbanzos',
   },
   'c-turkey-cebolla-escabeche': {
-    name: 'Turkey + cebolla caramelizada estilo escabeche', meals: ['comida'],
+    name: 'Turkey + caramelized onion, escabeche style', meals: ['comida'],
     items: [{ k: 'turkey-drumstick', p: { grams: 150 } }, { k: 'patata', p: { grams: 200 } }, { k: 'cebolla-amarilla', p: { grams: 100 } }, { k: 'zanahoria', p: { grams: 80 } }, { k: 'vino-blanco', p: { ml: 30 } }, { k: 'vinagre', p: { ml: 20 } }, { k: 'pimienta-negra', p: {} }, { k: 'laurel', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'patata',
   },
   'c-pollo-manzana-cebolla-arroz': {
-    name: 'Pollo pierna + manzana-cebolla + arroz', meals: ['comida'],
+    name: 'Chicken leg + apple-onion + rice', meals: ['comida'],
     items: [{ k: 'pollo-pierna-generic', p: { grams: 200 } }, { k: 'arroz', p: { grams: 75 } }, { k: 'cebolla-amarilla', p: { grams: 80 } }, { k: 'manzana', p: { units: 0.5 } }, { k: 'vinagre', p: { ml: 10 } }, { k: 'aove', p: { ml: 20 } }], scalable: 'arroz',
   },
   'c-solomillo-patata-mayonesa-limon': {
     // 6 sep 2026: no hay mayonesa en casa -- se quita del todo, no se
     // sustituye por otro ingrediente graso. Yogur da la acidez sin el aporte
     // de grasa de la mayonesa (144kcal/20g grasa por 25g -> practicamente 0).
-    name: 'Solomillo + patata + crema de limón', meals: ['comida'],
+    name: 'Pork tenderloin + potato + lemon cream', meals: ['comida'],
     items: [{ k: 'solomillo-cerdo', p: { grams: 180 } }, { k: 'patata', p: { grams: 250 } }, { k: 'yogur-vaca', p: { grams: 40 } }, { k: 'limon', p: { units: 0.5 } }, { k: 'aove', p: { ml: 25 } }], scalable: 'patata',
   },
   'c-codillo-garbanzos-patata-laurel': {
-    name: 'Codillo español + garbanzos + patata + laurel', meals: ['comida'],
+    name: 'Spanish ham hock + chickpeas + potato + bay leaf', meals: ['comida'],
     items: [{ k: 'ham-hock', p: { grams: 120 } }, { k: 'garbanzos', p: { grams: 80 } }, { k: 'patata', p: { grams: 150 } }, { k: 'zanahoria', p: { grams: 60 } }, { k: 'laurel', p: {} }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'garbanzos',
   },
   'c-codillo-pure-garbanzos-horno': {
-    name: 'Codillo sobre puré con garbanzos tostados al horno', meals: ['comida'],
+    name: 'Ham hock on mash with oven-roasted chickpeas', meals: ['comida'],
     items: [{ k: 'ham-hock', p: { grams: 120 } }, { k: 'patata', p: { grams: 200 } }, { k: 'leche', p: { grams: 60 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'garbanzos', p: { grams: 70 } }, { k: 'pimenton', p: {} }, { k: 'comino', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'patata',
   },
   'c-turkey-setas-vino': {
-    name: 'Turkey + setas + vino (otoñal)', meals: ['comida'],
+    name: 'Turkey + mushrooms + wine (autumn)', meals: ['comida'],
     items: [{ k: 'turkey-drumstick', p: { grams: 150 } }, { k: 'garbanzos', p: { grams: 80 } }, { k: 'setas', p: { grams: 80 } }, { k: 'cebolla-amarilla', p: { grams: 60 } }, { k: 'vino-blanco', p: { ml: 30 } }, { k: 'aove', p: { ml: 20 } }], scalable: 'garbanzos',
   },
   'c-bangers-mash': {
@@ -256,147 +256,147 @@ export const DISHES = {
     items: [{ k: 'salchichas', p: { grams: 150 } }, { k: 'patata', p: { grams: 250 } }, { k: 'leche', p: { grams: 60 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'cebolla-amarilla', p: { grams: 80 } }, { k: 'aove', p: { ml: 15 } }], scalable: 'patata',
   },
   'c-higado-cebolla-pure': {
-    name: 'Hígado de vaca + cebolla caramelizada + puré de patata', meals: ['comida'],
+    name: 'Beef liver + caramelized onion + mashed potato', meals: ['comida'],
     items: [{ k: 'higado-vaca', p: { grams: 150 } }, { k: 'patata', p: { grams: 250 } }, { k: 'leche', p: { grams: 60 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'cebolla-amarilla', p: { grams: 100 } }, { k: 'vinagre', p: { ml: 10 } }, { k: 'aove', p: { ml: 20 } }], scalable: 'patata',
   },
   'c-higado-patatitas-especias': {
-    name: 'Hígado + patatitas en dados con especias + cebolla', meals: ['comida'],
+    name: 'Liver + spiced diced potatoes + onion', meals: ['comida'],
     items: [{ k: 'higado-vaca', p: { grams: 150 } }, { k: 'patata', p: { grams: 250 } }, { k: 'cebolla-amarilla', p: { grams: 100 } }, { k: 'pimiento-verde', p: { grams: 60 } }, { k: 'pimenton', p: {} }, { k: 'comino', p: {} }, { k: 'aove', p: { ml: 25 } }], scalable: 'patata',
   },
   'c-hamhock-garbanzos-laurel-grande': {
-    name: 'Ham hock + garbanzos + laurel (ración grande)', meals: ['comida'],
+    name: 'Ham hock + chickpeas + bay leaf (large serving)', meals: ['comida'],
     items: [{ k: 'ham-hock', p: { grams: 150 } }, { k: 'garbanzos', p: { grams: 100 } }, { k: 'zanahoria', p: { grams: 80 } }, { k: 'laurel', p: {} }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 25 } }], scalable: 'garbanzos',
   },
   'c-albondigas-cerdo-picado': {
-    name: 'Albóndigas de cerdo picado (Eataly) + tomate + puré', meals: ['comida'],
+    name: 'Pork meatballs (Eataly) + tomato + mash', meals: ['comida'],
     items: [{ k: 'cerdo-picado', p: { grams: 120 } }, { k: 'huevo', p: { units: 0.5 } }, { k: 'tomate-conserva', p: { grams: 100 } }, { k: 'patata', p: { grams: 250 } }, { k: 'leche', p: { grams: 60 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'cebolla-amarilla', p: { grams: 60 } }, { k: 'aove', p: { ml: 20 } }], scalable: 'patata',
   },
   'c-contramuslo-ac-pure-setas': {
-    name: 'Contramuslo (Foodland AC) + puré con mantequilla y leche + setas al vino', meals: ['comida'],
+    name: 'Chicken thigh (Foodland AC) + butter-milk mash + mushrooms in wine', meals: ['comida'],
     items: [{ k: 'pollo-muslo-air', p: { grams: 150 } }, { k: 'patata', p: { grams: 300 } }, { k: 'leche', p: { grams: 80 } }, { k: 'mantequilla', p: { grams: 20 } }, { k: 'setas', p: { grams: 60 } }, { k: 'vino-blanco', p: { ml: 25 } }, { k: 'aove', p: { ml: 25 } }], scalable: 'patata',
   },
   'c-carne-picada-patata-tomate-ajo': {
-    name: 'Carne picada de res + patata + tomate-ajo', meals: ['comida'],
+    name: 'Ground beef + potato + tomato-garlic', meals: ['comida'],
     items: [{ k: 'carne-picada', p: { grams: 120 } }, { k: 'patata', p: { grams: 250 } }, { k: 'tomate-conserva', p: { grams: 100 } }, { k: 'cebolla-amarilla', p: { grams: 60 } }, { k: 'ajo', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'patata',
   },
   'c-contramuslo-farmboy-garbanzos': {
-    name: 'Contramuslo orgánico (Farm Boy) + garbanzos reforzados + tomate-comino', meals: ['comida'],
+    name: 'Organic chicken thigh (Farm Boy) + extra chickpeas + tomato-cumin', meals: ['comida'],
     items: [{ k: 'pollo-muslo-farmboy', p: { grams: 150 } }, { k: 'garbanzos', p: { grams: 120 } }, { k: 'tomate-conserva', p: { grams: 80 } }, { k: 'comino', p: {} }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 25 } }], scalable: 'garbanzos',
   },
   'c-cordero-pure-cebolla-laurel': {
-    name: 'Cordero + puré de patata + cebolla + laurel', meals: ['comida'],
+    name: 'Lamb + mashed potato + onion + bay leaf', meals: ['comida'],
     items: [{ k: 'lamb', p: { grams: 150 } }, { k: 'patata', p: { grams: 250 } }, { k: 'leche', p: { grams: 60 } }, { k: 'mantequilla', p: { grams: 8 } }, { k: 'cebolla-amarilla', p: { grams: 80 } }, { k: 'laurel', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'patata', // mantequilla recortada 15->8g (6 sep 2026, pasada de grasa)
   },
   'c-pollo-pure-patata-zanahoria': {
-    name: 'Pollo pierna + puré patata-zanahoria + pimentón', meals: ['comida'],
+    name: 'Chicken leg + potato-carrot mash + paprika', meals: ['comida'],
     items: [{ k: 'pollo-pierna-generic', p: { grams: 180 } }, { k: 'patata', p: { grams: 250 } }, { k: 'zanahoria', p: { grams: 100 } }, { k: 'leche', p: { grams: 60 } }, { k: 'mantequilla', p: { grams: 8 } }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'patata', // mantequilla recortada 15->8g
   },
   'c-solomillo-pure-manzana-batida': {
-    name: 'Solomillo + puré de patata + manzana batida', meals: ['comida'],
+    name: 'Pork tenderloin + mashed potato + blended apple', meals: ['comida'],
     items: [{ k: 'solomillo-cerdo', p: { grams: 180 } }, { k: 'patata', p: { grams: 250 } }, { k: 'leche', p: { grams: 60 } }, { k: 'mantequilla', p: { grams: 8 } }, { k: 'manzana', p: { units: 0.5 } }, { k: 'aove', p: { ml: 20 } }], scalable: 'patata', // mantequilla recortada 15->8g
   },
   'c-pollo-beretta-garbanzos-tomillo-limon': {
-    name: 'Pollo pierna (Beretta) + garbanzos + tomillo y limón', meals: ['comida'],
+    name: 'Chicken leg (Beretta) + chickpeas + thyme and lemon', meals: ['comida'],
     items: [{ k: 'pollo-pierna', p: { grams: 150 } }, { k: 'garbanzos', p: { grams: 100 } }, { k: 'limon', p: { units: 0.5 } }, { k: 'parsley', p: {} }, { k: 'aove', p: { ml: 25 } }], scalable: 'garbanzos',
   },
   'c-chili-carne-picada-blackbeans': {
-    name: 'Chili de carne picada + black beans + tomate + comino-pimentón', meals: ['comida'],
+    name: 'Ground beef chili + black beans + tomato + cumin-paprika', meals: ['comida'],
     items: [{ k: 'carne-picada', p: { grams: 100 } }, { k: 'black-beans', p: { grams: 100 } }, { k: 'tomate-conserva', p: { grams: 100 } }, { k: 'cebolla-amarilla', p: { grams: 60 } }, { k: 'comino', p: {} }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'black-beans',
   },
   'c-pastel-carne-ricotta': {
-    name: 'Pastel de carne (cottage pie) con ricotta gratinada', meals: ['comida'],
+    name: 'Cottage pie with baked ricotta', meals: ['comida'],
     items: [{ k: 'carne-picada', p: { grams: 100 } }, { k: 'patata', p: { grams: 250 } }, { k: 'leche', p: { grams: 60 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'ricotta', p: { grams: 60 } }, { k: 'zanahoria', p: { grams: 80 } }, { k: 'tomate-conserva', p: { grams: 80 } }, { k: 'cebolla-amarilla', p: { grams: 60 } }, { k: 'aove', p: { ml: 15 } }], scalable: 'patata',
   },
   'c-solomillo-blackbeans-comino': {
-    name: 'Solomillo cerdo + black beans + comino-pimentón-tomate', meals: ['comida'],
+    name: 'Pork tenderloin + black beans + cumin-paprika-tomato', meals: ['comida'],
     items: [{ k: 'solomillo-cerdo', p: { grams: 150 } }, { k: 'black-beans', p: { grams: 100 } }, { k: 'tomate-conserva', p: { grams: 60 } }, { k: 'comino', p: {} }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'black-beans',
   },
   'c-turkey-blackbeans-comino': {
-    name: 'Turkey drumstick + black beans + comino-pimentón-tomate', meals: ['comida'],
+    name: 'Turkey drumstick + black beans + cumin-paprika-tomato', meals: ['comida'],
     items: [{ k: 'turkey-drumstick', p: { grams: 150 } }, { k: 'black-beans', p: { grams: 100 } }, { k: 'tomate-conserva', p: { grams: 60 } }, { k: 'comino', p: {} }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'black-beans',
   },
   'c-costillas-lentejas-laurel-vino': {
-    name: 'Costillas cerdo + lentejas verdes + laurel y vino', meals: ['comida'],
+    name: 'Pork ribs + green lentils + bay leaf and wine', meals: ['comida'],
     items: [{ k: 'costillas-cerdo', p: { grams: 150 } }, { k: 'lentejas-verdes', p: { grams: 80 } }, { k: 'cebolla-amarilla', p: { grams: 60 } }, { k: 'vino-blanco', p: { ml: 20 } }, { k: 'laurel', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'lentejas-verdes',
   },
   'c-costillas-pintas-zanahoria': {
-    name: 'Costillas + alubias pintas + zanahoria muy cocida + laurel', meals: ['comida'],
+    name: 'Ribs + pinto beans + well-cooked carrot + bay leaf', meals: ['comida'],
     items: [{ k: 'costillas-cerdo', p: { grams: 150 } }, { k: 'romano-beans', p: { grams: 80 } }, { k: 'zanahoria', p: { grams: 80 } }, { k: 'cebolla-amarilla', p: { grams: 60 } }, { k: 'laurel', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'romano-beans',
   },
   'c-solomillo-pintas-pimenton': {
-    name: 'Solomillo + alubias pintas + pimentón y tomate', meals: ['comida'],
+    name: 'Pork tenderloin + pinto beans + paprika and tomato', meals: ['comida'],
     items: [{ k: 'solomillo-cerdo', p: { grams: 150 } }, { k: 'romano-beans', p: { grams: 100 } }, { k: 'tomate-conserva', p: { grams: 80 } }, { k: 'cebolla-amarilla', p: { grams: 60 } }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'romano-beans',
   },
   'c-lomo-pintas-cebolla-vino': {
-    name: 'Lomo cerdo + alubias pintas + cebolla y vino blanco', meals: ['comida'],
+    name: 'Pork loin + pinto beans + onion and white wine', meals: ['comida'],
     items: [{ k: 'lomo-cerdo', p: { grams: 180 } }, { k: 'romano-beans', p: { grams: 100 } }, { k: 'cebolla-amarilla', p: { grams: 80 } }, { k: 'vino-blanco', p: { ml: 30 } }, { k: 'laurel', p: {} }, { k: 'aove', p: { ml: 25 } }], scalable: 'romano-beans',
   },
   'c-turkey-pintas-huevo': {
-    name: 'Turkey + alubias pintas + huevo', meals: ['comida'],
+    name: 'Turkey + pinto beans + egg', meals: ['comida'],
     items: [{ k: 'turkey-drumstick', p: { grams: 130 } }, { k: 'romano-beans', p: { grams: 100 } }, { k: 'huevo', p: { units: 1 } }, { k: 'tomate-conserva', p: { grams: 60 } }, { k: 'comino', p: {} }, { k: 'aove', p: { ml: 25 } }], scalable: 'romano-beans', // pavo recortado 180->130g (6 sep 2026, techo de proteina)
   },
   'c-pollo-pure-rustico-pipas': {
-    name: 'Pollo pierna asada + puré rústico + pipas de girasol', meals: ['comida'],
+    name: 'Roast chicken leg + rustic mash + sunflower seeds', meals: ['comida'],
     items: [{ k: 'pollo-pierna-generic', p: { grams: 200 } }, { k: 'patata', p: { grams: 350 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'sunflower-seeds', p: { grams: 25 } }, { k: 'leche', p: { grams: 100 } }, { k: 'aove', p: { ml: 15 } }], scalable: 'patata',
   },
   'c-solomillo-blackbeans-huevo-tomate': {
-    name: 'Solomillo + black beans + huevo + tomate', meals: ['comida'],
+    name: 'Pork tenderloin + black beans + egg + tomato', meals: ['comida'],
     items: [{ k: 'solomillo-cerdo', p: { grams: 200 } }, { k: 'black-beans', p: { grams: 120 } }, { k: 'huevo', p: { units: 1 } }, { k: 'tomate-conserva', p: { grams: 60 } }, { k: 'comino', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'black-beans',
   },
   'c-solomillo-blackbeans-huevo-mostaza': {
-    name: 'Solomillo + black beans + huevo + salsa de mostaza y miel', meals: ['comida'],
+    name: 'Pork tenderloin + black beans + egg + honey mustard sauce', meals: ['comida'],
     items: [{ k: 'solomillo-cerdo', p: { grams: 200 } }, { k: 'black-beans', p: { grams: 120 } }, { k: 'huevo', p: { units: 1 } }, { k: 'mostaza', p: { grams: 15 } }, { k: 'miel', p: { grams: 10 } }, { k: 'aove', p: { ml: 20 } }], scalable: 'black-beans',
   },
   'c-solomillo-blackbeans-huevo-salsaverde': {
-    name: 'Solomillo + black beans + huevo + salsa verde', meals: ['comida'],
+    name: 'Pork tenderloin + black beans + egg + salsa verde', meals: ['comida'],
     items: [{ k: 'solomillo-cerdo', p: { grams: 200 } }, { k: 'black-beans', p: { grams: 120 } }, { k: 'huevo', p: { units: 1 } }, { k: 'parsley', p: {} }, { k: 'jalapeno', p: { units: 1 } }, { k: 'limon', p: { units: 0.5 } }, { k: 'aove', p: { ml: 30 } }], scalable: 'black-beans',
   },
   'c-turkey-garbanzos-huevo-sofrito': {
-    name: 'Turkey + garbanzos + huevo + sofrito de tomate y cebolla', meals: ['comida'],
+    name: 'Turkey + chickpeas + egg + tomato-onion sofrito', meals: ['comida'],
     items: [{ k: 'turkey-drumstick', p: { grams: 140 } }, { k: 'garbanzos', p: { grams: 100 } }, { k: 'huevo', p: { units: 1 } }, { k: 'tomate-conserva', p: { grams: 100 } }, { k: 'cebolla-amarilla', p: { grams: 60 } }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 25 } }], scalable: 'garbanzos', // pavo recortado 200->140g
   },
   'c-turkey-blackbeans-huevo-cheddar': {
-    name: 'Turkey + black beans + huevo + cheddar', meals: ['comida'],
+    name: 'Turkey + black beans + egg + cheddar', meals: ['comida'],
     items: [{ k: 'turkey-drumstick', p: { grams: 140 } }, { k: 'black-beans', p: { grams: 100 } }, { k: 'huevo', p: { units: 1 } }, { k: 'cheddar', p: { grams: 18 } }, { k: 'comino', p: {} }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'black-beans', // cheddar recortado 30->18g; pavo recortado 200->140g (techo de proteina)
   },
   'c-pollo-2huevos-garbanzos-crema': {
-    name: 'Pollo pierna + 2 huevos + garbanzos + crema de garbanzo', meals: ['comida'],
+    name: 'Chicken leg + 2 eggs + chickpeas + chickpea cream', meals: ['comida'],
     items: [{ k: 'pollo-pierna-generic', p: { grams: 150 } }, { k: 'huevo', p: { units: 2 } }, { k: 'garbanzos', p: { grams: 80 } }, { k: 'limon', p: { units: 0.5 } }, { k: 'comino', p: {} }, { k: 'aove', p: { ml: 30 } }], scalable: 'garbanzos',
   },
   'c-ens-garbanzos-aguacate-cheddar-pollo': {
-    name: 'Garbanzos, aguacate, cheddar y pollo pierna + vinagreta', meals: ['comida'],
+    name: 'Chickpeas, avocado, cheddar and chicken leg + vinaigrette', meals: ['comida'],
     items: [{ k: 'pollo-pierna-generic', p: { grams: 150 } }, { k: 'garbanzos', p: { grams: 100 } }, { k: 'aguacate', p: { units: 0.5 } }, { k: 'cheddar', p: { grams: 30 } }, { k: 'vinagre', p: { ml: 10 } }, { k: 'aove', p: { ml: 20 } }], scalable: 'garbanzos',
   },
   'c-ens-garbanzos-aguacate-feta-pollo': {
-    name: 'Garbanzos, aguacate, feta y pollo pierna + vinagreta', meals: ['comida'],
+    name: 'Chickpeas, avocado, feta and chicken leg + vinaigrette', meals: ['comida'],
     items: [{ k: 'pollo-pierna-generic', p: { grams: 150 } }, { k: 'garbanzos', p: { grams: 100 } }, { k: 'aguacate', p: { units: 0.5 } }, { k: 'feta-vaca', p: { grams: 40 } }, { k: 'vinagre', p: { ml: 10 } }, { k: 'aove', p: { ml: 20 } }], scalable: 'garbanzos',
   },
   'c-ens-blackbeans-aguacate-turkey-salsaroja': {
-    name: 'Black beans, aguacate, cheddar y turkey + salsa roja casera', meals: ['comida'],
+    name: 'Black beans, avocado, cheddar and turkey + homemade red salsa', meals: ['comida'],
     items: [{ k: 'turkey-drumstick', p: { grams: 150 } }, { k: 'black-beans', p: { grams: 100 } }, { k: 'aguacate', p: { units: 0.5 } }, { k: 'cheddar', p: { grams: 20 } }, { k: 'tomate-conserva', p: { grams: 100 } }, { k: 'jalapeno', p: { units: 1 } }, { k: 'cebolla-amarilla', p: { grams: 40 } }, { k: 'limon', p: { units: 0.5 } }, { k: 'comino', p: {} }, { k: 'aove', p: { ml: 15 } }], scalable: 'black-beans',
   },
   'c-ens-melon-feta-aguacate-solomillo': {
-    name: 'Melón cantalupo, feta, aguacate y solomillo', meals: ['comida'],
+    name: 'Cantaloupe, feta, avocado and pork tenderloin', meals: ['comida'],
     items: [{ k: 'solomillo-cerdo', p: { grams: 150 } }, { k: 'melon-cantalupo', p: { grams: 200 } }, { k: 'aguacate', p: { units: 0.5 } }, { k: 'feta-vaca', p: { grams: 30 } }, { k: 'aove', p: { ml: 20 } }],
   },
   'c-ens-manzana-feta-aguacate-solomillo': {
-    name: 'Manzana, feta, aguacate y solomillo', meals: ['comida'],
+    name: 'Apple, feta, avocado and pork tenderloin', meals: ['comida'],
     items: [{ k: 'solomillo-cerdo', p: { grams: 150 } }, { k: 'manzana', p: { units: 0.5 } }, { k: 'aguacate', p: { units: 0.5 } }, { k: 'feta-vaca', p: { grams: 30 } }, { k: 'vinagre', p: { ml: 10 } }, { k: 'aove', p: { ml: 25 } }],
   },
   'c-lomo-tomate-pimiento-arroz': {
-    name: 'Lomo cerdo + tomate + pimiento verde + arroz', meals: ['comida'],
+    name: 'Pork loin + tomato + green pepper + rice', meals: ['comida'],
     items: [{ k: 'lomo-cerdo', p: { grams: 150 } }, { k: 'arroz', p: { grams: 75 } }, { k: 'tomate-conserva', p: { grams: 80 } }, { k: 'pimiento-verde', p: { grams: 80 } }, { k: 'ajo', p: {} }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'arroz',
   },
   'c-rancho-aragones-barato': {
-    name: 'Rancho aragonés (barato)', meals: ['comida'],
+    name: 'Aragonese rancho stew (cheap)', meals: ['comida'],
     items: [{ k: 'lomo-cerdo', p: { grams: 75 } }, { k: 'costillas-cerdo', p: { grams: 75 } }, { k: 'patata', p: { grams: 200 } }, { k: 'zanahoria', p: { grams: 100 } }, { k: 'arroz', p: { grams: 50 } }, { k: 'ajo', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'patata',
   },
   'c-rancho-aragones-grande': {
-    name: 'Rancho aragonés (grande)', meals: ['comida'],
+    name: 'Aragonese rancho stew (large)', meals: ['comida'],
     items: [{ k: 'lomo-cerdo', p: { grams: 100 } }, { k: 'costillas-cerdo', p: { grams: 100 } }, { k: 'patata', p: { grams: 250 } }, { k: 'zanahoria', p: { grams: 120 } }, { k: 'arroz', p: { grams: 60 } }, { k: 'ajo', p: {} }, { k: 'aove', p: { ml: 25 } }], scalable: 'patata',
   },
   'c-rancho-aragones-xl': {
-    name: 'Rancho aragonés (XL)', meals: ['comida'],
+    name: 'Aragonese rancho stew (XL)', meals: ['comida'],
     items: [{ k: 'lomo-cerdo', p: { grams: 130 } }, { k: 'costillas-cerdo', p: { grams: 110 } }, { k: 'patata', p: { grams: 290 } }, { k: 'zanahoria', p: { grams: 140 } }, { k: 'arroz', p: { grams: 70 } }, { k: 'ajo', p: {} }, { k: 'aove', p: { ml: 25 } }], scalable: 'patata',
   },
   // Semana 12 (astringente/diarrea) — pedido explicito del usuario: "lo que
@@ -406,47 +406,47 @@ export const DISHES = {
   // (GOS/insoluble/fructano). Zanahoria "muy cocida" (no cruda) por lo mismo
   // que ya hace c-costillas-pintas-zanahoria.
   'c-estofado-ternera-patata-zanahoria': {
-    name: 'Estofado de ternera + patata + zanahoria (muy cocida)', meals: ['comida'],
+    name: 'Beef stew + potato + carrot (well-cooked)', meals: ['comida'],
     items: [{ k: 'ternera-guisar', p: { grams: 180 } }, { k: 'patata', p: { grams: 280 } }, { k: 'zanahoria', p: { grams: 150 } }, { k: 'laurel', p: {} }, { k: 'parsley', p: {} }, { k: 'aove', p: { ml: 20 } }], scalable: 'patata',
   },
   'n-mejillones-marinera-patata': {
-    name: 'Mejillones a la marinera + patata pequeña salteada', meals: ['cena'],
+    name: 'Mussels marinara + small sautéed potatoes', meals: ['cena'],
     items: [{ k: 'mejillones', p: { grams: 200 } }, { k: 'tomate-conserva', p: { grams: 80 } }, { k: 'cebolla-amarilla', p: { grams: 60 } }, { k: 'patata', p: { grams: 150 } }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 30 } }],
   },
   'n-bacalao-mantequilla-limon': {
-    name: 'Bacalao con mantequilla de limón', meals: ['cena'],
+    name: 'Cod with lemon butter', meals: ['cena'],
     items: [{ k: 'bacalao', p: { grams: 180 } }, { k: 'mantequilla', p: { grams: 25 } }, { k: 'limon', p: { units: 0.5 } }, { k: 'vino-blanco', p: { ml: 20 } }, { k: 'aove', p: { ml: 30 } }],
   },
   'n-ceviche-bacalao': {
-    name: 'Ceviche de bacalao curado en lima + cebolla morada + aguacate', meals: ['cena'],
+    name: 'Lime-cured cod ceviche + red onion + avocado', meals: ['cena'],
     items: [{ k: 'bacalao', p: { grams: 150 } }, { k: 'limon', p: { units: 1 } }, { k: 'cebolla-morada', p: { grams: 50 } }, { k: 'aguacate', p: { units: 0.5 } }, { k: 'parsley', p: {} }, { k: 'aove', p: { ml: 30 } }],
   },
   'n-fajita-bowl-turkey': {
-    name: 'Fajita bowl de turkey', meals: ['cena'],
+    name: 'Turkey fajita bowl', meals: ['cena'],
     items: [{ k: 'turkey-drumstick', p: { grams: 150 } }, { k: 'pimiento-verde', p: { grams: 80 } }, { k: 'cebolla-amarilla', p: { grams: 60 } }, { k: 'aguacate', p: { units: 0.5 } }, { k: 'cheddar', p: { grams: 15 } }, { k: 'limon', p: { units: 0.5 } }, { k: 'comino', p: {} }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 25 } }],
   },
   'n-frittata-turkey-cheddar': {
-    name: 'Frittata al horno de turkey y cheddar', meals: ['cena'],
+    name: 'Baked turkey and cheddar frittata', meals: ['cena'],
     items: [{ k: 'huevo', p: { units: 3 } }, { k: 'turkey-drumstick', p: { grams: 100 } }, { k: 'cheddar', p: { grams: 20 } }, { k: 'cebolla-amarilla', p: { grams: 40 } }, { k: 'aove', p: { ml: 20 } }],
   },
   'n-shakshuka-turkey': {
-    name: 'Shakshuka de pimiento verde y tomate con turkey desmenuzado', meals: ['cena'],
+    name: 'Green pepper and tomato shakshuka with shredded turkey', meals: ['cena'],
     items: [{ k: 'huevo', p: { units: 3 } }, { k: 'tomate-conserva', p: { grams: 100 } }, { k: 'pimiento-verde', p: { grams: 80 } }, { k: 'turkey-drumstick', p: { grams: 80 } }, { k: 'cebolla-amarilla', p: { grams: 60 } }, { k: 'comino', p: {} }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 35 } }],
   },
   'n-burrito-pollo-arroz-pimientos': {
-    name: 'Burrito de pollo + arroz + pimientos', meals: ['cena'],
+    name: 'Chicken burrito + rice + peppers', meals: ['cena'],
     items: [{ k: 'pollo-pierna-generic', p: { grams: 150 } }, { k: 'harina', p: { grams: 55 } }, { k: 'arroz', p: { grams: 75 } }, { k: 'pimiento-verde', p: { grams: 60 } }, { k: 'cebolla-amarilla', p: { grams: 40 } }, { k: 'comino', p: {} }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 15 } }],
   },
   'n-burrito-pollo-blackbeans-pimientos': {
-    name: 'Burrito de pollo + black beans + pimientos', meals: ['cena'],
+    name: 'Chicken burrito + black beans + peppers', meals: ['cena'],
     items: [{ k: 'pollo-pierna-generic', p: { grams: 150 } }, { k: 'harina', p: { grams: 55 } }, { k: 'black-beans', p: { grams: 80 } }, { k: 'pimiento-verde', p: { grams: 60 } }, { k: 'cebolla-amarilla', p: { grams: 40 } }, { k: 'comino', p: {} }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 15 } }],
   },
   'n-sardinas-patata-huevo': {
-    name: 'Sardinas + patata + huevo', meals: ['cena'],
+    name: 'Sardines + potato + egg', meals: ['cena'],
     items: [{ k: 'sardina-media', p: {} }, { k: 'patata', p: { grams: 150 } }, { k: 'huevo', p: { units: 1 } }, { k: 'aove', p: { ml: 15 } }],
   },
   'n-patata-3huevos': {
-    name: 'Patata + 3 huevos', meals: ['cena'],
+    name: 'Potato + 3 eggs', meals: ['cena'],
     items: [{ k: 'patata', p: { grams: 150 } }, { k: 'huevo', p: { units: 3 } }, { k: 'aove', p: { ml: 20 } }],
   },
   // Semana 12 (astringente/diarrea) — especie distinta a la comida de esa
@@ -454,39 +454,39 @@ export const DISHES = {
   // salirse de lo blando. Sin cebolla/ajo, pollo hervido (no frito/asado con
   // piel) -- lo mas suave posible.
   'n-pollo-hervido-arroz-zanahoria': {
-    name: 'Pollo hervido + arroz + zanahoria (muy cocida)', meals: ['cena'],
+    name: 'Boiled chicken + rice + carrot (well-cooked)', meals: ['cena'],
     items: [{ k: 'pollo-pierna-generic', p: { grams: 150 } }, { k: 'arroz', p: { grams: 70 } }, { k: 'zanahoria', p: { grams: 100 } }, { k: 'aove', p: { ml: 15 } }], scalable: 'arroz',
   },
   'n-turkey-patata-huevo': {
-    name: 'Turkey + patata + huevo', meals: ['cena'],
+    name: 'Turkey + potato + egg', meals: ['cena'],
     items: [{ k: 'turkey-drumstick', p: { grams: 100 } }, { k: 'patata', p: { grams: 200 } }, { k: 'huevo', p: { units: 2 } }, { k: 'aove', p: { ml: 20 } }],
   },
   'n-patata-4huevos': {
-    name: 'Patata + 4 huevos', meals: ['cena'],
+    name: 'Potato + 4 eggs', meals: ['cena'],
     items: [{ k: 'patata', p: { grams: 200 } }, { k: 'huevo', p: { units: 4 } }, { k: 'aove', p: { ml: 20 } }],
   },
   'n-turkey-patata-huevo-cheddar': {
-    name: 'Turkey + patata + huevo + cheddar', meals: ['cena'],
+    name: 'Turkey + potato + egg + cheddar', meals: ['cena'],
     items: [{ k: 'turkey-drumstick', p: { grams: 100 } }, { k: 'patata', p: { grams: 200 } }, { k: 'huevo', p: { units: 2 } }, { k: 'cheddar', p: { grams: 15 } }, { k: 'aove', p: { ml: 15 } }],
   },
   'n-blackbeans-huevo-patata': {
-    name: 'Black beans + huevo + patata', meals: ['cena'],
+    name: 'Black beans + egg + potato', meals: ['cena'],
     items: [{ k: 'black-beans', p: { grams: 80 } }, { k: 'huevo', p: { units: 1 } }, { k: 'patata', p: { grams: 100 } }, { k: 'aove', p: { ml: 15 } }],
   },
   'n-garbanzos-huevo-patata': {
-    name: 'Garbanzos + huevo + patata', meals: ['cena'],
+    name: 'Chickpeas + egg + potato', meals: ['cena'],
     items: [{ k: 'garbanzos', p: { grams: 80 } }, { k: 'huevo', p: { units: 1 } }, { k: 'patata', p: { grams: 100 } }, { k: 'aove', p: { ml: 15 } }],
   },
   'n-3huevos-patata120': {
-    name: '3 huevos + patata', meals: ['cena'],
+    name: '3 eggs + potato', meals: ['cena'],
     items: [{ k: 'huevo', p: { units: 3 } }, { k: 'patata', p: { grams: 120 } }, { k: 'aove', p: { ml: 25 } }],
   },
   'n-sopa-lentejas-huevo-escalfado': {
-    name: 'Sopa de lentejas con huevo escalfado', meals: ['cena'],
+    name: 'Lentil soup with poached egg', meals: ['cena'],
     items: [{ k: 'lentejas-verdes', p: { grams: 80 } }, { k: 'huevo', p: { units: 1 } }, { k: 'cebolla-amarilla', p: { grams: 40 } }, { k: 'zanahoria', p: { grams: 40 } }, { k: 'laurel', p: {} }, { k: 'aove', p: { ml: 15 } }],
   },
   'n-migas-patata-huevo': {
-    name: 'Migas de patata crujiente con huevo frito', meals: ['cena'],
+    name: 'Crispy potato migas with fried egg', meals: ['cena'],
     items: [{ k: 'patata', p: { grams: 250 } }, { k: 'huevo', p: { units: 2 } }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 25 } }],
   },
   'n-huevos-rancheros': {
@@ -494,105 +494,105 @@ export const DISHES = {
     items: [{ k: 'black-beans', p: { grams: 80 } }, { k: 'huevo', p: { units: 2 } }, { k: 'tomate-conserva', p: { grams: 60 } }, { k: 'pimenton', p: {} }, { k: 'comino', p: {} }, { k: 'aove', p: { ml: 20 } }],
   },
   'n-pure-garbanzos-huevo-frito': {
-    name: 'Puré de garbanzos caliente con huevo frito y pimentón', meals: ['cena'],
+    name: 'Warm chickpea purée with fried egg and paprika', meals: ['cena'],
     items: [{ k: 'garbanzos', p: { grams: 80 } }, { k: 'huevo', p: { units: 2 } }, { k: 'pimenton', p: {} }, { k: 'limon', p: { units: 0.25 } }, { k: 'aove', p: { ml: 20 } }],
   },
   'n-huevos-flamenca': {
-    name: 'Huevos horneados a la flamenca', meals: ['cena'],
+    name: 'Flamenco-style baked eggs', meals: ['cena'],
     items: [{ k: 'garbanzos', p: { grams: 50 } }, { k: 'huevo', p: { units: 2 } }, { k: 'tomate-conserva', p: { grams: 80 } }, { k: 'pimiento-verde', p: { grams: 60 } }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 20 } }],
   },
   'n-tostadas-tomate-huevo': {
-    name: 'Tostadas de tomate con huevo (pan tumaca)', meals: ['cena'],
+    name: 'Tomato toast with egg (pan tumaca)', meals: ['cena'],
     items: [{ k: 'pan-masa-madre', p: { grams: 120 } }, { k: 'tomate-conserva', p: { grams: 100 } }, { k: 'huevo', p: { units: 2 } }, { k: 'aove', p: { ml: 20 } }],
   },
   'n-tostadas-aguacate-huevo': {
-    name: 'Tostadas de aguacate con huevo', meals: ['cena'],
+    name: 'Avocado toast with egg', meals: ['cena'],
     items: [{ k: 'pan-masa-madre', p: { grams: 120 } }, { k: 'aguacate', p: { units: 0.5 } }, { k: 'huevo', p: { units: 2 } }, { k: 'aove', p: { ml: 20 } }],
   },
   'n-bacalao-legumbre-lentejas': {
-    name: 'Potaje de bacalao con lentejas', meals: ['cena'],
+    name: 'Cod and lentil stew', meals: ['cena'],
     items: [{ k: 'bacalao', p: { grams: 100 } }, { k: 'lentejas-verdes', p: { grams: 80 } }, { k: 'cebolla-amarilla', p: { grams: 40 } }, { k: 'laurel', p: {} }, { k: 'aove', p: { ml: 20 } }],
   },
   'n-bacalao-garbanzos-tomate': {
-    name: 'Bacalao + garbanzos + tomate', meals: ['cena'],
+    name: 'Cod + chickpeas + tomato', meals: ['cena'],
     items: [{ k: 'bacalao', p: { grams: 120 } }, { k: 'garbanzos', p: { grams: 120 } }, { k: 'tomate-conserva', p: { grams: 60 } }, { k: 'aove', p: { ml: 35 } }],
   },
   'n-bacalao-blackbeans-comino': {
-    name: 'Bacalao + black beans + tomate-comino', meals: ['cena'],
+    name: 'Cod + black beans + tomato-cumin', meals: ['cena'],
     items: [{ k: 'bacalao', p: { grams: 120 } }, { k: 'black-beans', p: { grams: 120 } }, { k: 'tomate-conserva', p: { grams: 50 } }, { k: 'comino', p: {} }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 35 } }],
   },
   'n-bacalao-patata-tomate': {
-    name: 'Bacalao + patata + tomate (sin legumbre)', meals: ['cena'],
+    name: 'Cod + potato + tomato (no legumes)', meals: ['cena'],
     items: [{ k: 'bacalao', p: { grams: 100 } }, { k: 'patata', p: { grams: 200 } }, { k: 'tomate-conserva', p: { grams: 60 } }, { k: 'aove', p: { ml: 25 } }],
   },
   'n-bacalao-pure-simple': {
-    name: 'Bacalao + puré de patata simple', meals: ['cena'],
+    name: 'Cod + simple mashed potato', meals: ['cena'],
     items: [{ k: 'bacalao', p: { grams: 150 } }, { k: 'patata', p: { grams: 300 } }, { k: 'leche', p: { grams: 40 } }, { k: 'mantequilla', p: { grams: 8 } }, { k: 'aove', p: { ml: 25 } }], // mantequilla recortada 15->8g
   },
   'n-bacalao-pure-squash': {
-    name: 'Bacalao + puré de patata-squash', meals: ['cena'],
+    name: 'Cod + potato-squash mash', meals: ['cena'],
     items: [{ k: 'bacalao', p: { grams: 150 } }, { k: 'patata', p: { grams: 200 } }, { k: 'squash-butternut', p: { grams: 150 } }, { k: 'mantequilla', p: { grams: 8 } }, { k: 'aove', p: { ml: 25 } }], // mantequilla recortada 15->8g
   },
   // NUEVO 3 sep 2026 — variante con huevo, a peticion. El squash aporta pectina
   // (fibra soluble) en la cena, que es donde encaja: la calabaza en batido
   // desplaza sabor y el pure la absorbe sin notarse.
   'n-bacalao-pure-squash-huevo': {
-    name: 'Bacalao + puré de patata-squash + huevo', meals: ['cena'],
+    name: 'Cod + potato-squash mash + egg', meals: ['cena'],
     items: [{ k: 'bacalao', p: { grams: 150 } }, { k: 'patata', p: { grams: 200 } }, { k: 'squash-butternut', p: { grams: 150 } }, { k: 'huevo', p: { units: 1 } }, { k: 'mantequilla', p: { grams: 8 } }, { k: 'aove', p: { ml: 25 } }], // mantequilla recortada 15->8g
   },
   'n-bacalao-pure-zucchini': {
-    name: 'Bacalao + puré de patata-zucchini', meals: ['cena'],
+    name: 'Cod + potato-zucchini mash', meals: ['cena'],
     items: [{ k: 'bacalao', p: { grams: 150 } }, { k: 'patata', p: { grams: 200 } }, { k: 'zucchini', p: { grams: 120 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'leche', p: { grams: 30 } }, { k: 'aove', p: { ml: 25 } }],
   },
   'n-bacalao-pure-puerro': {
-    name: 'Bacalao + puré de patata-puerro', meals: ['cena'],
+    name: 'Cod + potato-leek mash', meals: ['cena'],
     items: [{ k: 'bacalao', p: { grams: 150 } }, { k: 'patata', p: { grams: 250 } }, { k: 'puerro', p: { units: 0.25 } }, { k: 'mantequilla', p: { grams: 15 } }, { k: 'leche', p: { grams: 40 } }, { k: 'aove', p: { ml: 25 } }],
   },
   'n-turkey-mejillones-cazuela': {
-    name: 'Turkey y mejillones en cazuela', meals: ['cena'],
+    name: 'Turkey and mussel casserole', meals: ['cena'],
     items: [{ k: 'turkey-drumstick', p: { grams: 150 } }, { k: 'mejillones', p: { grams: 200 } }, { k: 'tomate-conserva', p: { grams: 80 } }, { k: 'cebolla-amarilla', p: { grams: 60 } }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 25 } }],
   },
   'n-bacalao-mejillones-cazuela': {
-    name: 'Bacalao y mejillones en cazuela', meals: ['cena'],
+    name: 'Cod and mussel casserole', meals: ['cena'],
     items: [{ k: 'bacalao', p: { grams: 150 } }, { k: 'mejillones', p: { grams: 200 } }, { k: 'tomate-conserva', p: { grams: 80 } }, { k: 'cebolla-amarilla', p: { grams: 60 } }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 25 } }],
   },
   'n-burrito-harina-2huevos': {
     // scalableMax (6 sep 2026): sin esto, un dia de mucha kcal podia escalar
     // la harina hasta ~200g+ (4x el default) -- demasiada masa para una sola
     // cena. Tope a 150g (~2.7x); si aun asi falta, sale el aviso de snack.
-    name: 'Burrito de harina + 2 huevos', meals: ['cena'], scalableMax: 150,
+    name: 'Flour burrito + 2 eggs', meals: ['cena'], scalableMax: 150,
     items: [{ k: 'harina', p: { grams: 55 } }, { k: 'huevo', p: { units: 2 } }, { k: 'aove', p: { ml: 10 } }],
   },
   'n-burrito-huevo-turkey-queso': {
-    name: 'Burrito de huevo, turkey y queso', meals: ['cena'],
+    name: 'Egg, turkey and cheese burrito', meals: ['cena'],
     items: [{ k: 'harina', p: { grams: 55 } }, { k: 'huevo', p: { units: 3 } }, { k: 'turkey-drumstick', p: { grams: 60 } }, { k: 'cheddar', p: { grams: 10 } }, { k: 'aove', p: { ml: 15 } }],
   },
   'n-rancho-aragones-costillas': {
-    name: 'Rancho aragonés (costillas de cerdo)', meals: ['cena'],
+    name: 'Aragonese rancho stew (pork ribs)', meals: ['cena'],
     items: [{ k: 'costillas-cerdo', p: { grams: 150 } }, { k: 'patata', p: { grams: 200 } }, { k: 'zanahoria', p: { grams: 100 } }, { k: 'arroz', p: { grams: 50 } }, { k: 'ajo', p: {} }, { k: 'aove', p: { ml: 20 } }],
   },
   'n-rancho-aragones-lomo': {
-    name: 'Rancho aragonés (lomo de cerdo)', meals: ['cena'],
+    name: 'Aragonese rancho stew (pork loin)', meals: ['cena'],
     items: [{ k: 'lomo-cerdo', p: { grams: 150 } }, { k: 'patata', p: { grams: 200 } }, { k: 'zanahoria', p: { grams: 100 } }, { k: 'arroz', p: { grams: 50 } }, { k: 'ajo', p: {} }, { k: 'aove', p: { ml: 20 } }],
   },
   'n-fajitas-pollo-sin-tortilla': {
-    name: 'Fajitas de pollo sin tortilla', meals: ['cena'],
+    name: 'Chicken fajitas, no tortilla', meals: ['cena'],
     items: [{ k: 'pollo-pierna-generic', p: { grams: 180 } }, { k: 'pimiento-verde', p: { grams: 80 } }, { k: 'pimiento-amarillo', p: { grams: 80 } }, { k: 'cebolla-amarilla', p: { grams: 60 } }, { k: 'limon', p: { units: 0.5 } }, { k: 'comino', p: {} }, { k: 'pimenton', p: {} }, { k: 'aove', p: { ml: 25 } }],
   },
   'b-arandanos': {
-    name: 'Batido de arándanos', meals: ['merienda'],
+    name: 'Blueberry shake', meals: ['merienda'],
     items: [{ k: 'avena', p: { grams: 100 } }, { k: 'leche', p: { grams: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'arandanos', p: { grams: 80 } }, { k: 'mantequilla', p: { grams: 25 } }],
   },
   'b-clasico': {
-    name: 'Batido clásico', meals: ['merienda'],
+    name: 'Classic shake', meals: ['merienda'],
     items: [{ k: 'avena', p: { grams: 100 } }, { k: 'leche', p: { grams: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'mantequilla', p: { grams: 10 } }, { k: 'pumpkin-seeds', p: { grams: 20 } }], // mantequilla recortada 20->10g
   },
   'b-clasico-2': {
-    name: 'Batido clásico 2', meals: ['merienda'],
+    name: 'Classic shake 2', meals: ['merienda'],
     items: [{ k: 'avena', p: { grams: 100 } }, { k: 'leche', p: { grams: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'almendras', p: { grams: 20 } }],
   },
   'b-citrico': {
-    name: 'Batido cítrico', meals: ['merienda'],
+    name: 'Citrus shake', meals: ['merienda'],
     items: [{ k: 'avena', p: { grams: 100 } }, { k: 'yogur-cabra', p: { grams: 150 } }, { k: 'mandarina', p: { units: 1 } }, { k: 'arandanos', p: { grams: 80 } }, { k: 'mantequilla', p: { grams: 12 } }], // mantequilla recortada 25->12g
   },
   'm-proteina-portatil': {
@@ -602,19 +602,19 @@ export const DISHES = {
     // ~800 kcal solas y eso disparaba la grasa del dia muy por encima de lo
     // razonable. Proteina en polvo + leche desnatada + banana: ~29g grasa
     // menos que el batido clasico, con mas proteina.
-    name: 'Batido proteico para llevar', meals: ['merienda'],
+    name: 'Protein shake to go', meals: ['merienda'],
     items: [{ k: 'proteina-polvo', p: { grams: 35 } }, { k: 'leche-desnatada', p: { grams: 350 } }, { k: 'banana', p: { grams: 120 } }],
   },
   'b-melon': {
-    name: 'Batido de melón', meals: ['merienda'],
+    name: 'Melon shake', meals: ['merienda'],
     items: [{ k: 'avena', p: { grams: 100 } }, { k: 'leche', p: { grams: 300 } }, { k: 'melon-cantalupo', p: { grams: 200 } }, { k: 'mantequilla', p: { grams: 20 } }],
   },
   'b-aguacate-cacao': {
-    name: 'Batido aguacate y cacao', meals: ['merienda'],
+    name: 'Avocado and cocoa shake', meals: ['merienda'],
     items: [{ k: 'avena', p: { grams: 100 } }, { k: 'leche', p: { grams: 300 } }, { k: 'aguacate', p: { units: 0.5 } }, { k: 'cacao', p: { grams: 5 } }, { k: 'banana', p: { grams: 120 } }],
   },
   'b-fruto-seco': {
-    name: 'Batido fruto seco', meals: ['merienda'],
+    name: 'Nut shake', meals: ['merienda'],
     items: [{ k: 'avena', p: { grams: 100 } }, { k: 'kefir', p: { ml: 150 } }, { k: 'banana', p: { grams: 120 } }, { k: 'avellana', p: { grams: 20 } }, { k: 'mantequilla', p: { grams: 15 } }],
   },
   // Semana 12 (astringente/diarrea) — sin lacteos (leche/yogur/mantequilla),
@@ -627,11 +627,11 @@ export const DISHES = {
     // compota YA ES esto -- "Lsm bio Unsweetened Apple Sauce", precio real
     // confirmado por el) en vez de platano -- se descarto el membrillo por
     // precio real ($2-3/ud, mucho mas caro que la compota).
-    name: 'Tostada de masa madre con manzana hervida y miel (astringente)', meals: ['merienda'],
+    name: 'Sourdough toast with boiled apple and honey (binding)', meals: ['merienda'],
     items: [{ k: 'pan-masa-madre', p: { grams: 80 } }, { k: 'compota-manzana', p: { grams: 200 } }, { k: 'miel', p: { grams: 10 } }],
   },
   'b-blando': {
-    name: 'Batido blando (día malo de estómago)', meals: ['merienda'],
+    name: 'Gentle shake (bad stomach day)', meals: ['merienda'],
     items: [{ k: 'avena', p: { grams: 100 } }, { k: 'leche', p: { grams: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'mantequilla', p: { grams: 12 } }], // mantequilla recortada 25->12g
   },
   // NUEVO 3 sep 2026 — BATIDO DE GANANCIA.
@@ -649,13 +649,13 @@ export const DISHES = {
   //     es el apetito de comer, es el espacio en el estomago: compra calorias
   //     sin volumen y sin sabor que estorbe.
   'b-ganancia': {
-    name: 'Batido de ganancia (membrillo)', meals: ['merienda'],
+    name: 'Weight-gain shake (quince)', meals: ['merienda'],
     items: [{ k: 'cebada-copos', p: { grams: 100 } }, { k: 'leche', p: { grams: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'membrillo', p: { grams: 150 } }, { k: 'aove', p: { ml: 15 } }], // aceite-coco (87% sat) -> AOVE (14% sat), misma densidad calorica
   },
   // Variante con manzana: mas facil de encontrar todo el ano y algo mas barata,
   // pero menos pectina y mas sorbitol. Misma tecnica: hervir y tirar el agua.
   'b-ganancia-manzana': {
-    name: 'Batido de ganancia (manzana)', meals: ['merienda'],
+    name: 'Weight-gain shake (apple)', meals: ['merienda'],
     items: [{ k: 'cebada-copos', p: { grams: 100 } }, { k: 'leche', p: { grams: 300 } }, { k: 'banana', p: { grams: 120 } }, { k: 'manzana', p: { units: 1 } }, { k: 'aove', p: { ml: 15 } }], // aceite-coco (87% sat) -> AOVE (14% sat), misma densidad calorica
   },
 }

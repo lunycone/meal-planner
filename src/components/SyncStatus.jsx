@@ -32,8 +32,8 @@ export default function SyncStatus() {
 
   const color = status === 'synced' ? '#22c55e' : '#ef4444'
   const title = status === 'synced'
-    ? 'Sincronizado'
-    : `Error de sincronización — los cambios NO se han guardado${errorDetail ? `: ${errorDetail}` : ''}`
+    ? 'Synced'
+    : `Sync error — changes were NOT saved${errorDetail ? `: ${errorDetail}` : ''}`
 
   return (
     <div

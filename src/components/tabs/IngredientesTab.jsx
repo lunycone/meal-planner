@@ -14,16 +14,16 @@ function priceLabel(i) {
   if (i.flat === 0) return '$0.00'
   switch (ingredientUnitType(i)) {
     case 'per100':     return `$${i.per100.toFixed(3)}/100g`
-    case 'perUnit':    return `$${i.perUnit.toFixed(2)}/ud`
+    case 'perUnit':    return `$${i.perUnit.toFixed(2)}/unit`
     case 'perML':      return `$${(i.perML * 100).toFixed(3)}/100ml`
-    case 'perServing': return `~$${i.perServing.toFixed(2)}/plato`
+    case 'perServing': return `~$${i.perServing.toFixed(2)}/serving`
     default:           return '—'
   }
 }
 
 function kcalLabel(i) {
   if (i.kc   != null) return `${i.kc} kcal/100g`
-  if (i.kcu  != null) return `${i.kcu} kcal/ud`
+  if (i.kcu  != null) return `${i.kcu} kcal/unit`
   if (i.kcml != null) return `${Math.round(i.kcml * 100)} kcal/100ml`
   if (i.kcs  != null) return `~${i.kcs} kcal`
   if (i.kcf  != null) return `${i.kcf} kcal`
@@ -47,23 +47,23 @@ function IngCard({ ingKey, ing, modified, stores, menuOpen, onMenu, onPickStore,
   const c = storeColor(store)
   return (
     <div className="ig-card mp-in">
-      <button type="button" className="ig-hit" aria-label={`Abrir ${ing.name}`} onClick={onOpen} />
+      <button type="button" className="ig-hit" aria-label={`Open ${ing.name}`} onClick={onOpen} />
       <span className="ig-card-top">
         <button type="button" className="ig-store" aria-haspopup="menu" aria-expanded={menuOpen} onClick={onMenu}
           style={store ? { background: c + '1F', color: c } : undefined}>
-          <span className="mp-dot" style={{ background: store ? c : 'rgba(110,80,50,0.35)' }} />{store ?? 'Sin tienda'}
+          <span className="mp-dot" style={{ background: store ? c : 'rgba(110,80,50,0.35)' }} />{store ?? 'No store'}
           <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
         </button>
-        {ing.organic && <span className="mp-tag" style={{ background: 'rgba(47,158,91,0.13)', color: '#1F7A45' }}>orgánico</span>}
-        {ing.est && !ing.pend && <span className="mp-tag" style={{ background: 'rgba(110,80,50,0.08)', color: 'var(--c-ink-3)' }}>estimado</span>}
-        {modified && <span className="mp-tag" style={{ background: 'rgba(224,162,27,0.16)', color: '#8A5E08' }}>editado</span>}
+        {ing.organic && <span className="mp-tag" style={{ background: 'rgba(47,158,91,0.13)', color: '#1F7A45' }}>organic</span>}
+        {ing.est && !ing.pend && <span className="mp-tag" style={{ background: 'rgba(110,80,50,0.08)', color: 'var(--c-ink-3)' }}>estimated</span>}
+        {modified && <span className="mp-tag" style={{ background: 'rgba(224,162,27,0.16)', color: '#8A5E08' }}>edited</span>}
       </span>
       <span className="ig-name">{ing.name}</span>
       <span className="ig-price mp-num">{priceLabel(ing)}</span>
       <span className="ig-meta mp-num">{[kcalLabel(ing), ing.pack].filter(Boolean).join(' · ')}</span>
       {menuOpen && (
         <>
-          <div className="ig-menu" role="menu" aria-label="Tienda">
+          <div className="ig-menu" role="menu" aria-label="Store">
             {stores.map(s => (
               <button key={s.name} type="button" role="menuitemradio" aria-checked={s.name === store} onClick={() => onPickStore(s.name)}>
                 <span className="mp-dot" style={{ background: storeColor(s.name) }} />{s.name}
@@ -71,10 +71,10 @@ function IngCard({ ingKey, ing, modified, stores, menuOpen, onMenu, onPickStore,
               </button>
             ))}
             <button type="button" role="menuitemradio" aria-checked={!store} onClick={() => onPickStore('')}>
-              <span className="mp-dot" style={{ background: 'rgba(110,80,50,0.35)' }} />Sin tienda
+              <span className="mp-dot" style={{ background: 'rgba(110,80,50,0.35)' }} />No store
               {!store && <Icon name="check" size={13} stroke={2.6} style={{ marginLeft: 'auto' }} />}
             </button>
-            <button type="button" role="menuitem" onClick={onOpen} style={{ color: 'var(--c-ink-3)' }}><Icon name="plus" size={12} stroke={2.6} />Otra tienda…</button>
+            <button type="button" role="menuitem" onClick={onOpen} style={{ color: 'var(--c-ink-3)' }}><Icon name="plus" size={12} stroke={2.6} />Other store…</button>
           </div>
         </>
       )}
@@ -131,27 +131,27 @@ export default function IngredientesTab() {
        { id: NO_STORE, label: NO_STORE, color: 'rgba(110,80,50,0.35)', keys: visible.filter(k => !storeOf(allIng[k])) }]
     : catOrder.map(c => ({ id: c, label: allCats[c] ?? c, custom: customCategories.some(x => x.key === c), keys: visible.filter(k => allIng[k].cat === c) }))
 
-  const chips = [{ id: 'all', label: `Todas · ${keys.length}` }, ...stores.map(s => ({ id: s.name, label: `${s.name} · ${s.count}`, color: storeColor(s.name) })), { id: NO_STORE, label: `Sin tienda · ${noStore}` }]
+  const chips = [{ id: 'all', label: `All · ${keys.length}` }, ...stores.map(s => ({ id: s.name, label: `${s.name} · ${s.count}`, color: storeColor(s.name) })), { id: NO_STORE, label: `No store · ${noStore}` }]
 
   return (
     <div>
       <div className="mp-page-head mp-rise">
         <div className="mp-page-title">
-          <h1>Ingredientes</h1>
-          <span>{keys.length} ingredientes · {stores.length} tiendas{noStore ? ` · ${noStore} sin tienda` : ''}</span>
+          <h1>Ingredients</h1>
+          <span>{keys.length} ingredients · {stores.length} stores{noStore ? ` · ${noStore} without a store` : ''}</span>
         </div>
         <div className="mp-page-tools">
           <label className="mp-search" style={{ width: 260 }}>
             <Icon name="search" size={14} stroke={2.4} />
-            <span className="sr-only">Buscar ingrediente</span>
-            <input placeholder="Buscar ingrediente o marca…" value={q} onChange={e => setQ(e.target.value)} />
+            <span className="sr-only">Search ingredient</span>
+            <input placeholder="Search ingredient or brand…" value={q} onChange={e => setQ(e.target.value)} />
           </label>
-          <Segmented label="Agrupar por" value={group} onChange={setGroup} options={[{ value: 'store', label: 'Por tienda' }, { value: 'cat', label: 'Por categoría' }]} />
-          <button className="mp-btn mp-btn-dark" onClick={() => setOpen(null)}><Icon name="plus" size={14} stroke={2.6} />Nuevo ingrediente</button>
+          <Segmented label="Group by" value={group} onChange={setGroup} options={[{ value: 'store', label: 'By store' }, { value: 'cat', label: 'By category' }]} />
+          <button className="mp-btn mp-btn-dark" onClick={() => setOpen(null)}><Icon name="plus" size={14} stroke={2.6} />New ingredient</button>
         </div>
       </div>
 
-      <nav aria-label="Filtrar por tienda" className="ig-filter mp-rise" style={{ animationDelay: '60ms' }}>
+      <nav aria-label="Filter by store" className="ig-filter mp-rise" style={{ animationDelay: '60ms' }}>
         {chips.map(c => {
           const on = storeF === c.id
           return (
@@ -163,14 +163,14 @@ export default function IngredientesTab() {
         })}
       </nav>
 
-      {visible.length === 0 && <div className="mp-empty" style={{ padding: 40 }}>Nada coincide con la búsqueda.</div>}
+      {visible.length === 0 && <div className="mp-empty" style={{ padding: 40 }}>Nothing matches your search.</div>}
 
       {sections.filter(sec => sec.keys.length).map(sec => (
         <section key={sec.id} style={{ marginBottom: 26 }}>
           <h3 className="ig-sec">
             {sec.color && <span className="mp-dot" style={{ width: 10, height: 10, background: sec.color }} />}
             {sec.label} <span className="mp-muted" style={{ fontWeight: 500, fontSize: 13 }}>{sec.keys.length}</span>
-            {sec.custom && <button type="button" className="mp-btn mp-btn-sm pl-del" style={{ marginLeft: 6 }} onClick={() => removeCustomCategory(sec.id)}>Quitar categoría</button>}
+            {sec.custom && <button type="button" className="mp-btn mp-btn-sm pl-del" style={{ marginLeft: 6 }} onClick={() => removeCustomCategory(sec.id)}>Remove category</button>}
           </h3>
           <div className="ig-grid">
             {sec.keys.map(k => (
@@ -186,7 +186,7 @@ export default function IngredientesTab() {
 
       {deletedIngredients.length > 0 && (
         <section className="mp-card mp-glass" style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <span className="mp-eyebrow">Ocultos · {deletedIngredients.length}</span>
+          <span className="mp-eyebrow">Hidden · {deletedIngredients.length}</span>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {deletedIngredients.map(k => (
               <button key={k} className="ig-chip" onClick={() => restoreIngredient(k)}><Icon name="repeat" size={12} />{ING[k]?.name ?? k}</button>

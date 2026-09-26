@@ -51,9 +51,9 @@ function Ring({ person, color, tot }) {
   const R = 26, C = 2 * Math.PI * R
   const frac = tot.target ? Math.min(1, tot.kcal / tot.target) : 0
   const diff = tot.kcal - tot.target
-  const sub = tot.planned === 0 ? 'Sin comidas puestas hoy'
-    : Math.abs(diff) <= tot.target * 0.05 ? `En objetivo · ${tot.prot} g prot`
-    : diff > 0 ? `+${diff} kcal · ${tot.prot} g prot` : `Faltan ${-diff} kcal · ${tot.prot} g prot`
+  const sub = tot.planned === 0 ? 'No meals planned today'
+    : Math.abs(diff) <= tot.target * 0.05 ? `On target · ${tot.prot} g prot`
+    : diff > 0 ? `+${diff} kcal · ${tot.prot} g prot` : `${-diff} kcal to go · ${tot.prot} g prot`
   return (
     <div className="hoy-ring mp-glass">
       <div style={{ position: 'relative', width: 62, height: 62, flexShrink: 0 }}>
@@ -121,7 +121,7 @@ function Carousel({ meals, active, setActive, nextIdx, isToday, onOpen }) {
   }
 
   return (
-    <section className="hoy-carousel" aria-label="Comidas de hoy · arrastra para cambiar" tabIndex={0} onKeyDown={onKey}
+    <section className="hoy-carousel" aria-label="Today's meals · drag to switch" tabIndex={0} onKeyDown={onKey}
       onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onPointerLeave={up}
       style={{ cursor: st.current.down && st.current.moved ? 'grabbing' : 'grab' }}>
       <div className="hoy-stage">
@@ -148,7 +148,7 @@ function Carousel({ meals, active, setActive, nextIdx, isToday, onOpen }) {
                     <span className="mp-muted" style={{ fontSize: 12.5 }}>{MEAL_TIME[m.type]}</span>
                   </span>
                 </span>
-                {isToday && i === nextIdx && <span className="mp-tag" style={{ background: 'var(--c-ink)', color: '#fff' }}>Siguiente</span>}
+                {isToday && i === nextIdx && <span className="mp-tag" style={{ background: 'var(--c-ink)', color: '#fff' }}>Next</span>}
               </div>
 
               {main ? (
@@ -162,7 +162,7 @@ function Carousel({ meals, active, setActive, nextIdx, isToday, onOpen }) {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 'auto' }}>
                     <Donut info={main} />
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 12, color: 'var(--c-ink-2)' }}>
-                      {['Proteína', 'Carbohidrato', 'Grasa'].map((l, k) => (
+                      {['Protein', 'Carbs', 'Fat'].map((l, k) => (
                         <span key={l} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                           <span className="mp-dot" style={{ background: ['#2E9BD6', '#E0A21B', '#8B6FE8'][k] }} />{l} {macroPct(main)[k]}%
                         </span>
@@ -175,7 +175,7 @@ function Carousel({ meals, active, setActive, nextIdx, isToday, onOpen }) {
                         <span className="mp-muted" style={{ fontSize: 11.5 }}>{r.person.name}</span>
                         <span className="mp-num" style={{ fontSize: 17, fontWeight: 600 }}>{r.info ? `${r.info.kcal} kcal` : '—'}</span>
                         <span style={{ fontSize: 11, color: r.info?.pcos && r.person.pcos ? PCOS_STYLE[r.info.pcos].color : 'var(--c-ink-3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {!r.info ? 'Sin plato' : r.person.pcos && r.info.pcos ? PCOS_STYLE[r.info.pcos].label : r.info.portion}
+                          {!r.info ? 'No dish' : r.person.pcos && r.info.pcos ? PCOS_STYLE[r.info.pcos].label : r.info.portion}
                         </span>
                       </div>
                     ))}
@@ -183,8 +183,8 @@ function Carousel({ meals, active, setActive, nextIdx, isToday, onOpen }) {
                 </>
               ) : (
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, textAlign: 'center' }}>
-                  <span className="mp-muted" style={{ fontSize: 15 }}>Sin plato para {MEAL_LABEL[m.type].toLowerCase()}</span>
-                  <span className="mp-btn mp-btn-dark"><Icon name="plus" size={14} stroke={2.6} />Elegir plato</span>
+                  <span className="mp-muted" style={{ fontSize: 15 }}>No dish for {MEAL_LABEL[m.type].toLowerCase()}</span>
+                  <span className="mp-btn mp-btn-dark"><Icon name="plus" size={14} stroke={2.6} />Choose dish</span>
                 </div>
               )}
             </article>
@@ -192,12 +192,12 @@ function Carousel({ meals, active, setActive, nextIdx, isToday, onOpen }) {
         })}
       </div>
       <div className="hoy-dots">
-        <button type="button" className="mp-icon-btn" style={{ width: 30, height: 30 }} aria-label="Comida anterior" onClick={() => setActive(Math.max(0, active - 1))}><Icon name="left" size={12} stroke={2.6} /></button>
+        <button type="button" className="mp-icon-btn" style={{ width: 30, height: 30 }} aria-label="Previous meal" onClick={() => setActive(Math.max(0, active - 1))}><Icon name="left" size={12} stroke={2.6} /></button>
         {meals.map((m, i) => (
           <button key={m.type} type="button" aria-label={MEAL_LABEL[m.type]} onClick={() => setActive(i)}
             style={{ width: i === active ? 26 : 8, height: 8, borderRadius: 4, border: 0, padding: 0, cursor: 'pointer', background: i === active ? MEAL_STYLE[m.type].color : 'rgba(110,80,50,0.2)', transition: 'width .5s var(--c-spring), background .3s' }} />
         ))}
-        <button type="button" className="mp-icon-btn" style={{ width: 30, height: 30 }} aria-label="Comida siguiente" onClick={() => setActive(Math.min(meals.length - 1, active + 1))}><Icon name="right" size={12} stroke={2.6} /></button>
+        <button type="button" className="mp-icon-btn" style={{ width: 30, height: 30 }} aria-label="Next meal" onClick={() => setActive(Math.min(meals.length - 1, active + 1))}><Icon name="right" size={12} stroke={2.6} /></button>
       </div>
     </section>
   )
@@ -282,12 +282,12 @@ export default function HomeView() {
     else if (s.recipeKey) inUse.add(s.recipeKey)
   }))
   const apps = [
-    { l: 'Planificador', icon: 'cal', c: '#1F1B16', g: 'rgba(31,27,22,0.25)', v: `${plannedThis}/28`, title: 'Comidas puestas esta semana', go: () => openPlanner(0, di) },
-    { l: 'Semanas modelo', icon: 'layers', c: '#7154DA', g: 'rgba(139,111,232,0.45)', v: 'Cargar', title: 'Cargar una semana modelo entera', go: () => setModels(true) },
-    { l: 'Compra', icon: 'bag', c: '#C1850C', g: 'rgba(224,162,27,0.45)', v: nextIngs.size ? `${nextIngs.size} ingr.` : 'Vacía', title: `Para el batch del ${nextMon.getDate()}–${addDays(nextMon, 4).getDate()}`, go: () => setView('compra') },
-    { l: 'Batch', icon: 'pot', c: '#D9486A', g: 'rgba(232,98,124,0.45)', v: di === 6 ? 'Hoy' : `Dom ${batchSunday.getDate()}`, title: tuppers ? `${tuppers} tuppers de comida y cena` : 'Semana que viene sin planificar', go: () => setView('batch') },
-    { l: 'Platos', icon: 'plate', c: '#2585BC', g: 'rgba(46,155,214,0.45)', v: `${Object.keys(allCombos).length}`, title: `${inUse.size} en algún plan`, go: () => setView('platos') },
-    { l: 'Ingredientes', icon: 'leaf', c: '#2F9E5B', g: 'rgba(47,158,91,0.45)', v: `${Object.keys(allIng).length}`, title: 'Precios y nutrientes', go: () => setView('ingredientes') },
+    { l: 'Planner', icon: 'cal', c: '#1F1B16', g: 'rgba(31,27,22,0.25)', v: `${plannedThis}/28`, title: 'Meals planned this week', go: () => openPlanner(0, di) },
+    { l: 'Model weeks', icon: 'layers', c: '#7154DA', g: 'rgba(139,111,232,0.45)', v: 'Load', title: 'Load a whole model week', go: () => setModels(true) },
+    { l: 'Shopping', icon: 'bag', c: '#C1850C', g: 'rgba(224,162,27,0.45)', v: nextIngs.size ? `${nextIngs.size} items` : 'Empty', title: `For the ${nextMon.getDate()}–${addDays(nextMon, 4).getDate()} batch`, go: () => setView('compra') },
+    { l: 'Batch', icon: 'pot', c: '#D9486A', g: 'rgba(232,98,124,0.45)', v: di === 6 ? 'Today' : `Sun ${batchSunday.getDate()}`, title: tuppers ? `${tuppers} lunch & dinner containers` : 'Next week not planned yet', go: () => setView('batch') },
+    { l: 'Dishes', icon: 'plate', c: '#2585BC', g: 'rgba(46,155,214,0.45)', v: `${Object.keys(allCombos).length}`, title: `${inUse.size} in some plan`, go: () => setView('platos') },
+    { l: 'Ingredients', icon: 'leaf', c: '#2F9E5B', g: 'rgba(47,158,91,0.45)', v: `${Object.keys(allIng).length}`, title: 'Prices and nutrition', go: () => setView('ingredientes') },
   ]
 
   const sheetMeal = sheet ? meals.find(m => m.type === sheet) : null
@@ -311,7 +311,7 @@ export default function HomeView() {
         <span style={{ fontSize: 22, fontWeight: 500, color: 'var(--c-ink-3)' }}>{DAY_LONG[di]}</span>
         <span className="hoy-date mp-num">{dayNum}</span>
         <span style={{ fontSize: 15, color: 'var(--c-ink-3)', marginTop: 8 }}>
-          {MONTHS[today.getMonth()]} · {BATCH_DAYS.includes(dk) ? 'semana de batch' : di === 6 ? 'día de batch' : 'fin de semana'}
+          {MONTHS[today.getMonth()]} · {BATCH_DAYS.includes(dk) ? 'batch week' : di === 6 ? 'batch day' : 'weekend'}
         </span>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 'clamp(14px, 3vh, 28px)' }}>
           {totals.map(({ p, tot }) => <Ring key={p.id} person={p} color={colorOf(p)} tot={tot} />)}
@@ -320,7 +320,7 @@ export default function HomeView() {
 
       <Carousel meals={meals} active={active} setActive={setActive} nextIdx={nextIdx} isToday onOpen={openMeal} />
 
-      <section className="hoy-apps" aria-label="Secciones">
+      <section className="hoy-apps" aria-label="Sections">
         {apps.map((a, i) => (
           <button key={a.l} type="button" className="hoy-app mp-rise" onClick={a.go} title={a.title} style={{ animationDelay: `${120 + i * 60}ms` }}>
             <span className="hoy-app-sq mp-rim">
@@ -332,18 +332,18 @@ export default function HomeView() {
         ))}
       </section>
 
-      <section className="hoy-week mp-glass mp-rise" aria-label="Esta semana" style={{ animationDelay: '320ms' }}>
+      <section className="hoy-week mp-glass mp-rise" aria-label="This week" style={{ animationDelay: '320ms' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: 4 }}>
-          <span style={{ fontSize: 17, fontWeight: 700 }}>Esta semana</span>
+          <span style={{ fontSize: 17, fontWeight: 700 }}>This week</span>
           <span style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column' }}>
-            <span className="mp-muted" style={{ fontSize: 12 }}>Coste {shown.length > 1 ? `de ${shown.length === 2 ? 'los dos' : 'todos'}` : `· ${shown[0]?.name ?? ''}`}</span>
+            <span className="mp-muted" style={{ fontSize: 12 }}>Cost {shown.length > 1 ? `for ${shown.length === 2 ? 'both' : 'everyone'}` : `· ${shown[0]?.name ?? ''}`}</span>
             <span className="mp-num" style={{ fontSize: 24, fontWeight: 600, letterSpacing: '-0.03em' }}>{fmtMoney(weekCost)}</span>
           </span>
         </div>
         {strip.map(s => {
           const isToday = s.i === di
           const past = s.i < di
-          const tag = isToday ? 'Hoy' : s.i === 6 ? 'Batch' : null
+          const tag = isToday ? 'Today' : s.i === 6 ? 'Batch' : null
           return (
             <button key={s.d} type="button" className={`hoy-day${isToday ? ' is-today' : ''}`} onClick={() => openPlanner(0, s.i)} style={{ opacity: past ? 0.55 : 1 }}>
               <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
@@ -356,17 +356,17 @@ export default function HomeView() {
               {[['comida', s.com], ['cena', s.cen]].map(([m, n]) => (
                 <span key={m} style={{ display: 'flex', gap: 7, alignItems: 'flex-start' }}>
                   <span className="mp-bubble" style={{ width: 20, height: 20, background: MEAL_STYLE[m].tint, color: MEAL_STYLE[m].color }}><Icon name={MEAL_ICON[m]} size={11} stroke={2.4} /></span>
-                  <span className="hoy-day-dish" style={{ fontWeight: n ? 600 : 400, color: n ? 'var(--c-ink)' : 'var(--c-ink-3)' }}>{n ?? 'Sin plato'}</span>
+                  <span className="hoy-day-dish" style={{ fontWeight: n ? 600 : 400, color: n ? 'var(--c-ink)' : 'var(--c-ink-3)' }}>{n ?? 'No dish'}</span>
                 </span>
               ))}
-              <span className="mp-muted mp-num" style={{ marginTop: 'auto', fontSize: 11.5 }}>{s.planned ? `${fmtMoney(s.cost)} · ${s.planned}/4` : 'Vacío'}</span>
+              <span className="mp-muted mp-num" style={{ marginTop: 'auto', fontSize: 11.5 }}>{s.planned ? `${fmtMoney(s.cost)} · ${s.planned}/4` : 'Empty'}</span>
             </button>
           )
         })}
       </section>
 
       {sheetMeal && (
-        <MealSheet mealType={sheetMeal.type} dayLabel={`hoy, ${DAY_LONG[di].toLowerCase()} ${today.getDate()}`} rows={sheetMeal.rows}
+        <MealSheet mealType={sheetMeal.type} dayLabel={`today, ${DAY_LONG[di]} ${today.getDate()}`} rows={sheetMeal.rows}
           onClose={() => setSheet(null)}
           onClear={() => clearMeal(sheetMeal.type)}
           onChange={() => { const k = sheetMeal.rows.find(r => r.info)?.info.key; setSheet(null); setPicker({ mealType: sheetMeal.type, currentKey: k, who }) }} />

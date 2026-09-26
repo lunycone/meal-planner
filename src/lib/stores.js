@@ -53,4 +53,4 @@ export function storesIn(allIng) {
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
 }
 
-export const NO_STORE = 'Sin tienda'
+export const NO_STORE = 'No store'

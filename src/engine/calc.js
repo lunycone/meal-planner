@@ -576,9 +576,9 @@ export function fmtPortion(p) {
   if (p.ml    != null) return p.ml + 'ml'
   if (p.units != null) {
     const m = { 0.25: '¼', 0.5: '½', 0.75: '¾' }
-    return (m[p.units] ?? p.units) + ' ud'
+    return (m[p.units] ?? p.units) + ' pc'
   }
-  if (p.serv  != null) return 'porción'
+  if (p.serv  != null) return 'serving'
   return '—'
 }
 
