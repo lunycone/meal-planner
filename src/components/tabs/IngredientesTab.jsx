@@ -2,17 +2,20 @@ import { useState } from 'react'
 import useStore, { selectAllIng, selectAllCats } from '../../store/useStore'
 import { CAT_ORDER } from '../../data/ingredients'
 import { ING } from '../../data/ingredients'
+import { ingredientUnitType } from '../../engine/calc'
 
 // ─── helpers ──────────────────────────────────────────────────────────────
 
 function priceLabel(i) {
-  if (i.pend)             return '—'
-  if (i.flat === 0)       return '$0.00'
-  if (i.per100    != null) return `$${i.per100.toFixed(3)}/100g`
-  if (i.perUnit   != null) return `$${i.perUnit.toFixed(2)}/ud`
-  if (i.perML     != null) return `$${(i.perML * 100).toFixed(3)}/100ml`
-  if (i.perServing != null) return `~$${i.perServing.toFixed(2)}/plato`
-  return '—'
+  if (i.pend)       return '—'
+  if (i.flat === 0) return '$0.00'
+  switch (ingredientUnitType(i)) {
+    case 'per100':     return `$${i.per100.toFixed(3)}/100g`
+    case 'perUnit':    return `$${i.perUnit.toFixed(2)}/ud`
+    case 'perML':      return `$${(i.perML * 100).toFixed(3)}/100ml`
+    case 'perServing': return `~$${i.perServing.toFixed(2)}/plato`
+    default:           return '—'
+  }
 }
 
 function kcalLabel(i) {
@@ -24,12 +27,11 @@ function kcalLabel(i) {
   return ''
 }
 
+// 'flat' no tiene input de precio propio en el formulario de edicion (se
+// trata como precio fijo no editable ahi), asi que se excluye del resultado.
 function priceField(i) {
-  if (i.per100    != null) return 'per100'
-  if (i.perUnit   != null) return 'perUnit'
-  if (i.perML     != null) return 'perML'
-  if (i.perServing != null) return 'perServing'
-  return null
+  const t = ingredientUnitType(i)
+  return t === 'flat' ? null : t
 }
 
 function isBaseIng(key) { return !!ING[key] }
@@ -169,9 +171,22 @@ function IngCard({ ingKey, ing, isModified, editingKey, setEditingKey }) {
         <IngEditForm ingKey={ingKey} ing={ing} onClose={() => setEditingKey(null)} />
       ) : (
         <>
-          <div className="in" style={{ justifyContent: 'space-between' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', flex: 1 }}>
-              {ing.name}
+          <div className="in-head">
+            <span className="in-name">{ing.name}</span>
+            <button
+              className="card-edit-btn"
+              onClick={() => setEditingKey(ingKey)}
+              aria-label={`Editar ${ing.name}`}
+              title="Editar"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 20h9"/>
+                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+              </svg>
+            </button>
+          </div>
+          {(ing.tag || ing.organic || ing.pend || ing.est || ing.jessica || isModified || ing.isCustom) && (
+            <span className="in-tags">
               {ing.tag === 'vaca'  && <span className="badge badge-vaca">vaca</span>}
               {ing.tag === 'oveja' && <span className="badge badge-oveja">oveja</span>}
               {ing.organic         && <span className="badge badge-organic">orgánico</span>}
@@ -181,28 +196,17 @@ function IngCard({ ingKey, ing, isModified, editingKey, setEditingKey }) {
               {isModified          && <span className="badge badge-modified">editado</span>}
               {ing.isCustom        && <span className="badge badge-custom">custom</span>}
             </span>
-            <button
-              className="card-edit-btn"
-              onClick={() => setEditingKey(ingKey)}
-              style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: '0.78rem', padding: '0 2px', flexShrink: 0 }}
-              title="Editar"
-            >
-              ✎
-            </button>
-          </div>
-          <div className="ipack">{ing.pack}</div>
+          )}
+          <div className="ihero">{ing.per}</div>
+          <div className="iref">{[priceLabel(ing), kcalLabel(ing)].filter(Boolean).join(' · ')}</div>
+          {ing.note && <div className="inote">{ing.note}</div>}
           {ing.brand && (
-            <div style={{ fontSize: '0.68rem', marginBottom: '0.2rem' }}>
+            <div style={{ fontSize: '0.68rem' }}>
               <span style={{ color: 'var(--brown)', fontWeight: 600 }}>{ing.brand}</span>
               <span style={{ color: 'var(--muted)' }}> · {ing.store}</span>
             </div>
           )}
-          <div className="irow">
-            <span className="iprice">{priceLabel(ing)}</span>
-            <span className="ikcal">{kcalLabel(ing)}</span>
-          </div>
-          <div className="iper">{ing.per}</div>
-          {ing.note && <div className="inote">{ing.note}</div>}
+          <div className="ipack">{ing.pack}</div>
         </>
       )}
     </div>

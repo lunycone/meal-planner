@@ -1006,18 +1006,25 @@ input, select, textarea { font-family: inherit; }
   backdrop-filter: var(--t-card-blur);
   -webkit-backdrop-filter: var(--t-card-blur);
   border: 1px solid var(--t-card-border);
-  border-radius: var(--radius-md); padding: 0.8rem 1rem;
-  display: flex; flex-direction: column; gap: 3px;
+  border-radius: var(--radius-md); padding: 0.9rem 1rem;
+  display: flex; flex-direction: column; gap: 7px;
   box-shadow: var(--t-card-shadow);
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 .ing-card.modified { border-color: rgba(200,168,40,0.65); box-shadow: 0 0 0 2px rgba(200,168,40,0.15), var(--t-card-shadow); }
-.ing-card .in    { font-size: 0.88rem; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.ing-card .ipack { font-size: 0.7rem; color: var(--muted); }
-.ing-card .irow  { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; gap: 6px; }
-.ing-card .iprice{ font-size: 0.85rem; color: var(--brown); }
-.ing-card .ikcal { font-size: 0.74rem; color: var(--kcal); }
-.ing-card .iper  { font-size: 0.7rem; color: var(--muted); }
+.ing-card .in-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.ing-card .in-name { font-family: var(--t-font-display); font-weight: 500; font-size: 0.98rem; line-height: 1.25; color: var(--t-text); }
+.ing-card .in-tags { display: flex; gap: 5px; flex-wrap: wrap; }
+/* "Hero" -- la ración real (ing.per), antes enterrada como la linea mas
+   pequeña y gris de la tarjeta. Es el dato que de verdad se usa al cocinar
+   o hacer la compra, asi que ahora es el mas grande y con mas peso visual;
+   el $/100g (.iref) pasa a referencia secundaria. */
+.ing-card .ihero { font-size: 0.86rem; font-weight: 700; color: var(--brown); }
+.ing-card .iref  { font-size: 0.68rem; color: var(--muted); }
+.ing-card .ipack {
+  margin-top: auto; padding-top: 6px; border-top: 1px solid var(--t-border-soft);
+  font-size: 0.64rem; color: var(--muted);
+}
 .ing-card .inote { font-size: 0.68rem; color: var(--jessica-ink); font-style: italic; }
 
 .price-edit-wrap { display: flex; align-items: center; gap: 4px; }
@@ -1243,8 +1250,18 @@ input, select, textarea { font-family: inherit; }
 /* ============================================================
    HOVER-REVEAL ACTION BUTTONS
    ============================================================ */
-.card-edit-btn { opacity: 0; transition: opacity 0.12s; }
-.ing-card:hover .card-edit-btn { opacity: 1; }
+/* Antes: opacity:0 hasta :hover -- invisible en movil (donde se usa esta
+   app, en la cocina) porque no hay hover real al tocar. Ahora siempre
+   visible, con tamaño de toque real (34px) en vez del glifo "✎" suelto. */
+.card-edit-btn {
+  width: 34px; height: 34px; border-radius: var(--t-radius);
+  border: 1px solid var(--t-border); background: var(--t-bg);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--t-text-soft); cursor: pointer; flex-shrink: 0; padding: 0;
+  transition: background 0.12s, border-color 0.12s;
+}
+.card-edit-btn:hover { background: var(--t-tinted-bg); border-color: var(--t-border-soft); }
+.card-edit-btn svg { width: 15px; height: 15px; }
 
 .batch-actions { display: flex; align-items: center; gap: 6px; opacity: 0; transition: opacity 0.12s; }
 .batch-block:hover .batch-actions,

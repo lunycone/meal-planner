@@ -3,6 +3,7 @@ import useStore, { selectAllIng, selectAllCombos } from '../../store/useStore'
 import { PROTEIN } from '../../data/proteins'
 import { PREP } from '../../data/combos'
 import { comboScalableKey, personMealScalesTwoPass, personTargetForDay, personDayKcal, slotForPerson, DRY_TO_COOKED as COOK_RATIO } from '../../engine/calc'
+import { getISOWeek, getWeekMonday, formatDateShort } from '../../utils/date'
 
 // Orden de dias para resolver el indice (0=lun..6=dom) que necesita
 // personTargetForDay/personMealScale — mismo orden que DAY_KEYS en el
@@ -179,27 +180,6 @@ function desayunoMethod(name = '', keys = []) {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function getISOWeek(date) {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
-  const dayNum = d.getUTCDay() || 7
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum)
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
-  return `${d.getUTCFullYear()}-W${String(Math.ceil((d - yearStart) / 86400000 / 7)).padStart(2, '0')}`
-}
-
-function getWeekMonday(weekOffset) {
-  const now    = new Date()
-  const target = new Date(now.getTime() + weekOffset * 7 * 24 * 60 * 60 * 1000)
-  const day    = target.getDay()
-  const diff   = target.getDate() - day + (day === 0 ? -6 : 1)
-  return new Date(new Date(target).setDate(diff))
-}
-
-function formatDateShort(date) {
-  const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']
-  return `${date.getDate()} ${months[date.getMonth()]}`
-}
-
 function profilesActiveOn(profiles, date) {
   const d = new Date(date); d.setHours(0, 0, 0, 0)
   return profiles.filter(p => {

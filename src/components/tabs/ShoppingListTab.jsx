@@ -4,19 +4,12 @@ import { CAT_ORDER, CAT_LABELS } from '../../data/ingredients'
 import { PROTEIN } from '../../data/proteins'
 import { COMBO } from '../../data/combos'
 import { ingCost, ingKcal, ingProt, ingFat, comboAgg, fmt, personLunchScale, comboScalableKey, dayKcal, personMealScalesTwoPass, personTargetForDay, slotForPerson } from '../../engine/calc'
+import { getISOWeek } from '../../utils/date'
 
 // Orden lun..dom para resolver el indice que personTargetForDay/personMealScalesTwoPass
 // necesitan — mismo orden que en WeeklyMealPlannerTab/BatchPrepTab.
 const ALL_DAY_KEYS = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom']
 const MEALS = ['desayuno', 'comida', 'merienda', 'cena']
-
-function getISOWeek(date) {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
-  const dayNum = d.getUTCDay() || 7
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum)
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
-  return `${d.getUTCFullYear()}-W${String(Math.ceil((d - yearStart) / 86400000 / 7)).padStart(2, '0')}`
-}
 
 // js getDay(): 0=Sun 1=Mon … 6=Sat → app day key
 const DOW_TO_DAYKEY = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']

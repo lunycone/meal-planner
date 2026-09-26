@@ -3,6 +3,21 @@
 
 import { PROTEIN } from '../data/proteins.js'
 
+// Que tipo de unidad usa este ingrediente para su precio/kcal base --
+// 'per100' (100g), 'perUnit' (ud), 'perML' (100ml), 'perServing' (plato) o
+// 'flat' (precio fijo). Fuente unica de verdad: antes IngredientesTab.jsx
+// repetia esta misma cadena de comprobaciones dos veces (priceField y
+// priceLabel por separado).
+export function ingredientUnitType(ing) {
+  if (!ing) return null
+  if (ing.per100     != null) return 'per100'
+  if (ing.perUnit    != null) return 'perUnit'
+  if (ing.perML      != null) return 'perML'
+  if (ing.perServing != null) return 'perServing'
+  if (ing.flat       != null) return 'flat'
+  return null
+}
+
 export function ingCost(key, p, allIng) {
   const i = allIng[key]
   if (!i) return 0

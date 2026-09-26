@@ -8,60 +8,12 @@ import DailyProgress from '../components/DailyProgress'
 import PersonalizedDay from '../components/PersonalizedDay'
 import ProfileSelector from '../components/ProfileSelector'
 import SyncStatus from '../components/SyncStatus'
+import { getISOWeek, formatDateShort, formatFullDate, getDayName, isToday, getTodayDayKey } from '../utils/date'
 
 // Orden lun..dom -- personTargetForDay/personMealScalesTwoPass necesitan el
 // indice (0=lunes), mismo orden que en el resto de tabs.
 const ALL_DAY_KEYS = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom']
 const MEALS = ['desayuno', 'comida', 'merienda', 'cena']
-
-// ─── Utility functions ────────────────────────────────────────────────────────
-
-function getISOWeek(date) {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
-  const dayNum = d.getUTCDay() || 7
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum)
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
-  return `${d.getUTCFullYear()}-W${String(Math.ceil((d - yearStart) / 86400000 / 7)).padStart(2, '0')}`
-}
-
-function formatDateShort(date) {
-  const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
-  return `${date.getDate()} ${months[date.getMonth()]}`
-}
-
-function formatFullDate(date) {
-  const months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']
-  return `${date.getDate()} de ${months[date.getMonth()]}`
-}
-
-function getDayName(date) {
-  const days = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado']
-  return days[date.getDay()]
-}
-
-function isToday(date) {
-  const today = new Date()
-  return date.getDate() === today.getDate() &&
-         date.getMonth() === today.getMonth() &&
-         date.getFullYear() === today.getFullYear()
-}
-
-function getTodayDayKey() {
-  const today = new Date()
-  const monday = new Date(today)
-  const day = today.getDay()
-  const diff = today.getDate() - day + (day === 0 ? -6 : 1)
-  monday.setDate(diff)
-
-  const DAY_KEYS = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom']
-
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(monday)
-    d.setDate(d.getDate() + i)
-    if (isToday(d)) return DAY_KEYS[i]
-  }
-  return null
-}
 
 // ─── Combo detail modal (preview: coste · kcal · proteína · ingredientes) ─────
 function ComboDetailModal({ combo, allIng, onConfirm, onClose }) {
