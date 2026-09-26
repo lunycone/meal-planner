@@ -46,6 +46,7 @@ export const ING = {
   rucula:            { name: 'Rúcula',            cat: 'fresco',   per100: 2.11,  kc: 25,  prot: 2.6, fat: 0.7, fib: 1.6, pack: '900 g · $19.00',        per: 'solo batch' },
   zanahoria:         { name: 'Zanahoria (No Name Naturally Imperfect)', cat: 'fresco', per100: 0.220, kc: 41, prot: 0.9, fat: 0.2, fib: 2.8, fibSol: 1.4, pack: '2270 g · $5.00 (No Frills)',  per: '100g → $0.22' },
   espinaca:          { name: 'Espinaca congelada',cat: 'fresco',   per100: 1.11,  kc: 23,  prot: 2.9, fat: 0.4, fib: 2.2, fibSol: 0.5, pack: '450 g · $4.99',         per: '80g → $0.89' },
+  'guisantes-organic': { name: 'Guisantes orgánicos congelados (Costco)', cat: 'fresco', per100: 0.4596, kc: 81, prot: 5.4, fat: 0.4, fib: 5.5, fibSol: 1.2, pack: '2.5 kg (Costco) · $11.49', per: '80g → $0.37 · 65 kcal', organic: true, est: true },
   puerro:            { name: 'Puerro',            cat: 'fresco',   perUnit: 2.00, kcu: 55,  protu: 1.4, fatu: 0.3, fibu: 1.8, pack: '3 ud · $5.99',       per: '½ → $1.00 · 27 kcal' },
   'tomate-fresco':   { name: 'Tomate fresco (vine)', cat: 'fresco', per100: 0.660, kc: 18, prot: 0.9, fat: 0.2, fib: 1.2, pack: 'Organic Vine ~0.35 lb · $1.05 (~159g)', per: '120g → $0.79 · 22 kcal', organic: true },
   'pepino-ingles':   { name: 'Pepino inglés',        cat: 'fresco', per100: 0.286, kc: 15, prot: 0.6, fat: 0.1, fib: 0.5, pack: 'English cucumber · $1.00 (~350g)',     per: '100g → $0.29 · 15 kcal' },
@@ -68,7 +69,7 @@ export const ING = {
   'melon-cantalupo': { name: 'Melón cantalupo',  cat: 'fresco',   per100: 0.233, kc: 34,  prot: 0.8, fat: 0.2, fib: 0.9, fibSol: 0.3, pack: '~1.5kg · $3.50 est.',   per: '200g → $0.47 · 68 kcal', est: true },
   avellana:          { name: 'Avellana',          cat: 'fresco',   per100: 3.40,  kc: 628, prot: 15,  fat: 61,  fib: 9.7, fibSol: 1.2, pack: '1kg · $34.00',          per: '20g → $0.68 · 126 kcal' },
   macadamia:         { name: 'Macadamia',         cat: 'fresco',   per100: 2.40,  kc: 718, prot: 7.9, fat: 76,  fib: 8.6, fibSol: 1.6, pack: '1kg · $24.00',          per: '20g → $0.48 · 144 kcal' },
-  'pumpkin-seeds':   { name: 'Pumpkin Seeds (Ambrosia)', cat: 'fresco', per100: 1.143, kc: 559, prot: 30.2, fat: 49.1, fib: 6.0, pack: '1 lb · $5.19', per: '30g → $0.34 · 168 kcal' },
+  'pumpkin-seeds':   { name: 'Pumpkin Seeds orgánicas (Costco)', cat: 'fresco', per100: 1.00, kc: 559, prot: 30.2, fat: 49.1, fib: 6.0, pack: '1.2 kg (Costco) · $12.00', per: '30g → $0.30 · 168 kcal', organic: true },
   chia:              { name: 'Semillas de chía',    cat: 'fresco', per100: 1.50,  kc: 486, prot: 17,  fat: 31, fib: 34, fibSol: 7.0, gi: 1, pack: 'estimado',              per: '12g → $0.18 · 58 kcal', est: true },
   'sunflower-seeds': { name: 'Sunflower Seeds (Ambrosia)', cat: 'fresco', per100: 1.076, kc: 584, prot: 20.8, fat: 51.5, fib: 8.6, pack: '454g · $4.89', per: '30g → $0.32 · 175 kcal' },
   almendras:         { name: 'Almendras (Whole Natural)', cat: 'fresco', per100: 1.781, kc: 579, prot: 21.2, fat: 49.9, fib: 12.5, fibSol: 0.9, pack: '1 lb · $8.09', per: '20g → $0.36 · 116 kcal' },
@@ -90,7 +91,7 @@ export const ING = {
   // OTROS
   aceite:           { name: 'Aceite de oliva',  cat: 'otro', flat: 0,    kcf: 0,  pack: 'ya tienes',        per: '~120 kcal/cda · NO contado' },
   aove:             { name: 'AOVE',              cat: 'otro', perML: 0,    kcml: 9, fatml: 1, pack: 'ya comprado — $0, kcal sí cuenta', per: '20ml → $0 · 180 kcal · 20g grasa' },
-  'aceite-coco':    { name: 'Aceite coco refinado (Nutiva)', cat: 'otro', per100: 2.02, kc: 892, prot: 0, fat: 99.5, pack: '1.6L · CA$29.69', per: '15g → $0.30' },
+  'aceite-coco':    { name: 'Aceite de coco virgen orgánico (Costco)', cat: 'otro', per100: 1.043, kc: 892, prot: 0, fat: 99.5, pack: '2.3 kg (Costco) · $24.00', per: '15g → $0.16 · 134 kcal', organic: true },
   suet:             { name: 'Beef Suet',        cat: 'otro', per100: 1.768, kc: 895, prot: 0, fat: 99.5, pack: '2.2lb · $17.64',  per: '15g → $0.27' },
   canela:           { name: 'Canela',           cat: 'otro', flat: 0.05, kcf: 5,  pack: 'especia',          per: 'uso → $0.05', est: true },
   'chocolate-negro':{ name: 'Chocolate negro (chips)', cat: 'otro', per100: 3.00, kc: 550, prot: 6, fat: 32, fib: 10.9, gi: 23, pack: 'estimado',   per: '20g → $0.60', est: true },
@@ -105,6 +106,8 @@ export const ING = {
   bacon:             { name: 'Bacon (Lifesmart Uncured)',    cat: 'carne', per100: 2.131, kc: 540, prot: 37, fat: 42, pack: '375 g · $7.99',       per: '40g → $0.85 · 216 kcal · 15g prot' },
   'cerdo-picado':   { name: 'Cerdo picado (Heritage Linton · Eataly)', cat: 'carne', per100: 1.899, kc: 260, prot: 17, fat: 18, pack: 'kg · $18.99 (Eataly)', per: '100g → $1.90 · 260 kcal · 17g prot' },
   'embutido-citterio': { name: 'Surtido embutido italiano (Citterio Panini: capocollo, mortadela, prosciutto cotto)', cat: 'carne', per100: 1.665, kc: 220, prot: 19, fat: 15, pack: '900 g (Costco) · $14.99', per: '40g → $0.67 · 88 kcal — para meriendas', brand: 'Citterio', store: 'Costco', est: true },
+  'jamon-cocido-extralean': { name: 'Jamón cocido extra lean (Costco)', cat: 'carne', per100: 1.399, kc: 105, prot: 19, fat: 2.5, pack: '1 kg (Costco) · $13.99', per: '40g → $0.56 · 42 kcal — para meriendas', store: 'Costco', est: true },
+  'salmon-ahumado': { name: 'Salmón ahumado (Costco)', cat: 'carne', per100: 3.426, kc: 117, prot: 18.3, fat: 4.3, pack: '1.08 kg (Costco) · $37.00', per: '50g → $1.71 · 59 kcal', store: 'Costco', est: true },
   // CARNES Y PESCADO — ordenados por precio ascendente
   'ham-hock':               { name: 'Jarrete ahumado (Ham Hock)',                  cat: 'carne', per100: 1.80,  kc: 200, prot: 20, fat: 12, pack: '~700g ud · $4.50 (→ ~250g carne útil)', per: '40g → $0.72 · 80 kcal · 8g prot' },
   'costillas-cerdo':        { name: 'Costillas de cerdo',                          cat: 'carne', per100: 0.60,  kc: 250, prot: 17, fat: 20, pack: 'kg · $6.00',              per: '100g → $0.60 · 250 kcal · 17g prot' },
@@ -176,6 +179,7 @@ export const ING = {
   // lista de la compra muestra "~N docenas" (decimal) en vez de "49 ud".
   huevo:            { name: 'Huevo',            cat: 'otro', perUnit: 0.624, kcu: 72, protu: 6, fatu: 5, packSize: 12, packLabel: 'docena', pack: 'docena · $7.49', per: 'ud → $0.62 · 72 kcal' },
   tahini:           { name: 'Tahini',           cat: 'otro', per100: 5.95, kc: 595, prot: 17, fat: 54, fib: 9.3, pack: '500g · ~$29.75', per: '15g → $0.89 · 89 kcal' },
+  'almond-butter':  { name: 'Almond butter (Costco)', cat: 'otro', per100: 1.502, kc: 614, prot: 21, fat: 56, fib: 10.3, pack: '765 g (Costco) · $11.49', per: '20g → $0.30 · 123 kcal', est: true },
   'tomate-conserva':{ name: 'Tomate cherry/conserva', cat: 'otro', per100: 0.30, kc: 33, prot: 1.6, fat: 0.2, fib: 1.9, pack: 'lata · ~$1.50', per: '100g → $0.30 · 33 kcal' },
   vinagre:          { name: 'Vinagre',          cat: 'otro', perML: 0.003, kcml: 0.18, pack: 'botella · ~$3.00', per: '15ml → $0.045 · 3 kcal' },
   alioli:           { name: 'Alioli',           cat: 'otro', per100: 8.00, kc: 710, prot: 1, fat: 78, fib: 0, pack: 'frasco · ~$8.00', per: '20g → $1.60 · 142 kcal' },
