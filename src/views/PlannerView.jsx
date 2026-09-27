@@ -9,9 +9,10 @@ import SaveWeekSheet from '../components/meal/SaveWeekSheet'
 import { clearFor, weekWith, cleanWeek } from '../lib/planActions'
 import {
   DAY_KEYS, DAY_SHORT, DAY_LONG, MONTHS, MEALS, MEAL_LABEL, MEAL_TIME, MEAL_STYLE, PCOS_STYLE, PERSON_COLOR,
-  BATCH_DAYS, addDays, mondayOf, weekKeyOf, dayIndexOf, sameDay, startOfDay, fmtMoney, fmtRange, fmtShortDate,
+  addDays, mondayOf, weekKeyOf, dayIndexOf, sameDay, startOfDay, fmtMoney, fmtRange, fmtShortDate,
   activeProfilesOn, dayForPerson, mealInfo, dayTotals, shortName,
 } from '../lib/mealplan'
+import { batchesCookedOn, sessionDates } from '../lib/batchConfig'
 
 // ─── Planificador ───────────────────────────────────────────────────────────
 // Semana: 7 columnas, el día elegido se despliega con sus 4 comidas. Encima,
@@ -94,15 +95,16 @@ function MonthView({ monthDate, weekPlan, shown, allCombos, today, onPick }) {
         const day = person ? dayForPerson(week, dk, person.id) : {}
         const name = m => { const k = day[m]?.recipeKey; return k && allCombos[k] ? shortName(allCombos[k].name) : null }
         const com = name('comida'), cen = name('cena')
-        const isSunday = i % 7 === 6
-        const nextWeek = isSunday ? weekPlan[weekKeyOf(addDays(date, 1))] ?? {} : null
-        const batchReady = isSunday && BATCH_DAYS.some(d => nextWeek[`${d}-comida`] || nextWeek[`${d}-cena`])
+        // Días de cocinar según Ajustes; «listo» si ese batch ya tiene platos.
+        const cooked = batchesCookedOn(date)
+        const isCookDay = cooked.length > 0
+        const batchReady = cooked.some(b => sessionDates(b.monday, b.si).some(x => (weekPlan[x.wk] ?? {})[`${x.dayKey}-comida`] || (weekPlan[x.wk] ?? {})[`${x.dayKey}-cena`]))
         return (
           <button key={i} type="button" className="plan-mcell mp-in" onClick={() => onPick(date)}
             style={{ opacity: inMonth ? (date < today && !isToday ? 0.6 : 1) : 0.32, background: isToday ? '#FFFFFF' : undefined, boxShadow: isToday ? '0 10px 24px rgba(110,80,50,0.14)' : undefined, animationDelay: `${Math.min(i, 34) * 12}ms` }}>
             <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
               <span className="mp-num" style={{ minWidth: 26, height: 26, padding: '0 6px', boxSizing: 'border-box', borderRadius: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13.5, fontWeight: 700, background: isToday ? 'var(--c-ink)' : 'transparent', color: isToday ? '#fff' : 'var(--c-ink)' }}>{date.getDate()}</span>
-              {isSunday && inMonth && <span className="mp-tag" style={{ background: batchReady ? 'rgba(232,98,124,0.14)' : 'rgba(110,80,50,0.08)', color: batchReady ? '#C2375A' : 'var(--c-ink-3)' }}>Batch</span>}
+              {isCookDay && inMonth && <span className="mp-tag" style={{ background: batchReady ? 'rgba(232,98,124,0.14)' : 'rgba(110,80,50,0.08)', color: batchReady ? '#C2375A' : 'var(--c-ink-3)' }}>Batch</span>}
             </span>
             {(com || cen) && (
               <span style={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%', minWidth: 0 }}>
@@ -127,6 +129,7 @@ export default function PlannerView() {
   const allIng      = useStore(selectAllIng)
   const allCombos   = useStore(selectAllCombos)
   const weekPlan    = useStore(s => s.weekPlan)
+  useStore(s => s.batchSettings) // repintar si cambian los días de batch
   const profiles    = useStore(s => s.profiles)
   const activeProfileId = useStore(s => s.activeProfileId)
   const setActiveProfile = useStore(s => s.setActiveProfile)
@@ -264,7 +267,7 @@ export default function PlannerView() {
               const big = d.i === sel
               const isToday = d.i === todayIdx
               const past = todayIdx >= 0 && d.i < todayIdx
-              const tag = isToday ? 'Today' : d.i === 6 ? 'Batch' : null
+              const tag = isToday ? 'Today' : batchesCookedOn(d.date).length ? 'Batch' : null
               return (
                 <article key={d.dk} className={`plan-day mp-glass mp-rise${big ? ' is-big' : ''}`}
                   style={{ animationDelay: `${80 + d.i * 40}ms`, opacity: past && !big ? 0.62 : 1 }}

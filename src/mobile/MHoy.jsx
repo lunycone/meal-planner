@@ -8,7 +8,7 @@ import {
   DAY_KEYS, DAY_SHORT, DAY_LONG, MONTHS_SHORT, MEALS, MEAL_LABEL, MEAL_TIME, MEAL_STYLE, PCOS_STYLE,
   addDays, mondayOf, weekKeyOf, dayIndexOf, startOfDay, activeProfilesOn, dayForPerson, mealInfo, dayTotals, macroPct,
 } from '../lib/mealplan'
-import { People, Bulb } from './MobileApp'
+import { People, Bulb, Gear } from './MobileApp'
 
 // Hoy en el móvil: la fecha grande, los avatares con su anillo de kcal, las
 // 4 comidas en tarjetas que se pasan con el dedo y la semana abajo.
@@ -151,6 +151,7 @@ export default function MHoy({ unseen, onIdeas }) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
           <People rings={rings} />
+          <Gear />
           <Bulb unseen={unseen} onOpen={onIdeas} />
         </div>
       </section>

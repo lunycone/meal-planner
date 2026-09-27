@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { generateSmartWeeks } from '../engine/smartWeek'
+import { generateSmartPlan } from '../engine/smartWeek'
 
 // Lanza el generador en un Web Worker cada vez que cambian los datos o las
 // opciones. Si el navegador no tiene workers, lo calcula aquí mismo.
@@ -13,7 +13,7 @@ function getWorker() {
 export default function useSmartWeeks(args, enabled = true) {
   const [state, setState] = useState({ busy: true, results: [], tried: 0, ms: 0, error: null })
   const seq = useRef(0)
-  const key = enabled ? JSON.stringify([args.priority, args.vegMin, args.seed, args.shown, args.exclude, args.locks, args.prefs, args.recent, args.stock, args.source, args.country, args.pairPrefs, args.people?.map(p => p.id)]) : null
+  const key = enabled ? JSON.stringify([args.priority, args.vegMin, args.seed, args.shown, args.exclude, args.locks, args.prefs, args.recent, args.stock, args.source, args.country, args.pairPrefs, args.sessions, args.people?.map(p => p.id)]) : null
 
   useEffect(() => {
     if (!enabled) return
@@ -22,7 +22,7 @@ export default function useSmartWeeks(args, enabled = true) {
     const done = out => { if (id === seq.current) setState({ busy: false, ...out, error: null }) }
     const w = getWorker()
     if (!w) {
-      const t = setTimeout(() => { try { done(generateSmartWeeks(args)) } catch (e) { setState(s => ({ ...s, busy: false, error: String(e) })) } }, 30)
+      const t = setTimeout(() => { try { done(generateSmartPlan(args)) } catch (e) { setState(s => ({ ...s, busy: false, error: String(e) })) } }, 30)
       return () => clearTimeout(t)
     }
     const onMsg = e => {

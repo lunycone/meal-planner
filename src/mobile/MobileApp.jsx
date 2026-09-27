@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import useStore from '../store/useStore'
 import { supabase } from '../store/storage'
 import Icon from '../components/ui/Icon'
@@ -8,6 +8,7 @@ import MSemana from './MSemana'
 import MCompra from './MCompra'
 import MBatch from './MBatch'
 import MMas from './MMas'
+import SettingsSheet from '../components/meal/SettingsSheet'
 
 // ─── App móvil ───────────────────────────────────────────────────────────────
 // Misma app y mismos datos que en el Mac, con pantallas pensadas para el
@@ -55,6 +56,17 @@ export function Bulb({ unseen, onOpen }) {
   )
 }
 
+// Engranaje de Ajustes (días de batch…), a la derecha de J/M.
+export function Gear() {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <button type="button" className="m-bulb" aria-label="Settings" onClick={() => setOpen(true)}><Icon name="gear" size={18} /></button>
+      {open && <SettingsSheet onClose={() => setOpen(false)} />}
+    </>
+  )
+}
+
 export function MHeader({ title, sub, unseen, onIdeas }) {
   return (
     <header className="m-head">
@@ -63,6 +75,7 @@ export function MHeader({ title, sub, unseen, onIdeas }) {
         <h1>{title}</h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           <People />
+          <Gear />
           <Bulb unseen={unseen} onOpen={onIdeas} />
         </div>
       </div>

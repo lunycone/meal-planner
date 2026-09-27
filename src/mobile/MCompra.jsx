@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import useStore from '../store/useStore'
 import Icon from '../components/ui/Icon'
-import { addDays, fmtMoney } from '../lib/mealplan'
+import { DAY_LONG, fmtMoney } from '../lib/mealplan'
 import { storeColor, catColor } from '../lib/stores'
 import useShoppingList from '../lib/useShoppingList'
+import useBatchNav from '../lib/useBatchNav'
 import { MHeader } from './MobileApp'
 
 // Compra en el móvil («modo súper»): progreso siempre a la vista, lista
@@ -11,9 +12,9 @@ import { MHeader } from './MobileApp'
 // Mismo cálculo y mismas marcas compartidas que la Compra del Mac.
 
 export default function MCompra({ unseen, onIdeas }) {
-  const [offset, setOffset] = useState(1)
+  const nav = useBatchNav('batch')
   const [tab, setTab] = useState('buy')
-  const { batchWindow, items, checked, toggleChecked, setHome } = useShoppingList(offset, 'batch')
+  const { batchWindow, items, checked, toggleChecked, setHome } = useShoppingList(nav.ref, 'batch')
   useStore(s => s.storeColors); useStore(s => s.catColors) // repintar al cambiar colores
 
   const buy = items.filter(i => !i.home)
@@ -32,17 +33,17 @@ export default function MCompra({ unseen, onIdeas }) {
   const groups = order.map(k => ({ k, label: k || 'No store', color: k ? storeColor(k) : 'rgba(110,80,50,0.35)', rows: byStore[k].sort((a, b) => a.name.localeCompare(b.name)) }))
   if (done.length) groups.push({ k: '__done', label: 'In the cart', color: 'var(--c-green)', rows: done })
 
-  const sunday = addDays(batchWindow.start, -1)
+  const cook = batchWindow.cookDate
   const days = batchWindow.windowDates.map(w => w.dayKey)
-  const sub = `Sunday ${sunday.getDate()} batch · Mon ${batchWindow.start.getDate()} – Fri ${batchWindow.end.getDate()}`
+  const sub = `${DAY_LONG[(cook.getDay() + 6) % 7]} ${cook.getDate()} batch · ${batchWindow.dayLabel} ${batchWindow.rangeLabel}`
 
   return (
     <div className="m-page">
       <MHeader title="Shopping" sub={sub} unseen={unseen} onIdeas={onIdeas} />
       <div className="ms-nav">
-        <button type="button" aria-label="Previous batch" onClick={() => setOffset(o => o - 1)}><Icon name="left" size={14} stroke={2.6} /></button>
-        <button type="button" onClick={() => setOffset(1)} disabled={offset === 1}>Next batch</button>
-        <button type="button" aria-label="Following batch" onClick={() => setOffset(o => o + 1)}><Icon name="right" size={14} stroke={2.6} /></button>
+        <button type="button" aria-label="Previous batch" onClick={nav.prev}><Icon name="left" size={14} stroke={2.6} /></button>
+        <button type="button" onClick={nav.reset} disabled={nav.isNext}>Next batch</button>
+        <button type="button" aria-label="Following batch" onClick={nav.next}><Icon name="right" size={14} stroke={2.6} /></button>
       </div>
 
       <section className="mc-progress">

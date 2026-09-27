@@ -1,4 +1,6 @@
 import CookedButton from '../meal/CookedButton'
+import useBatchNav from '../../lib/useBatchNav'
+import { cookDateFor, sessionDates, rangeLabel, DAY_LONG_EN } from '../../lib/batchConfig'
 import { useState, useEffect, useMemo } from 'react'
 import useStore, { selectAllIng, selectAllCombos } from '../../store/useStore'
 import { PROTEIN } from '../../data/proteins'
@@ -1075,10 +1077,9 @@ const MEALS    = ['desayuno', 'comida', 'merienda', 'cena']
 // SIGUIENTE). Como los 5 dias caen todos en la misma semana ISO que
 // weekMonday, ya no hace falta el manejo de "cruce de semana" que si hacia
 // falta con el batch de jueves (que llegaba hasta el lunes siguiente).
-export const WEEKDAY_DAYS = ['lun', 'mar', 'mié', 'jue', 'vie']
 
-const DAY_LETTER = { lun: 'M', mar: 'T', 'mié': 'W', jue: 'T', vie: 'F' }
-const DAY_NAME = { lun: 'Monday', mar: 'Tuesday', 'mié': 'Wednesday', jue: 'Thursday', vie: 'Friday' }
+const DAY_LETTER = { lun: 'M', mar: 'T', 'mié': 'W', jue: 'T', vie: 'F', 'sáb': 'S', dom: 'S' }
+const DAY_NAME = { lun: 'Monday', mar: 'Tuesday', 'mié': 'Wednesday', jue: 'Thursday', vie: 'Friday', 'sáb': 'Saturday', dom: 'Sunday' }
 
 export default function BatchPrepTab() {
   const allIng        = useStore(selectAllIng)
@@ -1087,19 +1088,18 @@ export default function BatchPrepTab() {
   const profiles      = useStore(s => s.profiles)
   const openPlanner   = useStore(s => s.openPlanner)
 
-  // Por defecto, el PRÓXIMO batch (el de esta semana ya se cocinó el domingo
-  // pasado). Estado propio: ya no comparte semana con el Planificador.
-  const [offset, setOffset] = useState(1)
+  // Por defecto, el PRÓXIMO batch por cocinar (según los días de batch de
+  // Ajustes). Estado propio: no comparte semana con el Planificador.
+  const nav = useBatchNav('batch')
   const [playing, setPlaying] = useState(false)
   const [detail, setDetail] = useState(false)
 
-  const weekMonday  = useMemo(() => addDays(mondayOf(new Date()), offset * 7), [offset])
+  const weekMonday  = nav.ref.monday
   const weekKey     = useMemo(() => getISOWeek(addDays(weekMonday, 3)), [weekMonday])
-  const cookDate    = useMemo(() => addDays(weekMonday, -1), [weekMonday])
-
-  const batchDays = useMemo(() => WEEKDAY_DAYS.map((dk, i) => ({
-    dayKey: dk, wk: weekKey, date: addDays(weekMonday, i),
-  })), [weekMonday, weekKey])
+  const cookDate    = cookDateFor(weekMonday, nav.ref.si)
+  const batchDays   = useMemo(() => sessionDates(weekMonday, nav.ref.si), [+weekMonday, nav.ref.si]) // eslint-disable-line react-hooks/exhaustive-deps
+  const daysLabel   = rangeLabel(batchDays.map(b => ALL_DAY_KEYS.indexOf(b.dayKey)))
+  const cookName    = DAY_LONG_EN[(cookDate.getDay() + 6) % 7]
 
   const batchData = useMemo(() => Object.fromEntries(
     MEALS.map(mt => [mt, computeBatchMeal(mt, batchDays, profiles, allIng, allCombos, weekPlan)])
@@ -1139,23 +1139,24 @@ export default function BatchPrepTab() {
   const tupDone = packable.reduce((s, c) => s + c.tupList.filter(t => tups.has(t.id)).length, 0)
   const colorOf = p => PERSON_COLOR[Math.max(0, profiles.findIndex(x => x.id === p.id)) % PERSON_COLOR.length]
   const hasPlan = schedule.jobs.length > 0 || schedule.prepTasks.length > 0
-  const label = offset === 1 ? 'Next batch' : offset === 0 ? "This week's batch" : offset < 0 ? 'Past batch' : 'Future batch'
+  const today0 = new Date(); today0.setHours(0, 0, 0, 0)
+  const label = nav.isNext ? 'Next batch' : cookDate < today0 ? 'Past batch' : 'Future batch'
 
   if (playing) {
-    return <CookMode schedule={schedule} title={`Batch · Sunday ${cookDate.getDate()}`} onExit={() => setPlaying(false)} />
+    return <CookMode schedule={schedule} title={`Batch · ${cookName} ${cookDate.getDate()}`} onExit={() => setPlaying(false)} />
   }
 
   return (
     <div className="bt">
       <section className="bt-left mp-rise">
-        <span style={{ fontSize: 22, fontWeight: 500, color: 'var(--c-ink-3)' }}>{label} · Sunday</span>
+        <span style={{ fontSize: 22, fontWeight: 500, color: 'var(--c-ink-3)' }}>{label} · {cookName}</span>
         <span className="hoy-date mp-num">{cookDate.getDate()}</span>
-        <span style={{ fontSize: 15, color: 'var(--c-ink-3)', marginTop: 10 }}>for Mon–Fri · {fmtRange(weekMonday, addDays(weekMonday, 4))}</span>
+        <span style={{ fontSize: 15, color: 'var(--c-ink-3)', marginTop: 10 }}>for {daysLabel} · {fmtRange(batchDays[0].date, batchDays[batchDays.length - 1].date)}</span>
 
         <div className="mp-seg" style={{ gap: 0, alignSelf: 'flex-start', marginTop: 16 }}>
-          <button type="button" aria-label="Previous batch" onClick={() => setOffset(o => o - 1)} style={{ padding: '0 10px' }}><Icon name="left" size={12} stroke={2.6} /></button>
-          <button type="button" onClick={() => setOffset(1)} style={{ fontWeight: 600, color: 'var(--c-ink)' }}>Next</button>
-          <button type="button" aria-label="Following batch" onClick={() => setOffset(o => o + 1)} style={{ padding: '0 10px' }}><Icon name="right" size={12} stroke={2.6} /></button>
+          <button type="button" aria-label="Previous batch" onClick={nav.prev} style={{ padding: '0 10px' }}><Icon name="left" size={12} stroke={2.6} /></button>
+          <button type="button" onClick={nav.reset} style={{ fontWeight: 600, color: 'var(--c-ink)' }}>Next</button>
+          <button type="button" aria-label="Following batch" onClick={nav.next} style={{ padding: '0 10px' }}><Icon name="right" size={12} stroke={2.6} /></button>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10, marginTop: 20 }}>
@@ -1167,7 +1168,7 @@ export default function BatchPrepTab() {
           <div className="bt-note mp-rim">
             <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700 }}>
               <span className="mp-bubble" style={{ width: 26, height: 26, background: 'rgba(255,255,255,0.85)', color: '#7154DA' }}><Icon name="moon" size={13} stroke={2.2} /></span>
-              Saturday night
+              {DAY_LONG_EN[(cookDate.getDay() + 5) % 7]} night
             </span>
             <ul>
               {schedule.vispera.map((v, i) => <li key={i}>{v.text}</li>)}
@@ -1180,14 +1181,14 @@ export default function BatchPrepTab() {
             <Icon name="play" size={14} fill="currentColor" />Start cooking
           </button>
         )}
-        {hasPlan && <CookedButton monday={weekMonday} className="mp-btn mp-btn-glass" style={{ marginTop: 8, height: 40, alignSelf: 'stretch' }} />}
+        {hasPlan && <CookedButton monday={weekMonday} si={nav.ref.si} className="mp-btn mp-btn-glass" style={{ marginTop: 8, height: 40, alignSelf: 'stretch' }} />}
       </section>
 
       <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
         {cards.length === 0 && (
           <div className="mp-glass mp-card mp-empty" style={{ padding: '80px 20px' }}>
-            Nothing planned Monday to Friday this week.<br />
-            <button className="mp-btn mp-btn-dark" style={{ marginTop: 14 }} onClick={() => openPlanner(offset, 0)}><Icon name="cal" size={14} />Plan the week</button>
+            Nothing planned for {daysLabel} that week.<br />
+            <button className="mp-btn mp-btn-dark" style={{ marginTop: 14 }} onClick={() => openPlanner(nav.weekOffset, ALL_DAY_KEYS.indexOf(batchDays[0].dayKey))}><Icon name="cal" size={14} />Plan the week</button>
           </div>
         )}
         <section className="bt-cards" aria-label="Batch dishes">

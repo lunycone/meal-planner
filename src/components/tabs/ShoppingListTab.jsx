@@ -3,8 +3,9 @@ import useStore, { selectAllCats, selectCatOrder } from '../../store/useStore'
 import Icon from '../ui/Icon'
 import Segmented from '../ui/Segmented'
 import { storeColor, catColor } from '../../lib/stores'
-import { DAY_KEYS, addDays, fmtMoney } from '../../lib/mealplan'
+import { DAY_KEYS, DAY_LONG, fmtMoney } from '../../lib/mealplan'
 import useShoppingList from '../../lib/useShoppingList'
+import useBatchNav from '../../lib/useBatchNav'
 
 const DAY_LETTER = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
@@ -18,8 +19,8 @@ function Check({ on }) {
 
 // ─── Main shopping list ──────────────────────────────────────────────────────
 export default function ShoppingListTab() {
-  const [batchOffset, setBatchOffset] = useState(1)
   const [viewMode, setViewMode] = useState('batch') // 'batch' | 'semana'
+  const nav = useBatchNav(viewMode)
   const [tab, setTab] = useState('buy')             // 'buy' | 'home'
   const [searchTerm, setSearchTerm] = useState('')
   // Por tienda por defecto: así la lista sale ya separada por supermercado
@@ -27,7 +28,7 @@ export default function ShoppingListTab() {
   const setSortBy = v => { setSortByState(v); try { localStorage.setItem('mp-compra-sort', v) } catch {} }
   const [copied, setCopied] = useState(false)
 
-  const { batchWindow, people, items, batidoAgg, checked, toggleChecked, setHome } = useShoppingList(batchOffset, viewMode)
+  const { batchWindow, people, items, batidoAgg, checked, toggleChecked, setHome } = useShoppingList(nav.ref, viewMode)
   const CAT_LABELS = useStore(selectAllCats)
   const catOrderBase = useStore(selectCatOrder)
   useStore(s => s.storeColors); useStore(s => s.catColors) // repintar al cambiar colores
@@ -57,7 +58,7 @@ export default function ShoppingListTab() {
   const byCat = CAT_ORDER.map(c => ({ c, cost: buy.filter(i => i.cat === c).reduce((s, i) => s + i.cost, 0) })).filter(x => x.cost > 0.004)
   const maxCat = Math.max(0.01, ...byCat.map(x => x.cost))
   const catsPresent = CAT_ORDER.filter(c => buy.some(i => i.cat === c))
-  const batchSunday = addDays(batchWindow.start, -1)
+  const cookDay = batchWindow.cookDate
   const dayCols = batchWindow.windowDates.map(w => w.dayKey)
 
   function copyToClipboard() {
@@ -83,17 +84,17 @@ export default function ShoppingListTab() {
       <div className="mp-page-head mp-rise">
         <div className="mp-page-title">
           <h1>Shopping</h1>
-          <span>{viewMode === 'batch' ? `Sunday ${batchSunday.getDate()} batch · Mon ${batchWindow.start.getDate()} – Fri ${batchWindow.end.getDate()}` : `week ${batchWindow.rangeLabel}`}{people.length ? ` · ${people.map(p => p.name).join(' & ')}` : ''}</span>
+          <span>{viewMode === 'batch' ? `${DAY_LONG[(cookDay.getDay() + 6) % 7]} ${cookDay.getDate()} batch · ${batchWindow.dayLabel} ${batchWindow.rangeLabel}` : `week ${batchWindow.rangeLabel}`}{people.length ? ` · ${people.map(p => p.name).join(' & ')}` : ''}</span>
         </div>
         <div className="mp-page-tools">
           <Segmented label="List" value={tab} onChange={setTab}
             options={[{ value: 'buy', label: `To buy · ${buy.length}` }, { value: 'home', label: `At home · ${home.length}` }]} />
           <Segmented label="Period" value={viewMode} onChange={v => setViewMode(v)}
-            options={[{ value: 'batch', label: 'Batch Mon–Fri' }, { value: 'semana', label: 'Week Mon–Sun' }]} />
+            options={[{ value: 'batch', label: `Batch ${viewMode === 'batch' ? batchWindow.dayLabel : ''}`.trim() }, { value: 'semana', label: 'Week Mon–Sun' }]} />
           <div className="mp-seg" style={{ gap: 0 }}>
-            <button type="button" aria-label="Previous" onClick={() => setBatchOffset(o => o - 1)} style={{ padding: '0 10px' }}><Icon name="left" size={12} stroke={2.6} /></button>
-            <button type="button" onClick={() => setBatchOffset(1)} style={{ fontWeight: 600, color: 'var(--c-ink)' }} title="The next batch">Next</button>
-            <button type="button" aria-label="Following" onClick={() => setBatchOffset(o => o + 1)} style={{ padding: '0 10px' }}><Icon name="right" size={12} stroke={2.6} /></button>
+            <button type="button" aria-label="Previous" onClick={nav.prev} style={{ padding: '0 10px' }}><Icon name="left" size={12} stroke={2.6} /></button>
+            <button type="button" onClick={nav.reset} style={{ fontWeight: 600, color: 'var(--c-ink)' }} title="The next batch">Next</button>
+            <button type="button" aria-label="Following" onClick={nav.next} style={{ padding: '0 10px' }}><Icon name="right" size={12} stroke={2.6} /></button>
           </div>
         </div>
       </div>
@@ -114,7 +115,7 @@ export default function ShoppingListTab() {
           {items.length === 0 && (
             <div className="mp-empty" style={{ padding: '60px 20px' }}>
               No dishes planned for these days.<br />
-              <button className="mp-btn mp-btn-dark" style={{ marginTop: 14 }} onClick={() => useStore.getState().openPlanner(batchOffset, 0)}><Icon name="cal" size={14} />Open in the Planner</button>
+              <button className="mp-btn mp-btn-dark" style={{ marginTop: 14 }} onClick={() => useStore.getState().openPlanner(nav.weekOffset, DAY_KEYS.indexOf(batchWindow.windowDates[0].dayKey))}><Icon name="cal" size={14} />Open in the Planner</button>
             </div>
           )}
 

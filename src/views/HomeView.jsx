@@ -7,9 +7,10 @@ import ModelWeekSheet from '../components/meal/ModelWeekSheet'
 import { clearFor, weekWith, cleanWeek } from '../lib/planActions'
 import {
   DAY_KEYS, DAY_SHORT, DAY_LONG, MONTHS, MEALS, MEAL_LABEL, MEAL_TIME, MEAL_STYLE, PCOS_STYLE, PERSON_COLOR,
-  BATCH_DAYS, addDays, mondayOf, weekKeyOf, dayIndexOf, nextBatchMonday, startOfDay, fmtMoney,
+  addDays, mondayOf, weekKeyOf, dayIndexOf, startOfDay, fmtMoney,
   activeProfilesOn, dayForPerson, mealInfo, dayTotals, shortName, macroPct,
 } from '../lib/mealplan'
+import { nextBatch, sessionDates, rangeLabel, batchesCookedOn, batchDayKeys, DAY_SHORT_EN } from '../lib/batchConfig'
 
 // ─── Hoy ─────────────────────────────────────────────────────────────────────
 // Izquierda: la fecha y cómo va el día de cada uno (kcal planificadas frente
@@ -212,6 +213,7 @@ export default function HomeView() {
   const replaceWeek = useStore(s => s.replaceWeek)
   const setView    = useStore(s => s.setView)
   const openPlanner = useStore(s => s.openPlanner)
+  useStore(s => s.batchSettings) // repintar si cambian los días de batch
 
   const now = new Date()
   const today = startOfDay(now)
@@ -259,12 +261,14 @@ export default function HomeView() {
 
   // Accesos (cifras reales)
   const plannedThis = DAY_KEYS.reduce((s, d) => s + MEALS.filter(m => week[`${d}-${m}`]).length, 0)
-  const nextMon = nextBatchMonday(today)
-  const nextWeek = weekPlan[weekKeyOf(nextMon)] ?? {}
+  // El próximo batch por cocinar (Ajustes → días de batch).
+  const nb = nextBatch(today)
+  const nbDates = sessionDates(nb.monday, nb.si)
+  const nextWeek = weekPlan[weekKeyOf(nb.monday)] ?? {}
   const nextIngs = new Set()
   let tuppers = 0
-  BATCH_DAYS.forEach((d, i) => {
-    activeProfilesOn(profiles, addDays(nextMon, i)).forEach(p => {
+  nbDates.forEach(({ dayKey: d, date }) => {
+    activeProfilesOn(profiles, date).forEach(p => {
       MEALS.forEach(m => {
         const meal = dayForPerson(nextWeek, d, p.id)[m]
         const combo = meal && allCombos[meal.recipeKey]
@@ -274,7 +278,7 @@ export default function HomeView() {
       })
     })
   })
-  const batchSunday = addDays(nextMon, -1)
+  const cookIsToday = +startOfDay(nb.cookDate) === +startOfDay(today)
   const inUse = new Set()
   Object.values(weekPlan).forEach(w => Object.values(w ?? {}).forEach(s => {
     if (!s) return
@@ -284,8 +288,8 @@ export default function HomeView() {
   const apps = [
     { l: 'Planner', icon: 'cal', c: '#1F1B16', g: 'rgba(31,27,22,0.25)', v: `${plannedThis}/28`, title: 'Meals planned this week', go: () => openPlanner(0, di) },
     { l: 'Model weeks', icon: 'layers', c: '#7154DA', g: 'rgba(139,111,232,0.45)', v: 'Load', title: 'Load a whole model week', go: () => setModels(true) },
-    { l: 'Shopping', icon: 'bag', c: '#C1850C', g: 'rgba(224,162,27,0.45)', v: nextIngs.size ? `${nextIngs.size} items` : 'Empty', title: `For the ${nextMon.getDate()}–${addDays(nextMon, 4).getDate()} batch`, go: () => setView('compra') },
-    { l: 'Batch', icon: 'pot', c: '#D9486A', g: 'rgba(232,98,124,0.45)', v: di === 6 ? 'Today' : `Sun ${batchSunday.getDate()}`, title: tuppers ? `${tuppers} lunch & dinner containers` : 'Next week not planned yet', go: () => setView('batch') },
+    { l: 'Shopping', icon: 'bag', c: '#C1850C', g: 'rgba(224,162,27,0.45)', v: nextIngs.size ? `${nextIngs.size} items` : 'Empty', title: `For the ${rangeLabel(nbDates.map(x => DAY_KEYS.indexOf(x.dayKey)))} batch (${nbDates[0].date.getDate()}–${nbDates[nbDates.length - 1].date.getDate()})`, go: () => setView('compra') },
+    { l: 'Batch', icon: 'pot', c: '#D9486A', g: 'rgba(232,98,124,0.45)', v: cookIsToday ? 'Today' : `${DAY_SHORT_EN[(nb.cookDate.getDay() + 6) % 7]} ${nb.cookDate.getDate()}`, title: tuppers ? `${tuppers} lunch & dinner containers` : 'Next week not planned yet', go: () => setView('batch') },
     { l: 'Dishes', icon: 'plate', c: '#2585BC', g: 'rgba(46,155,214,0.45)', v: `${Object.keys(allCombos).length}`, title: `${inUse.size} in some plan`, go: () => setView('platos') },
     { l: 'Ingredients', icon: 'leaf', c: '#2F9E5B', g: 'rgba(47,158,91,0.45)', v: `${Object.keys(allIng).length}`, title: 'Prices and nutrition', go: () => setView('ingredientes') },
   ]
@@ -311,7 +315,7 @@ export default function HomeView() {
         <span style={{ fontSize: 22, fontWeight: 500, color: 'var(--c-ink-3)' }}>{DAY_LONG[di]}</span>
         <span className="hoy-date mp-num">{dayNum}</span>
         <span style={{ fontSize: 15, color: 'var(--c-ink-3)', marginTop: 8 }}>
-          {MONTHS[today.getMonth()]} · {BATCH_DAYS.includes(dk) ? 'batch week' : di === 6 ? 'batch day' : 'weekend'}
+          {MONTHS[today.getMonth()]} · {batchesCookedOn(today).length ? 'batch day' : batchDayKeys().includes(dk) ? 'batch week' : 'free day'}
         </span>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 'clamp(14px, 3vh, 28px)' }}>
           {totals.map(({ p, tot }) => <Ring key={p.id} person={p} color={colorOf(p)} tot={tot} />)}

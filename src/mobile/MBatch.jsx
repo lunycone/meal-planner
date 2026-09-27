@@ -2,20 +2,22 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import useStore, { selectAllIng, selectAllCombos } from '../store/useStore'
 import Icon, { MEAL_ICON } from '../components/ui/Icon'
-import { computeBatchMeal, buildSchedule, fmtQty, WEEKDAY_DAYS } from '../components/tabs/BatchPrepTab'
+import { computeBatchMeal, buildSchedule, fmtQty } from '../components/tabs/BatchPrepTab'
 import { getISOWeek } from '../utils/date'
-import { MEALS, MEAL_LABEL, MEAL_STYLE, PERSON_COLOR, addDays, mondayOf, activeProfilesOn, shortName } from '../lib/mealplan'
+import { MEALS, MEAL_LABEL, MEAL_STYLE, PERSON_COLOR, DAY_KEYS, addDays, fmtRange, activeProfilesOn, shortName } from '../lib/mealplan'
 import { slotForPerson } from '../engine/calc'
 import { MHeader } from './MobileApp'
 import CookedButton from '../components/meal/CookedButton'
+import useBatchNav from '../lib/useBatchNav'
+import { cookDateFor, sessionDates, rangeLabel, DAY_LONG_EN } from '../lib/batchConfig'
 
 // Batch en el móvil: cuántos tuppers llevas, un botón grande para cocinar y
 // una fila por plato que se despliega (cantidades, ración de cada uno y sus
 // tuppers). El modo cocina va paso a paso con temporizadores grandes que
 // siguen corriendo aunque cambies de paso, y mantiene la pantalla encendida.
 
-const LET = { lun: 'M', mar: 'T', 'mié': 'W', jue: 'T', vie: 'F' }
-const DAY3 = { lun: 'Mon', mar: 'Tue', 'mié': 'Wed', jue: 'Thu', vie: 'Fri' }
+const LET = { lun: 'M', mar: 'T', 'mié': 'W', jue: 'T', vie: 'F', 'sáb': 'S', dom: 'S' }
+const DAY3 = { lun: 'Mon', mar: 'Tue', 'mié': 'Wed', jue: 'Thu', vie: 'Fri', 'sáb': 'Sat', dom: 'Sun' }
 // «Make X the night before and leave it in the fridge» ×N → one sentence
 function visperaLine(list) {
   const fridge = [], rest = []
@@ -107,15 +109,16 @@ export default function MBatch({ unseen, onIdeas }) {
   const batchTups = useStore(s => s.batchTups)
   const toggleBatchTup = useStore(s => s.toggleBatchTup)
 
-  const [offset, setOffset] = useState(1)
+  const nav = useBatchNav('batch')
   const [open, setOpen] = useState(null)
   const [cooking, setCooking] = useState(false)
   const listRef = useRef(null)
 
-  const monday = useMemo(() => addDays(mondayOf(new Date()), offset * 7), [offset])
+  const monday = nav.ref.monday
   const wk = getISOWeek(addDays(monday, 3))
-  const cookDate = addDays(monday, -1)
-  const batchDays = useMemo(() => WEEKDAY_DAYS.map((dk, i) => ({ dayKey: dk, wk, date: addDays(monday, i) })), [monday, wk])
+  const cookDate = cookDateFor(monday, nav.ref.si)
+  const batchDays = useMemo(() => sessionDates(monday, nav.ref.si), [+monday, nav.ref.si]) // eslint-disable-line react-hooks/exhaustive-deps
+  const daysLabel = rangeLabel(batchDays.map(b => DAY_KEYS.indexOf(b.dayKey)))
   const batchData = useMemo(() => Object.fromEntries(MEALS.map(mt => [mt, computeBatchMeal(mt, batchDays, profiles, allIng, allCombos, weekPlan)])), [batchDays, profiles, allIng, allCombos, weekPlan])
   const schedule = useMemo(() => buildSchedule(MEALS.flatMap(mt => (batchData[mt] || []).map(g => ({ meal: g.meal, batchData: g })))), [batchData])
   const tups = new Set(batchTups?.[wk] ?? [])
@@ -150,15 +153,15 @@ export default function MBatch({ unseen, onIdeas }) {
 
   return (
     <div className="m-page">
-      <MHeader title={`Sunday ${cookDate.getDate()}`} sub={`batch for Mon ${monday.getDate()} – Fri ${addDays(monday, 4).getDate()}`} unseen={unseen} onIdeas={onIdeas} />
+      <MHeader title={`${DAY_LONG_EN[(cookDate.getDay() + 6) % 7]} ${cookDate.getDate()}`} sub={`batch for ${daysLabel} · ${fmtRange(batchDays[0].date, batchDays[batchDays.length - 1].date)}`} unseen={unseen} onIdeas={onIdeas} />
       <div className="ms-nav">
-        <button type="button" aria-label="Previous batch" onClick={() => setOffset(o => o - 1)}><Icon name="left" size={14} stroke={2.6} /></button>
-        <button type="button" onClick={() => setOffset(1)} disabled={offset === 1}>Next batch</button>
-        <button type="button" aria-label="Following batch" onClick={() => setOffset(o => o + 1)}><Icon name="right" size={14} stroke={2.6} /></button>
+        <button type="button" aria-label="Previous batch" onClick={nav.prev}><Icon name="left" size={14} stroke={2.6} /></button>
+        <button type="button" onClick={nav.reset} disabled={nav.isNext}>Next batch</button>
+        <button type="button" aria-label="Following batch" onClick={nav.next}><Icon name="right" size={14} stroke={2.6} /></button>
       </div>
 
       {rows.length === 0 ? (
-        <div className="mp-empty" style={{ padding: '40px 10px' }}>Nothing planned Monday to Friday that week.</div>
+        <div className="mp-empty" style={{ padding: '40px 10px' }}>Nothing planned for {daysLabel} that week.</div>
       ) : (
         <>
           <section className="mc-progress">
@@ -169,7 +172,7 @@ export default function MBatch({ unseen, onIdeas }) {
             <span className="mc-bar"><span style={{ width: `${total ? done / total * 100 : 0}%` }} /></span>
           </section>
           <button type="button" className="mb-cook" onClick={() => setCooking(true)}><Icon name="play" size={14} fill="currentColor" />Start cooking</button>
-          <CookedButton monday={monday} className="mb-cooked" />
+          <CookedButton monday={monday} si={nav.ref.si} className="mb-cooked" />
           {schedule.vispera.length > 0 && (
             <span className="mb-vispera"><Icon name="moon" size={16} color="#7154DA" style={{ flexShrink: 0, marginTop: 1 }} /><span><strong>Night before:</strong> {visperaLine(schedule.vispera)}</span></span>
           )}

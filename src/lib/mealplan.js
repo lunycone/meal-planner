@@ -18,11 +18,7 @@ export const MEALS      = ['desayuno', 'comida', 'merienda', 'cena']
 export const MEAL_LABEL = { desayuno: 'Breakfast', comida: 'Lunch', merienda: 'Snack', cena: 'Dinner' }
 export const MEAL_TIME  = { desayuno: '9:00', comida: '12:00', merienda: '16:30', cena: '19:30' }
 
-// Batch del domingo: se cocina UNA vez (domingo) para lunes-viernes de la
-// semana siguiente (ver BatchPrepTab / commit 711b9fa). El fin de semana
-// queda fuera del batch.
-export const BATCH_DAYS   = ['lun', 'mar', 'mié', 'jue', 'vie']
-export const WEEKEND_DAYS = ['sáb', 'dom']
+// Los días de batch ya no son fijos: ver lib/batchConfig.js (Ajustes).
 
 // Días en nevera a partir de los cuales el tupper conviene congelarlo
 // (cocinado el domingo: jueves = 4 días, viernes = 5).
