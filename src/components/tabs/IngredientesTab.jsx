@@ -36,7 +36,7 @@ function kcalLabel(i) {
   const r = v => (v == null ? null : Math.round(v * m * 10) / 10)
   const P = r(pick('prot', 'protu', 'protml', 'prots')), C = r(pick('carb', 'carbu', 'carbml', 'carbs')), F = r(pick('fat', 'fatu', 'fatml', 'fats'))
   const macros = [P != null && `P ${P}`, C != null && `C ${C}`, F != null && `F ${F}`].filter(Boolean).join(' · ')
-  return `${base} kcal${per}${macros ? ` · ${macros}` : ''}`
+  return `${i.nutEst ? '≈ ' : ''}${base} kcal${per}${macros ? ` · ${macros}` : ''}`
 }
 
 // 'flat' no tiene input de precio propio en el formulario de edicion (se
