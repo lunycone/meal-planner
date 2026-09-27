@@ -3,6 +3,7 @@ import useStore, { selectAllIng, selectAllCombos } from '../store/useStore'
 import Icon from '../components/ui/Icon'
 import PlatosTab from '../components/tabs/PlatosTab'
 import IngredientesTab from '../components/tabs/IngredientesTab'
+import PantryTab from '../components/tabs/PantryTab'
 import ModelWeekSheet from '../components/meal/ModelWeekSheet'
 import { MODEL_WEEKS } from '../data/modelWeeks'
 import { MHeader } from './MobileApp'
@@ -18,19 +19,21 @@ export default function MMas({ unseen, onIdeas, sub, onSub, onBack, onLogout }) 
   const deletedWeeks = useStore(s => s.deletedModelWeeks) ?? []
   const weekCount = MODEL_WEEKS.filter(w => !hiddenWeeks.includes(w.n) && !deletedWeeks.includes(w.n)).length + customWeeks.filter(w => !w.archived).length
   const openPlanner = useStore(s => s.openPlanner)
+  const stockCount = Object.values(useStore(s => s.stock) ?? {}).filter(v => v?.amount > 0).length
   const [models, setModels] = useState(false)
 
-  if (sub === 'platos' || sub === 'ingredientes') {
+  if (sub === 'platos' || sub === 'ingredientes' || sub === 'pantry') {
     return (
       <div className="m-page m-sub">
         <button type="button" className="m-back" onClick={onBack}><Icon name="left" size={14} stroke={2.6} />More</button>
-        {sub === 'platos' ? <PlatosTab /> : <IngredientesTab />}
+        {sub === 'platos' ? <PlatosTab /> : sub === 'pantry' ? <PantryTab /> : <IngredientesTab />}
       </div>
     )
   }
 
   const rows = [
     { l: 'Dishes', v: Object.keys(allCombos).length, icon: 'plate', c: '#2585BC', tint: 'rgba(46,155,214,0.15)', go: () => onSub('platos') },
+    { l: 'Pantry', v: stockCount || '', icon: 'home', c: '#B7791F', tint: 'rgba(224,162,27,0.16)', go: () => onSub('pantry') },
     { l: 'Ingredients', v: Object.keys(allIng).length, icon: 'leaf', c: '#2F9E5B', tint: 'rgba(47,158,91,0.14)', go: () => onSub('ingredientes') },
     { l: 'Model weeks', v: weekCount, icon: 'layers', c: '#7154DA', tint: 'rgba(139,111,232,0.15)', go: () => setModels(true) },
     { l: 'Suggestions', v: unseen || '', icon: 'bulb', c: '#C1850C', tint: 'rgba(224,162,27,0.16)', go: onIdeas },

@@ -51,6 +51,7 @@ export default function ShoppingListTab() {
     : byCatOrder(a, b))
 
   const buyTotal = buy.reduce((s, i) => s + i.cost, 0)
+  const eatTotal = items.filter(i => !i.home || i.covered).reduce((s, i) => s + (i.eatCost ?? 0), 0)
   const done = buy.filter(i => checked.has(i.key))
   const doneCost = done.reduce((s, i) => s + i.cost, 0)
   const byCat = CAT_ORDER.map(c => ({ c, cost: buy.filter(i => i.cat === c).reduce((s, i) => s + i.cost, 0) })).filter(x => x.cost > 0.004)
@@ -146,7 +147,7 @@ export default function ShoppingListTab() {
                         <span>{i.name}</span>
                         {(i.brand || i.breakdown) && <small>{i.brand ? `${i.brand}${i.store ? ' · ' + i.store : ''}` : i.breakdown}</small>}
                       </span>
-                      <span className="compra-qty mp-num">{i.qty}</span>
+                      <span className="compra-qty mp-num" title={i.need ? `Eaten this ${viewMode === 'batch' ? 'batch' : 'week'}: ${i.need}` : undefined}>{i.qty}{i.note && <small className="compra-note">{i.note}</small>}</span>
                       {dayCols.map(d => (
                         <span key={d} style={{ display: 'flex', justifyContent: 'center' }}>
                           <span className="compra-pill" style={i.usedDays.has(d) ? { background: catColor(i.cat), boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)' } : undefined} />
@@ -164,17 +165,19 @@ export default function ShoppingListTab() {
           {tab === 'home' && (
             <>
               <p className="mp-muted" style={{ margin: '4px 0 12px', fontSize: 13, lineHeight: 1.5 }}>
-                Spices, oil and what you already have. Not in the total; if it runs out, switch it to “Missing” and it goes back on the list.
+                Spices, oil and what the pantry already covers. Not in the total; if a staple runs out, switch it to “Missing” and it goes back on the list. Ticking something as bought adds the whole pack to the pantry.
               </p>
               <div className="compra-home">
                 {sorted.map((i, n) => (
                   <div key={i.key} className="compra-home-row mp-in" style={{ animationDelay: `${Math.min(n, 20) * 22}ms` }}>
                     <span style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
                       <span style={{ fontSize: 14, fontWeight: 600 }}>{i.name}</span>
-                      <span className="mp-muted mp-num" style={{ fontSize: 12 }}>{i.qty} this {viewMode === 'batch' ? 'batch' : 'week'}{i.cost > 0.004 ? ` · ${fmtMoney(i.cost)}` : ''}</span>
+                      <span className="mp-muted mp-num" style={{ fontSize: 12 }}>{i.covered ? `${i.qty} · in the pantry` : `${i.qty} this ${viewMode === 'batch' ? 'batch' : 'week'}${i.cost > 0.004 ? ` · ${fmtMoney(i.cost)}` : ''}`}</span>
                     </span>
-                    <Segmented label={`${i.name}: at home`} value="have" onChange={v => v === 'miss' && setHome(i.key, false)}
-                      options={[{ value: 'have', label: 'Have' }, { value: 'miss', label: 'Missing' }]} />
+                    {i.covered
+                      ? <span className="mp-tag compra-pantry-tag"><Icon name="home" size={12} />Pantry</span>
+                      : <Segmented label={`${i.name}: at home`} value="have" onChange={v => v === 'miss' && setHome(i.key, false)}
+                          options={[{ value: 'have', label: 'Have' }, { value: 'miss', label: 'Missing' }]} />}
                   </div>
                 ))}
                 {sorted.length === 0 && <div className="mp-empty">Nothing marked as at home.</div>}
@@ -206,6 +209,7 @@ export default function ShoppingListTab() {
               <span style={{ height: 8, borderRadius: 4, background: 'rgba(110,80,50,0.12)', overflow: 'hidden' }}><span style={{ display: 'block', height: '100%', width: `${buy.length ? done.length / buy.length * 100 : 0}%`, background: 'var(--c-green)', transition: 'width .4s' }} /></span>
             )}
             <span className="mp-muted mp-num" style={{ fontSize: 12.5 }}>{fmtMoney(doneCost)} of {fmtMoney(buyTotal)} in the cart</span>
+            {eatTotal > 0 && Math.abs(buyTotal - eatTotal) >= 1 && <span className="mp-muted mp-num" style={{ fontSize: 12, lineHeight: 1.45 }}>Whole packs. What’s eaten this {viewMode === 'batch' ? 'batch' : 'week'} is worth {fmtMoney(eatTotal)}; the rest stays in the pantry.</span>}
           </section>
 
           {sortBy === 'store' && storeOrder.length > 0 && (

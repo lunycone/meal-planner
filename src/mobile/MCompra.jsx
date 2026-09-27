@@ -22,6 +22,7 @@ export default function MCompra({ unseen, onIdeas }) {
   const done = buy.filter(i => checked.has(i.key))
   const total = buy.reduce((s, i) => s + i.cost, 0)
   const doneCost = done.reduce((s, i) => s + i.cost, 0)
+  const eatTotal = items.filter(i => !i.home || i.covered).reduce((s, i) => s + (i.eatCost ?? 0), 0)
 
   const byStore = {}
   pending.forEach(i => { const k = i.store ?? ''; (byStore[k] ??= []).push(i) })
@@ -49,6 +50,7 @@ export default function MCompra({ unseen, onIdeas }) {
           <span className="mp-muted" style={{ fontSize: 13 }}>In the cart <strong className="mp-num" style={{ fontSize: 22, color: 'var(--c-ink)' }}>{done.length}</strong> / {buy.length}</span>
           <span className="mp-muted mp-num" style={{ fontSize: 13 }}><strong style={{ color: 'var(--c-ink)' }}>{fmtMoney(doneCost)}</strong> of {fmtMoney(total)}</span>
         </span>
+        {eatTotal > 0 && Math.abs(total - eatTotal) >= 1 && <span className="mp-muted mp-num" style={{ fontSize: 12 }}>Whole packs · what’s eaten is worth {fmtMoney(eatTotal)}, the rest stays in the pantry</span>}
         <span className="mc-bar"><span style={{ width: `${buy.length ? done.length / buy.length * 100 : 0}%` }} /></span>
         <div className="mc-seg" role="group" aria-label="List">
           <span aria-hidden="true" style={{ left: tab === 'buy' ? 3 : '50%' }} />
@@ -76,6 +78,7 @@ export default function MCompra({ unseen, onIdeas }) {
                     <span className="mp-muted mp-num" style={{ fontSize: 12.5 }}>{i.qty}</span>
                     <span style={{ display: 'flex', gap: 2 }}>{days.map(d => <span key={d} style={{ width: 9, height: 6, borderRadius: 2, background: i.usedDays.has(d) ? catColor(i.cat) : 'rgba(110,80,50,0.12)' }} />)}</span>
                   </span>
+                  {i.note && <span className="mp-muted mc-note">{i.note}</span>}
                 </span>
                 <span className="mp-num" style={{ fontSize: 14, fontWeight: 700 }}>{fmtMoney(i.cost)}</span>
               </button>
@@ -86,14 +89,16 @@ export default function MCompra({ unseen, onIdeas }) {
 
       {tab === 'home' && (
         <section className="mc-group">
-          <span className="mp-muted" style={{ fontSize: 12.5, lineHeight: 1.45, padding: '0 4px' }}>What you already have. If something runs out, mark it “Missing” and it goes back on the list.</span>
+          <span className="mp-muted" style={{ fontSize: 12.5, lineHeight: 1.45, padding: '0 4px' }}>What you already have: staples and what the pantry covers. If a staple runs out, mark it “Missing”. Ticking something as bought adds the whole pack to the pantry.</span>
           {home.map(i => (
             <div key={i.key} className="mc-home">
               <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <span style={{ fontSize: 15, fontWeight: 600 }}>{i.name}</span>
-                <span className="mp-muted mp-num" style={{ fontSize: 12 }}>{i.qty} this batch</span>
+                <span className="mp-muted mp-num" style={{ fontSize: 12 }}>{i.covered ? `${i.qty} · in the pantry` : `${i.qty} this batch`}</span>
               </span>
-              <button type="button" className="mc-miss" onClick={() => setHome(i.key, false)}>Missing</button>
+              {i.covered
+                ? <span className="mp-tag compra-pantry-tag"><Icon name="home" size={12} />Pantry</span>
+                : <button type="button" className="mc-miss" onClick={() => setHome(i.key, false)}>Missing</button>}
             </div>
           ))}
         </section>

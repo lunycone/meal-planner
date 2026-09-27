@@ -7,6 +7,7 @@ import { getISOWeek } from '../utils/date'
 import { MEALS, MEAL_LABEL, MEAL_STYLE, PERSON_COLOR, addDays, mondayOf, activeProfilesOn, shortName } from '../lib/mealplan'
 import { slotForPerson } from '../engine/calc'
 import { MHeader } from './MobileApp'
+import CookedButton from '../components/meal/CookedButton'
 
 // Batch en el móvil: cuántos tuppers llevas, un botón grande para cocinar y
 // una fila por plato que se despliega (cantidades, ración de cada uno y sus
@@ -168,6 +169,7 @@ export default function MBatch({ unseen, onIdeas }) {
             <span className="mc-bar"><span style={{ width: `${total ? done / total * 100 : 0}%` }} /></span>
           </section>
           <button type="button" className="mb-cook" onClick={() => setCooking(true)}><Icon name="play" size={14} fill="currentColor" />Start cooking</button>
+          <CookedButton monday={monday} className="mb-cooked" />
           {schedule.vispera.length > 0 && (
             <span className="mb-vispera"><Icon name="moon" size={16} color="#7154DA" style={{ flexShrink: 0, marginTop: 1 }} /><span><strong>Night before:</strong> {visperaLine(schedule.vispera)}</span></span>
           )}

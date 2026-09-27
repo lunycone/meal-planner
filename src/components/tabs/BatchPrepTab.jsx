@@ -1,3 +1,4 @@
+import CookedButton from '../meal/CookedButton'
 import { useState, useEffect, useMemo } from 'react'
 import useStore, { selectAllIng, selectAllCombos } from '../../store/useStore'
 import { PROTEIN } from '../../data/proteins'
@@ -1179,6 +1180,7 @@ export default function BatchPrepTab() {
             <Icon name="play" size={14} fill="currentColor" />Start cooking
           </button>
         )}
+        {hasPlan && <CookedButton monday={weekMonday} className="mp-btn mp-btn-glass" style={{ marginTop: 8, height: 40, alignSelf: 'stretch' }} />}
       </section>
 
       <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>

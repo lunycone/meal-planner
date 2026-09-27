@@ -25,7 +25,7 @@ const emptyPerMeal = (val) => Object.fromEntries(MEAL_KEYS.map(k => [k, val()]))
 // Vistas validas para restaurar desde localStorage -- si un dia cambian los
 // ids de tab y localStorage tiene guardado uno viejo, mejor caer a 'home'
 // que dejar la pantalla en blanco (activeConfigTab/activeView sin match).
-const VALID_VIEWS = ['home', 'meal', 'platos', 'ingredientes', 'planificador', 'compra', 'batch', 'mas']
+const VALID_VIEWS = ['home', 'meal', 'platos', 'ingredientes', 'planificador', 'compra', 'batch', 'mas', 'pantry']
 
 // 26 sep 2026 -- la tab activa se guarda SOLO en localStorage (por
 // dispositivo), nunca en el guardado compartido de Supabase: si fuera
@@ -503,6 +503,74 @@ const useStore = create(
           return { pantry: { have: [...have], miss: [...miss] } }
         })
       },
+      // ── DESPENSA CON CANTIDADES (27 sep 2026) ──────────────────────────
+      // stock: lo que hay en casa, en la unidad base del paquete (g, ml o
+      // unidades) y cuándo entró (para saber si ya caducó). Al marcar algo
+      // como comprado entra el paquete entero (stockLog guarda cuánto, para
+      // poder desmarcarlo); al marcar el batch como cocinado se descuenta lo
+      // de lunes a viernes (cookedBatches, reversible).
+      stock:         {},   // { ingKey: { amount, addedAt } }
+      stockLog:      {},   // { checksKey: { ingKey: amount } }
+      cookedBatches: {},   // { weekKey: { ingKey: amount } }
+
+      setStock(ingKey, amount, addedAt) {
+        set(s => {
+          const stock = { ...s.stock }
+          if (!(amount > 0.0001)) delete stock[ingKey]
+          else stock[ingKey] = { amount, addedAt: addedAt ?? stock[ingKey]?.addedAt ?? new Date().toISOString() }
+          return { stock }
+        })
+      },
+      // Comprar: marca la casilla y mete en la despensa lo comprado.
+      buyShopItem(checksKey, ingKey, amount) {
+        set(s => {
+          const was = (s.shopChecks?.[checksKey] ?? []).includes(ingKey)
+          const stock = { ...s.stock }, log = { ...(s.stockLog?.[checksKey] ?? {}) }
+          if (was) {
+            const back = log[ingKey] ?? 0
+            if (back > 0 && stock[ingKey]) {
+              const left = stock[ingKey].amount - back
+              if (left > 0.0001) stock[ingKey] = { ...stock[ingKey], amount: left }; else delete stock[ingKey]
+            }
+            delete log[ingKey]
+          } else if (amount > 0) {
+            stock[ingKey] = { amount: (stock[ingKey]?.amount ?? 0) + amount, addedAt: new Date().toISOString() }
+            log[ingKey] = amount
+          }
+          const stockLog = { ...s.stockLog, [checksKey]: log }
+          const keys = Object.keys(stockLog)
+          if (keys.length > 8) keys.sort().slice(0, keys.length - 8).forEach(k => delete stockLog[k])
+          return { shopChecks: toggleIn(s.shopChecks, checksKey, ingKey), stock, stockLog }
+        })
+      },
+      // Batch cocinado: descuenta lo que se come de lunes a viernes.
+      cookBatch(weekKey, usage) {
+        set(s => {
+          if (s.cookedBatches?.[weekKey]) return {}
+          const stock = { ...s.stock }, took = {}
+          for (const [k, need] of Object.entries(usage)) {
+            const have = stock[k]?.amount ?? 0
+            const t = Math.min(have, need)
+            if (!(t > 0)) continue
+            took[k] = t
+            if (have - t > 0.0001) stock[k] = { ...stock[k], amount: have - t }; else delete stock[k]
+          }
+          const cookedBatches = { ...s.cookedBatches, [weekKey]: took }
+          const keys = Object.keys(cookedBatches)
+          if (keys.length > 8) keys.sort().slice(0, keys.length - 8).forEach(k => delete cookedBatches[k])
+          return { stock, cookedBatches }
+        })
+      },
+      uncookBatch(weekKey) {
+        set(s => {
+          const took = s.cookedBatches?.[weekKey]
+          if (!took) return {}
+          const stock = { ...s.stock }
+          for (const [k, t] of Object.entries(took)) stock[k] = { amount: (stock[k]?.amount ?? 0) + t, addedAt: stock[k]?.addedAt ?? new Date().toISOString() }
+          const cookedBatches = { ...s.cookedBatches }; delete cookedBatches[weekKey]
+          return { stock, cookedBatches }
+        })
+      },
       toggleBatchTup(weekKey, tupId) {
         set(s => ({ batchTups: toggleIn(s.batchTups, weekKey, tupId) }))
       },
@@ -615,6 +683,9 @@ const useStore = create(
         weekPlan:            s.weekPlan,
         shopChecks:          s.shopChecks,
         pantry:              s.pantry,
+        stock:               s.stock,
+        stockLog:            s.stockLog,
+        cookedBatches:       s.cookedBatches,
         batchTups:           s.batchTups,
         customWeeks:         s.customWeeks,
         hiddenModelWeeks:    s.hiddenModelWeeks,

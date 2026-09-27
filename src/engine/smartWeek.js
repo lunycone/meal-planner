@@ -23,6 +23,10 @@
 //     cebolla/ajo ni fibra insoluble;
 //   · fibra soluble ≥10 g/día y verdura ≥ vegMin g/día por persona;
 //   · proteína ≥ objetivo y ≤ techo (protCap); PCOS: desayuno nunca «alto».
+// Paquetes y despensa (solo en la fase exacta): lo que ya hay en casa sale
+// gratis; de lo que caduca en la semana (calabacín, verdura fresca) cuenta
+// un 30 % de lo que sobraría del paquete; lo que aguanta (la bolsa de
+// cebollas, huevos, yogur, congelados) pasa a la semana siguiente sin coste.
 // Y lo que aprende: platos rechazados («Not this one») pesan menos, los que
 // cargas pesan más, y no repite el batch de las 2 semanas anteriores.
 
@@ -34,6 +38,8 @@ import { SOLUBLE_FIBER_DAILY_MIN, VEG_DAILY_MIN, DIGESTIVE_MAX_PER_DAY, dishVegG
 import { MARIA_NO_BATIDO_CASERO, MARIA_MERIENDA_PORTATIL } from '../data/modelWeeks'
 import { DAY_KEYS, dayForPerson, dayTotals } from '../lib/mealplan'
 import { starchFamily } from '../lib/tags'
+import { aggregateIngredients, needAmount, packPlan } from '../lib/needs'
+import { packOf, fmtAmount } from '../lib/packs'
 
 export const PRIORITIES = ['price', 'protein', 'veg']
 export const PLAN_DAYS = [0, 1, 2, 3, 4] // lunes–viernes
@@ -53,6 +59,8 @@ const W = {
   recent: 4,          // plato del batch de las 2 semanas anteriores (por semana)
   pref: 2.5,          // por punto de gusto (−: rechazado, +: cargado), por semana
   reuse: 8,           // plato (o variante) ya enseñado en «New ideas»
+  waste: 0.3,         // por $ de paquete fresco que sobraría y se tiraría
+  pantry: 1,          // por $ de despensa que se gasta (ya está pagado)
 }
 const BONUS = { protein: 0.02, veg: 0.012 } // por g, según la prioridad
 
@@ -280,6 +288,9 @@ export function evaluatePlan(plan, people, allIng, allCombos, ctx) {
     score -= W.pref * prefOf(ctx.prefs, k)
   }
 
+  const pk = packScore(slots, people, allIng, allCombos, ctx.stock ?? {})
+  score += W.waste * pk.waste - W.pantry * pk.pantry
+
   const warnings = []
   const group = (list, text) => {
     const byP = {}
@@ -295,7 +306,37 @@ export function evaluatePlan(plan, people, allIng, allCombos, ctx) {
   if (base) warnings.push(`Lunch and dinner share the same base (${base})`)
   if (dishHasTag(dc, 'red-meat', allIng)) warnings.push('Red meat at dinner')
 
-  return { plan, slots, cost, weekCost: cost * 7 / PLAN_DAYS.length, score, perPerson, warnings }
+  return { plan, slots, cost, weekCost: cost * 7 / PLAN_DAYS.length, score, perPerson, warnings, packs: pk }
+}
+
+// Cuánto de la despensa usa esta semana y cuánto de lo fresco se tiraría.
+function packScore(slots, people, allIng, allCombos, stock) {
+  const windowDates = PLAN_DAYS.map(i => ({ date: null, wk: 'W', dayKey: DAY_KEYS[i] }))
+  const agg = aggregateIngredients({ weekPlan: { W: slots }, windowDates, people, allIng, allCombos })
+  let waste = 0, pantry = 0
+  const fromPantry = [], leftovers = []
+  for (const [k, data] of Object.entries(agg)) {
+    const ing = allIng[k]
+    const pack = packOf(ing)
+    if (!pack || pack.price == null) continue
+    const need = needAmount(data, ing, pack)
+    if (!(need > 0)) continue
+    const pp = packPlan(k, need, stock[k] ?? 0, allIng)
+    if (pp.use > 0) { pantry += pp.use * pp.unitPrice; fromPantry.push({ k, name: ing.name, amount: pp.use, dim: pack.dim, value: pp.use * pp.unitPrice }) }
+    if (pp.packs > 0 && pp.leftover > pack.amount * 0.03) {
+      const used = pp.toBuy / (pp.packs * pack.amount)
+      if (pp.keeps === 'week') waste += pp.leftover * pp.unitPrice
+      leftovers.push({ k, name: ing.name, used, amount: pp.leftover, dim: pack.dim, keeps: pp.keeps, value: pp.leftover * pp.unitPrice })
+    }
+  }
+  fromPantry.sort((a, b) => b.value - a.value)
+  leftovers.sort((a, b) => (a.keeps === 'week' ? 0 : 1) - (b.keeps === 'week' ? 0 : 1) || b.value - a.value)
+  const notes = []
+  if (fromPantry.length) notes.push(`From the pantry: ${fromPantry.slice(0, 4).map(x => `${x.name} ${fmtAmount(x.amount, x.dim)}`).join(', ')}${fromPantry.length > 4 ? ` +${fromPantry.length - 4}` : ''}`)
+  for (const x of leftovers.filter(x => x.keeps === 'week' && x.value >= 0.5).slice(0, 3)) notes.push(`${x.name}: uses ${Math.round(x.used * 100)}% of the pack — ${fmtAmount(x.amount, x.dim)} would go to waste`)
+  const carry = leftovers.filter(x => x.keeps === 'weeks' && x.value >= 1)
+  if (carry.length) notes.push(`Carries over to next week: ${carry.slice(0, 3).map(x => `${x.name} ${fmtAmount(x.amount, x.dim)}`).join(', ')}`)
+  return { waste, pantry, notes }
 }
 
 // Alternativas de verdad: no repiten la pareja (ni en variante) y cada plato
@@ -320,15 +361,16 @@ function pickDiverse(exact, count, fam, locked) {
  *       shown ['L|D'] parejas ya enseñadas · exclude [recipeKey] · prefs {key: n}
  *       recent [recipeKey] del batch de las 2 semanas anteriores
  *       locks { L, D, B: {pid}, S: {pid} } para cambiar solo un plato
+ *       stock { ingKey: amount } despensa disponible (sin lo caducado)
  * Devuelve { results: [evaluatePlan…], tried, ms }.
  */
 export function generateSmartWeeks({
   allIng, allCombos, people, priority = 'price', vegMin = VEG_DAILY_MIN, seed = 0,
-  shown = [], exclude = [], prefs = {}, recent = [], locks = {}, count = 3,
+  shown = [], exclude = [], prefs = {}, recent = [], locks = {}, stock = {}, count = 3,
 }) {
   const t0 = performance.now()
   const ctx = {
-    priority, vegMin, seed, prefs, locks, solMin: SOLUBLE_FIBER_DAILY_MIN,
+    priority, vegMin, seed, prefs, locks, stock, solMin: SOLUBLE_FIBER_DAILY_MIN,
     shown: new Set(shown), exclude: new Set(exclude), recent: new Set(recent),
     recentFam: new Set(recent.map(k => familyOf(allCombos[k]?.name)).filter(Boolean)),
   }

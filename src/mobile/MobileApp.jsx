@@ -21,7 +21,7 @@ const TABS = [
   { id: 'batch', label: 'Batch', icon: 'pot' },
   { id: 'mas', label: 'More', icon: 'more' },
 ]
-const tabOf = v => (v === 'platos' || v === 'ingredientes' || v === 'mas') ? 'mas' : (TABS.some(t => t.id === v) ? v : 'home')
+const tabOf = v => (v === 'platos' || v === 'ingredientes' || v === 'pantry' || v === 'mas') ? 'mas' : (TABS.some(t => t.id === v) ? v : 'home')
 
 export function People({ rings }) {
   const profiles = useStore(s => s.profiles)
