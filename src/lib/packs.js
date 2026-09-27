@@ -56,6 +56,13 @@ export function fmtQtyUnit(qty, unit) {
   const q = Math.round(qty * 100) / 100
   return unit === 'unit' ? `${q} ${q === 1 ? 'unit' : 'units'}` : `${q} ${UNIT_LABEL[unit] ?? unit}`
 }
+/** Cantidad en unidad base (g, ml o unidades) en texto corto: «1.2 kg», «350 g», «6 units». */
+export function fmtAmount(amount, dim) {
+  const a = amount ?? 0
+  if (dim === 'ml') return a >= 1000 ? `${+(a / 1000).toFixed(a >= 10000 ? 0 : 1)} L` : `${Math.round(a)} ml`
+  if (dim === 'unit') { const q = Math.round(a * 10) / 10; return `${q} ${q === 1 ? 'unit' : 'units'}` }
+  return a >= 1000 ? `${+(a / 1000).toFixed(a >= 10000 ? 0 : 1)} kg` : `${Math.round(a)} g`
+}
 export function formatPack({ qty, unit, price }, store) {
   const where = store ? ` (${store})` : ''
   return `${fmtQtyUnit(qty, unit)}${where}${price != null ? ` · $${price.toFixed(2)}` : ''}`

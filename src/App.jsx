@@ -7,6 +7,7 @@ import PlatosTab           from './components/tabs/PlatosTab'
 import IngredientesTab     from './components/tabs/IngredientesTab'
 import ShoppingListTab     from './components/tabs/ShoppingListTab'
 import BatchPrepTab        from './components/tabs/BatchPrepTab'
+import PantryTab           from './components/tabs/PantryTab'
 import AuthGate            from './components/AuthGate'
 import SyncStatus          from './components/SyncStatus'
 import Segmented           from './components/ui/Segmented'
@@ -20,6 +21,7 @@ const TABS = [
   { value: 'home',         label: 'Today',        Component: HomeView },
   { value: 'planificador', label: 'Planner',      Component: PlannerView },
   { value: 'compra',       label: 'Shopping',     Component: ShoppingListTab },
+  { value: 'pantry',       label: 'Pantry',       Component: PantryTab },
   { value: 'batch',        label: 'Batch',        Component: BatchPrepTab },
   { value: 'platos',       label: 'Dishes',       Component: PlatosTab },
   { value: 'ingredientes', label: 'Ingredients',  Component: IngredientesTab },

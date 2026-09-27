@@ -5,6 +5,8 @@ import useStore, { selectAllIng, selectAllCombos } from '../store/useStore'
 import { PROTEIN } from '../data/proteins'
 import { ingCost, ingKcal, ingProt, ingFat, comboAgg, personLunchScale, comboScalableKey, dayKcal, personMealScalesTwoPass, personTargetForDay, slotForPerson } from '../engine/calc'
 import { storeOf } from './stores'
+import { aggregateIngredients, needAmount, needDim, packPlan, stockAvailable } from './needs'
+import { fmtQtyUnit, fmtAmount, packOf } from './packs'
 import { DAY_KEYS, addDays, mondayOf, weekKeyOf, fmtRange, activeProfilesOn, startOfDay } from './mealplan'
 
 // Orden lun..dom para resolver el indice que personTargetForDay/personMealScalesTwoPass
@@ -61,12 +63,21 @@ export default function useShoppingList(batchOffset, viewMode) {
   const checksKey = `${viewMode}-${weekKeyOf(batchWindow.start)}`
   const shopChecks = useStore(s => s.shopChecks)
   const pantry     = useStore(s => s.pantry)
-  const toggleShopCheck = useStore(s => s.toggleShopCheck)
+  const buyShopItem = useStore(s => s.buyShopItem)
   const setAtHome  = useStore(s => s.setAtHome)
+  const stock      = useStore(s => s.stock)
+  const stockLog   = useStore(s => s.stockLog)
   const checked = useMemo(() => new Set(shopChecks?.[checksKey] ?? []), [shopChecks, checksKey])
   const haveSet = useMemo(() => new Set(pantry?.have ?? []), [pantry])
   const missSet = useMemo(() => new Set(pantry?.miss ?? []), [pantry])
-  const toggleChecked = key => toggleShopCheck(checksKey, key)
+  // Despensa como estaba ANTES de esta compra: lo que entró al marcar
+  // casillas de esta lista no cuenta, si no la fila se «cubriría» sola.
+  const pantryBefore = useMemo(() => {
+    const avail = stockAvailable(stock, allIng, batchWindow.start)
+    const log = stockLog?.[checksKey] ?? {}
+    for (const [k, v] of Object.entries(log)) if (avail[k] != null) avail[k] = Math.max(0, avail[k] - v)
+    return avail
+  }, [stock, stockLog, checksKey, allIng, batchWindow])
   const isHome = key => haveSet.has(key) || (defaultAtHome(allIng[key]) && !missSet.has(key))
   const setHome = (key, home) => setAtHome(key, home)
 
@@ -94,102 +105,8 @@ export default function useShoppingList(batchOffset, viewMode) {
   // El tipo legacy 'plato' (proteina+combo por separado) ya no se soporta
   // aqui — el planificador lo auto-limpia en cuanto lo ve (ver
   // WeeklyMealPlannerTab), igual que ya asumia el Batch tab.
-  const aggregatedItems = useMemo(() => {
-    const agg = {}
-
-    // persons: { [id]: { name, grams, units, ml, serv, days } }
-    function ensureAgg(ingKey) {
-      if (!agg[ingKey]) agg[ingKey] = { qtyByUnit: {}, cost: 0, kcal: 0, prot: 0, fat: 0, meals: new Set(), persons: {} }
-    }
-    function trackPerson(ingKey, person, pp) {
-      const ps = agg[ingKey].persons
-      if (!ps[person.id]) ps[person.id] = { name: person.name, grams: 0, units: 0, ml: 0, serv: 0, days: 0 }
-      ps[person.id].grams += pp.grams ?? 0
-      ps[person.id].units += pp.units ?? 0
-      ps[person.id].ml    += pp.ml    ?? 0
-      ps[person.id].serv  += pp.serv  ?? (pp.grams == null && pp.ml == null && pp.units == null ? 1 : 0)
-      ps[person.id].days  += 1
-    }
-    // Racion de UNA persona para UNA comida — se suma al agregado y se
-    // registra en el desglose por persona.
-    function addForPerson(ingKey, portion, mealTag, person) {
-      ensureAgg(ingKey)
-      const { val, unit } = getQtyValue(portion)
-      if (!agg[ingKey].qtyByUnit[unit]) agg[ingKey].qtyByUnit[unit] = 0
-      agg[ingKey].qtyByUnit[unit] += val
-      agg[ingKey].cost += ingCost(ingKey, portion, allIng)
-      agg[ingKey].kcal += ingKcal(ingKey, portion, allIng)
-      agg[ingKey].prot += ingProt(ingKey, portion, allIng)
-      agg[ingKey].fat  += ingFat(ingKey, portion, allIng)
-      agg[ingKey].meals.add(mealTag)
-      trackPerson(ingKey, person, portion)
-    }
-
-    function scalePortion(p, factor) {
-      if (factor === 1) return p
-      const out = { ...p }
-      if (out.grams != null) out.grams = Math.round(out.grams * factor)
-      if (out.ml    != null) out.ml    = Math.round(out.ml    * factor)
-      if (out.units != null) out.units = Math.round(out.units * factor * 2) / 2
-      return out
-    }
-
-    batchWindow.windowDates.forEach(({ date, wk, dayKey }) => {
-      const weekData = weekPlan[wk] ?? {}
-      const dayProfiles = profilesActiveOn(profiles, date)
-      if (dayProfiles.length === 0) return
-      const dayIdx = ALL_DAY_KEYS.indexOf(dayKey)
-
-      for (const mealType of MEALS) {
-        const rawSlot = weekData[`${dayKey}-${mealType}`] ?? null
-        if (!rawSlot) continue
-        const mealTag = `${dayKey} ${mealType}`
-        const isScalable = mealType === 'comida' || mealType === 'cena'
-
-        dayProfiles.forEach(person => {
-          const meal = slotForPerson(rawSlot, person.id)
-          if (!meal || meal.type !== 'desayuno') return
-          const combo = allCombos[meal.recipeKey]
-          if (!combo) return
-
-          let scale = null
-          let scalableKey = null
-          if (isScalable) {
-            scalableKey = comboScalableKey(combo, allIng)
-            const target = personTargetForDay(person, dayIdx)
-            const dayForPerson = Object.fromEntries(
-              MEALS.map(m => [m, slotForPerson(weekData[`${dayKey}-${m}`] ?? null, person.id)])
-            )
-            const twoPass = personMealScalesTwoPass(dayForPerson, person, allIng, allCombos, target)
-            scale = mealType === 'comida' ? twoPass.comida : twoPass.cena
-          }
-
-          const wholeFactor = (scale?.wholeDishFactor != null && scale.wholeDishFactor < 1) ? scale.wholeDishFactor : 1
-
-          combo.items.forEach(it => {
-            if (it.k === scalableKey && scale?.grams != null) {
-              addForPerson(it.k, { ...it.p, grams: scale.grams }, mealTag, person)
-            } else {
-              addForPerson(it.k, scalePortion(it.p, wholeFactor), mealTag, person)
-            }
-          })
-          if (combo.optionalItems && meal.comboOptionals?.length > 0) {
-            combo.optionalItems
-              .filter(oi => meal.comboOptionals.includes(oi.k))
-              .forEach(it => addForPerson(it.k, scalePortion(it.p, wholeFactor), mealTag, person))
-          }
-          // AOVE de autocierre (personMealScale): el chorro extra que cierra
-          // el hueco de kcal cuando la base ya esta al tope — mismo aceite
-          // que ya se cuenta en Planificador/Batch, aqui como ingrediente mas.
-          if (scale?.oilMlApplied > 0) {
-            addForPerson('evoo', { ml: scale.oilMlApplied }, mealTag, person)
-          }
-        })
-      }    // end mealType loop
-    })     // end windowDates.forEach
-
-    return agg
-  }, [weekPlan, batchWindow, allCombos, allIng, profiles])
+  const aggregatedItems = useMemo(() => aggregateIngredients({ weekPlan, windowDates: batchWindow.windowDates, profiles, allIng, allCombos }),
+    [weekPlan, batchWindow, allCombos, allIng, profiles])
 
   // ── Batido merienda suggestions aggregate ─────────────────────────────────
   const batidoAgg = useMemo(() => {
@@ -282,14 +199,43 @@ export default function useShoppingList(batchOffset, viewMode) {
       const breakdown = Object.entries(seen).map(([v, names]) => `${names.join(' & ')}: ${v}`).join(' · ')
 
       const usedDays = new Set(Array.from(data.meals).map(t => t.split(' ')[0]))
+
+      // Paquetes y despensa: lo que hay en casa se resta; lo que falta se
+      // compra en paquetes enteros y lo que sobra vuelve a la despensa.
+      const staple = isHome(ingKey)
+      const pack = packOf(allIng[ingKey])
+      const dim = needDim(data, pack)
+      const need = dim ? needAmount(data, allIng[ingKey], pack ?? { dim }) : 0
+      const pp = packPlan(ingKey, need, staple ? 0 : (pantryBefore[ingKey] ?? 0), allIng)
+      const covered = !staple && need > 0 && pp.toBuy <= 0.0001
+      let qty = qtyStr, note = '', cost = data.cost
+      if (pp.use > 0 && !covered) note = `${fmtAmount(pp.use, dim)} from the pantry`
+      if (pp.pack && pp.packs > 0) {
+        qty = `${pp.packs} × ${fmtQtyUnit(pp.pack.qty, pp.pack.unit)}`
+        const left = pp.leftover > pp.pack.amount * 0.03
+          ? ` · ${fmtAmount(pp.leftover, dim)} ${pp.keeps === 'week' ? 'left over — use it this week' : 'stays in the pantry'}`
+          : ''
+        note = [note, `uses ${fmtAmount(need - pp.use, dim)}${left}`].filter(Boolean).join(' · ')
+        if (pp.buyCost != null) cost = pp.buyCost
+      } else if (pp.use > 0 && need > 0) {
+        cost = data.cost * (pp.toBuy / need)
+      }
+      if (covered) { qty = `${fmtAmount(need, dim)} of ${fmtAmount(pantryBefore[ingKey], dim)}`; note = 'From the pantry'; cost = 0 }
       out.push({
         key: ingKey, name: ing.name, brand: ing.brand, store: storeOf(allIng[ingKey] ?? ing), cat: ing.cat ?? 'otro',
-        qty: qtyStr, cost: data.cost, breakdown, usedDays, home: isHome(ingKey),
+        qty, need: qtyStr, note, cost, eatCost: data.cost, breakdown, usedDays,
+        home: staple || covered, covered, keeps: pp.keeps, dim,
+        buyAmount: pp.pack ? (pp.packs ?? 0) * pp.pack.amount : pp.toBuy,
       })
     })
     return out
-  }, [aggregatedItems, allIng, haveSet, missSet]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [aggregatedItems, allIng, haveSet, missSet, pantryBefore]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Marcar = comprado: el paquete entra en la despensa (desmarcar lo saca).
+  const toggleChecked = key => {
+    const it = items.find(i => i.key === key)
+    buyShopItem(checksKey, key, checked.has(key) ? 0 : (it?.buyAmount ?? 0))
+  }
 
-  return { batchWindow, people, items, batidoAgg, checked, toggleChecked, setHome, allIng }
+  return { batchWindow, people, items, batidoAgg, checked, toggleChecked, setHome, allIng, aggregatedItems }
 }

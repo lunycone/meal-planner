@@ -7,6 +7,7 @@ import Segmented from '../ui/Segmented'
 import { buildModelWeekSlots } from '../../lib/planActions'
 import { addDays, mondayOf, weekKeyOf, fmtRange, fmtMoney, fmtShortDate, activeProfilesOn, weekStats, MEAL_STYLE, PERSON_COLOR, MEALS as MEALS_ALL, DAY_KEYS, dayForPerson, dayTotals } from '../../lib/mealplan'
 import useSmartWeeks from '../../lib/useSmartWeeks'
+import { stockAvailable } from '../../lib/needs'
 import { VEG_DAILY_MIN, SOLUBLE_FIBER_DAILY_MIN } from '../../engine/weekRules'
 
 // Titles shout in CAPS ('WEIGHT GAIN — …'): calm them down, keep acronyms.
@@ -77,7 +78,14 @@ export default function ModelWeekSheet({ initialTarget = 1, initialTab = 'smart'
     }
     return [...out].sort()
   }, [weekPlan, wk]) // eslint-disable-line react-hooks/exhaustive-deps
-  const smart = useSmartWeeks({ allIng, allCombos, people, priority, vegMin, seed, shown, exclude, prefs: dishPrefs, recent, locks: locks?.locks ?? {} }, tab === 'smart')
+  // Despensa el domingo del batch (lo caducado no cuenta), redondeada para
+  // que un gramo de más no relance el cálculo.
+  const stockRaw = useStore(s => s.stock)
+  const stock = useMemo(() => {
+    const a = stockAvailable(stockRaw, allIng, addDays(monday, -1))
+    return Object.fromEntries(Object.entries(a).map(([k, v]) => [k, Math.round(v)]).sort())
+  }, [stockRaw, allIng, wk]) // eslint-disable-line react-hooks/exhaustive-deps
+  const smart = useSmartWeeks({ allIng, allCombos, people, priority, vegMin, seed, shown, exclude, prefs: dishPrefs, recent, stock, locks: locks?.locks ?? {} }, tab === 'smart')
   const smartSel = smart.results[Math.min(pick, smart.results.length - 1)] ?? null
   // Lunes–viernes de lo ya planificado en la semana destino, para comparar.
   const planned = useMemo(() => {
@@ -377,6 +385,7 @@ function SmartCard({ r, i, on, busy, best, people, allCombos, vegMin, planned, o
           <span className="sw-radio" aria-hidden="true" />
           <span style={{ fontSize: 13, fontWeight: 700 }}>{i === 0 ? best : `Option ${i + 1}`}</span>
           <span className={`mp-tag ${ok ? 'sw-ok' : 'sw-warn'}`}>{ok ? '✓ All rules met' : `${r.warnings.length} note${r.warnings.length > 1 ? 's' : ''}`}</span>
+          {r.packs?.pantry >= 0.5 && <span className="mp-tag sw-pantry" title="Already paid for: it’s in the pantry"><Icon name="home" size={11} />{fmtMoney(r.packs.pantry)} from the pantry</span>}
         </span>
         <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
           <span className="mp-num" style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em' }}>{fmtMoney(r.cost)}<small className="mp-muted" style={{ fontSize: 12, fontWeight: 500 }}> Mon–Fri</small></span>
@@ -414,6 +423,9 @@ function SmartCard({ r, i, on, busy, best, people, allCombos, vegMin, planned, o
           })}
           {r.warnings.length > 0 && (
             <ul className="sw-warnings">{r.warnings.map(w => <li key={w}>{w}</li>)}</ul>
+          )}
+          {r.packs?.notes.length > 0 && (
+            <ul className="sw-packs">{r.packs.notes.map(w => <li key={w}>{w}</li>)}</ul>
           )}
           {ok && <span className="sw-why">Legumes, onion/garlic and insoluble fiber at most once a day, no red meat at dinner, a different base at lunch and dinner, fiber and veg above the minimum, protein within limits and portions on target.</span>}
           <span className="mp-muted" style={{ fontSize: 12 }}>The weekend stays free — it isn’t planned or shopped for.</span>
