@@ -1,10 +1,9 @@
 // ─── Cocinas del mundo ──────────────────────────────────────────────────────
 // Para «Countries»: recetas tipo de cada país escritas como plantillas de
-// ingredientes. Cada hueco admite alternativas ('chicken-thigh*|chicken-leg*')
+// ingredientes (nunca platos del catálogo). Cada hueco admite alternativas ('chicken-thigh*|chicken-leg*')
 // y se elige la que haya y salga más barata (por g de proteína en la
 // proteína, por coste en el resto), así que los precios de hoy y los
 // ingredientes nuevos cuentan. Si falta algo imprescindible, el plato no sale.
-// Los platos del catálogo también llevan país (CATALOG_CUISINE).
 // Las plantillas salen como platos compuestos (`custom-gen-…`): al cargar o
 // guardar la semana se quedan en Dishes como tuyos.
 
@@ -16,7 +15,7 @@ export const COUNTRIES = [
   { id: 'it', label: 'Italy', flag: '🇮🇹' }, { id: 'gr', label: 'Greece', flag: '🇬🇷' },
   { id: 'ch', label: 'Switzerland', flag: '🇨🇭' }, { id: 'us', label: 'USA', flag: '🇺🇸' },
   { id: 'mx', label: 'Mexico', flag: '🇲🇽' }, { id: 'uk', label: 'UK', flag: '🇬🇧' },
-  { id: 'ma', label: 'Morocco', flag: '🇲🇦' }, { id: 'me', label: 'Middle East', flag: '🇱🇧' },
+  { id: 'me', label: 'Middle East', flag: '🇱🇧' },
 ]
 export const COUNTRY_LABEL = Object.fromEntries(COUNTRIES.map(c => [c.id, `${c.flag} ${c.label}`]))
 
@@ -95,11 +94,6 @@ export const RECIPES = [
   R('uk', 'Fish pie with peas', D, [['cod', 160], ['potato', 250], ['frozen-peas', 70], ['whole-milk', 80], ['butter', 8]]),
   R('uk', 'Chicken and leek pie filling with rice', B, [[CHICKEN, 150], ['rice', 75], ['leek', 90], ['carrot', 60], ['whole-milk', 60], ['evoo', 10, 'ml']]),
   R('uk', 'Sunday roast chicken with carrots and peas', B, [[CHICKEN, 170], ['potato', 250], ['carrot', 90], ['frozen-peas', 60], ['evoo', 15, 'ml']]),
-  // Marruecos
-  R('ma', 'Chicken tagine with chickpeas and carrots', B, [[CHICKEN, 150], ['chickpeas', 70], ['carrot', 100], [ZUC, 80], ['cumin'], ['cinnamon?'], ['lemon', 0.5, 'u'], ['evoo', 15, 'ml']]),
-  R('ma', 'Beef and squash tagine with rice', L, [['stew-beef', 130], ['rice', 70], ['butternut-squash', 150], ['cinnamon?'], ['cumin'], ['evoo', 10, 'ml']]),
-  R('ma', 'Chermoula cod with potatoes and peppers', B, [['cod', 160], ['potato', 230], [PEPPER, 90], ['tomato', 80], ['cumin'], ['paprika'], ['lemon', 0.5, 'u'], ['evoo', 15, 'ml']]),
-  R('ma', 'Harira with chicken', B, [[CHICKEN, 130], ['red-lentils', 70], [TOMS, 100], ['carrot', 60], ['celery?'], ['cumin'], ['cinnamon?'], ['evoo', 10, 'ml']]),
   // Oriente Medio
   R('me', 'Chicken shawarma with rice and salad', B, [[CHICKEN, 160], ['rice', 75], ['tomato', 90], ['cucumber', 80], ['tahini?', 15], ['cumin'], ['paprika'], ['lemon', 0.5, 'u'], ['evoo', 10, 'ml']]),
   R('me', 'Mujadara with eggs', D, [['green-lentils', 70], ['rice', 50], ['eggs', 2, 'u'], ['cumin'], ['evoo', 15, 'ml']]),
@@ -107,22 +101,6 @@ export const RECIPES = [
   R('me', 'Baked cod with tahini and potatoes', D, [['cod', 160], ['potato', 230], ['tahini?', 15], ['lemon', 0.5, 'u'], [ZUC, 100], ['evoo', 10, 'ml']]),
 ]
 
-// País de los platos del catálogo (por su clave).
-const CATALOG_RULES = [
-  ['es', /paella|roast-potato-paprika|escabeche|spanish-ham-hock|ham-hock-chickpeas|aragonese|pork-ribs-green-lentils|ribs-pinto|pork-loin-pinto|pork-tenderloin-pinto|sofrito|pork-loin-tomato-green-pepper|mussels-marinara|migas|flamenco|pan-tumaca|cod-and-lentil|cod-chickpeas-tomato|mussel-casserole|potato-3-eggs|potato-4-eggs|3-eggs-potato/],
-  ['uk', /bangers|cottage-pie|liver-caramelized|lamb-mashed|beef-stew-potato-carrot/],
-  ['us', /chili|sweet-and-sour|rustic-mash/],
-  ['mx', /rancheros|fajita|burrito|salsa-verde|homemade-red|ceviche/],
-  ['fr', /lemon-butter|butter-milk-mash-mushrooms|mushrooms-wine|mustard-sauce|potato-leek|lemon-cream|potato-squash|potato-zucchini|simple-mashed/],
-  ['it', /meatballs|frittata/],
-  ['ma', /moroccan|tomato-cumin|chickpeas-thyme/],
-  ['me', /afghan|shakshuka|chickpea-pur|chickpea-cream/],
-  ['gr', /feta-and-chicken|feta-avocado/],
-]
-export function catalogCountry(key) {
-  for (const [c, re] of CATALOG_RULES) if (re.test(key)) return c
-  return null
-}
 
 const priced = ing => ing && !ing.pend && !ing.hideInTable && (ing.per100 != null || ing.perUnit != null || ing.perML != null || ing.perServing != null || ing.flat != null)
 

@@ -40,7 +40,7 @@ import { starchFamily, tagsOf } from '../lib/tags'
 import { aggregateIngredients, needAmount, packPlan } from '../lib/needs'
 import { packOf, fmtAmount } from '../lib/packs'
 import { composeDishes, isGenerated, GEN_PREFIX } from './composeDishes'
-import { cuisineDishes, catalogCountry } from './cuisines'
+import { cuisineDishes } from './cuisines'
 
 export const PRIORITIES = ['price', 'protein', 'veg']
 export const PLAN_DAYS = [0, 1, 2, 3, 4] // lunes–viernes
@@ -381,26 +381,24 @@ export function generateSmartWeeks({
   // Fuentes de comidas y cenas:
   //   dishes      → el catálogo (y tus platos);
   //   ingredients → platos compuestos de ingredientes (composeDishes);
-  //   country     → recetas de un país (cuisines.js) + platos del catálogo de ese país;
-  //   surprise    → todo mezclado y al azar: sin prioridad, pero con las reglas.
+  //   country     → recetas de un país (cuisines.js), hechas con tus ingredientes;
+  //   surprise    → compuestos + recetas del mundo, al azar: sin prioridad, con las reglas.
+  // Solo «dishes» usa las comidas y cenas del catálogo; desayunos y meriendas
+  // salen siempre del catálogo.
   let generated = null, poolKeys = null
   if (source === 'ingredients') {
     generated = composeDishes(allIng, allCombos, { stock })
     poolKeys = new Set(Object.keys(generated))
   } else if (source === 'country') {
     generated = cuisineDishes(allIng, country)
-    const fromCatalog = Object.keys(allCombos).filter(k => !k.startsWith('custom-') && (country ? catalogCountry(k) === country : catalogCountry(k)))
-    poolKeys = new Set([...Object.keys(generated), ...fromCatalog])
+    poolKeys = new Set(Object.keys(generated))
   } else if (source === 'surprise') {
     generated = { ...composeDishes(allIng, allCombos, { stock, limit: 40 }), ...cuisineDishes(allIng) }
-    // Cada «Surprise» saca al azar unos 45 platos de todo lo posible (rápido
-    // también en el móvil, y cada vez distinto).
-    const everything = [...Object.keys(allCombos), ...Object.keys(generated)].filter(k => {
-      const m = (generated[k] ?? allCombos[k])?.meals ?? []
-      return m.includes('comida') || m.includes('cena')
-    })
-    const share = Math.min(1, 45 / Math.max(1, everything.length))
-    poolKeys = new Set(everything.filter(k => hash(`${seed}:pick:${k}`) / 4294967295 < share))
+    // Cada «Surprise» saca al azar unos 45 de esos platos (rápido también en
+    // el móvil, y cada vez distinto).
+    const all = Object.keys(generated)
+    const share = Math.min(1, 45 / Math.max(1, all.length))
+    poolKeys = new Set(all.filter(k => hash(`${seed}:pick:${k}`) / 4294967295 < share))
     for (const k of [locks.L, locks.D]) if (k) poolKeys.add(k)
   }
   if (generated) allCombos = { ...allCombos, ...generated }
