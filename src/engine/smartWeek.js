@@ -4,8 +4,8 @@
 // como referencia (×7/5), pero nada del plan cuenta con sábado ni domingo.
 //
 // Estructura: comida y cena son un plato cada una para los 5 días (una olla
-// cada una); desayuno y merienda van por persona, y María merienda algo para
-// llevar los lunes y miércoles (MARIA_NO_BATIDO_CASERO).
+// cada una); desayuno y merienda van por persona (la merienda de cada uno
+// puede ser cualquiera, también los días de trabajo fuera).
 //
 // Dos fases, para que sea rápido también en el móvil:
 //   1. Modelo rápido: con las cifras de cada plato se prueban TODAS las
@@ -35,12 +35,12 @@ import {
   pcosCarbLevel, personTargetForDay, makeByPersonSlot,
 } from './calc'
 import { SOLUBLE_FIBER_DAILY_MIN, VEG_DAILY_MIN, DIGESTIVE_MAX_PER_DAY, dishVegGrams } from './weekRules'
-import { MARIA_NO_BATIDO_CASERO, MARIA_MERIENDA_PORTATIL } from '../data/modelWeeks'
 import { DAY_KEYS, dayForPerson, dayTotals } from '../lib/mealplan'
 import { starchFamily, tagsOf } from '../lib/tags'
 import { aggregateIngredients, needAmount, packPlan } from '../lib/needs'
 import { packOf, fmtAmount } from '../lib/packs'
 import { composeDishes, isGenerated, GEN_PREFIX } from './composeDishes'
+import { cuisineDishes, catalogCountry } from './cuisines'
 
 export const PRIORITIES = ['price', 'protein', 'veg']
 export const PLAN_DAYS = [0, 1, 2, 3, 4] // lunes–viernes
@@ -105,7 +105,7 @@ function pools(allCombos, allIng, people, ctx) {
   const st = k => (stat[k] ??= dishStats(k, allCombos[k], allIng, ctx.seed))
   const of = slot => all.filter(([k, c]) => (c.meals ?? []).includes(slot) && !ctx.exclude.has(k)).map(([k]) => st(k))
   // Por ingredientes: comida y cena solo de los platos compuestos.
-  const main = slot => ctx.source === 'ingredients' ? of(slot).filter(d => isGenerated(d.key)) : of(slot)
+  const main = slot => ctx.poolKeys ? of(slot).filter(d => ctx.poolKeys.has(d.key)) : of(slot)
   const lock = (list, k) => k && allCombos[k] ? [st(k)] : list
   // «New ideas»: lo ya enseñado como comida no vuelve como comida (ni en
   // variante) mientras queden alternativas de sobra; igual con la cena.
@@ -121,11 +121,8 @@ function pools(allCombos, allIng, people, ctx) {
     if (!b.length) b = B
     per[p.id] = { B: lock(b, ctx.locks.B?.[p.id]), S: lock(S.length ? S : B, ctx.locks.S?.[p.id]) }
   }
-  const portable = allCombos[MARIA_MERIENDA_PORTATIL] ? st(MARIA_MERIENDA_PORTATIL) : null
-  return { L, D, per, portable }
+  return { L, D, per }
 }
-
-function portableDays(p) { return p.id === 'maria' ? MARIA_NO_BATIDO_CASERO : [] }
 
 // ── Fase 1: modelo rápido de un día de una persona ──────────────────────────
 // Imita personMealScale: si sobra, comida y cena se reducen (hasta el 55 %);
@@ -170,16 +167,14 @@ function dayPenalty(p, ctx, b, s, l, d, cost, prot, short) {
 }
 
 // Mejor desayuno+merienda de una persona para una pareja comida/cena.
-function bestForPerson(p, ctx, pool, portable, l, d) {
-  const port = portableDays(p)
+function bestForPerson(p, ctx, pool, l, d) {
   let best = null
   for (const b of pool.B) {
     for (const s of pool.S) {
-      let score = W.pref * (-prefOf(ctx.prefs, b.key) - prefOf(ctx.prefs, s.key)) / 2
+      let score = W.pref * (-prefOf(ctx.prefs, b.key) - prefOf(ctx.prefs, s.key)) / 2 + (ctx.jit(b.key) + ctx.jit(s.key)) / 2
       for (const i of PLAN_DAYS) {
-        const sn = portable && port.includes(i) ? portable : s
-        const f = fastDay(personTargetForDay(p, i), b, sn, l, d)
-        score += dayPenalty(p, ctx, b, sn, l, d, f.cost, f.prot, f.short)
+        const f = fastDay(personTargetForDay(p, i), b, s, l, d)
+        score += dayPenalty(p, ctx, b, s, l, d, f.cost, f.prot, f.short)
       }
       if (!best || score < best.score) best = { score, b, s }
     }
@@ -202,13 +197,14 @@ function rankPairs(ctx, P, people) {
       const choice = {}
       for (const p of people) {
         const pool = P.per[p.id]
-        const bst = bestForPerson(p, ctx, pool, P.portable, l, d)
+        const bst = bestForPerson(p, ctx, pool, l, d)
         tried += pool.B.length * pool.S.length
         score += bst.score
         choice[p.id] = { b: bst.b.key, s: bst.s.key }
       }
       if (sharedBase(l, d)) score += W.sameBase * PLAN_DAYS.length * people.length
       for (const x of [l, d]) {
+        score += ctx.jit(x.key)
         if (ctx.recent.has(x.key) || ctx.recentFam.has(x.fam)) score += W.recent
         if (ctx.shownFam.has(x.fam)) score += W.reuse
         score -= W.pref * prefOf(ctx.prefs, x.key)
@@ -237,10 +233,7 @@ export function planToSlots(plan, people, allCombos) {
     slots[`${dk}-comida`] = meal(plan.L)
     slots[`${dk}-cena`] = meal(plan.D)
     slots[`${dk}-desayuno`] = makeByPersonSlot(Object.fromEntries(people.map(p => [p.id, meal(plan.B[p.id])])))
-    slots[`${dk}-merienda`] = makeByPersonSlot(Object.fromEntries(people.map(p => {
-      const port = portableDays(p).includes(i) && allCombos[MARIA_MERIENDA_PORTATIL]
-      return [p.id, meal(port ? MARIA_MERIENDA_PORTATIL : plan.S[p.id])]
-    })))
+    slots[`${dk}-merienda`] = makeByPersonSlot(Object.fromEntries(people.map(p => [p.id, meal(plan.S[p.id])])))
   })
   return slots
 }
@@ -296,6 +289,8 @@ export function evaluatePlan(plan, people, allIng, allCombos, ctx) {
   const vegOf = c => new Set((c?.items ?? []).filter(it => (it.p?.grams ?? 0) >= 60 && tagsOf(it.k, allIng).includes('veg')).map(it => it.k))
   const lv = vegOf(lc), sharedVeg = [...vegOf(dc)].filter(k => lv.has(k))
   score += W.sameVeg * sharedVeg.length * PLAN_DAYS.length * people.length
+  const jit = ctx.jit ?? (() => 0)
+  score += jit(plan.L) + jit(plan.D) + people.reduce((t, p) => t + (jit(plan.B[p.id]) + jit(plan.S[p.id])) / 2, 0)
   for (const k of [plan.L, plan.D]) {
     if (ctx.recent.has(k) || ctx.recentFam.has(famOfKey(k, allCombos))) score += W.recent
     score -= W.pref * prefOf(ctx.prefs, k)
@@ -380,17 +375,40 @@ function pickDiverse(exact, count, fam, locked) {
  */
 export function generateSmartWeeks({
   allIng, allCombos, people, priority = 'price', vegMin = VEG_DAILY_MIN, seed = 0,
-  shown = [], exclude = [], prefs = {}, recent = [], locks = {}, stock = {}, source = 'dishes', count = 3,
+  shown = [], exclude = [], prefs = {}, recent = [], locks = {}, stock = {}, source = 'dishes', country = null, count = 3,
 }) {
   const t0 = performance.now()
-  // Por ingredientes: se componen platos nuevos y se suman al catálogo.
-  let generated = null
+  // Fuentes de comidas y cenas:
+  //   dishes      → el catálogo (y tus platos);
+  //   ingredients → platos compuestos de ingredientes (composeDishes);
+  //   country     → recetas de un país (cuisines.js) + platos del catálogo de ese país;
+  //   surprise    → todo mezclado y al azar: sin prioridad, pero con las reglas.
+  let generated = null, poolKeys = null
   if (source === 'ingredients') {
     generated = composeDishes(allIng, allCombos, { stock })
-    allCombos = { ...allCombos, ...generated }
+    poolKeys = new Set(Object.keys(generated))
+  } else if (source === 'country') {
+    generated = cuisineDishes(allIng, country)
+    const fromCatalog = Object.keys(allCombos).filter(k => !k.startsWith('custom-') && (country ? catalogCountry(k) === country : catalogCountry(k)))
+    poolKeys = new Set([...Object.keys(generated), ...fromCatalog])
+  } else if (source === 'surprise') {
+    generated = { ...composeDishes(allIng, allCombos, { stock, limit: 40 }), ...cuisineDishes(allIng) }
+    // Cada «Surprise» saca al azar unos 45 platos de todo lo posible (rápido
+    // también en el móvil, y cada vez distinto).
+    const everything = [...Object.keys(allCombos), ...Object.keys(generated)].filter(k => {
+      const m = (generated[k] ?? allCombos[k])?.meals ?? []
+      return m.includes('comida') || m.includes('cena')
+    })
+    const share = Math.min(1, 45 / Math.max(1, everything.length))
+    poolKeys = new Set(everything.filter(k => hash(`${seed}:pick:${k}`) / 4294967295 < share))
+    for (const k of [locks.L, locks.D]) if (k) poolKeys.add(k)
   }
+  if (generated) allCombos = { ...allCombos, ...generated }
+  // Azar reproducible por semilla: en «surprise» pesa tanto como el precio.
+  const amp = source === 'surprise' ? 12 : source === 'country' ? 3 : 0
+  const jit = amp ? k => (k ? (hash(`${seed}:j:${k}`) / 4294967295 * 2 - 1) * amp : 0) : () => 0
   const ctx = {
-    priority, vegMin, seed, prefs, locks, stock, source, solMin: SOLUBLE_FIBER_DAILY_MIN,
+    priority: source === 'surprise' || source === 'country' ? 'price' : priority, vegMin, seed, prefs, locks, stock, source, poolKeys, jit, solMin: SOLUBLE_FIBER_DAILY_MIN,
     shown: new Set(shown), exclude: new Set(exclude), recent: new Set(recent),
     recentFam: new Set(recent.map(k => famOfKey(k, allCombos)).filter(Boolean)),
   }
