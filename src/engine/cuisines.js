@@ -1,149 +1,235 @@
-// ─── Cocinas del mundo ──────────────────────────────────────────────────────
-// Para «Countries»: recetas tipo de cada país escritas como plantillas de
-// ingredientes (nunca platos del catálogo). Cada hueco admite alternativas ('chicken-thigh*|chicken-leg*')
-// y se elige la que haya y salga más barata (por g de proteína en la
-// proteína, por coste en el resto), así que los precios de hoy y los
-// ingredientes nuevos cuentan. Si falta algo imprescindible, el plato no sale.
-// Las plantillas salen como platos compuestos (`custom-gen-…`): al cargar o
-// guardar la semana se quedan en Dishes como tuyos.
+// ─── Cocinas del mundo (por algoritmo) ──────────────────────────────────────
+// Para «Countries» no hay recetas escritas: cada país es un PERFIL de sabor
+// (qué proteínas, bases, verduras y condimentos le pegan, con un peso de 0 a
+// 1) y el algoritmo compone platos con TUS ingredientes que encajan:
+// proteína + base + 1–2 verduras + 1–2 condimentos del país + AOVE.
+// Los perfiles leen el nombre del ingrediente, así que lo que añadas en
+// Ingredientes (orégano, albahaca, parmesano, salsa de soja…) entra solo y
+// da más platos y más variados. `missingFor` dice qué condimentos típicos
+// faltan para cada país.
+// Las mismas reglas de siempre las pone después la semana inteligente
+// (carne roja nunca en la cena, base distinta, digestión, fibra, kcal…).
 
-import { ingCost, ingProt } from './calc'
-import { GEN_PREFIX } from './composeDishes'
+import { GEN_PREFIX, ingredientPools, learnPortions, median, prettyName, vegName, lower } from './composeDishes'
+import { tagsOf, starchFamily } from '../lib/tags'
+import { packOf } from '../lib/packs'
 
-export const COUNTRIES = [
-  { id: 'es', label: 'Spain', flag: '🇪🇸' }, { id: 'fr', label: 'France', flag: '🇫🇷' },
-  { id: 'it', label: 'Italy', flag: '🇮🇹' }, { id: 'gr', label: 'Greece', flag: '🇬🇷' },
-  { id: 'ch', label: 'Switzerland', flag: '🇨🇭' }, { id: 'us', label: 'USA', flag: '🇺🇸' },
-  { id: 'mx', label: 'Mexico', flag: '🇲🇽' }, { id: 'uk', label: 'UK', flag: '🇬🇧' },
-  { id: 'me', label: 'Middle East', flag: '🇱🇧' },
+const P = (id, label, flag, adj, prof) => ({ id, label, flag, adj, ...prof })
+
+// [regex sobre «clave + nombre», peso]. Peso 0 o sin coincidencia = no encaja.
+export const PROFILES = [
+  P('es', 'Spain', '🇪🇸', 'Spanish-style', {
+    protein: [[/chicken|pork|cod|hake|mussel|octopus|squid|shrimp|prawn|sardine|chorizo/, 1], [/turkey/, 0.6], [/beef|lamb/, 0.5]],
+    base: [[/potato|rice|chickpea|lentil|white-bean|alubia/, 1], [/pinto|romano|cranberry/, 0.8], [/pasta|noodle/, 0.2]],
+    veg: [[/pepper|tomato|green-bean|artichoke|spinach|pea\b|peas/, 1], [/zucchini|carrot|mushroom|eggplant/, 0.6]],
+    flavor: [[/paprika|pimenton|saffron|chorizo/, 1], [/garlic|bay|white-wine|sherry/, 0.8], [/parsley|lemon|onion|vinegar/, 0.5]],
+    hints: ['saffron', 'smoked paprika', 'chorizo', 'sherry vinegar'],
+  }),
+  P('fr', 'France', '🇫🇷', 'French-style', {
+    protein: [[/chicken|pork-tenderloin|cod|mussel|salmon|trout|duck/, 1], [/turkey|beef|lamb|egg/, 0.8], [/pork/, 0.6]],
+    base: [[/potato|green-lentil|puy/, 1], [/white-bean|flageolet/, 0.7], [/rice/, 0.6], [/pasta/, 0.3]],
+    veg: [[/carrot|leek|mushroom|green-bean|haricot/, 1], [/zucchini|spinach|pea|tomato|pepper/, 0.6]],
+    flavor: [[/\bbutter\b|white-wine|mustard|dijon|thyme|shallot|tarragon|herbes/, 1], [/cream|sour-cream|bay|parsley/, 0.8], [/garlic|lemon|onion/, 0.5]],
+    hints: ['thyme', 'dijon mustard', 'shallot', 'tarragon', 'crème fraîche'],
+  }),
+  P('it', 'Italy', '🇮🇹', 'Italian-style', {
+    protein: [[/chicken|mussel|clam|ground-beef|ground-pork|sausage|meatball/, 1], [/cod|egg|turkey|tuna/, 0.7], [/pork/, 0.5]],
+    base: [[/pasta|spaghetti|penne|gnocchi|polenta/, 1], [/rice|arborio/, 0.8], [/white-bean|cannellini|chickpea/, 0.7], [/potato/, 0.4]],
+    veg: [[/tomato|passata|zucchini|artichoke|eggplant/, 1], [/spinach|broccoli|pepper|mushroom|kale/, 0.8], [/green-bean|pea/, 0.5]],
+    flavor: [[/pesto|basil|oregano|parmesan|mozzarella|passata|balsamic/, 1], [/ricotta|garlic|white-wine|rosemary/, 0.8], [/lemon|onion|parsley/, 0.5]],
+    hints: ['basil', 'oregano', 'parmesan', 'mozzarella', 'balsamic vinegar'],
+  }),
+  P('gr', 'Greece', '🇬🇷', 'Greek-style', {
+    protein: [[/chicken|lamb|octopus|squid/, 1], [/pork|cod|ground-beef/, 0.8], [/egg/, 0.6]],
+    base: [[/potato|rice|white-bean|gigantes|orzo/, 1], [/chickpea|lentil/, 0.8], [/pasta/, 0.6]],
+    veg: [[/tomato|zucchini|spinach|green-bean|eggplant/, 1], [/pepper|cucumber|artichoke/, 0.8], [/carrot|cabbage/, 0.4]],
+    flavor: [[/lemon|feta|oregano|dill|greek-yogurt|olive\b|olives/, 1], [/mint|yogurt|garlic/, 0.7], [/cucumber|onion|parsley/, 0.5]],
+    hints: ['oregano', 'dill', 'kalamata olives', 'mint'],
+  }),
+  P('ch', 'Switzerland', '🇨🇭', 'Swiss-style', {
+    protein: [[/pork|chicken|veal|sausage/, 1], [/turkey|egg|beef/, 0.8], [/cod|trout|perch/, 0.7]],
+    base: [[/potato|pasta|spätzle|spaetzle/, 1], [/rice/, 0.7]],
+    veg: [[/carrot|mushroom|leek|cabbage|green-bean/, 1], [/spinach|pea|broccoli/, 0.6]],
+    flavor: [[/\bbutter\b|gruy|emmental|raclette|cheese|cheddar/, 1], [/cream|white-wine|milk|nutmeg/, 0.8], [/applesauce|apple|mustard|parsley/, 0.6]],
+    hints: ['gruyère', 'emmental', 'nutmeg', 'cream'],
+  }),
+  P('us', 'USA', '🇺🇸', 'American-style', {
+    protein: [[/chicken|turkey|ground-beef|ribs/, 1], [/pork|sausage|egg/, 0.8], [/cod|shrimp|salmon/, 0.7]],
+    base: [[/potato|sweet-potato|mac|pasta|corn/, 1], [/rice|black-bean|kidney-bean|pinto/, 0.8]],
+    veg: [[/green-bean|broccoli|corn|cabbage|coleslaw/, 1], [/carrot|pepper|celery|tomato/, 0.7]],
+    flavor: [[/cheddar|bbq|barbecue|ketchup|cajun|ranch/, 1], [/mustard|honey|paprika|\bbutter\b|sour-cream|taco/, 0.7], [/onion|garlic|vinegar|celery/, 0.5]],
+    hints: ['bbq sauce', 'cajun seasoning', 'hot sauce'],
+  }),
+  P('mx', 'Mexico', '🇲🇽', 'Mexican-style', {
+    protein: [[/chicken|pork-shoulder|pork-loin|ground-beef|egg|carnitas/, 1], [/turkey|cod|shrimp/, 0.8]],
+    base: [[/rice|black-bean|pinto|kidney-bean|masa|tortilla|corn/, 1], [/potato/, 0.3]],
+    veg: [[/pepper|tomato|jalape|zucchini|corn|cabbage/, 1], [/carrot|spinach/, 0.4]],
+    flavor: [[/cumin|lime|jalape|taco|avocado|cilantro|chipotle|salsa/, 1], [/sour-cream|paprika|cheddar/, 0.6], [/onion|garlic|lemon/, 0.5]],
+    hints: ['cilantro', 'chipotle', 'salsa', 'corn tortillas'],
+    allowBase: /masa|tortilla|corn/i,
+  }),
+  P('uk', 'UK', '🇬🇧', 'British-style', {
+    protein: [[/chicken|lamb|beef|sausage|cod|haddock/, 1], [/pork|turkey|egg/, 0.7]],
+    base: [[/potato/, 1], [/rice|pasta/, 0.3]],
+    veg: [[/pea\b|peas|carrot|leek|cabbage|broccoli/, 1], [/mushroom|green-bean|squash/, 0.6]],
+    flavor: [[/\bbutter\b|worcester|gravy|mint|mustard/, 1], [/milk|cheddar|bay|thyme/, 0.7], [/onion|parsley/, 0.5]],
+    hints: ['worcestershire sauce', 'gravy', 'mint', 'thyme'],
+  }),
+  P('me', 'Middle East', '🇱🇧', 'Middle Eastern-style', {
+    protein: [[/chicken|lamb/, 1], [/ground-beef|egg|kofta/, 0.8], [/cod/, 0.6]],
+    base: [[/rice|chickpea|lentil|bulgur|couscous|freekeh/, 1], [/potato/, 0.5]],
+    veg: [[/tomato|cucumber|eggplant|zucchini|cauliflower/, 1], [/spinach|pepper|green-bean|carrot/, 0.7]],
+    flavor: [[/tahini|cumin|sumac|za.?atar|lemon/, 1], [/yogurt|mint|parsley|cinnamon|garlic/, 0.7], [/paprika|onion/, 0.5]],
+    hints: ['sumac', "za'atar", 'bulgur', 'mint'],
+  }),
 ]
+export const COUNTRIES = PROFILES.map(({ id, label, flag }) => ({ id, label, flag }))
 export const COUNTRY_LABEL = Object.fromEntries(COUNTRIES.map(c => [c.id, `${c.flag} ${c.label}`]))
 
-const CHICKEN = 'chicken-thigh*|chicken-leg*|chicken-drumstick*'
-const BREAST = 'chicken-breast*|chicken-thigh-boneless'
-const WHITE = `${CHICKEN}|turkey-drumstick`
-const TENDER = 'pork-tenderloin*'
-const RIBS = 'pork-ribs|pork-side-ribs-costco|pork-back-ribs-costco'
-const PEPPER = 'green-pepper|yellow-pepper'
-const ZUC = 'zucchini*'
-const TOMS = 'canned-tomatoes|peeled-tomatoes|passata'
+const textOf = (key, ing) => `${key} ${ing?.name ?? ''}`.toLowerCase()
+function aff(list, key, ing) {
+  const t = textOf(key, ing)
+  let best = 0
+  for (const [re, w] of list) if (w > best && re.test(t)) best = w
+  return best
+}
 
-// [patrón, cantidad, unidad] — unidad 'g' por defecto, 'u' unidades, 'ml';
-// sin cantidad = una pizca (especias, precio fijo). `?` al final del patrón:
-// opcional (si no está, el plato sale igual).
-const R = (country, name, meals, items) => ({ country, name, meals, items })
-const B = ['comida', 'cena'], L = ['comida'], D = ['cena']
+const ALWAYS = /^(evoo|salt|water|olive-oil|black-pepper)$/
+const MAIN_TAGS = ['white-meat', 'red-meat', 'fish', 'seafood', 'egg', 'starch', 'legume']
+const pricedAny = ing => ing && !ing.pend && !ing.hideInTable &&
+  (ing.per100 != null || ing.perUnit != null || ing.perML != null || ing.perServing != null || ing.flat != null)
 
-export const RECIPES = [
-  // España
-  R('es', 'Chicken chilindrón with rice', B, [[CHICKEN, 160], ['rice', 75], [TOMS, 100], [PEPPER, 100], ['paprika'], ['evoo', 15, 'ml']]),
-  R('es', 'Lentil stew with pork ribs and carrot', L, [[RIBS, 120], ['green-lentils', 80], ['carrot', 80], ['bay-leaves'], ['paprika'], ['evoo', 10, 'ml']]),
-  R('es', 'Basque-style cod with potatoes and peas', D, [['cod', 160], ['potato', 250], ['frozen-peas', 60], ['white-wine?', 30, 'ml'], ['dried-parsley?'], ['evoo', 15, 'ml']]),
-  R('es', 'Spanish potato omelette', D, [['eggs', 3, 'u'], ['potato', 250], ['evoo', 20, 'ml']]),
-  R('es', 'Chicken paella with green beans', B, [[CHICKEN, 150], ['rice', 80], ['green-beans', 90], [TOMS, 60], ['paprika'], ['evoo', 15, 'ml']]),
-  R('es', 'Galician octopus with potatoes', B, [['octopus', 160], ['potato', 250], ['paprika'], ['evoo', 20, 'ml']]),
-  R('es', 'Chickpeas with spinach and egg', B, [['chickpeas', 80], ['frozen-spinach', 130], ['eggs', 2, 'u'], ['cumin'], ['paprika'], ['evoo', 15, 'ml']]),
-  // Francia
-  R('fr', 'Chicken basquaise with rice', B, [[CHICKEN, 160], ['rice', 75], [PEPPER, 120], [TOMS, 80], ['evoo', 15, 'ml']]),
-  R('fr', 'Ratatouille with turkey and rice', B, [['turkey-drumstick', 150], ['rice', 75], [ZUC, 120], [PEPPER, 80], [TOMS, 80], ['evoo', 15, 'ml']]),
-  R('fr', 'Moules marinières with roast potatoes', B, [['mussels', 220], ['potato', 250], ['white-wine?', 30, 'ml'], ['dried-parsley?'], ['evoo', 15, 'ml']]),
-  R('fr', 'Cod provençale with potatoes', D, [['cod', 160], ['potato', 250], [TOMS, 80], [ZUC, 100], ['evoo', 15, 'ml']]),
-  R('fr', 'Hachis parmentier', L, [['ground-beef', 120], ['potato', 250], ['carrot', 60], ['whole-milk', 60], ['butter', 8], ['evoo', 5, 'ml']]),
-  R('fr', 'Turkey blanquette with rice and mushrooms', B, [['turkey-drumstick', 150], ['rice', 75], ['carrot', 90], ['mushrooms', 80], ['sour-cream?', 30], ['evoo', 10, 'ml']]),
-  R('fr', 'Puy lentils with pork tenderloin', B, [[TENDER, 130], ['green-lentils', 80], ['carrot', 80], ['bay-leaves'], ['evoo', 15, 'ml']]),
-  // Italia
-  R('it', 'Pasta al ragù', L, [['ground-beef', 120], ['pasta', 90], [TOMS, 120], ['carrot', 50], ['evoo', 10, 'ml']]),
-  R('it', 'Pasta with chicken and zucchini', B, [[BREAST, 140], ['pasta', 90], [ZUC, 150], ['evoo', 15, 'ml']]),
-  R('it', 'Chicken cacciatore with potatoes', B, [[CHICKEN, 160], ['potato', 250], [TOMS, 100], ['mushrooms', 70], [PEPPER, 60], ['evoo', 15, 'ml']]),
-  R('it', 'Pasta with mussels and tomato', B, [['mussels', 200], ['pasta', 90], [TOMS, 80], ['dried-parsley?'], ['evoo', 15, 'ml']]),
-  R('it', 'Zucchini and potato frittata', D, [['eggs', 3, 'u'], [ZUC, 130], ['potato', 200], ['evoo', 15, 'ml']]),
-  R('it', 'Cod livornese with potatoes', D, [['cod', 160], ['potato', 250], [TOMS, 100], ['evoo', 15, 'ml']]),
-  R('it', 'Pesto pasta with chicken and green beans', B, [[BREAST, 130], ['pasta', 90], ['green-beans', 100], ['pesto', 20], ['evoo', 5, 'ml']]),
-  // Grecia
-  R('gr', 'Chicken souvlaki with rice and salad', B, [[CHICKEN, 160], ['rice', 75], ['tomato', 100], ['cucumber', 80], ['greek-yogurt*|cow-yogurt', 50], ['lemon', 0.5, 'u'], ['evoo', 15, 'ml']]),
-  R('gr', 'Greek lemon chicken with potatoes', B, [[CHICKEN, 160], ['potato', 260], ['lemon', 0.5, 'u'], ['evoo', 20, 'ml']]),
-  R('gr', 'White beans plaki with cod', B, [['white-beans', 80], ['cod', 130], [TOMS, 100], ['carrot', 60], ['evoo', 15, 'ml']]),
-  R('gr', 'Moussaka-style beef, potato and zucchini', L, [['ground-beef', 120], ['potato', 200], [ZUC, 120], [TOMS, 80], ['greek-yogurt*|cow-yogurt', 40], ['evoo', 10, 'ml']]),
-  R('gr', 'Octopus with orzo and tomato', B, [['octopus', 160], ['pasta', 85], [TOMS, 100], ['evoo', 15, 'ml']]),
-  R('gr', 'Spanakorizo with eggs and feta', D, [['rice', 70], ['frozen-spinach', 150], ['eggs', 2, 'u'], ['feta*', 30], ['lemon', 0.5, 'u'], ['evoo', 15, 'ml']]),
-  R('gr', 'Fasolakia with chicken and potatoes', B, [[CHICKEN, 150], ['green-beans', 150], ['potato', 200], [TOMS, 80], ['evoo', 15, 'ml']]),
-  // Suiza
-  R('ch', 'Rösti with fried eggs', D, [['potato', 300], ['eggs', 3, 'u'], ['butter', 8], ['evoo', 10, 'ml']]),
-  R('ch', 'Zurich-style pork with mushrooms and rösti', B, [[TENDER, 150], ['mushrooms', 100], ['sour-cream?', 30], ['white-wine?', 30, 'ml'], ['potato', 250], ['evoo', 10, 'ml']]),
-  R('ch', 'Älplermagronen with applesauce', L, [['pasta', 80], ['potato', 150], ['cheddar', 35], ['whole-milk', 60], ['cooked-ham', 50], ['applesauce?', 60], ['evoo', 5, 'ml']]),
-  R('ch', 'Swiss chicken with carrots and potatoes', B, [[CHICKEN, 160], ['potato', 250], ['carrot', 120], ['butter', 8], ['dried-parsley?'], ['evoo', 10, 'ml']]),
-  R('ch', 'Ticino risotto with chicken and mushrooms', B, [[CHICKEN, 150], ['rice', 80], ['mushrooms', 100], ['cheddar?', 15], ['white-wine?', 30, 'ml'], ['evoo', 15, 'ml']]),
-  R('ch', 'Bernese pork tenderloin with rice and green beans', B, [[TENDER, 150], ['rice', 75], ['green-beans', 130], ['butter', 8], ['evoo', 10, 'ml']]),
-  R('ch', 'Swiss turkey with spätzle-style pasta and carrots', B, [['turkey-drumstick', 150], ['pasta', 85], ['carrot', 120], ['butter', 8], ['evoo', 10, 'ml']]),
-  R('ch', 'Lake-style cod with butter and green beans', D, [['cod', 160], ['potato', 230], ['green-beans', 120], ['butter', 8], ['lemon', 0.5, 'u'], ['evoo', 5, 'ml']]),
-  // EE. UU.
-  R('us', 'BBQ ribs with potatoes and coleslaw', L, [[RIBS, 150], ['potato', 250], ['cabbage', 100], ['carrot', 50], ['vinegar', 10, 'ml'], ['honey', 10], ['evoo', 10, 'ml']]),
-  R('us', 'Chili con carne with rice', L, [['ground-beef', 110], ['kidney-beans|black-beans', 60], ['rice', 60], [TOMS, 100], ['cumin'], ['paprika'], ['evoo', 10, 'ml']]),
-  R('us', 'Southern chicken, mash and green beans', B, [[CHICKEN, 160], ['potato', 250], ['whole-milk', 60], ['butter', 8], ['green-beans', 120], ['evoo', 10, 'ml']]),
-  R('us', 'Turkey jambalaya', B, [['turkey-drumstick', 150], ['rice', 80], [PEPPER, 80], ['celery?'], [TOMS, 80], ['paprika'], ['evoo', 15, 'ml']]),
-  R('us', 'Mac and cheese with chicken and broccoli', B, [[BREAST, 120], ['pasta', 85], ['cheddar', 35], ['whole-milk', 80], ['broccoli', 120], ['evoo', 5, 'ml']]),
-  R('us', 'New England cod chowder', D, [['cod', 160], ['potato', 220], ['whole-milk', 120], ['carrot', 60], ['celery?'], ['butter', 8]]),
-  // México
-  R('mx', 'Chicken tinga with rice', B, [[CHICKEN, 160], ['rice', 75], [TOMS, 120], ['jalapeno?', 0.5, 'u'], ['evoo', 15, 'ml']]),
-  R('mx', 'Pork carnitas with black beans', L, [['pork-shoulder-costco|pork-loin*', 140], ['black-beans', 80], ['lime|lemon', 0.5, 'u'], ['cumin'], ['cabbage', 80], ['evoo', 10, 'ml']]),
-  R('mx', 'Turkey fajitas with rice and peppers', B, [['turkey-drumstick', 150], ['rice', 75], [PEPPER, 130], ['cumin'], ['paprika'], ['evoo', 15, 'ml']]),
-  R('mx', 'Huevos a la mexicana with beans and tortillas', D, [['eggs', 3, 'u'], ['masa-harina', 60], ['tomato', 120], ['black-beans', 50], ['jalapeno?', 0.5, 'u'], ['evoo', 15, 'ml']]),
-  R('mx', 'Cod tacos with cabbage and avocado', B, [['cod', 160], ['masa-harina', 70], ['cabbage', 90], ['avocado', 50], ['lime|lemon', 0.5, 'u'], ['evoo', 10, 'ml']]),
-  // Reino Unido
-  R('uk', "Shepherd's pie", L, [['lamb|ground-beef', 120], ['potato', 250], ['carrot', 60], ['frozen-peas', 50], ['whole-milk', 50], ['butter', 8]]),
-  R('uk', 'Fish pie with peas', D, [['cod', 160], ['potato', 250], ['frozen-peas', 70], ['whole-milk', 80], ['butter', 8]]),
-  R('uk', 'Chicken and leek pie filling with rice', B, [[CHICKEN, 150], ['rice', 75], ['leek', 90], ['carrot', 60], ['whole-milk', 60], ['evoo', 10, 'ml']]),
-  R('uk', 'Sunday roast chicken with carrots and peas', B, [[CHICKEN, 170], ['potato', 250], ['carrot', 90], ['frozen-peas', 60], ['evoo', 15, 'ml']]),
-  // Oriente Medio
-  R('me', 'Chicken shawarma with rice and salad', B, [[CHICKEN, 160], ['rice', 75], ['tomato', 90], ['cucumber', 80], ['tahini?', 15], ['cumin'], ['paprika'], ['lemon', 0.5, 'u'], ['evoo', 10, 'ml']]),
-  R('me', 'Mujadara with eggs', D, [['green-lentils', 70], ['rice', 50], ['eggs', 2, 'u'], ['cumin'], ['evoo', 15, 'ml']]),
-  R('me', 'Kofta with rice and tomato salad', L, [['ground-beef|lamb', 130], ['rice', 75], ['tomato', 100], ['cucumber', 80], ['cumin'], ['evoo', 10, 'ml']]),
-  R('me', 'Baked cod with tahini and potatoes', D, [['cod', 160], ['potato', 230], ['tahini?', 15], ['lemon', 0.5, 'u'], [ZUC, 100], ['evoo', 10, 'ml']]),
-]
+// Ración de un condimento: la del catálogo si la hay; si no, según cómo se vende.
+function flavorPortion(key, ing, learned) {
+  const l = learned[key]
+  if (l?.grams.length) return { grams: median(l.grams) }
+  if (l?.units.length) return { units: median(l.units) }
+  if (l?.ml.length) return { ml: median(l.ml) }
+  if (ing.flat != null || ing.perServing != null) return {}
+  if (ing.perUnit != null) return { units: /lemon|lime/.test(key) ? 0.5 : 1 }
+  if (ing.perML != null) return { ml: 30 }
+  const kc = ing.kc ?? 100
+  return { grams: kc >= 500 ? 12 : kc >= 250 ? 25 : kc >= 100 ? 40 : 60 }
+}
 
+/** Condimentos típicos del país que aún no están en Ingredientes. */
+export function missingFor(allIng, country) {
+  const prof = PROFILES.find(p => p.id === country)
+  if (!prof) return []
+  const names = Object.entries(allIng).map(([k, i]) => textOf(k, i))
+  return prof.hints.filter(h => {
+    const word = h.toLowerCase().split(' ')[0].replace(/[èé]/g, 'e').slice(0, 6)
+    return !names.some(n => n.normalize('NFD').replace(/[̀-ͯ]/g, '').includes(word))
+  })
+}
 
-const priced = ing => ing && !ing.pend && !ing.hideInTable && (ing.per100 != null || ing.perUnit != null || ing.perML != null || ing.perServing != null || ing.flat != null)
+const PLURAL = { potato: 'potatoes' }
+// Familia de un ingrediente para no repetir («feta & feta», «tomato, tomatoes»,
+// «whole milk & skim milk»): la palabra que lo define.
+const FAMILIES = ['yogurt', 'milk', 'onion', 'parsley', 'feta', 'cheese', 'cheddar', 'butter', 'mustard', 'ketchup', 'lemon', 'lime', 'vinegar', 'wine', 'tomato', 'pepper', 'zucchini', 'bean', 'pea', 'spinach', 'cream', 'garlic', 'paprika', 'cumin', 'tahini', 'pesto', 'passata', 'honey', 'avocado', 'jalape']
+function familyOfIng(key, ing) {
+  const t = textOf(key, ing).replace(/tomatoes/g, 'tomato')
+  if (/passata/.test(t)) return 'tomato'
+  if (/sour-cream|sour cream/.test(t)) return 'cream'
+  if (/cheddar|cheese|gruy|emmental|raclette|parmesan|mozzarella/.test(t)) return 'cheese'
+  return FAMILIES.find(f => t.includes(f)) ?? key
+}
+// Nombre corto y en minúsculas: sin marca, sin «5% plain», sin lo que va tras la coma.
+function shortName(key, ing, maxWords = 3) {
+  const fam = familyOfIng(key, ing)
+  if (FAMILIES.includes(fam) && !['bean', 'pea', 'pepper', 'tomato', 'onion', 'cheese'].includes(fam)) return fam === 'jalape' ? 'jalapeño' : fam
+  let n = prettyName(ing).split(',')[0].replace(/\b\d+%?\b|%/g, '').replace(/\b(organic|frozen|fresh|plain|a1)\b/gi, '')
+  if (n.includes(' / ')) n = n.split(' / ').pop()
+  return n.replace(/\s+/g, ' ').trim().toLowerCase().split(' ').slice(0, maxWords).join(' ')
+}
+function joinAnd(xs) { return xs.length <= 1 ? xs.join('') : `${xs.slice(0, -1).join(', ')} & ${xs[xs.length - 1]}` }
 
-function candidates(pattern, allIng) {
-  const out = []
-  for (const alt of pattern.split('|')) {
-    if (alt.endsWith('*')) {
-      const pre = alt.slice(0, -1)
-      for (const k of Object.keys(allIng)) if (k.startsWith(pre) && priced(allIng[k])) out.push(k)
-    } else if (priced(allIng[alt])) out.push(alt)
+function composeFor(prof, allIng, allCombos, { stock = {}, limit = 24 } = {}) {
+  const learned = learnPortions(allCombos)
+  const pools = ingredientPools(allIng, allCombos, { allowBase: prof.allowBase })
+  const withAff = (list, which) => list.map(c => ({ ...c, a: aff(prof[which], c.key, c.ing) })).filter(c => c.a > 0)
+  const mains = withAff([...pools.proteins, ...pools.eggs], 'protein')
+  const bases = withAff([...pools.bases, ...pools.legumes], 'base')
+  const veg = withAff(pools.veg, 'veg')
+  const used = new Set([...mains, ...bases, ...veg].map(c => c.key))
+  const flavors = Object.entries(allIng)
+    .filter(([k, i]) => pricedAny(i) && !ALWAYS.test(k) && !used.has(k) && !tagsOf(k, allIng).some(t => MAIN_TAGS.includes(t) || t === 'nut'))
+    .map(([k, i]) => ({ key: k, ing: i, a: aff(prof.flavor, k, i), p: flavorPortion(k, i, learned), fam: familyOfIng(k, i) }))
+    .filter(f => f.a > 0)
+    .sort((x, y) => y.a - x.a)
+  if (!mains.length || !bases.length || !veg.length || !flavors.length) return {}
+
+  const vegSets = []
+  for (let i = 0; i < veg.length; i++) {
+    vegSets.push([veg[i]])
+    for (let j = i + 1; j < veg.length; j++) if (familyOfIng(veg[i].key, veg[i].ing) !== familyOfIng(veg[j].key, veg[j].ing)) vegSets.push([veg[i], veg[j]])
   }
-  return [...new Set(out)]
-}
+  const pantryOff = c => {
+    const have = stock[c.key] ?? 0
+    if (!(have > 0)) return 0
+    const pack = packOf(c.ing)
+    const per = pack?.price && pack.amount ? pack.price / pack.amount : 0
+    const g = c.p.grams ?? (c.p.units ?? 0) * (c.ing.unitGrams ?? 1)
+    return Math.min(have, g * 10) * per / 10
+  }
+  const out = []
+  for (const m of mains) for (const b of bases) for (const vs of vegSets) {
+    const parts = [m, b, ...vs]
+    const kcal = parts.reduce((s, c) => s + c.kcal, 0) + 135
+    const cost = parts.reduce((s, c) => s + c.cost - pantryOff(c), 0)
+    const prot = parts.reduce((s, c) => s + c.prot, 0)
+    const vg = vs.reduce((s, v) => s + (v.p.grams ?? 0), 0)
+    const flags = parts.reduce((s, c) => s + (c.tags.includes('legume') ? 1 : 0) + (c.tags.includes('insoluble') ? 1 : 0), 0)
+    const fit = m.a + b.a + vs.reduce((s, v) => s + v.a, 0) / vs.length
+    // Encaje con el país pesa tanto como el precio.
+    out.push({ m, b, vs, score: cost / kcal * 700 - prot * 0.02 - vg * 0.01 + flags * 0.4 - fit * 2 })
+  }
+  out.sort((x, y) => x.score - y.score)
 
-function portion(amount, unit) {
-  if (amount == null) return {}
-  if (unit === 'u') return { units: amount }
-  if (unit === 'ml') return { ml: amount }
-  return { grams: amount }
-}
-
-/** Platos de un país (o de todos con country = null) con los ingredientes de hoy. */
-export function cuisineDishes(allIng, country = null) {
-  const out = {}
-  for (const r of RECIPES) {
-    if (country && r.country !== country) continue
-    const items = []
-    let ok = true
-    for (const [pat0, amount, unit] of r.items) {
-      const optional = pat0.endsWith('?')
-      const pat = optional ? pat0.slice(0, -1) : pat0
-      const p = portion(amount, unit)
-      const cands = candidates(pat, allIng)
-      if (!cands.length) { if (optional) continue; ok = false; break }
-      // La más barata: por g de proteína si es la proteína del plato, si no por coste.
-      const metric = k => { const c = ingCost(k, p, allIng), pr = ingProt(k, p, allIng); return pr > 8 ? c / pr : c }
-      const k = cands.length === 1 ? cands[0] : cands.reduce((a, b) => (metric(b) < metric(a) ? b : a))
-      items.push({ k, p })
+  // Variedad (como composeDishes) y condimentos repartidos: primero los que
+  // más encajan y menos se han usado.
+  const perMain = {}, perPair = new Set(), perBase = {}, perVegSet = {}, perVeg = {}, flavorUse = {}
+  const vegCap = Math.max(3, Math.ceil(limit / Math.max(1, veg.length) * 2))
+  const res = {}
+  let n = 0
+  for (const d of out) {
+    const pair = `${d.m.kind}|${d.b.kind}`, bk = starchFamily(d.b.key, allIng) ?? d.b.key
+    const vsKey = d.vs.map(v => v.key).join('+')
+    if (perPair.has(pair) || (perMain[d.m.kind] ?? 0) >= 3 || (perBase[bk] ?? 0) >= Math.ceil(limit / 2)) continue
+    if ((perVegSet[vsKey] ?? 0) >= 2 || d.vs.some(v => (perVeg[v.key] ?? 0) >= vegCap)) continue
+    perPair.add(pair); perMain[d.m.kind] = (perMain[d.m.kind] ?? 0) + 1; perBase[bk] = (perBase[bk] ?? 0) + 1
+    perVegSet[vsKey] = (perVegSet[vsKey] ?? 0) + 1; d.vs.forEach(v => { perVeg[v.key] = (perVeg[v.key] ?? 0) + 1 })
+    // Dos condimentos de familias distintas (y distintas de las verduras).
+    const taken = new Set(d.vs.map(v => familyOfIng(v.key, v.ing)))
+    const fl = []
+    for (const f of [...flavors].sort((x, y) => (y.a - 0.35 * (flavorUse[y.key] ?? 0)) - (x.a - 0.35 * (flavorUse[x.key] ?? 0)))) {
+      if (taken.has(f.fam)) continue
+      fl.push(f); taken.add(f.fam)
+      if (fl.length === 2) break
     }
-    if (!ok) continue
-    const slug = r.name.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-    const id = `gen-${r.country}-${slug}`
-    out[GEN_PREFIX + id.slice(4)] = { name: r.name, meals: r.meals, items, generated: true, isCustom: true, customId: id, country: r.country }
+    fl.forEach(f => { flavorUse[f.key] = (flavorUse[f.key] ?? 0) + 1 })
+
+    const items = [d.m, d.b, ...d.vs].map(c => ({ k: c.key, p: { ...c.p } }))
+    fl.forEach(f => items.push({ k: f.key, p: { ...f.p } }))
+    items.push({ k: 'evoo', p: { ml: 15 } })
+    if (allIng.salt) items.push({ k: 'salt', p: { grams: 2 } })
+    const baseName = shortName(d.b.key, d.b.ing); const bn = PLURAL[baseName] ?? baseName
+    const extras = [...d.vs.map(v => lower(vegName(v.key, v.ing))), ...fl.map(f => shortName(f.key, f.ing, 2))]
+    const name = `${prof.adj} ${shortName(d.m.key, d.m.ing, 4)} with ${bn} (${joinAnd(extras)})`
+    const id = `gen-${prof.id}-${[d.m, d.b, ...d.vs, ...fl].map(c => c.key).join('+')}`
+    res[GEN_PREFIX + id.slice(4)] = { name, meals: ['comida', 'cena'], items, generated: true, isCustom: true, customId: id, country: prof.id }
+    if (++n >= limit) break
+  }
+  return res
+}
+
+/** Platos de un país (o de todos con country = null), compuestos con tus ingredientes. */
+export function cuisineDishes(allIng, allCombos, { country = null, stock = {}, limit } = {}) {
+  const out = {}
+  for (const prof of PROFILES) {
+    if (country && prof.id !== country) continue
+    Object.assign(out, composeFor(prof, allIng, allCombos, { stock, limit: limit ?? (country ? 30 : 10) }))
   }
   return out
 }
+

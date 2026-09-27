@@ -28,10 +28,10 @@ const NOT_BATCH_VEG = /parsley|jalape|lettuce|arugula|radish|cucumber|black-pepp
 // Variantes del mismo producto en otra tienda: una sola, la más barata.
 const kindOf = key => key.replace(/-(costco|foodland|farmboy|beretta|organic|generic|a1|ref|boneless)\b/g, '')
 
-function median(xs) { const s = [...xs].sort((a, b) => a - b); return s.length ? s[Math.floor(s.length / 2)] : null }
+export function median(xs) { const s = [...xs].sort((a, b) => a - b); return s.length ? s[Math.floor(s.length / 2)] : null }
 
 // Ración típica de cada ingrediente en comidas y cenas del catálogo.
-function learnPortions(allCombos) {
+export function learnPortions(allCombos) {
   const seen = {}
   for (const c of Object.values(allCombos)) {
     if (!(c.meals ?? []).some(m => m === 'comida' || m === 'cena') || c.isCustom) continue
@@ -68,26 +68,26 @@ const priced = (key, ing) => ing && !ing.pend && !ing.hideInTable &&
   (ing.kc != null || ing.kcu != null)
 
 const SHORT = { 'butternut-squash': 'Butternut squash', 'canned-tomatoes': 'Tomatoes', carrot: 'Carrots' }
-function vegName(key, ing) {
+export function vegName(key, ing) {
   if (SHORT[key]) return SHORT[key]
   let n = prettyName(ing)
   if (n.includes(' / ')) n = n.split(' / ').pop()
   n = n.replace(/\b(organic|frozen|fresh|A1)\b/gi, '').replace(/\s+/g, ' ').trim()
   return n.charAt(0).toUpperCase() + n.slice(1)
 }
-function prettyName(ing) {
+export function prettyName(ing) {
   const n = (ing.name ?? '').replace(/\s*\(.*?\)\s*/g, ' ').replace(/\s·\s/g, ' ').replace(/\s+/g, ' ').trim()
   const m = /^(\w+), (\w+)$/.exec(n) // «Squash, butternut» → «Butternut squash»
   return m ? `${m[2].charAt(0).toUpperCase()}${m[2].slice(1)} ${m[1].toLowerCase()}` : n
 }
-const lower = s => s.charAt(0).toLowerCase() + s.slice(1)
+export const lower = s => s.charAt(0).toLowerCase() + s.slice(1)
 function joinVeg(names) { return names.length === 2 ? `${names[0]} & ${names[1]}` : names[0] }
 
 /**
  * Ingredientes candidatos por papel: { proteins, eggs, bases, legumes, veg }.
  * Cada uno { key, ing, p (ración), kind, cost, prot, kcal }.
  */
-export function ingredientPools(allIng, allCombos) {
+export function ingredientPools(allIng, allCombos, { allowBase = null } = {}) {
   const learned = learnPortions(allCombos)
   const best = {} // kind → candidato más barato por g de proteína (o por kcal)
   const add = (role, key, ing) => {
@@ -104,7 +104,7 @@ export function ingredientPools(allIng, allCombos) {
     if (tags.includes('egg')) add('egg', key, ing)
     else if (['white-meat', 'red-meat', 'fish', 'seafood'].some(t => tags.includes(t))) { if (!NOT_MAIN.test(key)) add('protein', key, ing) }
     else if (tags.includes('legume') && tags.includes('starch')) add('legume', key, ing)
-    else if (tags.includes('starch')) { if (!NOT_BASE.test(`${key} ${ing.name}`)) add('base', key, ing) }
+    else if (tags.includes('starch')) { const t = `${key} ${ing.name}`; if (!NOT_BASE.test(t) || allowBase?.test(t)) add('base', key, ing) }
     else if (tags.includes('veg') && !tags.includes('fructan')) { if (!NOT_BATCH_VEG.test(key)) add('veg', key, ing) }
   }
   const all = Object.values(best)
