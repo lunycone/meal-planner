@@ -1,8 +1,9 @@
 import { useState } from 'react'
+import useStore from '../store/useStore'
 import Icon from '../components/ui/Icon'
 import { addDays, fmtMoney } from '../lib/mealplan'
-import { storeColor } from '../lib/stores'
-import useShoppingList, { CAT_PILL } from '../lib/useShoppingList'
+import { storeColor, catColor } from '../lib/stores'
+import useShoppingList from '../lib/useShoppingList'
 import { MHeader } from './MobileApp'
 
 // Compra en el móvil («modo súper»): progreso siempre a la vista, lista
@@ -13,6 +14,7 @@ export default function MCompra({ unseen, onIdeas }) {
   const [offset, setOffset] = useState(1)
   const [tab, setTab] = useState('buy')
   const { batchWindow, items, checked, toggleChecked, setHome } = useShoppingList(offset, 'batch')
+  useStore(s => s.storeColors); useStore(s => s.catColors) // repintar al cambiar colores
 
   const buy = items.filter(i => !i.home)
   const home = items.filter(i => i.home).sort((a, b) => a.name.localeCompare(b.name))
@@ -72,7 +74,7 @@ export default function MCompra({ unseen, onIdeas }) {
                   <span className="mc-name">{i.name}</span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span className="mp-muted mp-num" style={{ fontSize: 12.5 }}>{i.qty}</span>
-                    <span style={{ display: 'flex', gap: 2 }}>{days.map(d => <span key={d} style={{ width: 9, height: 6, borderRadius: 2, background: i.usedDays.has(d) ? (CAT_PILL[i.cat] ?? CAT_PILL.otro) : 'rgba(110,80,50,0.12)' }} />)}</span>
+                    <span style={{ display: 'flex', gap: 2 }}>{days.map(d => <span key={d} style={{ width: 9, height: 6, borderRadius: 2, background: i.usedDays.has(d) ? catColor(i.cat) : 'rgba(110,80,50,0.12)' }} />)}</span>
                   </span>
                 </span>
                 <span className="mp-num" style={{ fontSize: 14, fontWeight: 700 }}>{fmtMoney(i.cost)}</span>

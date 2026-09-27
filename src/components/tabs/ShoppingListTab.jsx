@@ -1,11 +1,10 @@
 import { useState } from 'react'
-import useStore from '../../store/useStore'
-import { CAT_ORDER, CAT_LABELS } from '../../data/ingredients'
+import useStore, { selectAllCats, selectCatOrder } from '../../store/useStore'
 import Icon from '../ui/Icon'
 import Segmented from '../ui/Segmented'
-import { storeColor } from '../../lib/stores'
+import { storeColor, catColor } from '../../lib/stores'
 import { DAY_KEYS, addDays, fmtMoney } from '../../lib/mealplan'
-import useShoppingList, { CAT_PILL } from '../../lib/useShoppingList'
+import useShoppingList from '../../lib/useShoppingList'
 
 const DAY_LETTER = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
@@ -29,6 +28,11 @@ export default function ShoppingListTab() {
   const [copied, setCopied] = useState(false)
 
   const { batchWindow, people, items, batidoAgg, checked, toggleChecked, setHome } = useShoppingList(batchOffset, viewMode)
+  const CAT_LABELS = useStore(selectAllCats)
+  const catOrderBase = useStore(selectCatOrder)
+  useStore(s => s.storeColors); useStore(s => s.catColors) // repintar al cambiar colores
+  // Categorías de la lista: las visibles en su orden y luego cualquier otra que traigan los ingredientes
+  const CAT_ORDER = [...catOrderBase, ...new Set(items.map(i => i.cat).filter(c => !catOrderBase.includes(c)))]
 
   const q = searchTerm.trim().toLowerCase()
   const buy = items.filter(i => !i.home)
@@ -145,7 +149,7 @@ export default function ShoppingListTab() {
                       <span className="compra-qty mp-num">{i.qty}</span>
                       {dayCols.map(d => (
                         <span key={d} style={{ display: 'flex', justifyContent: 'center' }}>
-                          <span className="compra-pill" style={i.usedDays.has(d) ? { background: CAT_PILL[i.cat] ?? CAT_PILL.otro, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)' } : undefined} />
+                          <span className="compra-pill" style={i.usedDays.has(d) ? { background: catColor(i.cat), boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.6)' } : undefined} />
                         </span>
                       ))}
                       <span className="mp-num" style={{ textAlign: 'right', fontSize: 13.5, fontWeight: 600 }}>{fmtMoney(i.cost)}</span>
@@ -224,7 +228,7 @@ export default function ShoppingListTab() {
               {byCat.map(({ c, cost }) => (
                 <div key={c} style={{ display: 'grid', gridTemplateColumns: '112px minmax(0, 1fr) 58px', gap: 8, alignItems: 'center', fontSize: 12.5 }}>
                   <span style={{ color: 'var(--c-ink-2)' }}>{CAT_LABELS[c] ?? c}</span>
-                  <span style={{ height: 7, borderRadius: 4, background: 'rgba(110,80,50,0.08)', overflow: 'hidden' }}><span style={{ display: 'block', height: '100%', width: `${cost / maxCat * 100}%`, borderRadius: 4, background: CAT_PILL[c] ?? CAT_PILL.otro, animation: 'mp-grow 1s var(--c-ease) both' }} /></span>
+                  <span style={{ height: 7, borderRadius: 4, background: 'rgba(110,80,50,0.08)', overflow: 'hidden' }}><span style={{ display: 'block', height: '100%', width: `${cost / maxCat * 100}%`, borderRadius: 4, background: catColor(c), animation: 'mp-grow 1s var(--c-ease) both' }} /></span>
                   <span className="mp-num" style={{ textAlign: 'right', fontWeight: 600 }}>{fmtMoney(cost)}</span>
                 </div>
               ))}
@@ -236,7 +240,7 @@ export default function ShoppingListTab() {
               <span style={{ fontSize: 15, fontWeight: 700 }}>When it's eaten</span>
               <span style={{ fontSize: 12.5, lineHeight: 1.5, color: 'var(--c-ink-2)' }}>Each row marks the days that product is in some dish.</span>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12.5 }}>
-                {catsPresent.map(c => <span key={c} style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ width: 18, height: 12, borderRadius: 4, background: CAT_PILL[c] ?? CAT_PILL.otro }} />{CAT_LABELS[c] ?? c}</span>)}
+                {catsPresent.map(c => <span key={c} style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ width: 18, height: 12, borderRadius: 4, background: catColor(c) }} />{CAT_LABELS[c] ?? c}</span>)}
               </div>
             </section>
           )}

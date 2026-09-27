@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
-import useStore, { selectAllIng, selectAllCats, selectAllCombos } from '../../store/useStore'
-import { CAT_ORDER, ING } from '../../data/ingredients'
+import useStore, { selectAllIng, selectAllCats, selectAllCombos, selectCatOrder } from '../../store/useStore'
+import StoresSheet from './StoresSheet'
+import { ING } from '../../data/ingredients'
 import { ingredientUnitType } from '../../engine/calc'
 import Overlay from '../ui/Overlay'
 import Icon from '../ui/Icon'
@@ -37,7 +38,10 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
   const allIng    = useStore(selectAllIng)
   const allCats   = useStore(selectAllCats)
   const allCombos = useStore(selectAllCombos)
-  const customCategories = useStore(s => s.customCategories)
+  const catOrder = useStore(selectCatOrder)
+  const extraStores = useStore(s => s.extraStores)
+  useStore(s => s.storeColors) // repintar al cambiar colores
+  const [manage, setManage] = useState(null)
   const ingredientOverrides = useStore(s => s.ingredientOverrides)
   const priceOverrides = useStore(s => s.priceOverrides)
   const setIngredientOverride = useStore(s => s.setIngredientOverride)
@@ -63,9 +67,9 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
   const dirty = !same(draft, initial)
   const U = UNIT[unit]
 
-  const stores = storesIn(allIng)
+  const stores = storesIn(allIng, extraStores)
   const storeNames = [...new Set([...stores.map(s => s.name), ...(draft.store && !stores.some(s => s.name === draft.store) ? [draft.store] : [])])]
-  const cats = [...CAT_ORDER, ...customCategories.map(c => c.key)]
+  const cats = catOrder.includes(draft.cat) ? catOrder : [...catOrder, draft.cat]
   const usedIn = useMemo(() => ingKey ? Object.entries(allCombos).filter(([, c]) => (c.items ?? []).some(it => it.k === ingKey) || (c.optionalItems ?? []).some(it => it.k === ingKey)).map(([k, c]) => ({ k, name: c.name })) : [], [ingKey, allCombos])
   const modified = !!(ingKey && (ingredientOverrides[ingKey] || priceOverrides[ingKey]))
 
@@ -130,7 +134,7 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
         <div className="ig-body">
           <section style={{ display: 'flex', flexDirection: 'column', gap: 16, minWidth: 0 }}>
             <div className="ig-field">
-              <span className="mp-eyebrow">Where to buy</span>
+              <span className="ig-field-head"><span className="mp-eyebrow">Where to buy</span><button type="button" className="ig-manage" onClick={() => setManage('stores')}>Edit stores</button></span>
               <div className="ig-chips">
                 {storeNames.map(s => {
                   const on = draft.store === s, c = storeColor(s)
@@ -151,7 +155,7 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
             </div>
 
             <div className="ig-field">
-              <span className="mp-eyebrow">Category</span>
+              <span className="ig-field-head"><span className="mp-eyebrow">Category</span><button type="button" className="ig-manage" onClick={() => setManage('cats')}>Edit categories</button></span>
               <div className="ig-chips">
                 {cats.map(k => {
                   const on = draft.cat === k
@@ -250,6 +254,7 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
           )}
         </div>
       </div>
+      {manage && <StoresSheet initialTab={manage} onClose={() => setManage(null)} />}
     </Overlay>
   )
 }

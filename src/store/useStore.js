@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist }  from 'zustand/middleware'
-import { ING, CAT_LABELS } from '../data/ingredients'
+import { ING, CAT_LABELS, CAT_ORDER } from '../data/ingredients'
+import { storeOf as storeOfIng, applyColorOverrides } from '../lib/stores'
 import { COMBO }            from '../data/combos'
 import { STORAGE_KEY, createStorageAdapter } from './storage'
 import { migrateWeekKeys } from '../utils/date'
@@ -211,6 +212,85 @@ const useStore = create(
       },
       removeCustomCategory(key) {
         set(s => ({ customCategories: s.customCategories.filter(c => c.key !== key) }))
+      },
+
+      // ── TIENDAS Y CATEGORÍAS: gestor (27 sep 2026) ──────────────────────
+      // Una tienda existe si algún ingrediente la lleva o si se añadió a mano
+      // (extraStores). Colores propios en storeColors / catColors; nombres de
+      // categoría cambiados en catLabels; categorías de fábrica quitadas en
+      // hiddenCats. Renombrar o borrar reescribe los ingredientes afectados
+      // en UNA sola escritura.
+      extraStores: [],
+      storeColors: {},
+      catColors:   {},
+      catLabels:   {},
+      hiddenCats:  [],
+      addStore(name, color) {
+        const n = name.trim()
+        if (!n) return
+        set(s => ({
+          extraStores: [...new Set([...(s.extraStores ?? []), n])],
+          storeColors: color ? { ...s.storeColors, [n]: color } : s.storeColors,
+        }))
+      },
+      setStoreColor(name, color) { set(s => ({ storeColors: { ...s.storeColors, [name]: color } })) },
+      renameStore(from, to) {
+        const n = to.trim()
+        if (!n || n === from) return
+        set(s => {
+          const all = selectAllIng(s)
+          const ov = { ...s.ingredientOverrides }
+          for (const [k, ing] of Object.entries(all)) if (storeOfIng(ing) === from) ov[k] = { ...ov[k], store: n }
+          const colors = { ...s.storeColors }
+          if (colors[from]) { colors[n] = colors[from]; delete colors[from] }
+          const extra = (s.extraStores ?? []).map(x => x === from ? n : x)
+          return { ingredientOverrides: ov, storeColors: colors, extraStores: [...new Set(extra)] }
+        })
+      },
+      deleteStore(name) {
+        set(s => {
+          const all = selectAllIng(s)
+          const ov = { ...s.ingredientOverrides }
+          for (const [k, ing] of Object.entries(all)) if (storeOfIng(ing) === name) ov[k] = { ...ov[k], store: '' }
+          const colors = { ...s.storeColors }; delete colors[name]
+          return { ingredientOverrides: ov, storeColors: colors, extraStores: (s.extraStores ?? []).filter(x => x !== name) }
+        })
+      },
+      addCategory(label, color) {
+        const key = 'custom-' + Date.now()
+        set(s => ({
+          customCategories: [...s.customCategories, { key, label: label.trim() }],
+          catColors: color ? { ...s.catColors, [key]: color } : s.catColors,
+        }))
+        return key
+      },
+      setCatColor(key, color) { set(s => ({ catColors: { ...s.catColors, [key]: color } })) },
+      renameCategory(key, label) {
+        const l = label.trim()
+        if (!l) return
+        set(s => s.customCategories.some(c => c.key === key)
+          ? { customCategories: s.customCategories.map(c => c.key === key ? { ...c, label: l } : c) }
+          : { catLabels: { ...s.catLabels, [key]: l } })
+      },
+      // Lo que llevaba esa categoría pasa a «Other».
+      deleteCategory(key) {
+        if (key === 'otro') return
+        set(s => {
+          const all = selectAllIng(s)
+          const ov = { ...s.ingredientOverrides }
+          const custom = { ...s.customIngredients }
+          for (const [k, ing] of Object.entries(all)) {
+            if (ing.cat !== key) continue
+            if (custom[k]) custom[k] = { ...custom[k], cat: 'otro' }
+            else ov[k] = { ...ov[k], cat: 'otro' }
+          }
+          const isCustom = s.customCategories.some(c => c.key === key)
+          return {
+            ingredientOverrides: ov, customIngredients: custom,
+            customCategories: isCustom ? s.customCategories.filter(c => c.key !== key) : s.customCategories,
+            hiddenCats: isCustom ? s.hiddenCats : [...new Set([...(s.hiddenCats ?? []), key])],
+          }
+        })
       },
 
       // ── LEGACY MENU (keeps existing MenuTab working) ───────────────────────
@@ -505,6 +585,11 @@ const useStore = create(
         deletedCombos:       s.deletedCombos,
         customCombos:        s.customCombos,
         customCategories:    s.customCategories,
+        extraStores:         s.extraStores,
+        storeColors:         s.storeColors,
+        catColors:           s.catColors,
+        catLabels:           s.catLabels,
+        hiddenCats:          s.hiddenCats,
         batchOverrides:      s.batchOverrides,
         deletedBatches:      s.deletedBatches,
         mealBatchOverrides:  s.mealBatchOverrides,
@@ -525,6 +610,10 @@ const useStore = create(
 )
 
 export default useStore
+
+// Colores de tiendas y categorías elegidos por el usuario → lib/stores.js
+applyColorOverrides(useStore.getState().storeColors, useStore.getState().catColors)
+useStore.subscribe(s => applyColorOverrides(s.storeColors, s.catColors))
 
 // ─── SELECTORS ───────────────────────────────────────────────────────────────
 
@@ -554,9 +643,15 @@ export function selectAllCombos(s) {
 }
 
 export function selectAllCats(s) {
-  const base = { ...CAT_LABELS }
+  const base = {}
+  for (const [k, v] of Object.entries(CAT_LABELS)) if (!(s.hiddenCats ?? []).includes(k)) base[k] = s.catLabels?.[k] ?? v
   for (const c of s.customCategories) base[c.key] = c.label
   return base
+}
+
+/** Orden de categorías visibles: las de fábrica y luego las tuyas. */
+export function selectCatOrder(s) {
+  return [...CAT_ORDER.filter(k => !(s.hiddenCats ?? []).includes(k)), ...s.customCategories.map(c => c.key)]
 }
 
 /** Merged plan for a meal: static base + custom weeks + overrides + deletions */
