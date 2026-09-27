@@ -34,17 +34,34 @@ const FIXED = {
 }
 const EXTRA = ['#0F7B7B', '#8A5E08', '#5B3FC4', '#1F6E9E', '#A04A12', '#3F7A2E']
 
+// Colores elegidos a mano (gestor de tiendas y categorías): los registra
+// useStore al arrancar y cada vez que cambian.
+let STORE_OVR = {}, CAT_OVR = {}
+export function applyColorOverrides(storeColors, catColors) { STORE_OVR = storeColors ?? {}; CAT_OVR = catColors ?? {} }
+
+// Paleta para elegir color (tiendas y categorías).
+export const SWATCHES = ['#D64545', '#E97B2E', '#C1850C', '#2F9E5B', '#0F7B7B', '#2585BC', '#3B6FD8', '#7154DA', '#C9489F', '#B0344F', '#8A5E08', '#6B6259']
+
 export function storeColor(name) {
   if (!name) return '#8A8076'
+  if (STORE_OVR[name]) return STORE_OVR[name]
   if (FIXED[name]) return FIXED[name]
   let h = 0
   for (const c of name) h = (h * 31 + c.charCodeAt(0)) >>> 0
   return EXTRA[h % EXTRA.length]
 }
 
-/** Tiendas en uso, de más a menos ingredientes: [{ name, count }]. */
-export function storesIn(allIng) {
+// Color de cada categoría (pastillas de Compra, tarjetas…).
+export const CAT_COLORS = {
+  carne: '#F2A0AE', proteina: '#F2A0AE', lacteo: '#F5C868', fresco: '#8FD4A8',
+  legumbre: '#B7B0F0', base: '#E6C39A', otro: '#CFC3B5',
+}
+export function catColor(key) { return CAT_OVR[key] ?? CAT_COLORS[key] ?? CAT_COLORS.otro }
+
+/** Tiendas en uso (y las añadidas a mano), de más a menos ingredientes: [{ name, count }]. */
+export function storesIn(allIng, extra = []) {
   const counts = {}
+  for (const n of extra ?? []) counts[n] = 0
   for (const ing of Object.values(allIng)) {
     const s = storeOf(ing)
     if (s) counts[s] = (counts[s] ?? 0) + 1

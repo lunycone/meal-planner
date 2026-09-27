@@ -1,9 +1,10 @@
 import { useState, useMemo, useEffect } from 'react'
-import useStore, { selectAllIng, selectAllCats } from '../../store/useStore'
+import useStore, { selectAllIng, selectAllCats, selectCatOrder } from '../../store/useStore'
+import StoresSheet from '../meal/StoresSheet'
 import Icon from '../ui/Icon'
 import Segmented from '../ui/Segmented'
 import IngredienteSheet from '../meal/IngredienteSheet'
-import { CAT_ORDER, ING } from '../../data/ingredients'
+import { ING } from '../../data/ingredients'
 import { ingredientUnitType } from '../../engine/calc'
 import { storeOf, storeColor, storesIn, NO_STORE } from '../../lib/stores'
 
@@ -91,7 +92,9 @@ export default function IngredientesTab() {
   const priceOverrides      = useStore(s => s.priceOverrides)
   const ingredientOverrides = useStore(s => s.ingredientOverrides)
   const customCategories    = useStore(s => s.customCategories)
-  const removeCustomCategory = useStore(s => s.removeCustomCategory)
+  const catOrder = useStore(selectCatOrder)
+  const extraStores = useStore(s => s.extraStores)
+  useStore(s => s.storeColors); useStore(s => s.catColors) // repintar al cambiar colores
   const deletedIngredients  = useStore(s => s.deletedIngredients)
   const restoreIngredient   = useStore(s => s.restoreIngredient)
   const setIngredientOverride = useStore(s => s.setIngredientOverride)
@@ -101,6 +104,7 @@ export default function IngredientesTab() {
   const [q, setQ] = useState('')
   const [group, setGroupState] = useState(() => readPref('mp-ing-group', 'store'))
   const [storeF, setStoreF] = useState('all')
+  const [manage, setManage] = useState(null) // null | 'stores' | 'cats'
   const setGroup = g => { setGroupState(g); try { localStorage.setItem('mp-ing-group', g) } catch {} }
 
   // Cerrar el menú de tienda al tocar fuera o con Esc
@@ -113,7 +117,7 @@ export default function IngredientesTab() {
     return () => { document.removeEventListener('pointerdown', onDown); window.removeEventListener('keydown', onKey) }
   }, [menu])
 
-  const stores = useMemo(() => storesIn(allIng), [allIng])
+  const stores = useMemo(() => storesIn(allIng, extraStores), [allIng, extraStores])
   const keys = Object.keys(allIng).filter(k => !allIng[k].hideInTable)
   const noStore = keys.filter(k => !storeOf(allIng[k])).length
   const needle = q.trim().toLowerCase()
@@ -125,7 +129,6 @@ export default function IngredientesTab() {
     return st === storeF
   }).sort((a, b) => allIng[a].name.localeCompare(allIng[b].name))
 
-  const catOrder = [...CAT_ORDER, ...customCategories.map(c => c.key)]
   const sections = group === 'store'
     ? [...stores.map(s => ({ id: s.name, label: s.name, color: storeColor(s.name), keys: visible.filter(k => storeOf(allIng[k]) === s.name) })),
        { id: NO_STORE, label: NO_STORE, color: 'rgba(110,80,50,0.35)', keys: visible.filter(k => !storeOf(allIng[k])) }]
@@ -147,6 +150,7 @@ export default function IngredientesTab() {
             <input placeholder="Search ingredient or brand…" value={q} onChange={e => setQ(e.target.value)} />
           </label>
           <Segmented label="Group by" value={group} onChange={setGroup} options={[{ value: 'store', label: 'By store' }, { value: 'cat', label: 'By category' }]} />
+          <button className="mp-btn mp-btn-glass" onClick={() => setManage(group === 'store' ? 'stores' : 'cats')}><Icon name="edit" size={14} />Stores & categories</button>
           <button className="mp-btn mp-btn-dark" onClick={() => setOpen(null)}><Icon name="plus" size={14} stroke={2.6} />New ingredient</button>
         </div>
       </div>
@@ -170,7 +174,7 @@ export default function IngredientesTab() {
           <h3 className="ig-sec">
             {sec.color && <span className="mp-dot" style={{ width: 10, height: 10, background: sec.color }} />}
             {sec.label} <span className="mp-muted" style={{ fontWeight: 500, fontSize: 13 }}>{sec.keys.length}</span>
-            {sec.custom && <button type="button" className="mp-btn mp-btn-sm pl-del" style={{ marginLeft: 6 }} onClick={() => removeCustomCategory(sec.id)}>Remove category</button>}
+            {sec.id !== NO_STORE && <button type="button" className="mw-act ig-sec-edit" title={group === 'store' ? 'Edit stores' : 'Edit categories'} aria-label={`Edit ${sec.label}`} onClick={() => setManage(group === 'store' ? 'stores' : 'cats')}><Icon name="edit" size={13} /></button>}
           </h3>
           <div className="ig-grid">
             {sec.keys.map(k => (
@@ -196,6 +200,7 @@ export default function IngredientesTab() {
       )}
 
       {open !== undefined && <IngredienteSheet key={open ?? 'new'} ingKey={open} onClose={() => setOpen(undefined)} />}
+      {manage && <StoresSheet initialTab={manage} onClose={() => setManage(null)} />}
     </div>
   )
 }

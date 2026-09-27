@@ -37,10 +37,7 @@ function getQtyValue(p) {
 }
 
 // Color de la pastilla L-V por categoria (misma leyenda del lateral)
-export const CAT_PILL = {
-  carne: '#F2A0AE', proteina: '#F2A0AE', lacteo: '#F5C868', fresco: '#8FD4A8',
-  legumbre: '#B7B0F0', base: '#E6C39A', otro: '#CFC3B5',
-}
+export { CAT_COLORS as CAT_PILL } from './stores'
 
 // Lo que por defecto se da por «en casa»: especias y básicos de uso suelto
 // (precio plano de céntimos, o $0: sal, comino, AOVE, agua…). Ojo: las
