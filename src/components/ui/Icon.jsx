@@ -32,6 +32,8 @@ const PATHS = {
   more: 'M5 12h.01M12 12h.01M19 12h.01',
   pause: 'M7 5h3v14H7zM14 5h3v14h-3z',
   edit: 'M4 20h4L19 9l-4-4L4 16v4zM13 7l4 4',
+  archive: 'M3 4h18v4H3zM5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 12h4',
+  shuffle: 'M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5',
 }
 
 export const MEAL_ICON = { desayuno: 'sun', comida: 'fork', merienda: 'cup', cena: 'moon' }
