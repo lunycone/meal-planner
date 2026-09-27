@@ -7,6 +7,8 @@ import PantryTab from '../components/tabs/PantryTab'
 import ModelWeekSheet from '../components/meal/ModelWeekSheet'
 import { MODEL_WEEKS } from '../data/modelWeeks'
 import { MHeader } from './MobileApp'
+import SettingsSheet from '../components/meal/SettingsSheet'
+import { batchSummary } from '../lib/batchConfig'
 
 // Más: Platos, Ingredientes (las mismas pantallas que en el Mac, que ya se
 // adaptan a pantalla estrecha), Semanas modelo, sugerencias y salir.
@@ -21,6 +23,8 @@ export default function MMas({ unseen, onIdeas, sub, onSub, onBack, onLogout }) 
   const openPlanner = useStore(s => s.openPlanner)
   const stockCount = Object.values(useStore(s => s.stock) ?? {}).filter(v => v?.amount > 0).length
   const [models, setModels] = useState(false)
+  const [settings, setSettings] = useState(false)
+  useStore(s => s.batchSettings)
 
   if (sub === 'platos' || sub === 'ingredientes' || sub === 'pantry') {
     return (
@@ -36,6 +40,7 @@ export default function MMas({ unseen, onIdeas, sub, onSub, onBack, onLogout }) 
     { l: 'Pantry', v: stockCount || '', icon: 'home', c: '#B7791F', tint: 'rgba(224,162,27,0.16)', go: () => onSub('pantry') },
     { l: 'Ingredients', v: Object.keys(allIng).length, icon: 'leaf', c: '#2F9E5B', tint: 'rgba(47,158,91,0.14)', go: () => onSub('ingredientes') },
     { l: 'Model weeks', v: weekCount, icon: 'layers', c: '#7154DA', tint: 'rgba(139,111,232,0.15)', go: () => setModels(true) },
+    { l: 'Settings', v: batchSummary(), icon: 'gear', c: '#1F1B16', tint: 'rgba(31,27,22,0.08)', go: () => setSettings(true) },
     { l: 'Suggestions', v: unseen || '', icon: 'bulb', c: '#C1850C', tint: 'rgba(224,162,27,0.16)', go: onIdeas },
   ]
   return (
@@ -52,6 +57,7 @@ export default function MMas({ unseen, onIdeas, sub, onSub, onBack, onLogout }) 
         ))}
       </section>
       {onLogout && <button type="button" className="mm-logout" onClick={onLogout}><Icon name="logout" size={16} />Sign out</button>}
+      {settings && <SettingsSheet onClose={() => setSettings(false)} />}
       {models && <ModelWeekSheet initialTarget={1} onClose={() => setModels(false)} onLoaded={t => openPlanner(t, 0)} />}
     </div>
   )

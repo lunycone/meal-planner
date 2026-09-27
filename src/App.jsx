@@ -8,6 +8,7 @@ import IngredientesTab     from './components/tabs/IngredientesTab'
 import ShoppingListTab     from './components/tabs/ShoppingListTab'
 import BatchPrepTab        from './components/tabs/BatchPrepTab'
 import PantryTab           from './components/tabs/PantryTab'
+import SettingsSheet       from './components/meal/SettingsSheet'
 import AuthGate            from './components/AuthGate'
 import SyncStatus          from './components/SyncStatus'
 import Segmented           from './components/ui/Segmented'
@@ -110,11 +111,13 @@ function AppShell() {
   const allIng     = useStore(selectAllIng)
   const allCombos  = useStore(selectAllCombos)
   const [ideasOpen, setIdeasOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const batchSettings = useStore(s => s.batchSettings)
 
   const view = TABS.find(t => t.value === activeView) ?? TABS[0]
   const allIdeas = useMemo(
     () => computeInsights({ weekPlan, profiles, allIng, allCombos }),
-    [weekPlan, profiles, allIng, allCombos]
+    [weekPlan, profiles, allIng, allCombos, batchSettings] // eslint-disable-line react-hooks/exhaustive-deps
   )
   const [dismissed, setDismissed] = useState(() => readTags('mp-ideas-dismissed'))
   const [seen, setSeen] = useState(() => readTags('mp-ideas-seen'))
@@ -164,6 +167,9 @@ function AppShell() {
         <div className="mp-top-right">
           <SyncStatus />
           <PeopleToggle />
+          <button type="button" className={`mp-icon-btn${settingsOpen ? ' is-on' : ''}`} aria-label="Settings" title="Settings · batch days" onClick={() => setSettingsOpen(true)}>
+            <Icon name="gear" size={18} />
+          </button>
           <button type="button" className={`mp-icon-btn${ideasOpen ? ' is-on' : ''}`} aria-label="Suggestions" aria-expanded={ideasOpen}
             onClick={() => setIdeasOpen(o => !o)} style={{ position: 'relative' }}>
             <Icon name="bulb" size={18} />
@@ -186,6 +192,7 @@ function AppShell() {
           onClose={() => setIdeasOpen(false)} onDismiss={dismiss} onRestore={restoreDismissed}
           onPick={v => { setView(v); setIdeasOpen(false) }} />
       )}
+      {settingsOpen && <SettingsSheet onClose={() => setSettingsOpen(false)} />}
     </div>
   )
 }

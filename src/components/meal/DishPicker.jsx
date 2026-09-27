@@ -4,7 +4,8 @@ import { comboAgg, fmtPortion, ingKcal, ingCost, pcosCarbLevel } from '../../eng
 import Overlay from '../ui/Overlay'
 import Icon, { MEAL_ICON } from '../ui/Icon'
 import Segmented from '../ui/Segmented'
-import { MEAL_LABEL, MEAL_STYLE, PCOS_STYLE, BATCH_DAYS, DAY_LONG, DAY_KEYS, fmtMoney, activeProfilesOn } from '../../lib/mealplan'
+import { MEAL_LABEL, MEAL_STYLE, PCOS_STYLE, DAY_LONG, DAY_KEYS, fmtMoney, activeProfilesOn } from '../../lib/mealplan'
+import { batchSessions, freeDayKeys, rangeLabel, sessionOfDay } from '../../lib/batchConfig'
 import { defaultScope, buildSelection } from '../../lib/planActions'
 
 // Selector de plato: lista a la izquierda, ficha a la derecha, y abajo a qué
@@ -40,11 +41,14 @@ export default function DishPicker({ weekKey, weekData, dayKey, date, mealType, 
   const sel = selKey ? allCombos[selKey] : null
   const selAgg = sel ? comboAgg(sel, allIng, {}, {}, optionals) : null
   const st = MEAL_STYLE[mealType]
-  const isWeekday = BATCH_DAYS.includes(dayKey)
+  useStore(s => s.batchSettings) // repintar si cambian los días de batch
+  const si = sessionOfDay(dayKey)
   const dayName = DAY_LONG[DAY_KEYS.indexOf(dayKey)]
+  const groupDays = si >= 0 ? batchSessions()[si].days : freeDayKeys().map(d => DAY_KEYS.indexOf(d))
+  const groupLabel = si >= 0 ? `${rangeLabel(groupDays)} · batch` : `${rangeLabel(groupDays)} · free days`
   const scopeOptions = [
     { value: 'day', label: `Only ${dayName}` },
-    isWeekday ? { value: 'batch', label: 'Monday to Friday · batch' } : { value: 'weekend', label: 'Saturday and Sunday' },
+    ...(groupDays.length > 1 ? [si >= 0 ? { value: 'batch', label: groupLabel } : { value: 'weekend', label: groupLabel }] : []),
   ]
   const whoOptions = [{ value: 'all', label: 'Both' }, ...people.map(p => ({ value: p.id, label: p.name }))]
   if (people.length > 2) whoOptions[0].label = 'Everyone'
@@ -170,7 +174,7 @@ export default function DishPicker({ weekKey, weekData, dayKey, date, mealType, 
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="mp-btn mp-btn-glass" onClick={onClose}>Cancel</button>
             <button className="mp-btn mp-btn-dark" disabled={!selKey} onClick={confirm}>
-              {scope === 'batch' ? 'Set Monday to Friday' : scope === 'weekend' ? 'Set Saturday and Sunday' : 'Set this day'}
+              {scope === 'day' ? 'Set this day' : `Set ${rangeLabel(groupDays)}`}
             </button>
           </div>
         </div>

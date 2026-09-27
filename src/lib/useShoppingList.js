@@ -8,6 +8,7 @@ import { storeOf } from './stores'
 import { aggregateIngredients, needAmount, needDim, packPlan, stockAvailable } from './needs'
 import { fmtQtyUnit, fmtAmount, packOf } from './packs'
 import { DAY_KEYS, addDays, mondayOf, weekKeyOf, fmtRange, activeProfilesOn, startOfDay } from './mealplan'
+import { sessionDates, cookDateFor, rangeLabel } from './batchConfig'
 
 // Orden lun..dom para resolver el indice que personTargetForDay/personMealScalesTwoPass
 // necesitan — mismo orden que en Planificador/BatchPrepTab.
@@ -16,17 +17,18 @@ const MEALS = ['desayuno', 'comida', 'merienda', 'cena']
 const DAY_LETTER = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
 // ─── Ventanas ────────────────────────────────────────────────────────────────
-// Batch del domingo: se cocina UNA vez (domingo) para lunes-viernes de la
-// semana siguiente. offset 0 = la semana en curso (su batch ya se cocino),
-// 1 = el proximo batch -- el que hay que comprar, y por eso el de por defecto.
-export function getWindow(offset, mode) {
-  const monday = addDays(mondayOf(new Date()), offset * 7)
-  const n = mode === 'semana' ? 7 : 5
-  const windowDates = DAY_KEYS.slice(0, n).map((dayKey, i) => {
-    const d = addDays(monday, i)
-    return { date: d, wk: weekKeyOf(monday), dayKey }
-  })
-  return { start: monday, end: addDays(monday, n - 1), days: n, windowDates, rangeLabel: fmtRange(monday, addDays(monday, n - 1)) }
+// Un batch = una sesión de Ajustes (lib/batchConfig): { monday, si }. Su
+// ventana son los días que cubre; «semana» = lunes–domingo de esa semana.
+export function getWindow(ref, mode) {
+  const monday = ref.monday
+  const windowDates = mode === 'semana'
+    ? DAY_KEYS.map((dayKey, i) => ({ date: addDays(monday, i), wk: weekKeyOf(monday), dayKey }))
+    : sessionDates(monday, ref.si)
+  const start = windowDates[0].date, end = windowDates[windowDates.length - 1].date
+  return {
+    start, end, monday, si: ref.si, days: windowDates.length, windowDates, rangeLabel: fmtRange(start, end),
+    cookDate: cookDateFor(monday, ref.si), dayLabel: rangeLabel(windowDates.map(w => DAY_KEYS.indexOf(w.dayKey))),
+  }
 }
 
 // Helper to extract quantity from portion object
@@ -50,17 +52,19 @@ function defaultAtHome(ing) {
 }
 
 
-export default function useShoppingList(batchOffset, viewMode) {
+export default function useShoppingList(batchRef, viewMode) {
   const allIng = useStore(selectAllIng)
   const allCombos = useStore(selectAllCombos)
   const weekPlan = useStore(s => s.weekPlan)
   const profiles  = useStore(s => s.profiles)
 
-  const batchWindow = useMemo(() => getWindow(batchOffset, viewMode), [batchOffset, viewMode])
+  const batchSettings = useStore(s => s.batchSettings)
+  const batchWindow = useMemo(() => getWindow(batchRef, viewMode), [+batchRef.monday, batchRef.si, viewMode, batchSettings]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Marcado al comprar (por ventana) y «En casa» (para todas las semanas):
   // en el guardado compartido, así Julio y María ven lo mismo.
-  const checksKey = `${viewMode}-${weekKeyOf(batchWindow.start)}`
+  // Marcas por sesión (la 1.ª conserva la clave de antes).
+  const checksKey = `${viewMode}-${weekKeyOf(batchWindow.monday)}${viewMode === 'batch' && batchRef.si ? `-${batchRef.si}` : ''}`
   const shopChecks = useStore(s => s.shopChecks)
   const pantry     = useStore(s => s.pantry)
   const buyShopItem = useStore(s => s.buyShopItem)

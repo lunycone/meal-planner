@@ -1,3 +1,4 @@
+import { DEFAULT_BATCH, normalizeBatch, applyBatchSettings } from '../lib/batchConfig'
 import { create } from 'zustand'
 import { persist }  from 'zustand/middleware'
 import { ING, CAT_LABELS, CAT_ORDER } from '../data/ingredients'
@@ -241,6 +242,10 @@ const useStore = create(
           return { dishPrefs: next }
         })
       },
+      // Días de batch (Ajustes): [{ cook: 0..6, days }] — ver lib/batchConfig.js.
+      batchSettings: DEFAULT_BATCH,
+      setBatchSettings(next) { set({ batchSettings: normalizeBatch(next) }) },
+
       // Parejas de conceptos que aprende de ti ({ 'pork|yogurt': n }, ver
       // engine/pairing.js): «Not this one» en un plato compuesto resta a sus
       // parejas; cargar o guardar uno suma un poco.
@@ -694,6 +699,7 @@ const useStore = create(
         extraStores:         s.extraStores,
         dishPrefs:           s.dishPrefs,
         pairPrefs:           s.pairPrefs,
+        batchSettings:       s.batchSettings,
         storeColors:         s.storeColors,
         catColors:           s.catColors,
         catLabels:           s.catLabels,
@@ -724,6 +730,9 @@ export default useStore
 
 // Colores de tiendas y categorías elegidos por el usuario → lib/stores.js
 applyColorOverrides(useStore.getState().storeColors, useStore.getState().catColors)
+// Días de batch → lib/batchConfig.js (lo leen Compra, Batch, Planificador, semana inteligente…)
+applyBatchSettings(useStore.getState().batchSettings)
+useStore.subscribe(s => applyBatchSettings(s.batchSettings))
 useStore.subscribe(s => applyColorOverrides(s.storeColors, s.catColors))
 
 // ─── SELECTORS ───────────────────────────────────────────────────────────────

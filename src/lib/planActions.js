@@ -4,25 +4,28 @@
 
 import { MODEL_WEEKS, expandModelWeek, MARIA_NO_BATIDO_CASERO, MARIA_MERIENDA_PORTATIL, MARIA_DESAYUNO_DOWNGRADE, MARIA_DESAYUNO_DOWNGRADE_DAYS_BY_WEEK } from '../data/modelWeeks'
 import { makeByPersonSlot } from '../engine/calc'
-import { DAY_KEYS, BATCH_DAYS, WEEKEND_DAYS } from './mealplan'
+import { DAY_KEYS } from './mealplan'
+import { batchSessions, freeDayKeys, sessionOfDay } from './batchConfig'
 
 export const slotKey = (dayKey, mealType) => `${dayKey}-${mealType}`
 
-/** Días a los que se aplica un plato elegido para `dayKey`. */
+/** Días a los que se aplica un plato elegido para `dayKey`: los de su batch
+ *  (según Ajustes) o, si es un día libre, todos los días libres. */
 export function scopeDays(scope, dayKey) {
-  if (scope === 'batch') return BATCH_DAYS
-  if (scope === 'weekend') return WEEKEND_DAYS
+  if (scope === 'batch') { const si = sessionOfDay(dayKey); return si >= 0 ? batchSessions()[si].dayKeys : [dayKey] }
+  if (scope === 'weekend') return freeDayKeys()
   return [dayKey]
 }
 
-/** Por defecto, el plato va a todo el batch (lun-vie) si los demás días del
- *  batch están vacíos en esa franja; si alguno ya tiene plato, solo al día
- *  (para no pisar nada sin querer). En fin de semana, igual con sáb+dom. */
+/** Por defecto, el plato va a todo su batch si los demás días de ese batch
+ *  están vacíos en esa franja; si alguno ya tiene plato, solo al día (para no
+ *  pisar nada sin querer). En los días libres, igual con todos ellos. */
 export function defaultScope(dayKey, mealType, weekData) {
-  const group = BATCH_DAYS.includes(dayKey) ? BATCH_DAYS : WEEKEND_DAYS
+  const scope = sessionOfDay(dayKey) >= 0 ? 'batch' : 'weekend'
+  const group = scopeDays(scope, dayKey)
+  if (group.length < 2) return 'day'
   const othersEmpty = group.filter(d => d !== dayKey).every(d => !weekData?.[slotKey(d, mealType)])
-  if (!othersEmpty) return 'day'
-  return BATCH_DAYS.includes(dayKey) ? 'batch' : 'weekend'
+  return othersEmpty ? scope : 'day'
 }
 
 /** Construye los huecos a escribir. `who` = 'all' (mismo plato para todos,

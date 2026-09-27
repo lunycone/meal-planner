@@ -11,15 +11,17 @@ import {
   addDays, mondayOf, weekKeyOf, dayIndexOf, startOfDay, fmtMoney, fmtRange, activeProfilesOn, dayForPerson, mealInfo, dayTotals, shortName,
 } from '../lib/mealplan'
 import { MHeader } from './MobileApp'
+import { batchesCookedOn } from '../lib/batchConfig'
 
 // Semana en el móvil: los 7 días en lista (comida y cena a la vista); tocar
 // un día lo despliega con sus 4 comidas. Un plato puesto en lun-vie va por
-// defecto a los 5 días del batch (DishPicker).
+// defecto a los días de su batch (DishPicker, Ajustes).
 
 export default function MSemana({ unseen, onIdeas }) {
   const allIng = useStore(selectAllIng)
   const allCombos = useStore(selectAllCombos)
   const weekPlan = useStore(s => s.weekPlan)
+  useStore(s => s.batchSettings) // repintar si cambian los días de batch
   const profiles = useStore(s => s.profiles)
   const activeProfileId = useStore(s => s.activeProfileId)
   const weekOffset = useStore(s => s.weekOffset)
@@ -87,7 +89,7 @@ export default function MSemana({ unseen, onIdeas }) {
 
       {days.map(d => {
         const isOpen = open === d.i, isToday = d.i === todayIdx
-        const tag = isToday ? 'Today' : d.i === 6 ? 'Batch' : null
+        const tag = isToday ? 'Today' : batchesCookedOn(d.date).length ? 'Batch' : null
         return (
           <div key={d.dk} className={`ms-day mp-in${isOpen ? ' is-open' : ''}`} style={{ opacity: todayIdx >= 0 && d.i < todayIdx && !isOpen ? 0.62 : 1, animationDelay: `${d.i * 35}ms` }}>
             <button type="button" className="ms-day-head" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? -1 : d.i)}>

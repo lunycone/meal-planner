@@ -41,9 +41,10 @@ import { aggregateIngredients, needAmount, packPlan } from '../lib/needs'
 import { packOf, fmtAmount } from '../lib/packs'
 import { composeDishes, isGenerated, GEN_PREFIX } from './composeDishes'
 import { cuisineDishes } from './cuisines'
+import { rangeLabel } from '../lib/batchConfig'
 
 export const PRIORITIES = ['price', 'protein', 'veg']
-export const PLAN_DAYS = [0, 1, 2, 3, 4] // lunes–viernes
+export const PLAN_DAYS = [0, 1, 2, 3, 4] // por defecto lunes–viernes; los de verdad vienen de Ajustes (ctx.days)
 const EXCLUDE_KEYS = new Set(['b-gentle-shake-bad-stomach-day', 'm-sourdough-toast-with-boiled-apple-and-honey-binding']) // para días malos de estómago
 const TOP_PAIRS = 60
 
@@ -172,7 +173,7 @@ function bestForPerson(p, ctx, pool, l, d) {
   for (const b of pool.B) {
     for (const s of pool.S) {
       let score = W.pref * (-prefOf(ctx.prefs, b.key) - prefOf(ctx.prefs, s.key)) / 2 + (ctx.jit(b.key) + ctx.jit(s.key)) / 2
-      for (const i of PLAN_DAYS) {
+      for (const i of ctx.days) {
         const f = fastDay(personTargetForDay(p, i), b, s, l, d)
         score += dayPenalty(p, ctx, b, s, l, d, f.cost, f.prot, f.short)
       }
@@ -202,7 +203,7 @@ function rankPairs(ctx, P, people) {
         score += bst.score
         choice[p.id] = { b: bst.b.key, s: bst.s.key }
       }
-      if (sharedBase(l, d)) score += W.sameBase * PLAN_DAYS.length * people.length
+      if (sharedBase(l, d)) score += W.sameBase * ctx.days.length * people.length
       for (const x of [l, d]) {
         score += ctx.jit(x.key)
         if (ctx.recent.has(x.key) || ctx.recentFam.has(x.fam)) score += W.recent
@@ -225,10 +226,10 @@ function rankPairs(ctx, P, people) {
 }
 
 // ── Plan → huecos del planificador (solo lunes–viernes) ─────────────────────
-export function planToSlots(plan, people, allCombos) {
+export function planToSlots(plan, people, allCombos, days = PLAN_DAYS) {
   const meal = k => ({ type: 'desayuno', recipeKey: k })
   const slots = {}
-  PLAN_DAYS.forEach(i => {
+  days.forEach(i => {
     const dk = DAY_KEYS[i]
     slots[`${dk}-comida`] = meal(plan.L)
     slots[`${dk}-cena`] = meal(plan.D)
@@ -239,19 +240,16 @@ export function planToSlots(plan, people, allCombos) {
 }
 
 // ── Fase 2: motor real ──────────────────────────────────────────────────────
-const DAY_EN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-function listDays(ix) {
-  if (ix.join() === '0,1,2,3,4') return 'Mon–Fri'
-  return ix.map(i => DAY_EN[i]).join(', ')
-}
+function listDays(ix) { return rangeLabel(ix) }
 
 export function evaluatePlan(plan, people, allIng, allCombos, ctx) {
-  const slots = planToSlots(plan, people, allCombos)
+  const days = ctx.days ?? PLAN_DAYS
+  const slots = planToSlots(plan, people, allCombos, days)
   let cost = 0, score = 0
   const issues = { veg: [], sol: [], dig: [], protLow: [], protHigh: [], kcal: [] }
   const perPerson = people.map(p => {
     let kcal = 0, tgt = 0, prot = 0, veg = 0, sol = 0, hit = 0
-    PLAN_DAYS.forEach(i => {
+    days.forEach(i => {
       const dk = DAY_KEYS[i]
       const day = dayForPerson(slots, dk, p.id)
       const t = dayTotals(day, p, i, allIng, allCombos)
@@ -277,7 +275,7 @@ export function evaluatePlan(plan, people, allIng, allCombos, ctx) {
       if (ctx.priority === 'veg') pen -= dayVeg * BONUS.veg
       score += t.cost + pen
     })
-    const n = PLAN_DAYS.length
+    const n = days.length
     return { p, kcal: Math.round(kcal / n), target: Math.round(tgt / n), prot: Math.round(prot / n), veg: Math.round(veg / n), sol: +(sol / n).toFixed(1), hit }
   })
 
@@ -285,10 +283,10 @@ export function evaluatePlan(plan, people, allIng, allCombos, ctx) {
   const lc = allCombos[plan.L], dc = allCombos[plan.D]
   const lb = basesOf(lc, allIng), db = basesOf(dc, allIng)
   const base = [...lb].find(f => db.has(f))
-  if (base) score += W.sameBase * PLAN_DAYS.length * people.length
+  if (base) score += W.sameBase * days.length * people.length
   const vegOf = c => new Set((c?.items ?? []).filter(it => (it.p?.grams ?? 0) >= 60 && tagsOf(it.k, allIng).includes('veg')).map(it => it.k))
   const lv = vegOf(lc), sharedVeg = [...vegOf(dc)].filter(k => lv.has(k))
-  score += W.sameVeg * sharedVeg.length * PLAN_DAYS.length * people.length
+  score += W.sameVeg * sharedVeg.length * days.length * people.length
   const jit = ctx.jit ?? (() => 0)
   score += jit(plan.L) + jit(plan.D) + people.reduce((t, p) => t + (jit(plan.B[p.id]) + jit(plan.S[p.id])) / 2, 0)
   for (const k of [plan.L, plan.D]) {
@@ -296,7 +294,7 @@ export function evaluatePlan(plan, people, allIng, allCombos, ctx) {
     score -= W.pref * prefOf(ctx.prefs, k)
   }
 
-  const pk = packScore(slots, people, allIng, allCombos, ctx.stock ?? {})
+  const pk = packScore(slots, people, allIng, allCombos, ctx.stock ?? {}, days)
   score += W.waste * pk.waste - W.pantry * pk.pantry
 
   const warnings = []
@@ -314,12 +312,12 @@ export function evaluatePlan(plan, people, allIng, allCombos, ctx) {
   if (base) warnings.push(`Lunch and dinner share the same base (${base})`)
   if (dishHasTag(dc, 'red-meat', allIng)) warnings.push('Red meat at dinner')
 
-  return { plan, slots, cost, weekCost: cost * 7 / PLAN_DAYS.length, score, perPerson, warnings, packs: pk }
+  return { plan, slots, days, cost, weekCost: cost * 7 / days.length, score, perPerson, warnings, packs: pk }
 }
 
 // Cuánto de la despensa usa esta semana y cuánto de lo fresco se tiraría.
-function packScore(slots, people, allIng, allCombos, stock) {
-  const windowDates = PLAN_DAYS.map(i => ({ date: null, wk: 'W', dayKey: DAY_KEYS[i] }))
+function packScore(slots, people, allIng, allCombos, stock, days) {
+  const windowDates = days.map(i => ({ date: null, wk: 'W', dayKey: DAY_KEYS[i] }))
   const agg = aggregateIngredients({ weekPlan: { W: slots }, windowDates, people, allIng, allCombos })
   let waste = 0, pantry = 0
   const fromPantry = [], leftovers = []
@@ -375,7 +373,7 @@ function pickDiverse(exact, count, fam, locked) {
  */
 export function generateSmartWeeks({
   allIng, allCombos, people, priority = 'price', vegMin = VEG_DAILY_MIN, seed = 0,
-  shown = [], exclude = [], prefs = {}, recent = [], locks = {}, stock = {}, source = 'dishes', country = null, pairPrefs = {}, count = 3,
+  shown = [], exclude = [], prefs = {}, recent = [], locks = {}, stock = {}, source = 'dishes', country = null, pairPrefs = {}, days = PLAN_DAYS, count = 3,
 }) {
   const t0 = performance.now()
   // Fuentes de comidas y cenas:
@@ -406,7 +404,7 @@ export function generateSmartWeeks({
   const amp = source === 'surprise' ? 12 : source === 'country' ? 3 : 0
   const jit = amp ? k => (k ? (hash(`${seed}:j:${k}`) / 4294967295 * 2 - 1) * amp : 0) : () => 0
   const ctx = {
-    priority: source === 'surprise' || source === 'country' ? 'price' : priority, vegMin, seed, prefs, locks, stock, source, poolKeys, jit, solMin: SOLUBLE_FIBER_DAILY_MIN,
+    days, priority: source === 'surprise' || source === 'country' ? 'price' : priority, vegMin, seed, prefs, locks, stock, source, poolKeys, jit, solMin: SOLUBLE_FIBER_DAILY_MIN,
     shown: new Set(shown), exclude: new Set(exclude), recent: new Set(recent),
     recentFam: new Set(recent.map(k => famOfKey(k, allCombos)).filter(Boolean)),
   }
@@ -433,4 +431,60 @@ export function generateSmartWeeks({
   // enseñarlos y guardarlos como platos tuyos al cargar la semana).
   if (generated) for (const r of results) r.newDishes = Object.fromEntries([r.plan.L, r.plan.D].filter(k => generated[k]).map(k => [k, generated[k]]))
   return { results, tried, ms: Math.round(performance.now() - t0), composed: generated ? Object.keys(generated).length : 0 }
+}
+
+// ── Varios días de batch ─────────────────────────────────────────────────────
+// Con más de un batch a la semana (Ajustes), cada uno es su propia olla:
+// se genera cada sesión con sus días y se juntan las opciones, sin repetir en
+// la segunda los platos (ni variantes) de la primera. Con uno solo es lo de
+// siempre. Devuelve opciones con `parts` (una por sesión) y lo combinado:
+// slots, coste, coste semanal (×7/días cubiertos), avisos y notas.
+export function generateSmartPlan({ sessions = [PLAN_DAYS], locks = {}, count = 3, ...args }) {
+  const t0 = performance.now()
+  const partLocks = i => locks.parts?.[i] ?? {}
+  const multi = sessions.length > 1
+  const runs = sessions.map((days, i) => generateSmartWeeks({ ...args, days, locks: partLocks(i), count: multi ? count * 2 : count }))
+  const fam = (k, r) => familyOf((r.newDishes?.[k] ?? args.allCombos[k])?.name ?? k)
+  const results = [], seenSets = new Set()
+  for (const first of runs[0].results) {
+    if (results.length >= count) break
+    const parts = [first]
+    const used = new Set([fam(first.plan.L, first), fam(first.plan.D, first)])
+    for (let si = 1; si < runs.length; si++) {
+      const opts = runs[si].results
+      const pick = opts.find(r => !used.has(fam(r.plan.L, r)) && !used.has(fam(r.plan.D, r))) ?? opts[results.length % Math.max(1, opts.length)]
+      if (!pick) break
+      parts.push(pick); used.add(fam(pick.plan.L, pick)); used.add(fam(pick.plan.D, pick))
+    }
+    if (parts.length < sessions.length) continue
+    // No la misma semana con las sesiones cambiadas de orden.
+    const set = parts.flatMap(p => [fam(p.plan.L, p), fam(p.plan.D, p)]).sort().join('|')
+    if (seenSets.has(set)) continue
+    seenSets.add(set)
+    results.push(combineParts(parts))
+  }
+  return {
+    results, tried: runs.reduce((t, r) => t + r.tried, 0), ms: Math.round(performance.now() - t0),
+    composed: runs[0].composed ?? 0,
+  }
+}
+
+function combineParts(parts) {
+  if (parts.length === 1) return { ...parts[0], parts }
+  const days = parts.flatMap(p => p.days)
+  const cost = parts.reduce((t, p) => t + p.cost, 0)
+  const perPerson = parts[0].perPerson.map((x, j) => {
+    const all = parts.map(p => p.perPerson[j]), w = parts.map(p => p.days.length), W_ = w.reduce((a, b) => a + b, 0)
+    const avg = k => all.reduce((t, a, i) => t + a[k] * w[i], 0) / W_
+    return { p: x.p, kcal: Math.round(avg('kcal')), target: Math.round(avg('target')), prot: Math.round(avg('prot')), veg: Math.round(avg('veg')), sol: +avg('sol').toFixed(1), hit: all.reduce((t, a) => t + a.hit, 0) }
+  })
+  const pantry = parts.reduce((t, p) => t + (p.packs?.pantry ?? 0), 0)
+  return {
+    parts, plan: parts[0].plan, days, cost, weekCost: cost * 7 / days.length,
+    score: parts.reduce((t, p) => t + p.score, 0), perPerson,
+    slots: Object.assign({}, ...parts.map(p => p.slots)),
+    warnings: [...new Set(parts.flatMap(p => p.warnings))],
+    packs: { pantry, notes: [...new Set(parts.flatMap(p => p.packs?.notes ?? []))] },
+    newDishes: Object.assign({}, ...parts.map(p => p.newDishes ?? {})),
+  }
 }

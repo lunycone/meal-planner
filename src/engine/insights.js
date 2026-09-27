@@ -4,25 +4,24 @@
 import { slotForPerson } from './calc'
 import { weekViolations } from './weekRules'
 import {
-  DAY_KEYS, DAY_LONG, BATCH_DAYS, MEALS, addDays, mondayOf, weekKeyOf, nextBatchMonday,
+  DAY_KEYS, DAY_LONG, MEALS, addDays, mondayOf, weekKeyOf, nextBatchMonday,
   activeProfilesOn, dayForPerson, dayTotals, fmtRange, startOfDay,
 } from '../lib/mealplan'
+import { nextBatch, sessionDates, daysSinceCook } from '../lib/batchConfig'
 
 const SOAK_KEYS = new Set(['chickpeas', 'black-beans', 'white-beans', 'kidney-beans', 'cranberry-beans', 'romano-beans'])
 const OVERNIGHT_KEYS = new Set(['oats'])
 
-function batchSlots(weekPlan, monday, profiles, allCombos) {
-  // [{ dayKey, mealType, person, combo, key }] de lun-vie de la semana `monday`
-  const wk = weekKeyOf(monday)
-  const week = weekPlan[wk] ?? {}
+function batchSlots(weekPlan, dates, profiles, allCombos) {
+  // [{ dayKey, mealType, person, combo, key, date }] de los días de un batch
   const out = []
-  BATCH_DAYS.forEach((dk, i) => {
-    const date = addDays(monday, i)
+  dates.forEach(({ dayKey: dk, date, wk }) => {
+    const week = weekPlan[wk] ?? {}
     activeProfilesOn(profiles, date).forEach(person => {
       MEALS.forEach(mt => {
         const meal = slotForPerson(week[`${dk}-${mt}`] ?? null, person.id)
         const combo = meal?.type === 'desayuno' ? allCombos[meal.recipeKey] : null
-        if (combo) out.push({ dayKey: dk, mealType: mt, person, combo, key: meal.recipeKey })
+        if (combo) out.push({ dayKey: dk, mealType: mt, person, combo, key: meal.recipeKey, date })
       })
     })
   })
@@ -33,12 +32,17 @@ export function computeInsights({ weekPlan, profiles, allIng, allCombos, today =
   const out = []
   const t = startOfDay(today)
   const dow = t.getDay() // 0 dom … 6 sáb
+  // El próximo batch por cocinar (Ajustes → días de batch).
+  const nb = nextBatch(t)
+  const nbDates = sessionDates(nb.monday, nb.si)
   const nextMon = nextBatchMonday(t)
-  const nextSlots = batchSlots(weekPlan, nextMon, profiles, allCombos)
-  const range = fmtRange(nextMon, addDays(nextMon, 4))
+  const nextSlots = batchSlots(weekPlan, nbDates, profiles, allCombos)
+  const range = fmtRange(nbDates[0].date, nbDates[nbDates.length - 1].date)
+  const daysToCook = Math.round((startOfDay(nb.cookDate) - t) / 86400000)
+  const cookName = DAY_LONG[(nb.cookDate.getDay() + 6) % 7]
 
-  // 1 · Víspera del batch (sábado): lo que necesita la noche
-  if (dow === 6 && nextSlots.length) {
+  // 1 · Víspera del batch: lo que necesita la noche
+  if (daysToCook === 1 && nextSlots.length) {
     const overnight = {}, soak = new Set()
     nextSlots.forEach(s => {
       const keys = s.combo.items.map(it => it.k)
@@ -58,30 +62,33 @@ export function computeInsights({ weekPlan, profiles, allIng, allCombos, today =
     })
   }
 
-  // 2 · Congelar / descongelar
-  if ((dow === 6 || dow === 0) && nextSlots.length) {
-    const n = nextSlots.filter(s => (s.dayKey === 'jue' || s.dayKey === 'vie') && (s.mealType === 'comida' || s.mealType === 'cena')).length
-    if (n) out.push({
-      id: 'congelar', when: dow === 0 ? 'Today, after the batch' : 'Tomorrow, at the batch', icon: 'snow', color: '#2585BC', tint: 'rgba(46,155,214,0.15)',
-      title: `Freeze the ${n} Thursday and Friday containers`, detail: 'Cooked on Sunday they would be 4–5 days in the fridge.', view: 'batch',
+  // 2 · Congelar / descongelar: lo que se come 4+ días después de cocinarlo
+  if ((daysToCook === 0 || daysToCook === 1) && nextSlots.length) {
+    const late = nextSlots.filter(s => (s.mealType === 'comida' || s.mealType === 'cena') && Math.round((startOfDay(s.date) - startOfDay(nb.cookDate)) / 86400000) >= 4)
+    const lateDays = [...new Set(late.map(s => DAY_KEYS.indexOf(s.dayKey)))].sort((a, b) => a - b)
+    if (late.length) out.push({
+      id: 'congelar', when: daysToCook === 0 ? 'Today, after the batch' : 'Tomorrow, at the batch', icon: 'snow', color: '#2585BC', tint: 'rgba(46,155,214,0.15)',
+      title: `Freeze the ${late.length} ${lateDays.map(i => DAY_LONG[i]).join(' and ')} containers`, detail: `Cooked on ${cookName} they would be 4+ days in the fridge.`, view: 'batch',
     })
   }
-  if (dow === 3 || dow === 4) {
-    const tomorrow = dow === 3 ? 'jue' : 'vie'
-    const week = weekPlan[weekKeyOf(mondayOf(t))] ?? {}
-    const has = ['comida', 'cena'].some(m => week[`${tomorrow}-${m}`])
-    if (has) out.push({
+  {
+    const tmr = addDays(t, 1)
+    const since = daysSinceCook(tmr)
+    const tdk = DAY_KEYS[(tmr.getDay() + 6) % 7]
+    const week = weekPlan[weekKeyOf(mondayOf(tmr))] ?? {}
+    const has = ['comida', 'cena'].some(m => week[`${tdk}-${m}`])
+    if (since != null && since >= 4 && has) out.push({
       id: 'descongelar', when: 'Tonight', icon: 'snow', color: '#2585BC', tint: 'rgba(46,155,214,0.15)',
-      title: `Move ${tomorrow === 'jue' ? "Thursday's" : "Friday's"} containers to the fridge`, detail: "So they're ready to reheat tomorrow.",
+      title: `Move ${DAY_LONG[DAY_KEYS.indexOf(tdk)]}'s containers to the fridge`, detail: "So they're ready to reheat tomorrow.",
     })
   }
 
   // 3 · Compra del próximo batch
-  if (nextSlots.length && (dow >= 4 || dow === 0)) {
+  if (nextSlots.length && daysToCook <= 3) {
     const ings = new Set()
     nextSlots.forEach(s => s.combo.items.forEach(it => ings.add(it.k)))
     if (ings.size) out.push({
-      id: 'compra', when: dow === 0 ? 'Today' : 'Before Sunday', icon: 'bag', color: '#C1850C', tint: 'rgba(224,162,27,0.16)',
+      id: 'compra', when: daysToCook === 0 ? 'Today' : `Before ${cookName}`, icon: 'bag', color: '#C1850C', tint: 'rgba(224,162,27,0.16)',
       title: `Batch shopping: ${ings.size} ingredients`, detail: `For ${range}.`, view: 'compra',
     })
   }
