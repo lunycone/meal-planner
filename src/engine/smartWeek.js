@@ -381,7 +381,7 @@ export function generateSmartWeeks({
   // Fuentes de comidas y cenas:
   //   dishes      → el catálogo (y tus platos);
   //   ingredients → platos compuestos de ingredientes (composeDishes);
-  //   country     → recetas de un país (cuisines.js), hechas con tus ingredientes;
+  //   country     → platos compuestos con el perfil de sabor de un país (cuisines.js);
   //   surprise    → compuestos + recetas del mundo, al azar: sin prioridad, con las reglas.
   // Solo «dishes» usa las comidas y cenas del catálogo; desayunos y meriendas
   // salen siempre del catálogo.
@@ -390,10 +390,10 @@ export function generateSmartWeeks({
     generated = composeDishes(allIng, allCombos, { stock })
     poolKeys = new Set(Object.keys(generated))
   } else if (source === 'country') {
-    generated = cuisineDishes(allIng, country)
+    generated = cuisineDishes(allIng, allCombos, { country, stock })
     poolKeys = new Set(Object.keys(generated))
   } else if (source === 'surprise') {
-    generated = { ...composeDishes(allIng, allCombos, { stock, limit: 40 }), ...cuisineDishes(allIng) }
+    generated = { ...composeDishes(allIng, allCombos, { stock, limit: 40 }), ...cuisineDishes(allIng, allCombos, { stock }) }
     // Cada «Surprise» saca al azar unos 45 de esos platos (rápido también en
     // el móvil, y cada vez distinto).
     const all = Object.keys(generated)

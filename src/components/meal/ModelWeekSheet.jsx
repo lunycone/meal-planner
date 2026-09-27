@@ -7,7 +7,7 @@ import Segmented from '../ui/Segmented'
 import { buildModelWeekSlots } from '../../lib/planActions'
 import { addDays, mondayOf, weekKeyOf, fmtRange, fmtMoney, fmtShortDate, activeProfilesOn, weekStats, MEAL_STYLE, PERSON_COLOR, MEALS as MEALS_ALL, DAY_KEYS, dayForPerson, dayTotals } from '../../lib/mealplan'
 import useSmartWeeks from '../../lib/useSmartWeeks'
-import { COUNTRIES, COUNTRY_LABEL } from '../../engine/cuisines'
+import { COUNTRIES, COUNTRY_LABEL, missingFor } from '../../engine/cuisines'
 import { stockAvailable } from '../../lib/needs'
 import { VEG_DAILY_MIN, SOLUBLE_FIBER_DAILY_MIN } from '../../engine/weekRules'
 
@@ -233,7 +233,10 @@ export default function ModelWeekSheet({ initialTarget = 1, initialTab = 'smart'
                 <span className="sw-srcnote mp-in"><Icon name="shuffle" size={13} />A random week of lunches and dinners built from your ingredients — new combinations and recipes from around the world. No priority to choose; the rules still apply.</span>
               )}
               {source === 'country' && !locks && (
-                <span className="sw-srcnote mp-in"><Icon name="plate" size={13} />Classic dishes {country === 'all' ? 'from around the world' : `from ${COUNTRIES.find(c => c.id === country)?.label}`}, built from your ingredients at today’s prices.</span>
+                <span className="sw-srcnote mp-in"><Icon name="plate" size={13} /><span>
+                  Dishes composed with {country === 'all' ? 'the flavors of each country' : `${COUNTRIES.find(c => c.id === country)?.label}’s flavors`}: a protein, a base, vegetables and seasonings that fit, all from your ingredients at today’s prices.
+                  {country !== 'all' && missingFor(allIng, country).length > 0 && <> Add <strong>{missingFor(allIng, country).join(', ')}</strong> in Ingredients for more {COUNTRIES.find(c => c.id === country)?.label} ideas.</>}
+                </span></span>
               )}
               {source === 'ingredients' && !locks && (
                 <span className="sw-srcnote mp-in"><Icon name="leaf" size={13} />New lunches and dinners made from your ingredients — a protein, a base and two vegetables — using the pantry first and whole packs. Loading or saving a week adds its new dishes to Dishes.</span>
