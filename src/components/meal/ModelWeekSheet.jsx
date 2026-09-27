@@ -7,13 +7,16 @@ import Segmented from '../ui/Segmented'
 import { buildModelWeekSlots } from '../../lib/planActions'
 import { addDays, mondayOf, weekKeyOf, fmtRange, fmtMoney, fmtShortDate, activeProfilesOn, weekStats, MEAL_STYLE, PERSON_COLOR, MEALS as MEALS_ALL, DAY_KEYS, dayForPerson, dayTotals } from '../../lib/mealplan'
 import useSmartWeeks from '../../lib/useSmartWeeks'
+import { COUNTRIES, COUNTRY_LABEL } from '../../engine/cuisines'
 import { stockAvailable } from '../../lib/needs'
 import { VEG_DAILY_MIN, SOLUBLE_FIBER_DAILY_MIN } from '../../engine/weekRules'
 
 // Titles shout in CAPS ('WEIGHT GAIN — …'): calm them down, keep acronyms.
 const pretty = t => { const s = t.replace(/\b[A-Z]{3,}\b/g, w => w === 'PCOS' ? w : w.toLowerCase()); return s.charAt(0).toUpperCase() + s.slice(1) }
 
-const SOURCE_OPTS = [{ value: 'dishes', label: 'From dishes' }, { value: 'ingredients', label: 'From ingredients' }]
+const SOURCE_OPTS = [{ value: 'dishes', label: 'Dishes' }, { value: 'ingredients', label: 'Ingredients' }, { value: 'surprise', label: 'Surprise' }, { value: 'country', label: 'Countries' }]
+const COUNTRY_OPTS = [{ value: 'all', label: '🌍 All' }, ...COUNTRIES.map(c => ({ value: c.id, label: `${c.flag} ${c.label}` }))]
+const randomSeed = () => 1 + Math.floor(Math.random() * 1e9)
 const PRIORITY_OPTS = [{ value: 'price', label: 'Cheapest' }, { value: 'protein', label: 'More protein' }, { value: 'veg', label: 'More veg' }]
 const planKeys = plan => [plan.L, plan.D, ...Object.values(plan.B), ...Object.values(plan.S)]
 const PRIORITY_BEST = { price: 'Best price', protein: 'Most protein', veg: 'Most veg' }
@@ -66,7 +69,8 @@ export default function ModelWeekSheet({ initialTarget = 1, initialTab = 'smart'
   const dishPrefs = useStore(s => s.dishPrefs) ?? {}
   const rateDishes = useStore(s => s.rateDishes)
   const addGeneratedCombos = useStore(s => s.addGeneratedCombos)
-  const [source, setSource] = useState('dishes') // 'dishes' | 'ingredients'
+  const [source, setSource] = useState('dishes') // 'dishes' | 'ingredients' | 'surprise' | 'country'
+  const [country, setCountry] = useState('es')
   const resetDishPrefs = useStore(s => s.resetDishPrefs)
   const rejected = Object.values(dishPrefs).filter(v => v < 0).length
   // Batch de las 2 semanas anteriores a la de destino: no se repite.
@@ -88,7 +92,7 @@ export default function ModelWeekSheet({ initialTarget = 1, initialTab = 'smart'
     const a = stockAvailable(stockRaw, allIng, addDays(monday, -1))
     return Object.fromEntries(Object.entries(a).map(([k, v]) => [k, Math.round(v)]).sort())
   }, [stockRaw, allIng, wk]) // eslint-disable-line react-hooks/exhaustive-deps
-  const smart = useSmartWeeks({ allIng, allCombos, people, priority, vegMin, seed, shown, exclude, prefs: dishPrefs, recent, stock, source, locks: locks?.locks ?? {} }, tab === 'smart')
+  const smart = useSmartWeeks({ allIng, allCombos, people, priority, vegMin, seed, shown, exclude, prefs: dishPrefs, recent, stock, source, country: country === 'all' ? null : country, locks: locks?.locks ?? {} }, tab === 'smart')
   const smartSel = smart.results[Math.min(pick, smart.results.length - 1)] ?? null
   // Lunes–viernes de lo ya planificado en la semana destino, para comparar.
   const planned = useMemo(() => {
@@ -100,7 +104,7 @@ export default function ModelWeekSheet({ initialTarget = 1, initialTab = 'smart'
   // «New ideas»: 3 semanas nuevas, sin repetir ninguna pareja ya enseñada.
   function newIdeas() {
     setShown(sh => [...new Set([...sh, ...smart.results.map(r => `${r.plan.L}|${r.plan.D}`)])])
-    setSeed(s => s + 1); setPick(0); setSavedAs(null); setLocks(null)
+    setSeed(s => (source === 'surprise' ? randomSeed() : s + 1)); setPick(0); setSavedAs(null); setLocks(null)
   }
   // «Not this one»: se queda el resto de la semana y busca otro plato para
   // ese hueco; el rechazado pesa menos a partir de ahora.
@@ -116,6 +120,8 @@ export default function ModelWeekSheet({ initialTarget = 1, initialTab = 'smart'
     setLocks({ slot, label, locks: keep }); setPick(0); setSavedAs(null)
   }
   function changeOpt(fn) { return v => { fn(v); setPick(0); setSeed(0); setShown([]); setLocks(null); setSavedAs(null) } }
+  // «Surprise»: cada vez una semilla nueva al azar.
+  const pickSource = v => { changeOpt(setSource)(v); if (v === 'surprise') setSeed(randomSeed()) }
   function saveSmart() {
     if (!smartSel) return
     addGeneratedCombos(smartSel.newDishes)
@@ -210,12 +216,25 @@ export default function ModelWeekSheet({ initialTarget = 1, initialTab = 'smart'
         {tab === 'smart' && (
           <>
             <div className="sw-controls">
-              <Segmented label="Build from" value={source} onChange={changeOpt(setSource)} options={SOURCE_OPTS} />
-              <Segmented label="Priority" value={priority} onChange={changeOpt(setPriority)} options={PRIORITY_OPTS} />
+              <Segmented label="Build from" value={source} onChange={pickSource} options={SOURCE_OPTS} />
+              {(source === 'dishes' || source === 'ingredients') && <Segmented label="Priority" value={priority} onChange={changeOpt(setPriority)} options={PRIORITY_OPTS} />}
               <Segmented label="Vegetables per day" value={vegMin} onChange={changeOpt(setVegMin)} options={VEG_OPTS} />
-              <button type="button" className="mp-btn mp-btn-dark mp-btn-sm sw-new" onClick={newIdeas} disabled={smart.busy}><Icon name="repeat" size={14} />New ideas</button>
+              <button type="button" className="mp-btn mp-btn-dark mp-btn-sm sw-new" onClick={newIdeas} disabled={smart.busy}><Icon name={source === 'surprise' ? 'shuffle' : 'repeat'} size={14} />{source === 'surprise' ? 'Surprise me again' : 'New ideas'}</button>
+              {source === 'country' && (
+                <div className="sw-countries" role="group" aria-label="Country">
+                  {COUNTRY_OPTS.map(o => (
+                    <button key={o.value} type="button" className={`sw-country${country === o.value ? ' is-on' : ''}`} aria-pressed={country === o.value} onClick={() => changeOpt(setCountry)(o.value)}>{o.label}</button>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="mp-sheet-body" style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 2 }}>
+              {source === 'surprise' && !locks && (
+                <span className="sw-srcnote mp-in"><Icon name="shuffle" size={13} />A random week from everything — your dishes, new ones from your ingredients and recipes from around the world. No priority to choose; the rules still apply.</span>
+              )}
+              {source === 'country' && !locks && (
+                <span className="sw-srcnote mp-in"><Icon name="plate" size={13} />Classic dishes {country === 'all' ? 'from around the world' : `from ${COUNTRIES.find(c => c.id === country)?.label}`}, made with your ingredients at today’s prices, plus your dishes from that cuisine.</span>
+              )}
               {source === 'ingredients' && !locks && (
                 <span className="sw-srcnote mp-in"><Icon name="leaf" size={13} />New lunches and dinners made from your ingredients — a protein, a base and two vegetables — using the pantry first and whole packs. Loading or saving a week adds its new dishes to Dishes.</span>
               )}
@@ -230,7 +249,7 @@ export default function ModelWeekSheet({ initialTarget = 1, initialTab = 'smart'
               {!smart.busy && !smart.error && !smart.results.length && <div className="mp-empty" style={{ padding: 40 }}>{source === 'ingredients' ? 'Not enough tagged ingredients to compose dishes. Tag proteins, bases and vegetables in Ingredients.' : 'Not enough dishes to build a week. Add lunches and dinners in Dishes.'}</div>}
               {smart.results.map((r, i) => (
                 <SmartCard key={r.plan.L + r.plan.D + JSON.stringify(r.plan.B) + i} r={r} i={i} on={i === pick} busy={smart.busy} onReject={(slot, pid) => reject(r, slot, pid)}
-                  best={PRIORITY_BEST[priority]} people={people} allCombos={r.newDishes ? { ...allCombos, ...r.newDishes } : allCombos} vegMin={vegMin}
+                  best={source === 'surprise' ? 'Surprise' : source === 'country' ? (country === 'all' ? 'World week' : COUNTRY_LABEL[country]) : PRIORITY_BEST[priority]} people={people} allCombos={r.newDishes ? { ...allCombos, ...r.newDishes } : allCombos} vegMin={vegMin}
                   planned={planned} onPick={() => setPick(i)} />
               ))}
             </div>
@@ -382,7 +401,7 @@ function SmartCard({ r, i, on, busy, best, people, allCombos, vegMin, planned, o
   const Dish = ({ m, k, slot }) => (
     <span className="sw-dish">
       <span className="mp-bubble" style={{ width: 24, height: 24, background: MEAL_STYLE[m].tint, color: MEAL_STYLE[m].color }}><Icon name={MEAL_ICON[m]} size={12} stroke={2.4} /></span>
-      <span style={{ flex: 1, minWidth: 0 }}>{name(k)}{allCombos[k]?.generated && <span className="mp-tag sw-newdish">new</span>}</span>
+      <span style={{ flex: 1, minWidth: 0 }}>{name(k)}{allCombos[k]?.generated && <span className="mp-tag sw-newdish">{allCombos[k].country ? `${COUNTRIES.find(c => c.id === allCombos[k].country)?.flag ?? ''} ` : ''}new</span>}</span>
       <No slot={slot} what={m === 'comida' ? 'lunch' : 'dinner'} />
     </span>
   )
@@ -420,7 +439,7 @@ function SmartCard({ r, i, on, busy, best, people, allCombos, vegMin, planned, o
                   <span className="mp-muted mp-num">{s.kcal} / {s.target} kcal · {s.hit}/5 days on target</span>
                 </span>
                 <span className="sw-line"><Icon name={MEAL_ICON.desayuno} size={12} stroke={2.4} color={MEAL_STYLE.desayuno.color} />{name(r.plan.B[p.id])}<No slot="B" pid={p.id} what="breakfast" /></span>
-                <span className="sw-line"><Icon name={MEAL_ICON.merienda} size={12} stroke={2.4} color={MEAL_STYLE.merienda.color} />{name(r.plan.S[p.id])}{p.id === 'maria' ? <span className="mp-muted"> · Mon & Wed: one to take to work</span> : null}<No slot="S" pid={p.id} what="snack" /></span>
+                <span className="sw-line"><Icon name={MEAL_ICON.merienda} size={12} stroke={2.4} color={MEAL_STYLE.merienda.color} />{name(r.plan.S[p.id])}<No slot="S" pid={p.id} what="snack" /></span>
                 <span className="sw-stats mp-num">
                   <span><strong>{s.prot} g</strong> protein</span>
                   <span className={s.veg < vegMin ? 'is-low' : ''}><strong>{s.veg} g</strong> veg</span>

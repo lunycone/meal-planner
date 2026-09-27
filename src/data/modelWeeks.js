@@ -38,7 +38,9 @@ export const MODEL_KCAL_BY_DAY = {
 // probo para Julio, que si lo hacia -- ver commit revertido 7241041) porque
 // Maria suele estar en el regimen de "sobra kcal" (su objetivo ya esta por
 // debajo del plato por defecto), no en el de "falta kcal" de Julio.
-export const MARIA_NO_BATIDO_CASERO = [0, 2] // indices sobre MODEL_DAY_KEYS: lun, mié
+// 27 sep 2026: la merienda de María ya no es fija los lunes y miércoles
+// («puede ser lo que sea»): lista vacía.
+export const MARIA_NO_BATIDO_CASERO = [] // antes [0, 2]: lun, mié
 export const MARIA_MERIENDA_PORTATIL = 'd-yogurt-banana-oats'
 
 // 6 sep 2026 -- techo de proteina de Maria, mismo criterio que el de Julio
