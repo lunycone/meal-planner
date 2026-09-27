@@ -13,6 +13,7 @@ import { VEG_DAILY_MIN, SOLUBLE_FIBER_DAILY_MIN } from '../../engine/weekRules'
 // Titles shout in CAPS ('WEIGHT GAIN — …'): calm them down, keep acronyms.
 const pretty = t => { const s = t.replace(/\b[A-Z]{3,}\b/g, w => w === 'PCOS' ? w : w.toLowerCase()); return s.charAt(0).toUpperCase() + s.slice(1) }
 
+const SOURCE_OPTS = [{ value: 'dishes', label: 'From dishes' }, { value: 'ingredients', label: 'From ingredients' }]
 const PRIORITY_OPTS = [{ value: 'price', label: 'Cheapest' }, { value: 'protein', label: 'More protein' }, { value: 'veg', label: 'More veg' }]
 const planKeys = plan => [plan.L, plan.D, ...Object.values(plan.B), ...Object.values(plan.S)]
 const PRIORITY_BEST = { price: 'Best price', protein: 'Most protein', veg: 'Most veg' }
@@ -64,6 +65,8 @@ export default function ModelWeekSheet({ initialTarget = 1, initialTab = 'smart'
   // ── Smart ──
   const dishPrefs = useStore(s => s.dishPrefs) ?? {}
   const rateDishes = useStore(s => s.rateDishes)
+  const addGeneratedCombos = useStore(s => s.addGeneratedCombos)
+  const [source, setSource] = useState('dishes') // 'dishes' | 'ingredients'
   const resetDishPrefs = useStore(s => s.resetDishPrefs)
   const rejected = Object.values(dishPrefs).filter(v => v < 0).length
   // Batch de las 2 semanas anteriores a la de destino: no se repite.
@@ -85,7 +88,7 @@ export default function ModelWeekSheet({ initialTarget = 1, initialTab = 'smart'
     const a = stockAvailable(stockRaw, allIng, addDays(monday, -1))
     return Object.fromEntries(Object.entries(a).map(([k, v]) => [k, Math.round(v)]).sort())
   }, [stockRaw, allIng, wk]) // eslint-disable-line react-hooks/exhaustive-deps
-  const smart = useSmartWeeks({ allIng, allCombos, people, priority, vegMin, seed, shown, exclude, prefs: dishPrefs, recent, stock, locks: locks?.locks ?? {} }, tab === 'smart')
+  const smart = useSmartWeeks({ allIng, allCombos, people, priority, vegMin, seed, shown, exclude, prefs: dishPrefs, recent, stock, source, locks: locks?.locks ?? {} }, tab === 'smart')
   const smartSel = smart.results[Math.min(pick, smart.results.length - 1)] ?? null
   // Lunes–viernes de lo ya planificado en la semana destino, para comparar.
   const planned = useMemo(() => {
@@ -115,6 +118,7 @@ export default function ModelWeekSheet({ initialTarget = 1, initialTab = 'smart'
   function changeOpt(fn) { return v => { fn(v); setPick(0); setSeed(0); setShown([]); setLocks(null); setSavedAs(null) } }
   function saveSmart() {
     if (!smartSel) return
+    addGeneratedCombos(smartSel.newDishes)
     const name = `Smart · ${PRIORITY_OPTS.find(o => o.value === priority).label.toLowerCase()} · ${fmtShortDate(new Date())}`
     saveCustomWeek({ name, slots: JSON.parse(JSON.stringify(smartSel.slots)) })
     rateDishes(planKeys(smartSel.plan), 1)
@@ -122,6 +126,7 @@ export default function ModelWeekSheet({ initialTarget = 1, initialTab = 'smart'
   }
   function loadSmart() {
     if (!smartSel) return
+    addGeneratedCombos(smartSel.newDishes)
     replaceWeek(wk, JSON.parse(JSON.stringify(smartSel.slots)))
     if (!savedAs) rateDishes(planKeys(smartSel.plan), 1)
     setEditingWeek(null)
@@ -205,11 +210,15 @@ export default function ModelWeekSheet({ initialTarget = 1, initialTab = 'smart'
         {tab === 'smart' && (
           <>
             <div className="sw-controls">
+              <Segmented label="Build from" value={source} onChange={changeOpt(setSource)} options={SOURCE_OPTS} />
               <Segmented label="Priority" value={priority} onChange={changeOpt(setPriority)} options={PRIORITY_OPTS} />
               <Segmented label="Vegetables per day" value={vegMin} onChange={changeOpt(setVegMin)} options={VEG_OPTS} />
               <button type="button" className="mp-btn mp-btn-dark mp-btn-sm sw-new" onClick={newIdeas} disabled={smart.busy}><Icon name="repeat" size={14} />New ideas</button>
             </div>
             <div className="mp-sheet-body" style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 2 }}>
+              {source === 'ingredients' && !locks && (
+                <span className="sw-srcnote mp-in"><Icon name="leaf" size={13} />New lunches and dinners made from your ingredients — a protein, a base and two vegetables — using the pantry first and whole packs. Loading or saving a week adds its new dishes to Dishes.</span>
+              )}
               {locks && (
                 <div className="sw-lockbar mp-in">
                   <span>Other options for <strong>{locks.label}</strong>, keeping the rest of the week.</span>
@@ -218,10 +227,10 @@ export default function ModelWeekSheet({ initialTarget = 1, initialTab = 'smart'
               )}
               {smart.busy && !smart.results.length && <SmartSkeleton />}
               {smart.error && <div className="mp-empty">Couldn't build a week: {smart.error}</div>}
-              {!smart.busy && !smart.error && !smart.results.length && <div className="mp-empty" style={{ padding: 40 }}>Not enough dishes to build a week. Add lunches and dinners in Dishes.</div>}
+              {!smart.busy && !smart.error && !smart.results.length && <div className="mp-empty" style={{ padding: 40 }}>{source === 'ingredients' ? 'Not enough tagged ingredients to compose dishes. Tag proteins, bases and vegetables in Ingredients.' : 'Not enough dishes to build a week. Add lunches and dinners in Dishes.'}</div>}
               {smart.results.map((r, i) => (
                 <SmartCard key={r.plan.L + r.plan.D + JSON.stringify(r.plan.B) + i} r={r} i={i} on={i === pick} busy={smart.busy} onReject={(slot, pid) => reject(r, slot, pid)}
-                  best={PRIORITY_BEST[priority]} people={people} allCombos={allCombos} vegMin={vegMin}
+                  best={PRIORITY_BEST[priority]} people={people} allCombos={r.newDishes ? { ...allCombos, ...r.newDishes } : allCombos} vegMin={vegMin}
                   planned={planned} onPick={() => setPick(i)} />
               ))}
             </div>
@@ -229,7 +238,7 @@ export default function ModelWeekSheet({ initialTarget = 1, initialTab = 'smart'
               <span className="mp-muted" style={{ fontSize: 12.5, lineHeight: 1.4, maxWidth: 380 }}>
                 {savedAs ? <span style={{ color: 'var(--c-green)', fontWeight: 600 }}>Saved as “{savedAs}”</span>
                   : smart.busy ? 'Trying combinations with today’s prices…'
-                  : smart.tried ? `Tried ${smart.tried.toLocaleString('en-US')} combinations with today’s prices.` : ''}
+                  : smart.tried ? `${smart.composed ? `Composed ${smart.composed} dishes · ` : ''}Tried ${smart.tried.toLocaleString('en-US')} combinations with today’s prices.` : ''}
                 {rejected > 0 && !savedAs && <> · {rejected} dish{rejected > 1 ? 'es' : ''} you said no to <button type="button" className="ig-manage" onClick={() => resetDishPrefs(true)}>Reset</button></>}
               </span>
               <div style={{ display: 'flex', gap: 8 }}>
@@ -373,7 +382,7 @@ function SmartCard({ r, i, on, busy, best, people, allCombos, vegMin, planned, o
   const Dish = ({ m, k, slot }) => (
     <span className="sw-dish">
       <span className="mp-bubble" style={{ width: 24, height: 24, background: MEAL_STYLE[m].tint, color: MEAL_STYLE[m].color }}><Icon name={MEAL_ICON[m]} size={12} stroke={2.4} /></span>
-      <span style={{ flex: 1, minWidth: 0 }}>{name(k)}</span>
+      <span style={{ flex: 1, minWidth: 0 }}>{name(k)}{allCombos[k]?.generated && <span className="mp-tag sw-newdish">new</span>}</span>
       <No slot={slot} what={m === 'comida' ? 'lunch' : 'dinner'} />
     </span>
   )

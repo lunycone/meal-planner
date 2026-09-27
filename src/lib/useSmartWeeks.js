@@ -13,7 +13,7 @@ function getWorker() {
 export default function useSmartWeeks(args, enabled = true) {
   const [state, setState] = useState({ busy: true, results: [], tried: 0, ms: 0, error: null })
   const seq = useRef(0)
-  const key = enabled ? JSON.stringify([args.priority, args.vegMin, args.seed, args.shown, args.exclude, args.locks, args.prefs, args.recent, args.stock, args.people?.map(p => p.id)]) : null
+  const key = enabled ? JSON.stringify([args.priority, args.vegMin, args.seed, args.shown, args.exclude, args.locks, args.prefs, args.recent, args.stock, args.source, args.people?.map(p => p.id)]) : null
 
   useEffect(() => {
     if (!enabled) return

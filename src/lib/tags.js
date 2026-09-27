@@ -50,7 +50,7 @@ export const DEFAULT_TAGS = {
   'chicken-breast-organic': T('white-meat'), 'chicken-drumstick-generic': T('white-meat'), 'chicken-drumstick-organic': T('white-meat'),
   'chicken-wings': T('white-meat'), 'chicken-wings-organic': T('white-meat'), 'whole-chicken-organic': T('white-meat'),
   cabbage: T('veg', 'insoluble'), kale: T('veg', 'insoluble'), 'hot-dog-buns': T('starch'), 'fresh-parsley': T('veg'),
-  garlic: T('fructan'), 'butternut-squash': T('veg'), radishes: T('veg'), apple: T('fruit'), applesauce: T('fruit'), quince: T('fruit'),
+  garlic: T('fructan'), 'black-pepper': T(), paprika: T(), cumin: T(), salt: T(), 'butternut-squash': T('veg'), radishes: T('veg'), apple: T('fruit'), applesauce: T('fruit'), quince: T('fruit'),
   eggs: T('egg'), 'eggs-organic': T('egg'), 'canned-tomatoes': T('veg'), honey: T(),
   'mackerel-half-can': T('fish'), 'sardines-half-can': T('fish'), 'sardines-quarter-can': T('fish'),
 }
