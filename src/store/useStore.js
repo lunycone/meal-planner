@@ -1,4 +1,5 @@
 import { DEFAULT_BATCH, normalizeBatch, applyBatchSettings } from '../lib/batchConfig'
+import { withEstimatedNutrition } from '../data/nutritionRef'
 import { create } from 'zustand'
 import { persist }  from 'zustand/middleware'
 import { ING, CAT_LABELS, CAT_ORDER } from '../data/ingredients'
@@ -743,7 +744,8 @@ export function selectAllIng(s) {
   const merged  = {}
   for (const [k, v] of Object.entries(base)) {
     if (deleted.has(k)) continue
-    merged[k] = { ...v, ...s.ingredientOverrides[k], ...s.priceOverrides[k] }
+    // Sin kcal (p. ej. un ingrediente tuyo sin etiqueta): se estiman por el nombre.
+    merged[k] = withEstimatedNutrition(k, { ...v, ...s.ingredientOverrides[k], ...s.priceOverrides[k] })
   }
   return merged
 }

@@ -288,6 +288,7 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
 
                 <div className="ig-field">
                   <span className="mp-eyebrow">Nutrition · as on the label</span>
+                  {ing?.nutEst && <span className="ig-derived" style={{ color: '#8A5E08' }}>Estimated from the name — check the label and Done to keep it.</span>}
                   <div className="ig-grid4">
                     <label className="ig-input"><span>Label per ({dim === 'unit' ? 'units' : BASIS_UNIT[dim]})</span><input inputMode="decimal" value={draft.basis} onChange={e => setBasis(e.target.value)} placeholder={dim === 'unit' ? '1' : '100'} /></label>
                     <label className="ig-input"><span>kcal</span><input inputMode="decimal" value={draft.kc} onChange={e => setNut('kc', e.target.value)} placeholder="0" /></label>
