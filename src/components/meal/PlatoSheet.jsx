@@ -121,9 +121,9 @@ export default function PlatoSheet({ comboKey = null, onClose }) {
   const digestive = profiles.find(p => p.digestive)
   const probe = { items: draft.items }
   const digFlags = digestive && draft.items.length ? [
-    dishHasGOS(probe) && 'Legumes (ferment)',
-    dishHasInsolubleFiber(probe) && 'Insoluble fiber',
-    dishHasAllium(probe) && 'Onion / garlic',
+    dishHasGOS(probe, allIng) && 'Legumes (ferment)',
+    dishHasInsolubleFiber(probe, allIng) && 'Insoluble fiber',
+    dishHasAllium(probe, allIng) && 'Onion / garlic',
   ].filter(Boolean) : []
 
   const matches = useMemo(() => {

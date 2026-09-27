@@ -7,6 +7,7 @@ import Overlay from '../ui/Overlay'
 import Icon from '../ui/Icon'
 import Segmented from '../ui/Segmented'
 import { storeOf, storeColor, storesIn } from '../../lib/stores'
+import { TAGS, TAG_LABEL, TAG_HINT, tagsOf, guessTags } from '../../lib/tags'
 import { packOf, dimOf, toBase, formatPack, keepsOf, KEEPS, KEEPS_LABEL, WEIGHT_UNITS, VOLUME_UNITS } from '../../lib/packs'
 
 // ─── Ficha de ingrediente: ver y editar son lo mismo ───────────────────────
@@ -48,6 +49,7 @@ function draftOf(ing, unit, key) {
     keeps: ing ? keepsOf(key ?? '', ing) : 'week',
     basis: String(basis), kc: nutAt(U.nut[0]), prot: nutAt(U.nut[1]), fat: nutAt(U.nut[2]),
     portion,
+    tags: ing ? [...tagsOf(key, { [key]: ing })] : [],
   }
 }
 
@@ -81,6 +83,13 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
   const [askDelete, setAskDelete] = useState(false)
   const [askClose, setAskClose] = useState(false)
   const set = (k, v) => setDraft(d => ({ ...d, [k]: v }))
+  // Etiquetas: en uno nuevo se proponen solas según el nombre y la categoría
+  // hasta que las toques a mano.
+  const [tagsTouched, setTagsTouched] = useState(!!ing)
+  const shownTags = tagsTouched ? draft.tags : guessTags('', { name: draft.name, cat: draft.cat })
+  const [keepsTouched, setKeepsTouched] = useState(!!ing)
+  const shownKeeps = keepsTouched ? draft.keeps : keepsOf('', { name: draft.name, cat: draft.cat, tags: shownTags })
+  const toggleTag = t => { setTagsTouched(true); setDraft(d => { const cur = tagsTouched ? d.tags : shownTags; return { ...d, tags: cur.includes(t) ? cur.filter(x => x !== t) : [...cur, t] } }) }
   // Cambiar «por cuántos g» reescala lo ya escrito para que siga siendo lo
   // mismo (97 kcal por 100 g → 111.6 por 115 g); luego se copia la etiqueta.
   const setBasis = v => setDraft(d => {
@@ -129,7 +138,7 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
   function save() {
     if (!draft.name.trim()) return
     const store = draft.store.trim()
-    const data = { name: draft.name.trim(), cat: draft.cat, store, organic: draft.organic }
+    const data = { name: draft.name.trim(), cat: draft.cat, store, organic: draft.organic, tags: shownTags }
     if (legacy) {
       data.pack = draft.pack
       data.per = draft.per
@@ -140,7 +149,7 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
       if (priceVal != null) data[T.price] = priceVal
       T.nut.forEach((field, i) => { if (field && nut[i] != null) data[field] = nut[i] })
       if (packOk) Object.assign(data, { packQty: pQty, packUnit: draft.packUnit, packPrice: pPrice, pack: formatPack({ qty: pQty, unit: draft.packUnit, price: pPrice }) })
-      data.keeps = draft.keeps
+      data.keeps = shownKeeps
       if (portionN > 0) { data.portionG = portionN; data.per = portionNote } else data.per = ing?.per ?? ''
     }
     if (isNew) {
@@ -231,6 +240,16 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
               </div>
             </div>
 
+            <div className="ig-field">
+              <span className="ig-field-head"><span className="mp-eyebrow">What it is</span><span className="mp-muted" style={{ fontSize: 11.5 }}>Used by the rules and the smart week</span></span>
+              <div className="ig-chips">
+                {TAGS.map(t => {
+                  const on = shownTags.includes(t)
+                  return <button key={t} type="button" className={`ig-chip ig-tag${on ? ' is-on' : ''}`} aria-pressed={on} title={TAG_HINT[t]} onClick={() => toggleTag(t)}>{on && <Icon name="check" size={11} stroke={3} />}{TAG_LABEL[t]}</button>
+                })}
+              </div>
+            </div>
+
             {legacy ? (
               <>
                 <div className="ig-field">
@@ -264,7 +283,7 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
 
                 <div className="ig-field">
                   <span className="mp-eyebrow">How long it keeps</span>
-                  <Segmented label="How long it keeps" value={draft.keeps} onChange={v => set('keeps', v)} options={KEEPS.map(k => ({ value: k, label: KEEPS_LABEL[k] }))} />
+                  <Segmented label="How long it keeps" value={shownKeeps} onChange={v => { setKeepsTouched(true); set('keeps', v) }} options={KEEPS.map(k => ({ value: k, label: KEEPS_LABEL[k] }))} />
                 </div>
 
                 <div className="ig-field">

@@ -5,6 +5,7 @@ import { storeOf as storeOfIng, applyColorOverrides } from '../lib/stores'
 import { COMBO }            from '../data/combos'
 import { STORAGE_KEY, createStorageAdapter } from './storage'
 import { migrateWeekKeys } from '../utils/date'
+import { migrateKeysV2 } from './migrateKeys'
 
 import { PLAN as PLAN_COMIDA   } from '../data/plans/comida'
 import { PLAN as PLAN_DESAYUNO } from '../data/plans/desayuno'
@@ -220,6 +221,19 @@ const useStore = create(
       // categoría cambiados en catLabels; categorías de fábrica quitadas en
       // hiddenCats. Renombrar o borrar reescribe los ingredientes afectados
       // en UNA sola escritura.
+      // Gustos para la semana inteligente: { recipeKey: n } (−1 por cada
+      // «Not this one», +1 cada vez que cargas una semana que lo lleva).
+      dishPrefs: {},
+      rateDishes(keys, delta) {
+        set(s => {
+          const next = { ...s.dishPrefs }
+          for (const k of keys) if (k) next[k] = Math.max(-5, Math.min(5, (next[k] ?? 0) + delta))
+          return { dishPrefs: next }
+        })
+      },
+      resetDishPrefs(onlyNegative = true) {
+        set(s => ({ dishPrefs: onlyNegative ? Object.fromEntries(Object.entries(s.dishPrefs ?? {}).filter(([, v]) => v > 0)) : {} }))
+      },
       extraStores: [],
       storeColors: {},
       catColors:   {},
@@ -570,10 +584,12 @@ const useStore = create(
       storage: createStorageAdapter(),
       // v1 (26 sep 2026): getISOWeek corregido — las claves de weekPlan
       // guardadas con la formula vieja se renumeran una sola vez.
-      version: 1,
+      version: 2,
       migrate(state, version) {
-        if (version < 1 && state?.weekPlan) return { ...state, weekPlan: migrateWeekKeys(state.weekPlan) }
-        return state
+        let st = state
+        if (version < 1 && st?.weekPlan) st = { ...st, weekPlan: migrateWeekKeys(st.weekPlan) }
+        if (version < 2) st = migrateKeysV2(st)
+        return st
       },
       skipHydration: true,
       partialize: s => ({
@@ -586,6 +602,7 @@ const useStore = create(
         customCombos:        s.customCombos,
         customCategories:    s.customCategories,
         extraStores:         s.extraStores,
+        dishPrefs:           s.dishPrefs,
         storeColors:         s.storeColors,
         catColors:           s.catColors,
         catLabels:           s.catLabels,

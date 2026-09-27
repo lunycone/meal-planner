@@ -14,11 +14,11 @@ const ALL_DAY_KEYS = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom']
 
 // ─── Ingredients that go on fresh each day — only for platos (comida/cena) ───
 const FRESH_KEYS = new Set([
-  'aguacate', 'lechuga', 'tomate-fresco', 'tomate-cherry', 'pepino',
-  'apio', 'nachos', 'cheddar', 'sour-cream',
-  'feta-vaca', 'feta-oveja',
+  'avocado', 'lettuce', 'tomato', 'tomate-cherry', 'pepino',
+  'celery', 'nachos', 'cheddar', 'sour-cream',
+  'feta-cow', 'feta-sheep',
 ])
-const YOGUR_FRESH_IN_PLATO = new Set(['yogur-cabra', 'yogur-cabra-plain', 'yogur-vaca', 'yogur-griego', 'yogur-oveja'])
+const YOGUR_FRESH_IN_PLATO = new Set(['goat-yogurt', 'yogur-cabra-plain', 'cow-yogurt', 'greek-yogurt', 'sheep-yogurt'])
 
 // ─── Puré: que ingredientes se machacan CON la patata, no aparte ─────────────
 // 6 sep 2026 -- el usuario, con razon: en "Pollo pierna + puré patata-
@@ -31,14 +31,14 @@ const YOGUR_FRESH_IN_PLATO = new Set(['yogur-cabra', 'yogur-cabra-plain', 'yogur
 // pure), todo lo que este en esta lista se agrupa CON la base escalable
 // (patata); lo demas (proteina, aove, especias, guarniciones aparte como
 // setas/pipas/manzana) se queda en su propio grupo.
-const PUREE_COMPANION_KEYS = new Set(['leche', 'mantequilla', 'zanahoria', 'cebolla-amarilla', 'squash-butternut', 'zucchini', 'puerro'])
+const PUREE_COMPANION_KEYS = new Set(['whole-milk', 'butter', 'carrot', 'yellow-onion', 'butternut-squash', 'zucchini', 'leek'])
 
 // Separa sharedItems (mas la base, si se pasa) en { pureeItems, restItems }.
 // Devuelve pureeItems=[] si el plato no lleva pure de verdad (sin leche+
 // mantequilla juntas) -- en ese caso todo se queda en restItems, tal cual.
 function splitPureeItems(sharedItems, baseName, baseQtyLabel) {
   const keys = new Set(sharedItems.map(it => it.key))
-  const isPuree = keys.has('leche') && keys.has('mantequilla')
+  const isPuree = keys.has('whole-milk') && keys.has('butter')
   if (!isPuree) return { isPuree: false, pureeItems: [], restItems: sharedItems }
   const pureeItems = sharedItems.filter(it => PUREE_COMPANION_KEYS.has(it.key))
   const restItems  = sharedItems.filter(it => !PUREE_COMPANION_KEYS.has(it.key))
@@ -53,10 +53,10 @@ const PROTEIN_YIELD = {
   'lomo':        0.65,   // lomo al horno pierde ~35%
   'pollo':       0.65,
   'lamb':        0.65,
-  'carne-picada': 0.70,
-  'cerdo-picado': 0.70,
-  'higado-vaca': 0.70,
-  'bacalao':     0.75,
+  'ground-beef': 0.70,
+  'ground-pork': 0.70,
+  'beef-liver': 0.70,
+  'cod':     0.75,
   'pollock':     0.75,
   'calamares':   0.75,
 }
@@ -72,10 +72,10 @@ const PROTEIN_YIELD = {
 // Solo se usa para estimar el peso total de un puré ya batido (donde no se
 // puede medir cada ingrediente por separado). Valores de cocina, aproximados.
 const UNIT_GRAMS = {
-  'puerro':          100,
-  'cebolla-amarilla': 110,
-  'cebolla-morada':  110,
-  'zanahoria':        70,
+  'leek':          100,
+  'yellow-onion': 110,
+  'red-onion':  110,
+  'carrot':        70,
 }
 const unitToGrams = (key, units) => Math.round((UNIT_GRAMS[key] ?? 100) * units)
 
@@ -84,18 +84,18 @@ const unitToGrams = (key, units) => Math.round((UNIT_GRAMS[key] ?? 100) * units)
 // model; we only need cookMin (the timer), a label and an emoji. The `resource`/
 // `temp` fields are legacy metadata, kept for reference but no longer used.
 const PROTEIN_COOK = {
-  'carne-picada':   { resource: 'stove',    cookMin: 20, label: 'Pan',          emoji: '🍳' },
-  'cerdo-picado':   { resource: 'stove',    cookMin: 20, label: 'Pan',          emoji: '🍳' },
+  'ground-beef':   { resource: 'stove',    cookMin: 20, label: 'Pan',          emoji: '🍳' },
+  'ground-pork':   { resource: 'stove',    cookMin: 20, label: 'Pan',          emoji: '🍳' },
   'pollo':          { resource: 'oven', temp: 200, cookMin: 40, label: 'Oven 200°', emoji: '🫕' },
-  'bacalao':        { resource: 'oven', temp: 200, cookMin: 25, label: 'Oven 200° + sauce', emoji: '🫕' },
+  'cod':        { resource: 'oven', temp: 200, cookMin: 25, label: 'Oven 200° + sauce', emoji: '🫕' },
   'lamb':           { resource: 'oven', temp: 200, cookMin: 45, label: 'Oven 200°', emoji: '🫕' },
   'lomo':           { resource: 'oven', temp: 180, cookMin: 35, label: 'Oven 180°', emoji: '🫕' },
-  'higado-vaca':    { resource: 'stove',    cookMin: 15, label: 'Pan',          emoji: '🍳' },
+  'beef-liver':    { resource: 'stove',    cookMin: 15, label: 'Pan',          emoji: '🍳' },
   'higado-bacalao': { resource: 'none',     cookMin: 0,  label: 'Can (no cooking)', emoji: '🥫' },
   'sardinas':       { resource: 'none',     cookMin: 0,  label: 'Can (no cooking)', emoji: '🥫' },
   'caballa':        { resource: 'none',     cookMin: 0,  label: 'Can (no cooking)', emoji: '🥫' },
   'calamares':      { resource: 'stove',    cookMin: 10, label: 'Griddle',         emoji: '🍳' },
-  'mejillones':     { resource: 'stove',    cookMin: 10, label: 'Steam',           emoji: '♨️' },
+  'mussels':     { resource: 'stove',    cookMin: 10, label: 'Steam',           emoji: '♨️' },
   'pollock':        { resource: 'oven', temp: 200, cookMin: 25, label: 'Oven 200°', emoji: '🫕' },
   'langosta':       { resource: 'stove',    cookMin: 10, label: 'Pan',          emoji: '🍳' },
   'ostras':         { resource: 'none',     cookMin: 0,  label: 'Raw',           emoji: '🦪' },
@@ -103,51 +103,51 @@ const PROTEIN_COOK = {
 }
 
 const BASE_COOK = {
-  'arroz':           { resource: 'stove',    cookMin: 18, label: 'Pot 18 min',     emoji: '🍚' },
+  'rice':           { resource: 'stove',    cookMin: 18, label: 'Pot 18 min',     emoji: '🍚' },
   'pasta':           { resource: 'none', alMomento: true, cookMin: 0, label: 'Cook when serving (10 min)', emoji: '⚡' },
-  'patata':          { resource: 'oven', temp: 200, cookMin: 30, label: 'Oven 200°', emoji: '🥔' },
-  'garbanzos':       { resource: 'pressure', cookMin: 30, label: 'Pressure cooker',    emoji: '⚗️', soak: true },
+  'potato':          { resource: 'oven', temp: 200, cookMin: 30, label: 'Oven 200°', emoji: '🥔' },
+  'chickpeas':       { resource: 'pressure', cookMin: 30, label: 'Pressure cooker',    emoji: '⚗️', soak: true },
   'black-beans':     { resource: 'pressure', cookMin: 35, label: 'Pressure cooker',    emoji: '⚗️', soak: true },
-  'lentejas-rojas':  { resource: 'stove',    cookMin: 15, label: 'Pot 15 min',     emoji: '🍲' },
-  'lentejas-verdes': { resource: 'stove',    cookMin: 20, label: 'Pot 20 min',     emoji: '🍲' },
-  'avena':           { resource: 'none', overnight: true, cookMin: 0, label: 'Fridge (night before)', emoji: '❄️' },
-  'maiz':            { resource: 'stove',    cookMin: 10, label: 'Pot/pan',     emoji: '🌽' },
-  'alubias-blancas': { resource: 'pressure', cookMin: 35, label: 'Pressure cooker',    emoji: '⚗️', soak: true },
+  'red-lentils':  { resource: 'stove',    cookMin: 15, label: 'Pot 15 min',     emoji: '🍲' },
+  'green-lentils': { resource: 'stove',    cookMin: 20, label: 'Pot 20 min',     emoji: '🍲' },
+  'oats':           { resource: 'none', overnight: true, cookMin: 0, label: 'Fridge (night before)', emoji: '❄️' },
+  'frozen-corn':            { resource: 'stove',    cookMin: 10, label: 'Pot/pan',     emoji: '🌽' },
+  'white-beans': { resource: 'pressure', cookMin: 35, label: 'Pressure cooker',    emoji: '⚗️', soak: true },
   'cranberry-beans': { resource: 'pressure', cookMin: 35, label: 'Pressure cooker',    emoji: '⚗️', soak: true },
-  'alubias-rojas':   { resource: 'pressure', cookMin: 35, label: 'Pressure cooker',    emoji: '⚗️', soak: true },
+  'kidney-beans':   { resource: 'pressure', cookMin: 35, label: 'Pressure cooker',    emoji: '⚗️', soak: true },
 }
 
 // ─── Per-ingredient prep actions for the prep queue ──────────────────────────
 const ING_PREP_ACTION = {
-  'cebolla-amarilla':   { emoji: '🧅', action: 'Peel and finely chop',           prepMin: 5  },
+  'yellow-onion':   { emoji: '🧅', action: 'Peel and finely chop',           prepMin: 5  },
   'cebolla-roja':       { emoji: '🧅', action: 'Peel and slice thinly',          prepMin: 5  },
   'cebolla-blanca':     { emoji: '🧅', action: 'Peel and finely chop',           prepMin: 5  },
-  'zanahoria':          { emoji: '🥕', action: 'Peel and dice',          prepMin: 5  },
-  'puerro':             { emoji: '🌿', action: 'Clean and slice',       prepMin: 4  },
-  'ajo':                { emoji: '🧄', action: 'Peel and slice (or mince)',     prepMin: 3  },
+  'carrot':          { emoji: '🥕', action: 'Peel and dice',          prepMin: 5  },
+  'leek':             { emoji: '🌿', action: 'Clean and slice',       prepMin: 4  },
+  'garlic':                { emoji: '🧄', action: 'Peel and slice (or mince)',     prepMin: 3  },
   'pimiento-rojo':      { emoji: '🫑', action: 'Clean, deseed and chop', prepMin: 4 },
-  'pimiento-verde':     { emoji: '🫑', action: 'Clean, deseed and chop', prepMin: 4 },
-  'pimiento-amarillo':  { emoji: '🫑', action: 'Clean, deseed and chop', prepMin: 4 },
+  'green-pepper':     { emoji: '🫑', action: 'Clean, deseed and chop', prepMin: 4 },
+  'yellow-pepper':  { emoji: '🫑', action: 'Clean, deseed and chop', prepMin: 4 },
   'tomate':             { emoji: '🍅', action: 'Wash and chop',                   prepMin: 4  },
   'tomate-triturado':   { emoji: '🍅', action: 'Open the can and set aside',         prepMin: 1  },
   'tomate-cherry':      { emoji: '🍅', action: 'Wash and halve',      prepMin: 3  },
-  'patata':             { emoji: '🥔', action: 'Peel and cut into wedges',         prepMin: 8  },
+  'potato':             { emoji: '🥔', action: 'Peel and cut into wedges',         prepMin: 8  },
   'boniato':            { emoji: '🍠', action: 'Peel and dice',         prepMin: 6  },
   'coliflor':           { emoji: '🥦', action: 'Wash and cut into florets',       prepMin: 5  },
-  'brocoli':            { emoji: '🥦', action: 'Wash and cut into florets',       prepMin: 4  },
+  'broccoli':            { emoji: '🥦', action: 'Wash and cut into florets',       prepMin: 4  },
   'champiñon':          { emoji: '🍄', action: 'Wipe with a damp towel and slice', prepMin: 6 },
   'champiñones':        { emoji: '🍄', action: 'Wipe with a damp towel and slice', prepMin: 6 },
   'espinacas':          { emoji: '🥬', action: 'Wash the leaves well',            prepMin: 3  },
   'kale':               { emoji: '🥬', action: 'Wash and remove the stem', prepMin: 4  },
-  'apio':               { emoji: '🥬', action: 'Wash and slice',        prepMin: 3  },
+  'celery':               { emoji: '🥬', action: 'Wash and slice',        prepMin: 3  },
   'caldo-verduras':     { emoji: '🥣', action: 'Heat or make the stock',    prepMin: 5  },
   'caldo-pollo':        { emoji: '🥣', action: 'Heat or make the stock',    prepMin: 5  },
   'aceite-oliva':       { emoji: '🫒', action: 'Set aside for the sofrito',        prepMin: 1  },
   'pimiento-asado':     { emoji: '🫑', action: 'Open the can and drain',        prepMin: 2  },
   'jengibre':           { emoji: '🫚', action: 'Peel and grate',                   prepMin: 3  },
-  'calabacin':          { emoji: '🥒', action: 'Wash and dice',         prepMin: 4  },
+  'zucchini-ref':          { emoji: '🥒', action: 'Wash and dice',         prepMin: 4  },
   'berenjena':          { emoji: '🍆', action: 'Wash, chop and salt (30 min)',   prepMin: 5  },
-  'limon':              { emoji: '🍋', action: 'Squeeze',                         prepMin: 2  },
+  'lemon':              { emoji: '🍋', action: 'Squeeze',                         prepMin: 2  },
 }
 
 // ─── Scheduling constants ────────────────────────────────────────────────────
@@ -158,13 +158,13 @@ const PLATE_MIN = 12  // rough buffer for portioning + packing at the end
 // Overnight oats live in the fridge; yogur bowls & batidos need no cooking.
 function desayunoMethod(name = '', keys = []) {
   const n = name.toLowerCase()
-  if (/overnight|noche anterior|nevera|fridge/.test(n) || keys.includes('avena')) {
+  if (/overnight|noche anterior|nevera|fridge/.test(n) || keys.includes('oats')) {
     return { mode: 'nevera', cookMin: 0, emoji: '❄️', label: 'Fridge (night before)' }
   }
   // 6 sep 2026 -- masa harina nixtamalizada (maiz, key 'masa-harina') caia
-  // por las rendijas: no es 'harina' (harina de trigo, cae en "baked" de
+  // por las rendijas: no es 'flour' (harina de trigo, cae en "baked" de
   // abajo) y su nombre ("Burrito 100% maiz") no contiene "tortilla" ni
-  // "huevo" -- acababa en el ultimo caso, "Solo mezclar (sin coccion)",
+  // "eggs" -- acababa en el ultimo caso, "Solo mezclar (sin coccion)",
   // que es mentira: la masa se cuece en comal/plancha, y el huevo se
   // revuelve APARTE (no se mezcla crudo con la masa) y se pone dentro del
   // burrito ya hecho. El usuario, con razon: "obviamente van separados".
@@ -172,7 +172,7 @@ function desayunoMethod(name = '', keys = []) {
     return { mode: 'griddle', cookMin: 10, emoji: '🫓', label: 'Cook the dough on a griddle — scramble the egg separately, do not mix it in raw' }
   }
   const baked = /cheesecake|brownie|magdalena|muffin|waffle|gofre|pizza|shakshuka|tortilla de patata|al horno|bizcocho|\bbread\b|pan |frittata|baked/.test(n)
-    || keys.includes('harina')
+    || keys.includes('flour')
   if (baked) return { mode: 'oven', cookMin: 25, emoji: '🫕', label: 'Bake 175°' }
   if (/tortilla|huevo|revuelto|scramble|\beggs?\b|omelette/.test(n)) {
     return { mode: 'stove', cookMin: 8, emoji: '🍳', label: 'Pan' }
@@ -534,7 +534,7 @@ export function buildSchedule(mealDataList) {
         // (ver desayunoMethod). 'Mezcla todo' era enganoso justo aqui -- el
         // label lo deja explicito en vez de dar por hecho que se entiende.
         const keys = batchData.sharedItems.map(it => it.key)
-        const isMasaHuevo = keys.includes('masa-harina') && keys.includes('huevo')
+        const isMasaHuevo = keys.includes('masa-harina') && keys.includes('eggs')
         jobs[jobsBefore].ingredientsLabel = isMasaHuevo
           ? 'Dough + water (egg separate, scrambled)'
           : (meal.type === 'desayuno' && !isMealSlot) ? 'Mix everything' : 'Contains'
@@ -757,7 +757,7 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
               }
               // 6 sep 2026 -- mismo agrupado de pure que en "Cocinar" (ver
               // splitPureeItems arriba), aqui a nivel de racion individual.
-              const isPuree = perRacionItems.some(it => it.key === 'leche') && perRacionItems.some(it => it.key === 'mantequilla')
+              const isPuree = perRacionItems.some(it => it.key === 'whole-milk') && perRacionItems.some(it => it.key === 'butter')
               if (isPuree) {
                 const pureeItems = perRacionItems.filter(it => PUREE_COMPANION_KEYS.has(it.key))
                 const restItems  = perRacionItems.filter(it => !PUREE_COMPANION_KEYS.has(it.key))

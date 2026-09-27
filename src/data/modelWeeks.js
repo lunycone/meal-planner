@@ -39,7 +39,7 @@ export const MODEL_KCAL_BY_DAY = {
 // Maria suele estar en el regimen de "sobra kcal" (su objetivo ya esta por
 // debajo del plato por defecto), no en el de "falta kcal" de Julio.
 export const MARIA_NO_BATIDO_CASERO = [0, 2] // indices sobre MODEL_DAY_KEYS: lun, mié
-export const MARIA_MERIENDA_PORTATIL = 'd-yogur-platano-avena'
+export const MARIA_MERIENDA_PORTATIL = 'd-yogurt-banana-oats'
 
 // 6 sep 2026 -- techo de proteina de Maria, mismo criterio que el de Julio
 // (2,23 g/kg, ver CAP en scripts/html-core.mjs) aplicado a SU peso (58,4 kg)
@@ -55,92 +55,92 @@ export const MARIA_MERIENDA_PORTATIL = 'd-yogur-platano-avena'
 // solo 4 de 84 dias-persona por encima del techo (sabado semanas 7 y 9,
 // martes/jueves semana 10) -- dias sueltos donde su comida/cena compartida
 // con Julio es la que sube, no su desayuno ni su merienda.
-export const MARIA_DESAYUNO_DOWNGRADE = 'd-torta-garbanzo-50-huevo'
+export const MARIA_DESAYUNO_DOWNGRADE = 'd-chickpea-flatbread-50g-1-egg-evoo'
 export const MARIA_DESAYUNO_DOWNGRADE_DAYS_BY_WEEK = {
   1: [1], 5: [2], 6: [1], 7: [2], 8: [1, 3],
 }
 
 export const MODEL_WEEKS = [
 { n:1, title:'The best balanced', note:'Breakfast changes by block for both. Lunch, snack and dinner change too.',
-  DA:'d-burrito-maiz', DB:'d-burrito-maiz',
-  DMA:'d-burrito-5050', DMB:'d-tortilla-cheddar-aguacate',
-  CA:'c-rancho-aragones-xl', CB:'c-pollo-pure-patata-zanahoria',
-  MA:'b-clasico', MB:'b-citrico',
-  NA:'n-bacalao-patata-tomate', NB:'n-turkey-patata-huevo' },
+  DA:'d-100pct-corn-burrito', DB:'d-100pct-corn-burrito',
+  DMA:'d-50-50-burrito-corn-chickpea', DMB:'d-omelette-cheddar-avocado',
+  CA:'c-aragonese-rancho-stew-xl', CB:'c-chicken-leg-potato-carrot-mash-paprika',
+  MA:'b-classic-shake', MB:'b-citrus-shake',
+  NA:'n-cod-potato-tomato-no-legumes', NB:'n-turkey-potato-egg' },
 
 { n:2, title:'Cheap — money rules', note:'Breakfast changes by block. Lunch pork -> chicken in block B; dinner and breakfast sardines -> cod for variety.',
-  DA:'d-avena-leche-desnatada-miel', DB:'d-huevos-tostada-madre-miel-reforzado',
-  DMA:'d-torta-garbanzo-50-huevo', DMB:'d-burrito-maiz',
-  CA:'c-lomo-arroz-afgano', CB:'c-pollo-arroz-afgano-cebolla-limon',
-  MA:'b-clasico-2', MB:'b-clasico-2',
-  NA:'n-sardinas-patata-huevo', NB:'n-bacalao-patata-tomate' },
+  DA:'d-oats-with-skim-milk-and-honey', DB:'d-scrambled-eggs-with-sourdough-toast-and-honey',
+  DMA:'d-chickpea-flatbread-50g-1-egg-evoo', DMB:'d-100pct-corn-burrito',
+  CA:'c-pork-loin-afghan-rice', CB:'c-chicken-leg-afghan-rice-onion-and-lemon',
+  MA:'b-classic-shake-2', MB:'b-classic-shake-2',
+  NA:'n-sardines-potato-egg', NB:'n-cod-potato-tomato-no-legumes' },
 
 { n:3, title:'The cheapest possible without breaking anything', note:'Breakfast changes by block. Lunch pork -> turkey in block B; dinner egg -> cod.',
-  DA:'d-huevos-tostada-madre-miel-reforzado', DB:'d-avena-leche-desnatada-miel',
-  DMA:'d-torta-garbanzo-60', DMB:'d-burrito-maiz',
-  CA:'c-lomo-arroz-afgano', CB:'c-turkey-glaseado',
-  MA:'b-clasico-2', MB:'b-clasico-2',
-  NA:'n-patata-3huevos', NB:'n-bacalao-patata-tomate' },
+  DA:'d-scrambled-eggs-with-sourdough-toast-and-honey', DB:'d-oats-with-skim-milk-and-honey',
+  DMA:'d-chickpea-flatbread-75g-evoo', DMB:'d-100pct-corn-burrito',
+  CA:'c-pork-loin-afghan-rice', CB:'c-turkey-drumstick-sweet-and-sour-glaze',
+  MA:'b-classic-shake-2', MB:'b-classic-shake-2',
+  NA:'n-potato-3-eggs', NB:'n-cod-potato-tomato-no-legumes' },
 
 { n:4, extrema:false, title:'WEIGHT GAIN — replaces max protein', note:'Breakfast changes by block. Lunch pork -> turkey in block B. Dinner cod -> turkey.',
-  DA:'d-burrito-maiz', DB:'d-huevos-tostada-madre-miel-reforzado',
-  DMA:'d-tortilla-cheddar-aguacate', DMB:'d-torta-garbanzo-50-huevo',
-  CA:'c-lomo-arroz-afgano', CB:'c-turkey-garbanzos-huevo-sofrito',
-  MA:'b-ganancia', MB:'b-ganancia-manzana',
-  NA:'n-turkey-patata-huevo-cheddar', NB:'n-turkey-patata-huevo' },
+  DA:'d-100pct-corn-burrito', DB:'d-scrambled-eggs-with-sourdough-toast-and-honey',
+  DMA:'d-omelette-cheddar-avocado', DMB:'d-chickpea-flatbread-50g-1-egg-evoo',
+  CA:'c-pork-loin-afghan-rice', CB:'c-turkey-chickpeas-egg-tomato-onion-sofrito',
+  MA:'b-weight-gain-shake-quince', MB:'b-weight-gain-shake-apple',
+  NA:'n-turkey-potato-egg-cheddar', NB:'n-turkey-potato-egg' },
 
 { n:5, title:'Max PCOS (Maria) + fiber margin', note:'Breakfast changes by block. Lunch lamb -> turkey. Dinner cod -> turkey.',
-  DA:'d-tostada-madre-miel-platano', DB:'d-huevos-tostada-madre-miel-reforzado',
-  DMA:'d-tortilla-cheddar-aguacate', DMB:'d-torta-garbanzo-50-huevo',
-  CA:'c-cordero-pure-cebolla-laurel', CB:'c-turkey-cebolla-mostaza',
-  MA:'b-clasico', MB:'b-citrico',
-  NA:'n-bacalao-patata-tomate', NB:'n-turkey-patata-huevo' },
+  DA:'d-sourdough-toast-with-honey-and-banana', DB:'d-scrambled-eggs-with-sourdough-toast-and-honey',
+  DMA:'d-omelette-cheddar-avocado', DMB:'d-chickpea-flatbread-50g-1-egg-evoo',
+  CA:'c-lamb-mashed-potato-onion-bay-leaf', CB:'c-turkey-caramelized-onion-mustard-sauce',
+  MA:'b-classic-shake', MB:'b-citrus-shake',
+  NA:'n-cod-potato-tomato-no-legumes', NB:'n-turkey-potato-egg' },
 
 { n:6, title:'Seafood and fish first', note:'Your breakfast ROTATES daily (3 dishes A, 4 dishes B, none repeated in a block). Maria changes by block. Lunch mussels -> turkey in block B. Dinner cod (different recipe each block).',
   DA:'ROTA', DB:'ROTA',
-  DrotA:['d-huevos-tostada-madre-miel-reforzado','d-avena-leche-desnatada-miel','d-tostada-madre-miel-platano'],
-  DrotB:['d-burrito-maiz','d-avena-leche-desnatada-miel','d-huevos-tostada-madre-miel-reforzado','d-tostada-madre-miel-platano'],
-  DMA:'d-tortilla-cheddar-aguacate', DMB:'d-torta-garbanzo-50-huevo',
-  CA:'c-mejillones-paella', CB:'c-turkey-pintas-huevo',
-  MA:'b-clasico', MB:'b-citrico',
-  NA:'n-ceviche-bacalao', NB:'n-sardinas-patata-huevo' },
+  DrotA:['d-scrambled-eggs-with-sourdough-toast-and-honey','d-oats-with-skim-milk-and-honey','d-sourdough-toast-with-honey-and-banana'],
+  DrotB:['d-100pct-corn-burrito','d-oats-with-skim-milk-and-honey','d-scrambled-eggs-with-sourdough-toast-and-honey','d-sourdough-toast-with-honey-and-banana'],
+  DMA:'d-omelette-cheddar-avocado', DMB:'d-chickpea-flatbread-50g-1-egg-evoo',
+  CA:'c-paella-style-mussels', CB:'c-turkey-pinto-beans-egg',
+  MA:'b-classic-shake', MB:'b-citrus-shake',
+  NA:'n-lime-cured-cod-ceviche-red-onion-avocado', NB:'n-sardines-potato-egg' },
 
 { n:7, title:'Poultry first (chicken and turkey)', note:'Your breakfast ROTATES (3 dishes A, 4 dishes B). Maria changes by block. Lunch chicken -> turkey. Dinner chicken -> turkey.',
   DA:'ROTA', DB:'ROTA',
-  DrotA:['d-huevos-tostada-madre-miel-reforzado','d-avena-leche-desnatada-miel','d-tostada-madre-miel-platano'],
-  DrotB:['d-burrito-maiz','d-avena-leche-desnatada-miel','d-huevos-tostada-madre-miel-reforzado','d-tostada-madre-miel-platano'],
-  DMA:'d-tortilla-cheddar-aguacate', DMB:'d-torta-garbanzo-50-huevo',
-  CA:'c-pollo-arroz-afgano-cebolla-limon', CB:'c-turkey-pintas-huevo',
-  MA:'b-clasico', MB:'b-citrico',
-  NA:'n-fajitas-pollo-sin-tortilla', NB:'n-turkey-patata-huevo' },
+  DrotA:['d-scrambled-eggs-with-sourdough-toast-and-honey','d-oats-with-skim-milk-and-honey','d-sourdough-toast-with-honey-and-banana'],
+  DrotB:['d-100pct-corn-burrito','d-oats-with-skim-milk-and-honey','d-scrambled-eggs-with-sourdough-toast-and-honey','d-sourdough-toast-with-honey-and-banana'],
+  DMA:'d-omelette-cheddar-avocado', DMB:'d-chickpea-flatbread-50g-1-egg-evoo',
+  CA:'c-chicken-leg-afghan-rice-onion-and-lemon', CB:'c-turkey-pinto-beans-egg',
+  MA:'b-classic-shake', MB:'b-citrus-shake',
+  NA:'n-chicken-fajitas-no-tortilla', NB:'n-turkey-potato-egg' },
 
 { n:8, title:'Legumes at lunch, finally', note:'Breakfast changes by block. Lunch pork tenderloin -> turkey, CB with black beans. Dinner cod -> egg burrito.',
-  DA:'d-huevos-tostada-madre-miel-reforzado', DB:'d-burrito-maiz',
-  DMA:'d-tortilla-cheddar-aguacate', DMB:'d-torta-garbanzo-50-huevo',
-  CA:'c-solomillo-pure-manzana-batida', CB:'c-turkey-blackbeans-huevo-cheddar',
-  MA:'b-clasico', MB:'b-citrico',
-  NA:'n-bacalao-pure-squash', NB:'n-burrito-harina-2huevos' },
+  DA:'d-scrambled-eggs-with-sourdough-toast-and-honey', DB:'d-100pct-corn-burrito',
+  DMA:'d-omelette-cheddar-avocado', DMB:'d-chickpea-flatbread-50g-1-egg-evoo',
+  CA:'c-pork-tenderloin-mashed-potato-blended-apple', CB:'c-turkey-black-beans-egg-cheddar',
+  MA:'b-classic-shake', MB:'b-citrus-shake',
+  NA:'n-cod-potato-squash-mash', NB:'n-flour-burrito-2-eggs' },
 
 { n:9, title:'Beef and turkey, no liver', note:'Breakfast changes by block. Lunch beef -> turkey. Dinner sardines -> cod.',
-  DA:'d-huevos-tostada-madre-miel-reforzado', DB:'d-burrito-maiz',
-  DMA:'d-tortilla-cheddar-aguacate', DMB:'d-torta-garbanzo-50-huevo',
-  CA:'c-carne-picada-patata-tomate-ajo', CB:'c-turkey-pintas-huevo',
-  MA:'b-clasico', MB:'b-citrico',
-  NA:'n-sardinas-patata-huevo', NB:'n-bacalao-pure-simple' },
+  DA:'d-scrambled-eggs-with-sourdough-toast-and-honey', DB:'d-100pct-corn-burrito',
+  DMA:'d-omelette-cheddar-avocado', DMB:'d-chickpea-flatbread-50g-1-egg-evoo',
+  CA:'c-ground-beef-potato-tomato-garlic', CB:'c-turkey-pinto-beans-egg',
+  MA:'b-classic-shake', MB:'b-citrus-shake',
+  NA:'n-sardines-potato-egg', NB:'n-cod-simple-mashed-potato' },
 
 { n:10, title:'Lentils, truly cheap', note:'Breakfast changes by block. Lunch pork -> chicken in block B. Dinner sardines -> cod.',
-  DA:'d-burrito-maiz', DB:'d-avena-leche-desnatada-miel',
-  DMA:'d-tortilla-cheddar-aguacate', DMB:'d-torta-garbanzo-50-huevo',
-  CA:'c-costillas-lentejas-laurel-vino', CB:'c-pollo-pure-patata-zanahoria',
-  MA:'b-clasico-2', MB:'b-clasico-2',
-  NA:'n-sardinas-patata-huevo', NB:'n-bacalao-patata-tomate' },
+  DA:'d-100pct-corn-burrito', DB:'d-oats-with-skim-milk-and-honey',
+  DMA:'d-omelette-cheddar-avocado', DMB:'d-chickpea-flatbread-50g-1-egg-evoo',
+  CA:'c-pork-ribs-green-lentils-bay-leaf-and-wine', CB:'c-chicken-leg-potato-carrot-mash-paprika',
+  MA:'b-classic-shake-2', MB:'b-classic-shake-2',
+  NA:'n-sardines-potato-egg', NB:'n-cod-potato-tomato-no-legumes' },
 
 { n:11, extrema:true, title:'EXTREME — absolute cost floor, no rules', note:'⚠ Reference only — deliberately breaks several digestive rules. Not for regular use.',
-  DA:'d-torta-garbanzo-60', DB:'d-torta-garbanzo-60',
-  DMA:'d-torta-garbanzo-60', DMB:'d-torta-garbanzo-60',
-  CA:'c-lomo-arroz-afgano', CB:'c-lomo-patata-adobo',
-  MA:'b-clasico-2', MB:'b-clasico-2',
-  NA:'n-blackbeans-huevo-patata', NB:'n-garbanzos-huevo-patata' },
+  DA:'d-chickpea-flatbread-75g-evoo', DB:'d-chickpea-flatbread-75g-evoo',
+  DMA:'d-chickpea-flatbread-75g-evoo', DMB:'d-chickpea-flatbread-75g-evoo',
+  CA:'c-pork-loin-afghan-rice', CB:'c-pork-loin-roast-potato-paprika-marinade',
+  MA:'b-classic-shake-2', MB:'b-classic-shake-2',
+  NA:'n-black-beans-egg-potato', NB:'n-chickpeas-egg-potato' },
 
 { n:12, title:'BINDING — for diarrhea days', note:'Special week, not in rotation: only for diarrhea, not for regular use. No legumes, no onion/garlic (except the garlic in the rancho, kept on request), no nuts/seeds, no dairy at snack or breakfast (honey swapped for EVOO+salt), vegetables always well-cooked.',
   // 6 sep 2026 -- pedido explicito del usuario: "lo que mas me quita la
@@ -148,11 +148,11 @@ export const MODEL_WEEKS = [
   // (desayuno/merienda/cena) diseñado para acompañar sin romper el objetivo
   // astringente. Ya afinada en el HTML standalone (semanas-modelo-v2.html)
   // antes de traerla aqui -- mismos platos, mismas cantidades.
-  DA:'d-huevos-tostada-aove', DB:'d-tostada-platano-aove-sal',
-  DMA:'d-tostada-platano-aove-sal', DMB:'d-huevos-tostada-aove',
-  CA:'c-estofado-ternera-patata-zanahoria', CB:'c-rancho-aragones-grande',
-  MA:'m-astringente-platano-manzana', MB:'m-astringente-platano-manzana',
-  NA:'n-pollo-hervido-arroz-zanahoria', NB:'n-turkey-patata-huevo' },
+  DA:'d-scrambled-eggs-with-sourdough-toast-and-evoo', DB:'d-sourdough-toast-with-banana-evoo-and-salt',
+  DMA:'d-sourdough-toast-with-banana-evoo-and-salt', DMB:'d-scrambled-eggs-with-sourdough-toast-and-evoo',
+  CA:'c-beef-stew-potato-carrot-well-cooked', CB:'c-aragonese-rancho-stew-large',
+  MA:'m-sourdough-toast-with-boiled-apple-and-honey-binding', MB:'m-sourdough-toast-with-boiled-apple-and-honey-binding',
+  NA:'n-boiled-chicken-rice-carrot-well-cooked', NB:'n-turkey-potato-egg' },
 
 // 6 sep 2026 -- pedido explicito: semana de referencia (como la 11) que se
 // pase un ~10% del techo de proteina de LOS DOS todos los dias (Julio
@@ -172,11 +172,11 @@ export const MODEL_WEEKS = [
 // Julio lo pasa salvo martes/miercoles (151-154g, aun 5-8% sobre su
 // techo de 143g) -- preferido a forzar mas legumbre solo por el 10% exacto.
 { n:13, extrema:true, title:'HIGH PROTEIN — deliberately over both ceilings', note:"⚠ Reference only — goes over Julio's and María's protein ceiling most days (~10% target, keeping the usual legume/onion-garlic cadence), no protein powder. Deliberately breaks the breakfast fat ceiling. Not for regular use.",
-  DA:'d-torta-garbanzo-extrema', DB:'d-burrito-bacon',
-  DMA:'d-torta-garbanzo-extrema', DMB:'d-burrito-bacon',
-  CA:'c-rancho-aragones-xl', CB:'c-turkey-blackbeans-huevo-cheddar',
-  MA:'b-clasico', MB:'b-clasico',
-  NA:'n-turkey-patata-huevo-cheddar', NB:'n-bacalao-mejillones-cazuela' },
+  DA:'d-extreme-chickpea-flatbread-60-70g-protein', DB:'d-bacon-burrito',
+  DMA:'d-extreme-chickpea-flatbread-60-70g-protein', DMB:'d-bacon-burrito',
+  CA:'c-aragonese-rancho-stew-xl', CB:'c-turkey-black-beans-egg-cheddar',
+  MA:'b-classic-shake', MB:'b-classic-shake',
+  NA:'n-turkey-potato-egg-cheddar', NB:'n-cod-and-mussel-casserole' },
 ]
 
 // ─── Expansion de bloques a los 7 dias ───────────────────────────────────────

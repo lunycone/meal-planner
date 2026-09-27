@@ -13,6 +13,7 @@ import {
   dishHasGOS, dishHasAllium, dishHasInsolubleFiber,
   comboFibSol, comboAgg,
 } from './calc'
+import { tagsOf } from '../lib/tags'
 
 // 26 sep 2026 -- con el batch del domingo la comida y la cena de lunes a
 // viernes son el MISMO plato cinco dias: «max 4 de 7 por franja» y «nunca
@@ -28,24 +29,12 @@ export const PROTEIN_DAILY_MAX_G_PER_KG = 2.2
 const SLOT_EN = { desayuno: 'breakfast', comida: 'lunch', merienda: 'snack', cena: 'dinner' }
 const DAY_EN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-// Verdura: lista explícita (la categoría 'fresco' mezcla fruta, frutos secos
-// y leche). Los ingredientes propios con categoría 'fresco' cuentan salvo
-// que parezcan fruta o fruto seco por el nombre.
-const VEG_KEYS = new Set([
-  'cebolla-amarilla', 'cebolla-morada', 'beet', 'lechuga', 'rucula', 'zanahoria', 'espinaca',
-  'guisantes-organic', 'puerro', 'tomate-fresco', 'pepino-ingles', 'calabacin-a1', 'calabacin-org',
-  'calabacin', 'esparragos', 'brocoli', 'pimiento-verde', 'pimiento-amarillo', 'jalapeno',
-  'green-beans', 'col', 'col-rizada', 'squash-butternut', 'zucchini', 'rabanos', 'setas',
-  'alcachofa', 'passata', 'tomate-pelado-rosso', 'tomate-conserva', 'perejil-fresco',
-])
-const NOT_VEG = /fruit|fruta|berr|banana|apple|manzana|melon|orange|naranja|mandarin|nut|seed|almond|hazel|milk|leche/i
-export function isVeg(key, ing) {
-  if (VEG_KEYS.has(key)) return true
-  return !!ing?.isCustom && ing.cat === 'fresco' && !NOT_VEG.test(`${key} ${ing.name ?? ''}`)
-}
+// Verdura: ingredientes con la etiqueta 'veg' (lib/tags.js) — fruta, frutos
+// secos y lácteos no cuentan aunque sean de la categoría «fresco».
+export function isVeg(key, allIng) { return tagsOf(key, allIng).includes('veg') }
 export function dishVegGrams(combo, allIng) {
   return (combo?.items ?? []).reduce((s, it) => {
-    if (!isVeg(it.k, allIng[it.k])) return s
+    if (!isVeg(it.k, allIng)) return s
     const p = it.p ?? {}
     return s + (p.grams ?? p.ml ?? (p.units != null ? p.units * 120 : 0))
   }, 0)
@@ -64,7 +53,7 @@ export function weekViolations(week, allIng, person = {}) {
 
   week.forEach((day, i) => {
     for (const [rule, test, label] of groups) {
-      const hits = slots.filter(k => day?.[k] && test(day[k]))
+      const hits = slots.filter(k => day?.[k] && test(day[k], allIng))
       if (hits.length > DIGESTIVE_MAX_PER_DAY) out.push({
         rule: 'dosis-' + rule, day: i, slots: hits,
         msg: `${DAY_EN[i] ?? `Day ${i + 1}`}: ${label} at ${hits.map(h => SLOT_EN[h]).join(' and ')} (max once a day).`,

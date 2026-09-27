@@ -2,6 +2,7 @@
 // so price overrides propagate automatically everywhere.
 
 import { PROTEIN } from '../data/proteins.js'
+import { tagsOf } from '../lib/tags'
 
 // Que tipo de unidad usa este ingrediente para su precio/kcal base --
 // 'per100' (100g), 'perUnit' (ud), 'perML' (100ml), 'perServing' (plato) o
@@ -147,14 +148,7 @@ export function prepAgg(prep, allIng) {
 // ─── Per-person scaling ────────────────────────────────────────────────────
 // Energy bases that may be scaled up/down per person (cheap carbs/starch).
 // Anything not in this set is treated as fixed/shared.
-const ENERGY_BASES = new Set([
-  'arroz', 'pasta', 'patata', 'avena', 'pan-masa-madre', 'harina', 'buckwheat',
-  'lentejas-rojas', 'lentejas-verdes', 'garbanzos', 'black-beans',
-  // FIX 3 sep 2026: la clave real en ingredients.js es 'cranberry', no
-  // 'cranberry-beans' — nunca coincidia, asi que las judias romano jamas se
-  // trataron como base escalable. Anadida tambien 'alubias-rojas', que faltaba.
-  'alubias-blancas', 'alubias-rojas', 'cranberry', 'romano-beans', 'maiz',
-])
+// Bases escalables: ingredientes con la etiqueta 'starch' (lib/tags.js).
 
 // The single ingredient in a combo that scales per person. Either an explicit
 // combo.scalable override, or auto-derived as the grams-based energy base that
@@ -165,7 +159,7 @@ export function comboScalableKey(combo, allIng) {
   if (combo.scalable) return combo.scalable
   let best = null, bestKcal = -1
   for (const it of combo.items) {
-    if (!ENERGY_BASES.has(it.k)) continue
+    if (!tagsOf(it.k, allIng).includes('starch')) continue
     if (it.p?.grams == null) continue
     const ing = allIng[it.k]
     if (!ing || ing.kc == null) continue
@@ -192,7 +186,7 @@ const AOVE_FLAT_KCAL = 235
 
 function aoveFlatKcal(combo) {
   if (!combo || combo.noAove) return 0
-  if (combo.items?.some(it => it.k === 'aove')) return 0   // ya contado por ml
+  if (combo.items?.some(it => it.k === 'evoo')) return 0   // ya contado por ml
   return AOVE_FLAT_KCAL
 }
 
@@ -295,9 +289,9 @@ const MAX_COOKED_BASE_GRAMS = 300
 // hermanas garbanzos/black-beans/alubias, todas 2.5x) el tope real queda en
 // ~120g secos, coherente con el resto de legumbres.
 export const DRY_TO_COOKED = {
-  'garbanzos': 2.5, 'black-beans': 2.5, 'lentejas-rojas': 2.5, 'lentejas-verdes': 2.0,
-  'alubias-blancas': 2.5, 'cranberry-beans': 2.5, 'alubias-rojas': 2.5, 'romano-beans': 2.5,
-  'arroz': 2.8, 'pasta': 2.5, 'buckwheat': 2.6,
+  'chickpeas': 2.5, 'black-beans': 2.5, 'red-lentils': 2.5, 'green-lentils': 2.0,
+  'white-beans': 2.5, 'cranberry-beans': 2.5, 'kidney-beans': 2.5, 'romano-beans': 2.5,
+  'rice': 2.8, 'pasta': 2.5, 'buckwheat': 2.6,
 }
 
 // Given a full day plan + a person, returns how many grams of the LUNCH's
@@ -441,7 +435,7 @@ export function personMealScale(day, mealType, person, allIng, allCombos, opts =
   // ratio seco->cocido donde el 4x generico no es realista -- ej. la harina
   // de un burrito no es un acompañamiento que "se sirve mas" como el arroz o
   // la patata; subirla a 200g+ (el 4x de sus 55g por defecto) es demasiada
-  // masa para una sola cena. Solo "n-burrito-harina-2huevos" lo declara por
+  // masa para una sola cena. Solo "n-flour-burrito-2-eggs" lo declara por
   // ahora -- el resto sigue con el tope generico de siempre.
   const max = opts.max ?? combo.scalableMax ?? Math.max(defaultGrams, Math.min(factorCap, cookedCapDry))
   const rawGrams = neededKcal / kcalPerGram
@@ -639,7 +633,7 @@ const GI_DEFAULT = 20
 export function dishGlycemicLoad(combo, allIng) {
   let gl = 0
   for (const it of combo.items) {
-    if (it.k === 'aove') continue
+    if (it.k === 'evoo') continue
     const ing = allIng[it.k]
     if (!ing) continue
     let kc, prot, fat
@@ -693,22 +687,19 @@ export function pcosCarbLevel(combo, allIng, mealType) {
 //     separate foods — a legume-flour dish can be GOS-risky and insoluble-safe
 //     at the same time, so these must not be collapsed into one flag.
 // BUG CORREGIDO 3 sep 2026 — el regex de GOS se escribio a mano y dejaba fuera
-// tres legumbres del propio catalogo: 'alubias-blancas', 'alubias-rojas' y
-// 'cranberry' (cuyo NOMBRE es "Romano beans" pero cuya CLAVE no contiene
+// tres legumbres del propio catalogo: 'white-beans', 'kidney-beans' y
+// 'cranberry-beans' (cuyo NOMBRE es "Romano beans" pero cuya CLAVE no contiene
 // "romano-beans", asi que /romano-beans/ nunca la tocaba). Resultado: tres
 // legumbres pasaban el filtro digestivo sin marcar. Ahora se comprueba contra
 // la categoria del ingrediente, no contra el nombre de la clave — asi cualquier
 // legumbre futura queda cubierta por construccion y no por acordarse.
-const GOS_KEYS = /garbanzo|lenteja|black-beans|romano-beans|alubias|cranberry|guisante/
 
-// AMPLIADO 3 sep 2026. Faltaban las cruciferas del catalogo ('col' = repollo,
-// 'col-rizada' = kale) y 'macadamia'. Anclado con ^...$ a proposito: un /col/
+// AMPLIADO 3 sep 2026. Faltaban las cruciferas del catalogo ('cabbage' = repollo,
+// 'kale' = kale) y 'macadamia'. Anclado con ^...$ a proposito: un /col/
 // sin anclar tambien casaria con "choColate-negro".
-const INSOLUBLE_KEYS = /^brocoli$|^col$|^col-rizada$|^coco-rallado$|^almendras$|^avellana$|^macadamia$|^pumpkin-seeds$|^sunflower-seeds$|^chia$/
 
 // RENOMBRADO: no son solo alliums. La alcachofa no es un allium y es de los
 // alimentos con mayor carga de fructanos que existe — estaba sin marcar.
-const FRUCTAN_KEYS = /^cebolla|^ajo$|^puerro$|^alcachofa$/
 const DESAYUNO_FAT_MAX = 15    // g — Regla 2
 
 // NUEVO 3 sep 2026 — Regla 1-bis. El suelo existe porque Regla 1 ("desayuno =
@@ -717,14 +708,20 @@ const DESAYUNO_FAT_MAX = 15    // g — Regla 2
 // exactamente el escenario del dolor epigastrico del 3 sep. Pequeno, no ausente.
 const DESAYUNO_KCAL_MIN = 400
 
-export function dishHasGOS(combo) {
-  return combo.items.some(it => GOS_KEYS.test(it.k))
+// 27 sep 2026: por etiquetas del ingrediente (lib/tags.js), no por el nombre
+// interno — así un ingrediente nuevo («Red lentils») cuenta igual.
+// allIng es opcional: sin él se usan las etiquetas de fábrica.
+export function dishHasGOS(combo, allIng) {
+  return (combo?.items ?? []).some(it => tagsOf(it.k, allIng).includes('legume'))
 }
-export function dishHasInsolubleFiber(combo) {
-  return combo.items.some(it => INSOLUBLE_KEYS.test(it.k))
+export function dishHasInsolubleFiber(combo, allIng) {
+  return (combo?.items ?? []).some(it => tagsOf(it.k, allIng).includes('insoluble'))
 }
-export function dishHasAllium(combo) {
-  return combo.items.some(it => FRUCTAN_KEYS.test(it.k))
+export function dishHasAllium(combo, allIng) {
+  return (combo?.items ?? []).some(it => tagsOf(it.k, allIng).includes('fructan'))
+}
+export function dishHasTag(combo, tag, allIng) {
+  return (combo?.items ?? []).some(it => tagsOf(it.k, allIng).includes(tag))
 }
 
 // ─── Fibra soluble — el mismo error que el de carb% vs GL, un campo mas alla ──
@@ -760,14 +757,14 @@ export function comboFibSol(combo, allIng) {
 export function digestiveFlags(combo, allIng, mealType) {
   const agg = comboAgg(combo, allIng)
   const flags = {
-    gos: dishHasGOS(combo),
-    insolubleFiber: dishHasInsolubleFiber(combo),
+    gos: dishHasGOS(combo, allIng),
+    insolubleFiber: dishHasInsolubleFiber(combo, allIng),
     fibSol: comboFibSol(combo, allIng),
   }
   if (mealType === 'desayuno') {
     flags.fatOverLimit = agg.fat > DESAYUNO_FAT_MAX
     flags.kcalUnderFloor = agg.kcal < DESAYUNO_KCAL_MIN   // Regla 1-bis
-    flags.hasAllium = dishHasAllium(combo)
+    flags.hasAllium = dishHasAllium(combo, allIng)
   }
   return flags
 }

@@ -182,7 +182,7 @@ export default function useShoppingList(batchOffset, viewMode) {
           // el hueco de kcal cuando la base ya esta al tope — mismo aceite
           // que ya se cuenta en Planificador/Batch, aqui como ingrediente mas.
           if (scale?.oilMlApplied > 0) {
-            addForPerson('aove', { ml: scale.oilMlApplied }, mealTag, person)
+            addForPerson('evoo', { ml: scale.oilMlApplied }, mealTag, person)
           }
         })
       }    // end mealType loop
