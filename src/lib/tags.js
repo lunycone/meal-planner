@@ -50,14 +50,17 @@ export const DEFAULT_TAGS = {
   'chicken-breast-organic': T('white-meat'), 'chicken-drumstick-generic': T('white-meat'), 'chicken-drumstick-organic': T('white-meat'),
   'chicken-wings': T('white-meat'), 'chicken-wings-organic': T('white-meat'), 'whole-chicken-organic': T('white-meat'),
   cabbage: T('veg', 'insoluble'), kale: T('veg', 'insoluble'), 'hot-dog-buns': T('starch'), 'fresh-parsley': T('veg'),
-  garlic: T('fructan'), 'black-pepper': T(), paprika: T(), cumin: T(), salt: T(), 'butternut-squash': T('veg'), radishes: T('veg'), apple: T('fruit'), applesauce: T('fruit'), quince: T('fruit'),
+  garlic: T('fructan'), 'black-pepper': T(), paprika: T(), cumin: T(), salt: T(),
+  oregano: T(), 'oregano-greek': T(), thyme: T(), mint: T(), basil: T(), dill: T(), cilantro: T(), rosemary: T(), tarragon: T(),
+  saffron: T(), nutmeg: T(), zaatar: T(), turmeric: T(), 'cajun-seasoning': T(), chipotle: T(), ginger: T(),
+  parmesan: T('dairy'), mozzarella: T('dairy'), gouda: T('dairy'), 'balsamic-vinegar': T(), worcestershire: T(), 'coconut-milk': T(), 'soy-sauce': T(), 'butternut-squash': T('veg'), radishes: T('veg'), apple: T('fruit'), applesauce: T('fruit'), quince: T('fruit'),
   eggs: T('egg'), 'eggs-organic': T('egg'), 'canned-tomatoes': T('veg'), honey: T(),
   'mackerel-half-can': T('fish'), 'sardines-half-can': T('fish'), 'sardines-quarter-can': T('fish'),
 }
 
 // Deducción para ingredientes nuevos (nombre en inglés o español).
 const RULES = [
-  [/lentil|chickpea|\bbeans?\b|garbanzo|lenteja|alubia|jud[ií]a|frijol|edamame|soy/i, ['legume', 'starch']],
+  [/lentil|chickpea|\bbeans?\b|garbanzo|lenteja|alubia|jud[ií]a|frijol|edamame|soy(?!\s*sauce)/i, ['legume', 'starch']],
   [/onion|garlic|leek|shallot|scallion|artichoke|cebolla|\bajo\b|puerro|chalota|alcachofa/i, ['fructan', 'veg']],
   [/tenderloin|solomillo/i, ['white-meat']],
   [/beef|pork|lamb|veal|bacon|\bham\b|sausage|chorizo|salami|liver|steak|ternera|cerdo|cordero|vaca|buey|salchicha|jam[oó]n|h[ií]gado/i, ['red-meat']],

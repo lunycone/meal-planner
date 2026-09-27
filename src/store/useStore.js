@@ -241,8 +241,20 @@ const useStore = create(
           return { dishPrefs: next }
         })
       },
+      // Parejas de conceptos que aprende de ti ({ 'pork|yogurt': n }, ver
+      // engine/pairing.js): «Not this one» en un plato compuesto resta a sus
+      // parejas; cargar o guardar uno suma un poco.
+      pairPrefs: {},
+      ratePairs(pairs, delta) {
+        set(s => {
+          const next = { ...s.pairPrefs }
+          for (const k of pairs) if (k) next[k] = Math.max(-3, Math.min(3, (next[k] ?? 0) + delta))
+          return { pairPrefs: next }
+        })
+      },
       resetDishPrefs(onlyNegative = true) {
-        set(s => ({ dishPrefs: onlyNegative ? Object.fromEntries(Object.entries(s.dishPrefs ?? {}).filter(([, v]) => v > 0)) : {} }))
+        const keep = m => (onlyNegative ? Object.fromEntries(Object.entries(m ?? {}).filter(([, v]) => v > 0)) : {})
+        set(s => ({ dishPrefs: keep(s.dishPrefs), pairPrefs: keep(s.pairPrefs) }))
       },
       extraStores: [],
       storeColors: {},
@@ -681,6 +693,7 @@ const useStore = create(
         customCategories:    s.customCategories,
         extraStores:         s.extraStores,
         dishPrefs:           s.dishPrefs,
+        pairPrefs:           s.pairPrefs,
         storeColors:         s.storeColors,
         catColors:           s.catColors,
         catLabels:           s.catLabels,

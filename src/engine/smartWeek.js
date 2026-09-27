@@ -375,7 +375,7 @@ function pickDiverse(exact, count, fam, locked) {
  */
 export function generateSmartWeeks({
   allIng, allCombos, people, priority = 'price', vegMin = VEG_DAILY_MIN, seed = 0,
-  shown = [], exclude = [], prefs = {}, recent = [], locks = {}, stock = {}, source = 'dishes', country = null, count = 3,
+  shown = [], exclude = [], prefs = {}, recent = [], locks = {}, stock = {}, source = 'dishes', country = null, pairPrefs = {}, count = 3,
 }) {
   const t0 = performance.now()
   // Fuentes de comidas y cenas:
@@ -387,13 +387,13 @@ export function generateSmartWeeks({
   // salen siempre del catálogo.
   let generated = null, poolKeys = null
   if (source === 'ingredients') {
-    generated = composeDishes(allIng, allCombos, { stock })
+    generated = composeDishes(allIng, allCombos, { stock, pairPrefs })
     poolKeys = new Set(Object.keys(generated))
   } else if (source === 'country') {
-    generated = cuisineDishes(allIng, allCombos, { country, stock })
+    generated = cuisineDishes(allIng, allCombos, { country, stock, pairPrefs })
     poolKeys = new Set(Object.keys(generated))
   } else if (source === 'surprise') {
-    generated = { ...composeDishes(allIng, allCombos, { stock, limit: 40 }), ...cuisineDishes(allIng, allCombos, { stock }) }
+    generated = { ...composeDishes(allIng, allCombos, { stock, limit: 40, pairPrefs }), ...cuisineDishes(allIng, allCombos, { stock, pairPrefs }) }
     // Cada «Surprise» saca al azar unos 45 de esos platos (rápido también en
     // el móvil, y cada vez distinto).
     const all = Object.keys(generated)

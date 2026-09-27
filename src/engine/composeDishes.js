@@ -18,6 +18,7 @@
 import { ingCost, ingKcal, ingProt } from './calc'
 import { tagsOf, starchFamily } from '../lib/tags'
 import { packOf } from '../lib/packs'
+import { conceptOf, setFit } from './pairing'
 
 export const GEN_PREFIX = 'custom-gen-'
 
@@ -133,7 +134,7 @@ function makeDish(main, base, vegs, allIng) {
  * Compone platos y devuelve los mejores (con variedad) como { key: combo }.
  * stock: despensa disponible { ingKey: amount } — lo que hay en casa pesa a favor.
  */
-export function composeDishes(allIng, allCombos, { stock = {}, limit = 90 } = {}) {
+export function composeDishes(allIng, allCombos, { stock = {}, limit = 90, pairPrefs = {} } = {}) {
   const P = ingredientPools(allIng, allCombos)
   const vegSets = []
   for (let i = 0; i < P.veg.length; i++) {
@@ -164,7 +165,9 @@ export function composeDishes(allIng, allCombos, { stock = {}, limit = 90 } = {}
         const flags = parts.reduce((s, c) => s + (c.tags.includes('legume') ? 1 : 0) + (c.tags.includes('insoluble') ? 1 : 0), 0)
         // Puntuación previa (por 700 kcal): barato, proteína y verdura; la
         // semana inteligente hace la cuenta de verdad después.
-        const score = cost / kcal * 700 - prot * 0.02 - veg * 0.01 + flags * 0.4 + (vegs.length === 2 ? -0.2 : 0)
+        // Qué combina con qué (todas las cocinas) y lo que has rechazado.
+        const pair = setFit(parts.map(c => (c.c ??= conceptOf(c.key, c.ing))), null, pairPrefs)
+        const score = cost / kcal * 700 - prot * 0.02 - veg * 0.01 + flags * 0.4 + (vegs.length === 2 ? -0.2 : 0) - pair * 0.5
         out.push({ main, base, vegs, score })
       }
     }

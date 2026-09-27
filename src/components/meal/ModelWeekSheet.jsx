@@ -8,6 +8,7 @@ import { buildModelWeekSlots } from '../../lib/planActions'
 import { addDays, mondayOf, weekKeyOf, fmtRange, fmtMoney, fmtShortDate, activeProfilesOn, weekStats, MEAL_STYLE, PERSON_COLOR, MEALS as MEALS_ALL, DAY_KEYS, dayForPerson, dayTotals } from '../../lib/mealplan'
 import useSmartWeeks from '../../lib/useSmartWeeks'
 import { COUNTRIES, COUNTRY_LABEL, missingFor } from '../../engine/cuisines'
+import { dishPairs } from '../../engine/pairing'
 import { stockAvailable } from '../../lib/needs'
 import { VEG_DAILY_MIN, SOLUBLE_FIBER_DAILY_MIN } from '../../engine/weekRules'
 
@@ -72,6 +73,10 @@ export default function ModelWeekSheet({ initialTarget = 1, initialTab = 'smart'
   const [source, setSource] = useState('dishes') // 'dishes' | 'ingredients' | 'surprise' | 'country'
   const [country, setCountry] = useState('es')
   const resetDishPrefs = useStore(s => s.resetDishPrefs)
+  const pairPrefs = useStore(s => s.pairPrefs) ?? {}
+  const ratePairs = useStore(s => s.ratePairs)
+  // Platos compuestos de una opción: lo que les gusta o no se aprende por parejas.
+  const ratePlanPairs = (r, keys, delta) => keys.forEach(k => { const c = r?.newDishes?.[k]; if (c) ratePairs(dishPairs(c, allIng), delta) })
   const rejected = Object.values(dishPrefs).filter(v => v < 0).length
   // Batch de las 2 semanas anteriores a la de destino: no se repite.
   const recent = useMemo(() => {
@@ -92,7 +97,7 @@ export default function ModelWeekSheet({ initialTarget = 1, initialTab = 'smart'
     const a = stockAvailable(stockRaw, allIng, addDays(monday, -1))
     return Object.fromEntries(Object.entries(a).map(([k, v]) => [k, Math.round(v)]).sort())
   }, [stockRaw, allIng, wk]) // eslint-disable-line react-hooks/exhaustive-deps
-  const smart = useSmartWeeks({ allIng, allCombos, people, priority, vegMin, seed, shown, exclude, prefs: dishPrefs, recent, stock, source, country: country === 'all' ? null : country, locks: locks?.locks ?? {} }, tab === 'smart')
+  const smart = useSmartWeeks({ allIng, allCombos, people, priority, vegMin, seed, shown, exclude, prefs: dishPrefs, recent, stock, source, country: country === 'all' ? null : country, pairPrefs, locks: locks?.locks ?? {} }, tab === 'smart')
   const smartSel = smart.results[Math.min(pick, smart.results.length - 1)] ?? null
   // Lunes–viernes de lo ya planificado en la semana destino, para comparar.
   const planned = useMemo(() => {
@@ -111,6 +116,7 @@ export default function ModelWeekSheet({ initialTarget = 1, initialTab = 'smart'
   function reject(r, slot, pid = null) {
     const key = slot === 'L' ? r.plan.L : slot === 'D' ? r.plan.D : r.plan[slot][pid]
     rateDishes([key], -1)
+    ratePlanPairs(r, [key], -1)
     setExclude(x => [...new Set([...x, key])])
     const keep = { L: r.plan.L, D: r.plan.D, B: { ...r.plan.B }, S: { ...r.plan.S } }
     if (slot === 'L' || slot === 'D') delete keep[slot]
@@ -128,13 +134,14 @@ export default function ModelWeekSheet({ initialTarget = 1, initialTab = 'smart'
     const name = `Smart · ${PRIORITY_OPTS.find(o => o.value === priority).label.toLowerCase()} · ${fmtShortDate(new Date())}`
     saveCustomWeek({ name, slots: JSON.parse(JSON.stringify(smartSel.slots)) })
     rateDishes(planKeys(smartSel.plan), 1)
+    ratePlanPairs(smartSel, [smartSel.plan.L, smartSel.plan.D], 0.5)
     setSavedAs(name)
   }
   function loadSmart() {
     if (!smartSel) return
     addGeneratedCombos(smartSel.newDishes)
     replaceWeek(wk, JSON.parse(JSON.stringify(smartSel.slots)))
-    if (!savedAs) rateDishes(planKeys(smartSel.plan), 1)
+    if (!savedAs) { rateDishes(planKeys(smartSel.plan), 1); ratePlanPairs(smartSel, [smartSel.plan.L, smartSel.plan.D], 0.5) }
     setEditingWeek(null)
     onLoaded?.(target)
     onClose()
