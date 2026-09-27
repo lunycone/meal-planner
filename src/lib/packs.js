@@ -1,3 +1,4 @@
+import { tagsOf } from './tags'
 // ─── Paquetes: lo que compras de verdad ─────────────────────────────────────
 // Un ingrediente guarda su paquete como datos: packQty + packUnit + packPrice
 // («10 lb por $8.39»). De ahí salen el precio por 100 g / ml / unidad, el
@@ -71,19 +72,22 @@ export const KEEPS = ['week', 'weeks', 'months']
 export const KEEPS_LABEL = { week: 'About a week', weeks: '2–4 weeks', months: 'Months' }
 export const KEEPS_DAYS = { week: 7, weeks: 24, months: 180 }
 
-const LONG_FRESH = /^(patata|cebolla|ajo|zanahoria|squash|beet|col$|manzana|naranja|mandarina|limon|lima|huevo)/
-const FROZEN = /frozen|congelad/i
+// Lo que dijo el usuario (27 sep 2026): la carne y el pescado se congelan,
+// espinaca y brócoli son congelados; cebolla, zanahoria, squash, yogur y
+// huevos aguantan unas semanas; calabacín y verdura de hoja caducan en la semana.
+const WEEKS = /onion|carrot|potato|squash|beet|cabbage|garlic|apple|orange|mandarin|lemon|lime|egg|yogurt|kefir|cheese|feta|ricotta|cheddar|butter|celery|radish/i
+const FROZEN = /frozen|congelad|broccoli|spinach/i
 
-export function keepsOf(key, ing) {
+export function keepsOf(key, ing, allIng) {
   if (!ing) return 'week'
   if (ing.keeps && KEEPS.includes(ing.keeps)) return ing.keeps
-  if (FROZEN.test(`${ing.name} ${ing.pack ?? ''}`)) return 'months'
-  if (LONG_FRESH.test(key)) return 'weeks'
-  switch (ing.cat) {
-    case 'base': case 'legumbre': case 'proteina': return 'months'
-    case 'lacteo': return 'weeks'
-    case 'carne': return /lata|can\b|ahumado|smoked|bacon|cured|jam[oó]n|ham\b/i.test(`${key} ${ing.name}`) ? 'weeks' : 'week'
-    case 'fresco': return /seed|nut|almond|hazel|coco|chia|pumpkin|sunflower|macadamia|avellana|almendra|pipas/i.test(`${key} ${ing.name}`) ? 'months' : 'week'
-    default: return 'months'
-  }
+  const text = `${key} ${ing.name ?? ''} ${ing.pack ?? ''}`
+  if (FROZEN.test(text)) return 'months'
+  const tags = tagsOf(key, allIng ?? { [key]: ing })
+  if (['red-meat', 'white-meat', 'fish', 'seafood'].some(t => tags.includes(t))) return 'months' // se congela
+  if (['starch', 'legume', 'nut'].some(t => tags.includes(t))) return /bread|loaf|bagel|bun/i.test(text) ? 'weeks' : 'months'
+  if (WEEKS.test(text)) return 'weeks'
+  if (tags.includes('dairy') || tags.includes('egg')) return 'weeks'
+  if (tags.includes('veg') || tags.includes('fruit') || ing.cat === 'fresco') return 'week'
+  return 'months'
 }

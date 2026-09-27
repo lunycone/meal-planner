@@ -22,7 +22,7 @@ export default function MealSheet({ mealType, dayLabel, rows, onChange, onClear,
   const [pp, cp, fp] = macroPct(info)
   const maxG = Math.max(info.prot, info.carbs, info.fat, 1)
   const hasCycle = withInfo.some(r => r.person.pcos)
-  const phase = getPhaseScore(info.key)
+  const phase = getPhaseScore(info.combo, allIng)
   const scaledKey = info.scaled?.ingName
 
   return (
@@ -92,7 +92,7 @@ export default function MealSheet({ mealType, dayLabel, rows, onChange, onClear,
                 {(info.combo.items ?? []).map((it, i) => {
                   const isScaled = scaledKey && (allIng[it.k]?.name === scaledKey)
                   const p = isScaled ? { ...it.p, grams: info.scaled.grams } : it.p
-                  const extraOil = it.k === 'aove' && info.scaled?.oilMl > 0 ? info.scaled.oilMl : 0
+                  const extraOil = it.k === 'evoo' && info.scaled?.oilMl > 0 ? info.scaled.oilMl : 0
                   return (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '8px 0', borderTop: '1px solid var(--c-line)', fontSize: 13.5 }}>
                       <span style={{ fontWeight: isScaled || extraOil ? 650 : 400 }}>{allIng[it.k]?.name ?? it.k}{isScaled || extraOil ? ' · adjusted' : ''}</span>
@@ -100,7 +100,7 @@ export default function MealSheet({ mealType, dayLabel, rows, onChange, onClear,
                     </div>
                   )
                 })}
-                {info.scaled?.oilMl > 0 && !(info.combo.items ?? []).some(it => it.k === 'aove') && (
+                {info.scaled?.oilMl > 0 && !(info.combo.items ?? []).some(it => it.k === 'evoo') && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '8px 0', borderTop: '1px solid var(--c-line)', fontSize: 13.5 }}>
                     <span style={{ fontWeight: 650 }}>EVOO · day top-up</span>
                     <span className="mp-muted mp-num">{info.scaled.oilMl} ml</span>

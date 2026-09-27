@@ -8,8 +8,8 @@ import {
   activeProfilesOn, dayForPerson, dayTotals, fmtRange, startOfDay,
 } from '../lib/mealplan'
 
-const SOAK_KEYS = new Set(['garbanzos', 'black-beans', 'alubias-blancas', 'alubias-rojas', 'cranberry', 'romano-beans'])
-const OVERNIGHT_KEYS = new Set(['avena'])
+const SOAK_KEYS = new Set(['chickpeas', 'black-beans', 'white-beans', 'kidney-beans', 'cranberry-beans', 'romano-beans'])
+const OVERNIGHT_KEYS = new Set(['oats'])
 
 function batchSlots(weekPlan, monday, profiles, allCombos) {
   // [{ dayKey, mealType, person, combo, key }] de lun-vie de la semana `monday`
