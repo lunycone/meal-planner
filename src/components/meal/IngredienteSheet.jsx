@@ -7,6 +7,7 @@ import Overlay from '../ui/Overlay'
 import Icon from '../ui/Icon'
 import Segmented from '../ui/Segmented'
 import { storeOf, storeColor, storesIn } from '../../lib/stores'
+import { packOf, dimOf, toBase, formatPack, keepsOf, KEEPS, KEEPS_LABEL, WEIGHT_UNITS, VOLUME_UNITS } from '../../lib/packs'
 
 // ─── Ficha de ingrediente: ver y editar son lo mismo ───────────────────────
 // Tienda, categoría, precio, pack y nutrientes se tocan en su sitio. A la
@@ -25,12 +26,28 @@ const num = v => { const n = parseFloat(String(v).replace(',', '.')); return isN
 const show = (v, f = 1) => v == null ? '' : String(Math.round(v * f * 10000) / 10000)
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
 
-function draftOf(ing, unit) {
+// Tipo de precio del motor según la dimensión del paquete.
+const TYPE_OF_DIM = { g: 'per100', ml: 'perML', unit: 'perUnit' }
+const DIM_OF_TYPE = { per100: 'g', perML: 'ml', perUnit: 'unit' }
+const UNITS_OF_DIM = { g: Object.keys(WEIGHT_UNITS), ml: Object.keys(VOLUME_UNITS), unit: ['unit'] }
+const BASIS_UNIT = { g: 'g', ml: 'ml', unit: 'unit' }
+
+function draftOf(ing, unit, key) {
   const U = UNIT[unit]
+  const dim = DIM_OF_TYPE[unit] ?? 'g'
+  const pk = packOf(ing)
+  const okPack = pk && pk.dim === dim
+  const basis = dim === 'unit' ? 1 : 100
+  const nutAt = field => field && ing?.[field] != null ? show(ing[field] * (dim === 'ml' ? 100 : 1)) : ''
+  const portion = ing?.portionG != null ? String(ing.portionG) : (/^\s*(\d+(?:\.\d+)?)\s*(g|ml)\b/.exec(ing?.per ?? '')?.[1] ?? '')
   return {
-    name: ing?.name ?? '', cat: ing?.cat ?? 'otro', store: ing ? (storeOf(ing) ?? '') : '',
-    price: show(ing?.[U.price], U.f), pack: ing?.pack ?? '', per: ing?.per ?? '', organic: !!ing?.organic,
-    kc: show(ing?.[U.nut[0]], U.f), prot: U.nut[1] ? show(ing?.[U.nut[1]], U.f) : '', fat: U.nut[2] ? show(ing?.[U.nut[2]], U.f) : '',
+    name: ing?.name ?? '', cat: ing?.cat ?? 'otro', store: ing ? (storeOf(ing) ?? '') : '', organic: !!ing?.organic,
+    price: show(ing?.[U.price], U.f), pack: ing?.pack ?? '', per: ing?.per ?? '',
+    packQty: okPack ? String(pk.qty) : '', packUnit: okPack ? pk.unit : (dim === 'g' ? 'kg' : dim === 'ml' ? 'L' : 'unit'),
+    packPrice: okPack && pk.price != null ? String(pk.price) : '',
+    keeps: ing ? keepsOf(key ?? '', ing) : 'week',
+    basis: String(basis), kc: nutAt(U.nut[0]), prot: nutAt(U.nut[1]), fat: nutAt(U.nut[2]),
+    portion,
   }
 }
 
@@ -56,14 +73,25 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
   const ing = ingKey ? allIng[ingKey] : null
   const isNew = !ing
   const isBase = !!(ingKey && ING[ingKey])
-  const [unit, setUnit] = useState(() => (ing && ingredientUnitType(ing)) || 'per100')
-  const initial = useMemo(() => draftOf(ing, unit), [ingKey, unit]) // eslint-disable-line react-hooks/exhaustive-deps
+  const [unit] = useState(() => (ing && ingredientUnitType(ing)) || 'per100')
+  const initial = useMemo(() => draftOf(ing, unit, ingKey), [ingKey, unit]) // eslint-disable-line react-hooks/exhaustive-deps
   const [draft, setDraft] = useState(initial)
   const [newStore, setNewStore] = useState(null)
   const [newCat, setNewCat] = useState(null)
   const [askDelete, setAskDelete] = useState(false)
   const [askClose, setAskClose] = useState(false)
   const set = (k, v) => setDraft(d => ({ ...d, [k]: v }))
+  // Cambiar «por cuántos g» reescala lo ya escrito para que siga siendo lo
+  // mismo (97 kcal por 100 g → 111.6 por 115 g); luego se copia la etiqueta.
+  const setBasis = v => setDraft(d => {
+    const ref = d.nref ?? { b: d.basis, kc: d.kc, prot: d.prot, fat: d.fat }
+    const ob = num(ref.b), nb = num(v)
+    if (!(ob > 0) || !(nb > 0)) return { ...d, basis: v, nref: ref }
+    const r = x => { const n = num(x); return n == null ? x : String(Math.round(n * nb / ob * 10) / 10) }
+    return { ...d, basis: v, kc: r(ref.kc), prot: r(ref.prot), fat: r(ref.fat), nref: ref }
+  })
+  // Escribir un nutriente fija la referencia para el siguiente reescalado.
+  const setNut = (k, v) => setDraft(d => ({ ...d, [k]: v, nref: null }))
   const dirty = !same(draft, initial)
   const U = UNIT[unit]
 
@@ -73,20 +101,55 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
   const usedIn = useMemo(() => ingKey ? Object.entries(allCombos).filter(([, c]) => (c.items ?? []).some(it => it.k === ingKey) || (c.optionalItems ?? []).some(it => it.k === ingKey)).map(([k, c]) => ({ k, name: c.name })) : [], [ingKey, allCombos])
   const modified = !!(ingKey && (ingredientOverrides[ingKey] || priceOverrides[ingKey]))
 
+  // Lo que se guarda sale de lo que pone el paquete y la etiqueta: precio
+  // por 100 g / ml / unidad, nutrientes normalizados, texto del pack y nota
+  // de ración calculados aquí, no a mano.
+  const legacy = unit === 'flat' || unit === 'perServing'
+  const dim = legacy ? null : dimOf(draft.packUnit)
+  const type = legacy ? unit : TYPE_OF_DIM[dim]
+  const T = UNIT[type]
+  const pQty = num(draft.packQty), pPrice = num(draft.packPrice)
+  const packOk = !legacy && pQty > 0 && pPrice != null
+  const amount = packOk ? toBase(pQty, draft.packUnit) : null
+  const derivedPrice = packOk ? (dim === 'unit' ? pPrice / pQty : dim === 'ml' ? pPrice / amount : pPrice / amount * 100) : null
+  const priceVal = derivedPrice ?? (num(draft.price) != null ? num(draft.price) / T.f : null)
+  const b = num(draft.basis) > 0 ? num(draft.basis) : (dim === 'unit' ? 1 : 100)
+  const perBase = v => v == null ? null : dim === 'unit' ? v / b : dim === 'ml' ? v / b : v * 100 / b
+  const nut = [num(draft.kc), num(draft.prot), num(draft.fat)].map(v => legacy ? v : perBase(v))
+  const portionN = num(draft.portion)
+  const portionNote = !legacy && portionN > 0 && priceVal != null
+    ? (() => {
+        const f = dim === 'unit' ? portionN : dim === 'ml' ? portionN : portionN / 100
+        const kc = nut[0] != null ? Math.round(nut[0] * f) : null
+        const u = dim === 'unit' ? (portionN === 1 ? ' unit' : ' units') : dim === 'ml' ? ' ml' : ' g'
+        return `${portionN}${u} → $${(priceVal * f).toFixed(2)}${kc != null ? ` · ${kc} kcal` : ''}`
+      })()
+    : null
+
   function save() {
     if (!draft.name.trim()) return
-    const data = { name: draft.name.trim(), cat: draft.cat, store: draft.store.trim(), pack: draft.pack, per: draft.per, organic: draft.organic }
-    const p = num(draft.price)
-    if (p != null) data[U.price] = p / U.f
-    const n = [num(draft.kc), num(draft.prot), num(draft.fat)]
-    U.nut.forEach((field, i) => { if (field && n[i] != null) data[field] = n[i] / U.f })
+    const store = draft.store.trim()
+    const data = { name: draft.name.trim(), cat: draft.cat, store, organic: draft.organic }
+    if (legacy) {
+      data.pack = draft.pack
+      data.per = draft.per
+      if (num(draft.price) != null) data[U.price] = num(draft.price) / U.f
+      const n = [num(draft.kc), num(draft.prot), num(draft.fat)]
+      U.nut.forEach((field, i) => { if (field && n[i] != null) data[field] = n[i] / U.f })
+    } else {
+      if (priceVal != null) data[T.price] = priceVal
+      T.nut.forEach((field, i) => { if (field && nut[i] != null) data[field] = nut[i] })
+      if (packOk) Object.assign(data, { packQty: pQty, packUnit: draft.packUnit, packPrice: pPrice, pack: formatPack({ qty: pQty, unit: draft.packUnit, price: pPrice }) })
+      data.keeps = draft.keeps
+      if (portionN > 0) { data.portionG = portionN; data.per = portionNote } else data.per = ing?.per ?? ''
+    }
     if (isNew) {
       const key = 'custom-' + data.name.toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + Date.now().toString(36)
       addCustomIngredient(key, { ...data, isCustom: true })
     } else {
       setIngredientOverride(ingKey, data)
       // un precio antiguo en priceOverrides taparía el nuevo (se aplica después)
-      if (p != null && priceOverrides[ingKey]?.[U.price] != null) setPriceOverride(ingKey, U.price, p / U.f)
+      if (priceVal != null && priceOverrides[ingKey]?.[T.price] != null) setPriceOverride(ingKey, T.price, priceVal)
     }
     onClose()
   }
@@ -168,34 +231,63 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
               </div>
             </div>
 
-            <div className="ig-field">
-              <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
-                <span className="mp-eyebrow">Price and pack</span>
-                {isNew && <Segmented label="Priced by" value={unit} onChange={u => { setUnit(u); setDraft(d => ({ ...d, price: '', kc: '', prot: '', fat: '' })) }}
-                  options={[{ value: 'per100', label: 'By weight' }, { value: 'perUnit', label: 'By unit' }, { value: 'perML', label: 'By volume' }]} />}
-              </span>
-              <div className="ig-grid2">
-                <label className="ig-input"><span>{U.label}</span><input inputMode="decimal" value={draft.price} onChange={e => set('price', e.target.value)} placeholder="0.00" /></label>
-                <label className="ig-input"><span>Pack you buy</span><input value={draft.pack} onChange={e => set('pack', e.target.value)} placeholder="2.5 kg · $11.49" /></label>
-              </div>
-            </div>
+            {legacy ? (
+              <>
+                <div className="ig-field">
+                  <span className="mp-eyebrow">Price</span>
+                  <div className="ig-grid2">
+                    <label className="ig-input"><span>{U.label}</span><input inputMode="decimal" value={draft.price} onChange={e => set('price', e.target.value)} placeholder="0.00" /></label>
+                    <label className="ig-input"><span>kcal {U.per}</span><input inputMode="decimal" value={draft.kc} onChange={e => set('kc', e.target.value)} placeholder="0" /></label>
+                  </div>
+                </div>
+                <label className="ig-input"><span>Note</span><input value={draft.per} onChange={e => set('per', e.target.value)} placeholder="use → $0.05" /></label>
+              </>
+            ) : (
+              <>
+                <div className="ig-field">
+                  <span className="mp-eyebrow">The pack you buy</span>
+                  <div className="ig-pack">
+                    <label className="ig-input ig-pack-qty"><span>Amount</span><input inputMode="decimal" value={draft.packQty} onChange={e => set('packQty', e.target.value)} placeholder={dim === 'unit' ? '30' : '1'} /></label>
+                    <div className="ig-input ig-pack-unit"><span>Unit</span>
+                      <Segmented label="Pack unit" value={draft.packUnit} onChange={v => set('packUnit', v)}
+                        options={(isNew ? ['g', 'kg', 'lb', 'oz', 'ml', 'L', 'unit'] : UNITS_OF_DIM[dim]).map(u => ({ value: u, label: u === 'unit' ? 'units' : u }))} />
+                    </div>
+                    <label className="ig-input ig-pack-price"><span>Price paid ($)</span><input inputMode="decimal" value={draft.packPrice} onChange={e => set('packPrice', e.target.value)} placeholder="14.00" /></label>
+                  </div>
+                  {packOk ? (
+                    <span className="ig-derived mp-num">= ${dim === 'unit' ? derivedPrice.toFixed(2) + ' each' : dim === 'ml' ? (derivedPrice * 100).toFixed(3) + ' / 100 ml' : derivedPrice.toFixed(3) + ' / 100 g'}</span>
+                  ) : (
+                    <label className="ig-derived ig-derived-input"><span>No fixed pack? Price {T.label.replace('$ ', '')}:</span>
+                      <input inputMode="decimal" value={draft.price} onChange={e => set('price', e.target.value)} placeholder="0.00" /></label>
+                  )}
+                </div>
 
-            <div className="ig-field">
-              <span className="mp-eyebrow">Nutrition · {U.per}</span>
-              <div className="ig-grid3">
-                <label className="ig-input"><span>kcal</span><input inputMode="decimal" value={draft.kc} onChange={e => set('kc', e.target.value)} placeholder="0" /></label>
-                {U.nut[1] && <label className="ig-input"><span>Protein (g)</span><input inputMode="decimal" value={draft.prot} onChange={e => set('prot', e.target.value)} placeholder="0" /></label>}
-                {U.nut[2] && <label className="ig-input"><span>Fat (g)</span><input inputMode="decimal" value={draft.fat} onChange={e => set('fat', e.target.value)} placeholder="0" /></label>}
-              </div>
-            </div>
+                <div className="ig-field">
+                  <span className="mp-eyebrow">How long it keeps</span>
+                  <Segmented label="How long it keeps" value={draft.keeps} onChange={v => set('keeps', v)} options={KEEPS.map(k => ({ value: k, label: KEEPS_LABEL[k] }))} />
+                </div>
 
-            <div className="ig-grid2" style={{ alignItems: 'end' }}>
-              <label className="ig-input"><span>Portion note</span><input value={draft.per} onChange={e => set('per', e.target.value)} placeholder="80 g → $0.37 · 65 kcal" /></label>
-              <button type="button" className={`ig-chip${draft.organic ? ' is-on' : ''}`} aria-pressed={draft.organic} onClick={() => set('organic', !draft.organic)}
-                style={{ height: 44, justifyContent: 'center', ...(draft.organic ? { background: '#2F9E5B', color: '#fff' } : {}) }}>
-                <Icon name="leaf" size={14} />Organic
-              </button>
-            </div>
+                <div className="ig-field">
+                  <span className="mp-eyebrow">Nutrition · as on the label</span>
+                  <div className="ig-grid4">
+                    <label className="ig-input"><span>Label per ({dim === 'unit' ? 'units' : BASIS_UNIT[dim]})</span><input inputMode="decimal" value={draft.basis} onChange={e => setBasis(e.target.value)} placeholder={dim === 'unit' ? '1' : '100'} /></label>
+                    <label className="ig-input"><span>kcal</span><input inputMode="decimal" value={draft.kc} onChange={e => setNut('kc', e.target.value)} placeholder="0" /></label>
+                    {T.nut[1] && <label className="ig-input"><span>Protein (g)</span><input inputMode="decimal" value={draft.prot} onChange={e => setNut('prot', e.target.value)} placeholder="0" /></label>}
+                    {T.nut[2] && <label className="ig-input"><span>Fat (g)</span><input inputMode="decimal" value={draft.fat} onChange={e => setNut('fat', e.target.value)} placeholder="0" /></label>}
+                  </div>
+                </div>
+
+                <div className="ig-grid2" style={{ alignItems: 'end' }}>
+                  <label className="ig-input"><span>Usual portion ({dim === 'unit' ? 'units' : BASIS_UNIT[dim]})</span>
+                    <input inputMode="decimal" value={draft.portion} onChange={e => set('portion', e.target.value)} placeholder={dim === 'unit' ? '1' : '100'} /></label>
+                  <button type="button" className={`ig-chip${draft.organic ? ' is-on' : ''}`} aria-pressed={draft.organic} onClick={() => set('organic', !draft.organic)}
+                    style={{ height: 44, justifyContent: 'center', ...(draft.organic ? { background: '#2F9E5B', color: '#fff' } : {}) }}>
+                    <Icon name="leaf" size={14} />Organic
+                  </button>
+                </div>
+                {portionNote && <span className="ig-derived mp-num" style={{ marginTop: -8 }}>{portionNote}</span>}
+              </>
+            )}
           </section>
 
           <aside style={{ display: 'flex', flexDirection: 'column', gap: 10, minHeight: 0, overflowY: 'auto' }}>

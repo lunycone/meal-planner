@@ -517,3 +517,16 @@
 .ig-manage:hover { text-decoration: underline; }
 .ig-sec-edit { margin-left: 4px; opacity: .55; }
 .ig-sec:hover .ig-sec-edit { opacity: 1; }
+
+/* ── Ficha de ingrediente: paquete estructurado ── */
+.ig-pack { display: grid; grid-template-columns: 110px minmax(0, 1fr) 140px; gap: 10px; align-items: end; }
+.ig-pack-unit .mp-seg { height: 44px; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.ig-grid4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.ig-derived { font-size: 12.5px; font-weight: 600; color: #1F7A45; }
+.ig-derived-input { display: flex; align-items: center; gap: 8px; color: var(--c-ink-3); font-weight: 500; }
+.ig-derived-input input { width: 90px; height: 32px; box-sizing: border-box; padding: 0 10px; border: 0; border-radius: 10px; background: #fff; font: inherit; font-size: 13px; box-shadow: inset 0 0 0 1px var(--c-line); }
+@media (max-width: 760px) {
+  .ig-pack { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .ig-pack-unit { grid-column: 1 / -1; order: 3; }
+  .ig-grid4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
