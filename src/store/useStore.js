@@ -198,6 +198,16 @@ const useStore = create(
         const id = Date.now().toString()
         set(s => ({ customCombos: [...s.customCombos, { ...combo, id }] }))
       },
+      // Platos compuestos por el generador por ingredientes ({ 'custom-gen-…': combo }):
+      // se guardan como platos tuyos con su id fijo (`gen-…`), una sola vez.
+      addGeneratedCombos(map) {
+        set(s => {
+          const have = new Set(s.customCombos.map(c => c.id))
+          const add = Object.values(map ?? {}).filter(c => c.customId && !have.has(c.customId))
+            .map(c => ({ id: c.customId, name: c.name, items: c.items, meals: c.meals ?? ['comida', 'cena'] }))
+          return add.length ? { customCombos: [...s.customCombos, ...add] } : {}
+        })
+      },
       updateCustomCombo(id, data) {
         set(s => ({ customCombos: s.customCombos.map(c => c.id === id ? { ...c, ...data } : c) }))
       },

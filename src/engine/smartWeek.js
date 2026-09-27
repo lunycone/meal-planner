@@ -37,9 +37,10 @@ import {
 import { SOLUBLE_FIBER_DAILY_MIN, VEG_DAILY_MIN, DIGESTIVE_MAX_PER_DAY, dishVegGrams } from './weekRules'
 import { MARIA_NO_BATIDO_CASERO, MARIA_MERIENDA_PORTATIL } from '../data/modelWeeks'
 import { DAY_KEYS, dayForPerson, dayTotals } from '../lib/mealplan'
-import { starchFamily } from '../lib/tags'
+import { starchFamily, tagsOf } from '../lib/tags'
 import { aggregateIngredients, needAmount, packPlan } from '../lib/needs'
 import { packOf, fmtAmount } from '../lib/packs'
+import { composeDishes, isGenerated, GEN_PREFIX } from './composeDishes'
 
 export const PRIORITIES = ['price', 'protein', 'veg']
 export const PLAN_DAYS = [0, 1, 2, 3, 4] // lunes–viernes
@@ -61,6 +62,7 @@ const W = {
   reuse: 8,           // plato (o variante) ya enseñado en «New ideas»
   waste: 0.3,         // por $ de paquete fresco que sobraría y se tiraría
   pantry: 1,          // por $ de despensa que se gasta (ya está pagado)
+  sameVeg: 0.5,       // comida y cena con la misma verdura (por verdura, persona y día)
 }
 const BONUS = { protein: 0.02, veg: 0.012 } // por g, según la prioridad
 
@@ -71,6 +73,12 @@ function noise(seed, key, amp) { if (!seed) return 1; const x = hash(seed + ':' 
 function hasPowder(c) { return (c.items ?? []).some(it => it.k === 'whey-protein') }
 // «Aragonese rancho stew (cheap)» y «(XL)» son el mismo plato para la variedad.
 export function familyOf(name = '') { return name.split(' (')[0].trim().toLowerCase() }
+// Familia por clave: los platos compuestos se agrupan por su proteína (así
+// «Not this one» y «New ideas» cambian de verdad de plato, no solo la base).
+function famOfKey(k, allCombos) {
+  if (isGenerated(k)) return 'gen:' + k.slice(GEN_PREFIX.length).split('+')[0]
+  return familyOf(allCombos[k]?.name)
+}
 function prefOf(prefs, key) { return Math.max(-3, Math.min(3, prefs?.[key] ?? 0)) }
 function basesOf(combo, allIng) {
   return new Set((combo?.items ?? []).filter(it => (it.p?.grams ?? 0) >= 30).map(it => starchFamily(it.k, allIng)).filter(Boolean))
@@ -82,7 +90,7 @@ function dishStats(key, combo, allIng, seed) {
   const cap = comboScaleCapacity(combo, allIng)
   const n = noise(seed, key, 0.15)
   return {
-    key, name: combo.name, fam: familyOf(combo.name), kcal: a.kcal, cost: a.cost * n, prot: a.prot ?? 0, fat: a.fat ?? 0,
+    key, name: combo.name, fam: isGenerated(key) ? famOfKey(key) : familyOf(combo.name), kcal: a.kcal, cost: a.cost * n, prot: a.prot ?? 0, fat: a.fat ?? 0,
     sol: comboFibSol(combo, allIng), veg: dishVegGrams(combo, allIng), bases: basesOf(combo, allIng),
     gos: dishHasGOS(combo, allIng) ? 1 : 0, all: dishHasAllium(combo, allIng) ? 1 : 0, ins: dishHasInsolubleFiber(combo, allIng) ? 1 : 0,
     red: dishHasTag(combo, 'red-meat', allIng),
@@ -96,12 +104,14 @@ function pools(allCombos, allIng, people, ctx) {
   const stat = {}
   const st = k => (stat[k] ??= dishStats(k, allCombos[k], allIng, ctx.seed))
   const of = slot => all.filter(([k, c]) => (c.meals ?? []).includes(slot) && !ctx.exclude.has(k)).map(([k]) => st(k))
+  // Por ingredientes: comida y cena solo de los platos compuestos.
+  const main = slot => ctx.source === 'ingredients' ? of(slot).filter(d => isGenerated(d.key)) : of(slot)
   const lock = (list, k) => k && allCombos[k] ? [st(k)] : list
   // «New ideas»: lo ya enseñado como comida no vuelve como comida (ni en
   // variante) mientras queden alternativas de sobra; igual con la cena.
   const fresh = (list, seen) => { const f = list.filter(d => !seen.has(d.fam)); return f.length >= 6 ? f : list }
-  const L = lock(fresh(of('comida'), ctx.shownL), ctx.locks.L)
-  const D = lock(fresh(of('cena').filter(d => !d.red), ctx.shownD), ctx.locks.D) // cena sin carne roja
+  const L = lock(fresh(main('comida'), ctx.shownL), ctx.locks.L)
+  const D = lock(fresh(main('cena').filter(d => !d.red), ctx.shownD), ctx.locks.D) // cena sin carne roja
   const B = of('desayuno'), S = of('merienda')
   const per = {}
   for (const p of people) {
@@ -283,8 +293,11 @@ export function evaluatePlan(plan, people, allIng, allCombos, ctx) {
   const lb = basesOf(lc, allIng), db = basesOf(dc, allIng)
   const base = [...lb].find(f => db.has(f))
   if (base) score += W.sameBase * PLAN_DAYS.length * people.length
+  const vegOf = c => new Set((c?.items ?? []).filter(it => (it.p?.grams ?? 0) >= 60 && tagsOf(it.k, allIng).includes('veg')).map(it => it.k))
+  const lv = vegOf(lc), sharedVeg = [...vegOf(dc)].filter(k => lv.has(k))
+  score += W.sameVeg * sharedVeg.length * PLAN_DAYS.length * people.length
   for (const k of [plan.L, plan.D]) {
-    if (ctx.recent.has(k) || ctx.recentFam.has(familyOf(allCombos[k]?.name))) score += W.recent
+    if (ctx.recent.has(k) || ctx.recentFam.has(famOfKey(k, allCombos))) score += W.recent
     score -= W.pref * prefOf(ctx.prefs, k)
   }
 
@@ -362,19 +375,26 @@ function pickDiverse(exact, count, fam, locked) {
  *       recent [recipeKey] del batch de las 2 semanas anteriores
  *       locks { L, D, B: {pid}, S: {pid} } para cambiar solo un plato
  *       stock { ingKey: amount } despensa disponible (sin lo caducado)
+ *       source 'dishes' (catálogo) | 'ingredients' (platos compuestos, ver composeDishes)
  * Devuelve { results: [evaluatePlan…], tried, ms }.
  */
 export function generateSmartWeeks({
   allIng, allCombos, people, priority = 'price', vegMin = VEG_DAILY_MIN, seed = 0,
-  shown = [], exclude = [], prefs = {}, recent = [], locks = {}, stock = {}, count = 3,
+  shown = [], exclude = [], prefs = {}, recent = [], locks = {}, stock = {}, source = 'dishes', count = 3,
 }) {
   const t0 = performance.now()
-  const ctx = {
-    priority, vegMin, seed, prefs, locks, stock, solMin: SOLUBLE_FIBER_DAILY_MIN,
-    shown: new Set(shown), exclude: new Set(exclude), recent: new Set(recent),
-    recentFam: new Set(recent.map(k => familyOf(allCombos[k]?.name)).filter(Boolean)),
+  // Por ingredientes: se componen platos nuevos y se suman al catálogo.
+  let generated = null
+  if (source === 'ingredients') {
+    generated = composeDishes(allIng, allCombos, { stock })
+    allCombos = { ...allCombos, ...generated }
   }
-  const fam = k => familyOf(allCombos[k]?.name)
+  const ctx = {
+    priority, vegMin, seed, prefs, locks, stock, source, solMin: SOLUBLE_FIBER_DAILY_MIN,
+    shown: new Set(shown), exclude: new Set(exclude), recent: new Set(recent),
+    recentFam: new Set(recent.map(k => famOfKey(k, allCombos)).filter(Boolean)),
+  }
+  const fam = k => famOfKey(k, allCombos)
   ctx.shownFamPairs = new Set(shown.map(x => x.split('|').map(fam).join('|')))
   ctx.shownFam = new Set(shown.flatMap(x => x.split('|')).map(fam))
   ctx.shownL = new Set(shown.map(x => fam(x.split('|')[0])))
@@ -393,5 +413,8 @@ export function generateSmartWeeks({
   }, people, allIng, allCombos, ctx))
   exact.sort((x, y) => x.score - y.score)
   const results = pickDiverse(exact, count, fam, locks)
-  return { results, tried, ms: Math.round(performance.now() - t0) }
+  // Los platos compuestos que usa cada opción viajan con ella (para poder
+  // enseñarlos y guardarlos como platos tuyos al cargar la semana).
+  if (generated) for (const r of results) r.newDishes = Object.fromEntries([r.plan.L, r.plan.D].filter(k => generated[k]).map(k => [k, generated[k]]))
+  return { results, tried, ms: Math.round(performance.now() - t0), composed: generated ? Object.keys(generated).length : 0 }
 }
