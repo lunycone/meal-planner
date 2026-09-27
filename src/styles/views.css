@@ -598,3 +598,6 @@
 .st-add { align-self: flex-start; }
 .st-summary { font-size: 13px; font-weight: 600; color: var(--c-ink-2); padding: 10px 12px; border-radius: 12px; background: rgba(47,158,91,0.09); }
 @media (max-width: 560px) { .st-chip { width: 36px; } .st-label { width: auto; } .st-day-tag { font-size: 9.5px; } }
+
+.pl-store-dot { width: 8px; height: 8px; flex-shrink: 0; margin-right: 7px; display: inline-block; vertical-align: 1px; }
+.pl-store-dot.is-none { background: transparent; box-shadow: inset 0 0 0 1.5px rgba(110,80,50,0.28); }

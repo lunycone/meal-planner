@@ -5,6 +5,13 @@ import {
   dishHasGOS, dishHasInsolubleFiber, dishHasAllium,
 } from '../../engine/calc'
 import Overlay from '../ui/Overlay'
+// Puntito del color de la tienda (Costco rojo…), con su nombre al pasar el ratón.
+function StoreDot({ ing }) {
+  const st = ing ? storeOf(ing) : null
+  if (!st) return <span className="mp-dot pl-store-dot is-none" title="No store" aria-label="No store" />
+  return <span className="mp-dot pl-store-dot" title={st} aria-label={st} style={{ background: storeColor(st) }} />
+}
+import { storeOf, storeColor } from '../../lib/stores'
 import Icon, { MEAL_ICON } from '../ui/Icon'
 import {
   MEALS, MEAL_LABEL, MEAL_STYLE, PCOS_STYLE, fmtMoney, fmtRange, addDays, mondayOf, dishUsage, DAY_KEYS, DAY_SHORT,
@@ -72,6 +79,7 @@ function Stepper({ p, onChange }) {
 export default function PlatoSheet({ comboKey = null, onClose }) {
   const allIng    = useStore(selectAllIng)
   const allCombos = useStore(selectAllCombos)
+  useStore(s => s.storeColors) // repintar si cambian los colores de tienda
   const weekPlan  = useStore(s => s.weekPlan)
   const profiles  = useStore(s => s.profiles)
   const comboOverrides     = useStore(s => s.comboOverrides)
@@ -218,7 +226,7 @@ export default function PlatoSheet({ comboKey = null, onClose }) {
             {rows.map(({ it, ing, kcal, cost, prot, share }, i) => (
               <div key={`${it.k}-${i}`} className="pl-ing mp-in" style={{ animationDelay: `${Math.min(i, 12) * 25}ms` }}>
                 <div className="pl-ing-top">
-                  <span className="pl-ing-name">{ing?.name ?? it.k}</span>
+                  <span className="pl-ing-name"><StoreDot ing={ing} />{ing?.name ?? it.k}</span>
                   <Stepper p={it.p} onChange={p => setItems(items => items.map((x, j) => j === i ? { ...x, p } : x))} />
                   <button type="button" className="pl-ing-x" aria-label={`Remove ${ing?.name ?? it.k}`} onClick={() => setItems(items => items.filter((_, j) => j !== i))}><Icon name="x" size={10} stroke={3} /></button>
                 </div>
@@ -253,7 +261,7 @@ export default function PlatoSheet({ comboKey = null, onClose }) {
                     const idx = matches.filter(x => !x.have).indexOf(m)
                     return (
                       <button key={m.k} type="button" className={`pl-result${idx === hl ? ' is-hl' : ''}`} disabled={m.have} onClick={() => addIng(m.k)}>
-                        <span style={{ fontWeight: 600 }}>{m.ing.name}</span>
+                        <span style={{ fontWeight: 600, display: 'inline-flex', alignItems: 'center', minWidth: 0 }}><StoreDot ing={m.ing} />{m.ing.name}{storeOf(m.ing) && <span className="mp-muted" style={{ fontWeight: 500, fontSize: 12, marginLeft: 6 }}>{storeOf(m.ing)}</span>}</span>
                         <span className="mp-muted mp-num" style={{ fontSize: 11.5 }}>
                           {m.have ? 'already in the dish' : `${qtyOf(p) != null ? `${qtyOf(p)} ${unitOf(p)}` : 'fixed price'} · ${Math.round(ingKcal(m.k, p, allIng))} kcal · ${fmtMoney(ingCost(m.k, p, allIng))}`}
                         </span>
