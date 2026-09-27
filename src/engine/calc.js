@@ -46,6 +46,8 @@ export function ingProt(key, p, allIng) {
   if (!i) return 0
   if (i.prot  != null && p.grams != null) return i.prot * p.grams / 100
   if (i.protu != null && p.units != null) return i.protu * p.units
+  if (i.protml != null && p.ml   != null) return i.protml * p.ml
+  if (i.prots != null) return i.prots * (p.serv ?? 1)
   if (i.protf != null) return i.protf
   return 0
 }
@@ -56,8 +58,22 @@ export function ingFat(key, p, allIng) {
   if (i.fat   != null && p.grams != null) return i.fat * p.grams / 100
   if (i.fatu  != null && p.units != null) return i.fatu * p.units
   if (i.fatml != null && p.ml    != null) return i.fatml * p.ml
+  if (i.fats  != null) return i.fats * (p.serv ?? 1)
   if (i.fatf  != null) return i.fatf
   return 0
+}
+
+// Hidratos (totales, como en las etiquetas de Canadá: incluyen la fibra).
+// Si el ingrediente no los trae, lo que queda de las kcal tras proteína y grasa.
+export function ingCarb(key, p, allIng) {
+  const i = allIng[key]
+  if (!i) return 0
+  if (i.carb   != null && p.grams != null) return i.carb * p.grams / 100
+  if (i.carbu  != null && p.units != null) return i.carbu * p.units
+  if (i.carbml != null && p.ml    != null) return i.carbml * p.ml
+  if (i.carbs  != null && i.kcs   != null) return i.carbs * (p.serv ?? 1)
+  if (i.carbf  != null) return i.carbf
+  return Math.max(0, (ingKcal(key, p, allIng) - ingProt(key, p, allIng) * 4 - ingFat(key, p, allIng) * 9) / 4)
 }
 
 export function ingFib(key, p, allIng) {
@@ -65,6 +81,7 @@ export function ingFib(key, p, allIng) {
   if (!i) return 0
   if (i.fib  != null && p.grams != null) return i.fib * p.grams / 100
   if (i.fibu != null && p.units != null) return i.fibu * p.units
+  if (i.fibs != null) return i.fibs * (p.serv ?? 1)
   if (i.fibf != null) return i.fibf
   return 0
 }
@@ -100,7 +117,7 @@ export function proteinProt(pr, useAlt = false, unitsOverride = null) {
 }
 
 export function comboAgg(combo, allIng, variants = {}, gramsOverrides = {}, optionals = []) {
-  let cost = 0, kcal = 0, prot = 0, fat = 0, fib = 0, hasEst = false
+  let cost = 0, kcal = 0, prot = 0, fat = 0, carb = 0, fib = 0, hasEst = false
   for (const it of combo.items) {
     // If this ingredient has a variant override, use it
     let portion = it.p
@@ -116,6 +133,7 @@ export function comboAgg(combo, allIng, variants = {}, gramsOverrides = {}, opti
     kcal += ingKcal(it.k, portion, allIng)
     prot += ingProt(it.k, portion, allIng)
     fat  += ingFat(it.k, portion, allIng)
+    carb += ingCarb(it.k, portion, allIng)
     fib  += ingFib(it.k, portion, allIng)
     if (ingIsEst(it.k, allIng)) hasEst = true
   }
@@ -128,12 +146,13 @@ export function comboAgg(combo, allIng, variants = {}, gramsOverrides = {}, opti
         kcal += ingKcal(k, optItem.p, allIng)
         prot += ingProt(k, optItem.p, allIng)
         fat  += ingFat(k, optItem.p, allIng)
+        carb += ingCarb(k, optItem.p, allIng)
         fib  += ingFib(k, optItem.p, allIng)
         if (ingIsEst(k, allIng)) hasEst = true
       }
     }
   }
-  return { cost, kcal, prot, fat, fib, hasEst, incomplete: !!combo.incomplete }
+  return { cost, kcal, prot, fat, carb, fib, hasEst, incomplete: !!combo.incomplete }
 }
 
 export function prepAgg(prep, allIng) {

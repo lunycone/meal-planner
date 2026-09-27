@@ -93,7 +93,7 @@ export function mealInfo(day, mealType, person, dayIdx, allIng, allCombos) {
   const combo = allCombos[meal.recipeKey]
   if (!combo) return null
   const agg = comboAgg(combo, allIng, meal.comboVariants || {}, {}, meal.comboOptionals || [])
-  let kcal = agg.kcal, cost = agg.cost, prot = agg.prot ?? 0, fat = agg.fat ?? 0
+  let kcal = agg.kcal, cost = agg.cost, prot = agg.prot ?? 0, fat = agg.fat ?? 0, carb = agg.carb ?? 0
   let portion = 'Base portion', scaled = null
   if (mealType === 'comida' || mealType === 'cena') {
     const tp = personMealScalesTwoPass(day, person, allIng, allCombos, personTargetForDay(person, dayIdx))
@@ -104,19 +104,24 @@ export function mealInfo(day, mealType, person, dayIdx, allIng, allCombos) {
       if (sc.grams != null && sc.ingKey) {
         const a = comboAgg(combo, allIng, meal.comboVariants || {}, { [sc.ingKey]: sc.grams })
         prot = a.prot ?? prot
+        fat = a.fat ?? fat
+        carb = a.carb ?? carb
         portion = `${sc.ingName} ${sc.grams} g`
         scaled = { ingName: sc.ingName, grams: sc.grams, defaultGrams: sc.defaultGrams, oilMl: sc.oilMlApplied ?? 0 }
+        fat += sc.oilMlApplied ?? 0
       } else if (sc.wholeDishFactor != null && sc.wholeDishFactor < 0.995) {
-        prot = comboAggScaled(combo, allIng, sc.wholeDishFactor).prot ?? prot
+        const sa = comboAggScaled(combo, allIng, sc.wholeDishFactor)
+        prot = sa.prot ?? prot; fat = sa.fat ?? fat; carb = sa.carb ?? carb
         portion = `Portion ×${sc.wholeDishFactor.toFixed(2)}`
         scaled = { factor: sc.wholeDishFactor }
       } else if ((sc.oilMlApplied ?? 0) > 0) {
         portion = `Base portion + ${sc.oilMlApplied} ml EVOO`
         scaled = { oilMl: sc.oilMlApplied }
+        fat += sc.oilMlApplied
       }
     }
   }
-  const carbs = Math.max(0, (agg.kcal - (agg.prot ?? 0) * 4 - fat * 9) / 4)
+  const carbs = carb
   return {
     key: meal.recipeKey, combo, name: combo.name, kcal: Math.round(kcal), prot: Math.round(prot), cost,
     fat: Math.round(fat), carbs: Math.round(carbs), baseKcal: Math.round(agg.kcal),
