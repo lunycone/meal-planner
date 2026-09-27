@@ -345,6 +345,26 @@ export function personTargetForDay(person, dayIdx) {
   return person?.kcalTarget ?? 0
 }
 
+// Cuánto puede crecer un plato con la misma regla que personMealScale (base
+// escalable hasta su tope + chorro de AOVE hasta 30 ml) — lo usa el generador
+// de semanas (engine/smartWeek.js) para estimar raciones sin llamar al motor
+// completo en cada combinación.
+export function comboScaleCapacity(combo, allIng) {
+  const key = comboScalableKey(combo, allIng)
+  const ing = key ? allIng[key] : null
+  const oilKcal = AOVE_AUTOCLOSE_CAP_KCAL
+  if (!ing || !ing.kc) return { key: null, upKcal: oilKcal, costPerKcal: 0, protPerKcal: 0, floor: WHOLE_DISH_FLOOR }
+  const kcalPerGram = ing.kc / 100
+  const defaultGrams = combo.items.find(it => it.k === key)?.p?.grams ?? 0
+  const cookRatio = DRY_TO_COOKED[key] ?? 1
+  const factorCap = Math.max(defaultGrams * SCALE_CAP_FACTOR, MIN_SCALE_CAP_GRAMS)
+  const max = combo.scalableMax ?? Math.max(defaultGrams, Math.min(factorCap, MAX_COOKED_BASE_GRAMS / cookRatio))
+  return {
+    key, upKcal: Math.max(0, max - defaultGrams) * kcalPerGram, oilKcal,
+    costPerKcal: (ing.per100 || 0) / ing.kc, protPerKcal: (ing.prot || 0) / ing.kc, floor: WHOLE_DISH_FLOOR,
+  }
+}
+
 export function personMealScale(day, mealType, person, allIng, allCombos, opts = {}) {
   const meal = day?.[mealType]
   if (!meal || meal.type !== 'desayuno') return null
@@ -718,7 +738,7 @@ export function dishHasAllium(combo) {
 // de verdad; los que no lo declaren asumen 25% del total, que es la proporcion
 // media aproximada en alimentos vegetales mixtos.
 const SOLUBLE_FALLBACK_SHARE = 0.25
-const SOLUBLE_FIBER_DAILY_MIN = 8   // g/dia — suelo terapeutico en SII-M
+const SOLUBLE_FIBER_DAILY_MIN = 10  // g/dia — suelo terapeutico en SII-M (ver weekRules.js)
 
 export function ingFibSol(key, p, allIng) {
   const i = allIng[key]

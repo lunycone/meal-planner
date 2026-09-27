@@ -14,51 +14,63 @@ import {
   comboFibSol, comboAgg,
 } from './calc'
 
-export const CADENCE_MAX_DAYS = 4      // de 7, por franja horaria
-export const SOLUBLE_FIBER_DAILY_MIN = 8   // g/dia
+// 26 sep 2026 -- con el batch del domingo la comida y la cena de lunes a
+// viernes son el MISMO plato cinco dias: «max 4 de 7 por franja» y «nunca
+// legumbre dos dias seguidos» eran imposibles de cumplir. La dosis se
+// controla ahora por DIA: legumbre, cebolla/ajo (fructanos) o fibra
+// insoluble como mucho en UNA comida al dia. Suelo de fibra soluble subido
+// de 8 a 10 g (el usuario: «sentimos que comemos poca fibra») y suelo nuevo
+// de verdura (gramos de verdura de verdad, sin fruta ni frutos secos).
+export const DIGESTIVE_MAX_PER_DAY = 1
+export const SOLUBLE_FIBER_DAILY_MIN = 10  // g/dia
+export const VEG_DAILY_MIN = 150           // g/dia, receta base
 export const PROTEIN_DAILY_MAX_G_PER_KG = 2.2
 const SLOT_EN = { desayuno: 'breakfast', comida: 'lunch', merienda: 'snack', cena: 'dinner' }
+const DAY_EN = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+// Verdura: lista explícita (la categoría 'fresco' mezcla fruta, frutos secos
+// y leche). Los ingredientes propios con categoría 'fresco' cuentan salvo
+// que parezcan fruta o fruto seco por el nombre.
+const VEG_KEYS = new Set([
+  'cebolla-amarilla', 'cebolla-morada', 'beet', 'lechuga', 'rucula', 'zanahoria', 'espinaca',
+  'guisantes-organic', 'puerro', 'tomate-fresco', 'pepino-ingles', 'calabacin-a1', 'calabacin-org',
+  'calabacin', 'esparragos', 'brocoli', 'pimiento-verde', 'pimiento-amarillo', 'jalapeno',
+  'green-beans', 'col', 'col-rizada', 'squash-butternut', 'zucchini', 'rabanos', 'setas',
+  'alcachofa', 'passata', 'tomate-pelado-rosso', 'tomate-conserva', 'perejil-fresco',
+])
+const NOT_VEG = /fruit|fruta|berr|banana|apple|manzana|melon|orange|naranja|mandarin|nut|seed|almond|hazel|milk|leche/i
+export function isVeg(key, ing) {
+  if (VEG_KEYS.has(key)) return true
+  return !!ing?.isCustom && ing.cat === 'fresco' && !NOT_VEG.test(`${key} ${ing.name ?? ''}`)
+}
+export function dishVegGrams(combo, allIng) {
+  return (combo?.items ?? []).reduce((s, it) => {
+    if (!isVeg(it.k, allIng[it.k])) return s
+    const p = it.p ?? {}
+    return s + (p.grams ?? p.ml ?? (p.units != null ? p.units * 120 : 0))
+  }, 0)
+}
 
 // week = [{ desayuno, comida, merienda, cena }, ...] con combos ya resueltos.
 // Devuelve la lista de infracciones de semana, vacia si todo correcto.
 export function weekViolations(week, allIng, person = {}) {
   const out = []
   const slots = ['desayuno', 'comida', 'merienda', 'cena']
+  const groups = [
+    ['gos', dishHasGOS, 'Legumes'],
+    ['fructanos', dishHasAllium, 'Onion, garlic or leek'],
+    ['insoluble', dishHasInsolubleFiber, 'Insoluble fiber'],
+  ]
 
-  for (const slot of slots) {
-    const combos = week.map(d => d?.[slot]).filter(Boolean)
-    if (!combos.length) continue
-
-    const gosDays = combos.filter(dishHasGOS).length
-    if (gosDays > CADENCE_MAX_DAYS) out.push({
-      rule: 'cadencia-gos', slot, days: gosDays,
-      msg: `Legumes or legume flour at ${SLOT_EN[slot] ?? slot} ${gosDays}/7 days (max ${CADENCE_MAX_DAYS}).`,
-    })
-
-    const fructanDays = combos.filter(dishHasAllium).length
-    if (fructanDays > CADENCE_MAX_DAYS) out.push({
-      rule: 'cadencia-fructanos', slot, days: fructanDays,
-      msg: `Onion, garlic, leek or artichoke at ${SLOT_EN[slot] ?? slot} ${fructanDays}/7 days (max ${CADENCE_MAX_DAYS}).`,
-    })
-
-    const insolDays = combos.filter(dishHasInsolubleFiber).length
-    if (insolDays > CADENCE_MAX_DAYS) out.push({
-      rule: 'cadencia-insoluble', slot, days: insolDays,
-      msg: `Insoluble fiber at ${SLOT_EN[slot] ?? slot} ${insolDays}/7 days (max ${CADENCE_MAX_DAYS}).`,
-    })
-
-    // Dos dias seguidos con legumbre en la MISMA franja: prohibido en cena,
-    // avisado en el resto. Es la regla que ya existia, ahora aplicada a todas.
-    for (let i = 1; i < combos.length; i++) {
-      if (dishHasGOS(combos[i]) && dishHasGOS(combos[i - 1])) {
-        out.push({
-          rule: 'gos-consecutivo', slot, day: i,
-          msg: `Legumes at ${SLOT_EN[slot] ?? slot} two days in a row (days ${i} and ${i + 1}).`,
-        })
-        break
-      }
+  week.forEach((day, i) => {
+    for (const [rule, test, label] of groups) {
+      const hits = slots.filter(k => day?.[k] && test(day[k]))
+      if (hits.length > DIGESTIVE_MAX_PER_DAY) out.push({
+        rule: 'dosis-' + rule, day: i, slots: hits,
+        msg: `${DAY_EN[i] ?? `Day ${i + 1}`}: ${label} at ${hits.map(h => SLOT_EN[h]).join(' and ')} (max once a day).`,
+      })
     }
-  }
+  })
 
   // Suelo diario de fibra soluble. Evitar el desencadenante no es lo mismo que
   // aportar el remedio: en SII-M con rachas de estrenimiento, quitar insoluble
@@ -68,7 +80,7 @@ export function weekViolations(week, allIng, person = {}) {
     const sol = slots.reduce((s, k) => s + (day?.[k] ? comboFibSol(day[k], allIng) : 0), 0)
     if (sol < SOLUBLE_FIBER_DAILY_MIN) out.push({
       rule: 'fibra-soluble-baja', day: i, value: Math.round(sol * 10) / 10,
-      msg: `Day ${i + 1}: ${sol.toFixed(1)} g soluble fiber (min ${SOLUBLE_FIBER_DAILY_MIN}).`,
+      msg: `${DAY_EN[i] ?? `Day ${i + 1}`}: ${sol.toFixed(1)} g soluble fiber (min ${SOLUBLE_FIBER_DAILY_MIN}).`,
     })
   })
 
@@ -84,7 +96,7 @@ export function weekViolations(week, allIng, person = {}) {
       const prot = slots.reduce((s, k) => s + (day?.[k] ? comboAgg(day[k], allIng).prot : 0), 0)
       if (prot > cap) out.push({
         rule: 'proteina-excesiva', day: i, value: Math.round(prot),
-        msg: `Day ${i + 1}: ${Math.round(prot)} g protein (ceiling ${Math.round(cap)} g at ${person.weightKg} kg).`,
+        msg: `${DAY_EN[i] ?? `Day ${i + 1}`}: ${Math.round(prot)} g protein (ceiling ${Math.round(cap)} g at ${person.weightKg} kg).`,
       })
     })
   }

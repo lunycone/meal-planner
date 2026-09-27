@@ -418,8 +418,13 @@ const useStore = create(
       // nombre. Las semanas modelo de fábrica (data/modelWeeks.js) no se
       // pueden borrar del código: se ocultan (hiddenModelWeeks) y se pueden
       // renombrar (modelWeekNames). Todo en el guardado compartido.
-      customWeeks:      [],   // [{ id, name, slots, savedAt }]
-      hiddenModelWeeks: [],   // [n]
+      // Archivo (26 sep 2026): archivar es reversible; dentro del archivo se
+      // puede borrar para siempre. Semana propia archivada = `archived: true`;
+      // de fábrica archivada = hiddenModelWeeks; de fábrica borrada para
+      // siempre = deletedModelWeeks (no vuelve a salir en ningún sitio).
+      customWeeks:      [],   // [{ id, name, slots, savedAt, archived? }]
+      hiddenModelWeeks: [],   // [n] — archivadas
+      deletedModelWeeks: [],  // [n] — borradas para siempre
       modelWeekNames:   {},   // { n: 'nombre' }
       // Semana modelo que se está editando en el Planificador (por dispositivo,
       // no se guarda): { kind: 'custom' | 'model', id, name, weekKey }
@@ -449,11 +454,21 @@ const useStore = create(
         if (kind === 'custom') set(s => ({ customWeeks: s.customWeeks.map(w => w.id === id ? { ...w, name } : w) }))
         else set(s => ({ modelWeekNames: { ...s.modelWeekNames, [id]: name } }))
       },
-      deleteWeek(kind, id) {
-        if (kind === 'custom') set(s => ({ customWeeks: s.customWeeks.filter(w => w.id !== id) }))
+      archiveWeek(kind, id) {
+        if (kind === 'custom') set(s => ({ customWeeks: s.customWeeks.map(w => w.id === id ? { ...w, archived: true } : w) }))
         else set(s => ({ hiddenModelWeeks: [...new Set([...(s.hiddenModelWeeks ?? []), id])] }))
       },
-      restoreModelWeeks() { set({ hiddenModelWeeks: [] }) },
+      unarchiveWeek(kind, id) {
+        if (kind === 'custom') set(s => ({ customWeeks: s.customWeeks.map(w => w.id === id ? { ...w, archived: false } : w) }))
+        else set(s => ({ hiddenModelWeeks: (s.hiddenModelWeeks ?? []).filter(n => n !== id) }))
+      },
+      deleteWeekForever(kind, id) {
+        if (kind === 'custom') set(s => ({ customWeeks: s.customWeeks.filter(w => w.id !== id) }))
+        else set(s => ({
+          hiddenModelWeeks: (s.hiddenModelWeeks ?? []).filter(n => n !== id),
+          deletedModelWeeks: [...new Set([...(s.deletedModelWeeks ?? []), id])],
+        }))
+      },
 
       // Como setMealSlots, pero sustituye la semana ENTERA (no fusiona) --
       // para "Limpiar", "Cargar semana modelo", "Generar barato" y "Repetir
@@ -501,6 +516,7 @@ const useStore = create(
         batchTups:           s.batchTups,
         customWeeks:         s.customWeeks,
         hiddenModelWeeks:    s.hiddenModelWeeks,
+        deletedModelWeeks:   s.deletedModelWeeks,
         modelWeekNames:      s.modelWeekNames,
         // activeView / activeMeal NOT persisted → always start at home
       }),

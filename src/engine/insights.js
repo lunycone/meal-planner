@@ -121,10 +121,10 @@ export function computeInsights({ weekPlan, profiles, allIng, allCombos, today =
       const d = dayForPerson(week, dk, person.id)
       return Object.fromEntries(MEALS.map(m => [m, d[m]?.type === 'desayuno' ? allCombos[d[m].recipeKey] : null]))
     })
-    const v = weekViolations(days, allIng, {}).filter(x => x.rule.startsWith('cadencia') || x.rule === 'gos-consecutivo')
+    const v = weekViolations(days, allIng, {}).filter(x => x.rule.startsWith('dosis-'))
     if (v.length) out.push({
       id: 'dig-' + person.id, when: `Digestion · ${person.name}`, icon: 'leaf', color: '#2F9E5B', tint: 'rgba(47,158,91,0.14)',
-      title: 'The week repeats one food group too often', detail: v.slice(0, 2).map(x => x.msg).join(' '), view: 'planificador',
+      title: 'Too much of one food group in a day', detail: v.slice(0, 2).map(x => x.msg).join(' '), view: 'planificador',
     })
   })
 
