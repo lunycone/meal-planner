@@ -23,12 +23,20 @@ function priceLabel(i) {
 }
 
 function kcalLabel(i) {
-  if (i.kc   != null) return `${i.kc} kcal/100g`
-  if (i.kcu  != null) return `${i.kcu} kcal/unit`
-  if (i.kcml != null) return `${Math.round(i.kcml * 100)} kcal/100ml`
-  if (i.kcs  != null) return `~${i.kcs} kcal`
-  if (i.kcf  != null) return `${i.kcf} kcal`
-  return ''
+  // kcal y, si los hay, proteína · hidratos · grasa en la misma base.
+  const pick = (...ks) => ks.map(k => i[k]).find(v => v != null)
+  let base = null, per = ''
+  if (i.kc   != null) { base = i.kc; per = '/100g' }
+  else if (i.kcu  != null) { base = i.kcu; per = '/unit' }
+  else if (i.kcml != null) { base = Math.round(i.kcml * 100); per = '/100ml' }
+  else if (i.kcs  != null) { base = i.kcs; per = '/serving' }
+  else if (i.kcf  != null) return `${i.kcf} kcal`
+  if (base == null) return ''
+  const m = i.kcml != null ? 100 : 1
+  const r = v => (v == null ? null : Math.round(v * m * 10) / 10)
+  const P = r(pick('prot', 'protu', 'protml', 'prots')), C = r(pick('carb', 'carbu', 'carbml', 'carbs')), F = r(pick('fat', 'fatu', 'fatml', 'fats'))
+  const macros = [P != null && `P ${P}`, C != null && `C ${C}`, F != null && `F ${F}`].filter(Boolean).join(' · ')
+  return `${base} kcal${per}${macros ? ` · ${macros}` : ''}`
 }
 
 // 'flat' no tiene input de precio propio en el formulario de edicion (se

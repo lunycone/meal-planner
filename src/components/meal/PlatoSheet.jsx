@@ -100,7 +100,7 @@ export default function PlatoSheet({ comboKey = null, onClose }) {
 
   const agg = useMemo(() => comboAgg({ items: draft.items }, allIng), [draft.items, allIng])
   const before = useMemo(() => comboAgg({ items: initial.items }, allIng), [initial.items, allIng])
-  const carbs = Math.max(0, (agg.kcal - agg.prot * 4 - agg.fat * 9) / 4)
+  const carbs = agg.carb ?? Math.max(0, (agg.kcal - agg.prot * 4 - agg.fat * 9) / 4)
   const P = agg.prot * 4, C = carbs * 4, F = agg.fat * 9, T = P + C + F || 1
   const rows = draft.items.map(it => {
     const ing = allIng[it.k]

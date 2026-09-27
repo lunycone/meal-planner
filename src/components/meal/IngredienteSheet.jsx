@@ -15,13 +15,13 @@ import { packOf, dimOf, toBase, formatPack, keepsOf, KEEPS, KEEPS_LABEL, WEIGHT_
 // derecha, en qué platos se usa (cambiar el precio cambia su coste).
 
 // Campos por tipo de precio: [clave precio, etiqueta, factor para mostrar]
-// y los de nutrientes [kcal, prot, grasa] con el mismo factor.
+// y los de nutrientes [kcal, prot, grasa, hidratos, fibra] con el mismo factor.
 const UNIT = {
-  per100:     { price: 'per100', label: '$ / 100 g', f: 1, nut: ['kc', 'prot', 'fat'], per: 'per 100 g' },
-  perUnit:    { price: 'perUnit', label: '$ / unit', f: 1, nut: ['kcu', 'protu', 'fatu'], per: 'per unit' },
-  perML:      { price: 'perML', label: '$ / 100 ml', f: 100, nut: ['kcml', null, 'fatml'], per: 'per 100 ml' },
-  perServing: { price: 'perServing', label: '$ / serving', f: 1, nut: ['kcs', null, null], per: 'per serving' },
-  flat:       { price: 'flat', label: '$ per use', f: 1, nut: ['kcf', 'protf', 'fatf'], per: 'per use' },
+  per100:     { price: 'per100', label: '$ / 100 g', f: 1, nut: ['kc', 'prot', 'fat', 'carb', 'fib'], per: 'per 100 g' },
+  perUnit:    { price: 'perUnit', label: '$ / unit', f: 1, nut: ['kcu', 'protu', 'fatu', 'carbu', 'fibu'], per: 'per unit' },
+  perML:      { price: 'perML', label: '$ / 100 ml', f: 100, nut: ['kcml', 'protml', 'fatml', 'carbml', null], per: 'per 100 ml' },
+  perServing: { price: 'perServing', label: '$ / serving', f: 1, nut: ['kcs', 'prots', 'fats', 'carbs', 'fibs'], per: 'per serving' },
+  flat:       { price: 'flat', label: '$ per use', f: 1, nut: ['kcf', 'protf', 'fatf', 'carbf', 'fibf'], per: 'per use' },
 }
 const num = v => { const n = parseFloat(String(v).replace(',', '.')); return isNaN(n) ? null : n }
 const show = (v, f = 1) => v == null ? '' : String(Math.round(v * f * 10000) / 10000)
@@ -47,7 +47,7 @@ function draftOf(ing, unit, key) {
     packQty: okPack ? String(pk.qty) : '', packUnit: okPack ? pk.unit : (dim === 'g' ? 'kg' : dim === 'ml' ? 'L' : 'unit'),
     packPrice: okPack && pk.price != null ? String(pk.price) : '',
     keeps: ing ? keepsOf(key ?? '', ing) : 'week',
-    basis: String(basis), kc: nutAt(U.nut[0]), prot: nutAt(U.nut[1]), fat: nutAt(U.nut[2]),
+    basis: String(basis), kc: nutAt(U.nut[0]), prot: nutAt(U.nut[1]), fat: nutAt(U.nut[2]), carb: nutAt(U.nut[3]), fib: nutAt(U.nut[4]),
     portion,
     tags: ing ? [...tagsOf(key, { [key]: ing })] : [],
   }
@@ -93,11 +93,11 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
   // Cambiar «por cuántos g» reescala lo ya escrito para que siga siendo lo
   // mismo (97 kcal por 100 g → 111.6 por 115 g); luego se copia la etiqueta.
   const setBasis = v => setDraft(d => {
-    const ref = d.nref ?? { b: d.basis, kc: d.kc, prot: d.prot, fat: d.fat }
+    const ref = d.nref ?? { b: d.basis, kc: d.kc, prot: d.prot, fat: d.fat, carb: d.carb, fib: d.fib }
     const ob = num(ref.b), nb = num(v)
     if (!(ob > 0) || !(nb > 0)) return { ...d, basis: v, nref: ref }
     const r = x => { const n = num(x); return n == null ? x : String(Math.round(n * nb / ob * 10) / 10) }
-    return { ...d, basis: v, kc: r(ref.kc), prot: r(ref.prot), fat: r(ref.fat), nref: ref }
+    return { ...d, basis: v, kc: r(ref.kc), prot: r(ref.prot), fat: r(ref.fat), carb: r(ref.carb), fib: r(ref.fib), nref: ref }
   })
   // Escribir un nutriente fija la referencia para el siguiente reescalado.
   const setNut = (k, v) => setDraft(d => ({ ...d, [k]: v, nref: null }))
@@ -124,7 +124,7 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
   const priceVal = derivedPrice ?? (num(draft.price) != null ? num(draft.price) / T.f : null)
   const b = num(draft.basis) > 0 ? num(draft.basis) : (dim === 'unit' ? 1 : 100)
   const perBase = v => v == null ? null : dim === 'unit' ? v / b : dim === 'ml' ? v / b : v * 100 / b
-  const nut = [num(draft.kc), num(draft.prot), num(draft.fat)].map(v => legacy ? v : perBase(v))
+  const nut = [num(draft.kc), num(draft.prot), num(draft.fat), num(draft.carb), num(draft.fib)].map(v => legacy ? v : perBase(v))
   const portionN = num(draft.portion)
   const portionNote = !legacy && portionN > 0 && priceVal != null
     ? (() => {
@@ -143,7 +143,7 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
       data.pack = draft.pack
       data.per = draft.per
       if (num(draft.price) != null) data[U.price] = num(draft.price) / U.f
-      const n = [num(draft.kc), num(draft.prot), num(draft.fat)]
+      const n = [num(draft.kc), num(draft.prot), num(draft.fat), num(draft.carb), num(draft.fib)]
       U.nut.forEach((field, i) => { if (field && n[i] != null) data[field] = n[i] / U.f })
     } else {
       if (priceVal != null) data[T.price] = priceVal
@@ -293,6 +293,8 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
                     <label className="ig-input"><span>kcal</span><input inputMode="decimal" value={draft.kc} onChange={e => setNut('kc', e.target.value)} placeholder="0" /></label>
                     {T.nut[1] && <label className="ig-input"><span>Protein (g)</span><input inputMode="decimal" value={draft.prot} onChange={e => setNut('prot', e.target.value)} placeholder="0" /></label>}
                     {T.nut[2] && <label className="ig-input"><span>Fat (g)</span><input inputMode="decimal" value={draft.fat} onChange={e => setNut('fat', e.target.value)} placeholder="0" /></label>}
+                    {T.nut[3] && <label className="ig-input"><span>Carbs (g)</span><input inputMode="decimal" value={draft.carb} onChange={e => setNut('carb', e.target.value)} placeholder="0" /></label>}
+                    {T.nut[4] && <label className="ig-input"><span>Fiber (g)</span><input inputMode="decimal" value={draft.fib} onChange={e => setNut('fib', e.target.value)} placeholder="0" /></label>}
                   </div>
                 </div>
 
