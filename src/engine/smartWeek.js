@@ -101,7 +101,7 @@ function dishStats(key, combo, allIng, seed) {
 }
 
 function pools(allCombos, allIng, people, ctx) {
-  const all = Object.entries(allCombos).filter(([k, c]) => c?.items?.length && !EXCLUDE_KEYS.has(k) && !hasPowder(c))
+  const all = Object.entries(allCombos).filter(([k, c]) => c?.items?.length && !EXCLUDE_KEYS.has(k) && !hasPowder(c) && !c.date) // las de cita, aparte
   const stat = {}
   const st = k => (stat[k] ??= dishStats(k, allCombos[k], allIng, ctx.seed))
   const of = slot => all.filter(([k, c]) => (c.meals ?? []).includes(slot) && !ctx.exclude.has(k)).map(([k]) => st(k))

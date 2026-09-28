@@ -7,6 +7,7 @@ import Segmented from '../ui/Segmented'
 import { buildModelWeekSlots } from '../../lib/planActions'
 import { addDays, mondayOf, weekKeyOf, fmtRange, fmtMoney, fmtShortDate, activeProfilesOn, weekStats, MEAL_STYLE, PERSON_COLOR, MEALS as MEALS_ALL, DAY_KEYS, dayForPerson, dayTotals } from '../../lib/mealplan'
 import useSmartWeeks from '../../lib/useSmartWeeks'
+import DateNightPanel from './DateNightPanel'
 import { COUNTRIES, COUNTRY_LABEL, missingFor } from '../../engine/cuisines'
 import { dishPairs } from '../../engine/pairing'
 import { batchSessions, coveredDays, cookDateFor, rangeLabel } from '../../lib/batchConfig'
@@ -16,7 +17,7 @@ import { VEG_DAILY_MIN, SOLUBLE_FIBER_DAILY_MIN } from '../../engine/weekRules'
 // Titles shout in CAPS ('WEIGHT GAIN — …'): calm them down, keep acronyms.
 const pretty = t => { const s = t.replace(/\b[A-Z]{3,}\b/g, w => w === 'PCOS' ? w : w.toLowerCase()); return s.charAt(0).toUpperCase() + s.slice(1) }
 
-const SOURCE_OPTS = [{ value: 'dishes', label: 'Dishes' }, { value: 'ingredients', label: 'Ingredients' }, { value: 'surprise', label: 'Surprise' }, { value: 'country', label: 'Countries' }]
+const SOURCE_OPTS = [{ value: 'dishes', label: 'Dishes' }, { value: 'ingredients', label: 'Ingredients' }, { value: 'surprise', label: 'Surprise' }, { value: 'country', label: 'Countries' }, { value: 'date', label: '♥ Date night' }]
 const COUNTRY_OPTS = [{ value: 'all', label: '🌍 All' }, ...COUNTRIES.map(c => ({ value: c.id, label: `${c.flag} ${c.label}` }))]
 const randomSeed = () => 1 + Math.floor(Math.random() * 1e9)
 const PRIORITY_OPTS = [{ value: 'price', label: 'Cheapest' }, { value: 'protein', label: 'More protein' }, { value: 'veg', label: 'More veg' }]
@@ -105,7 +106,7 @@ export default function ModelWeekSheet({ initialTarget = 1, initialTab = 'smart'
     const a = stockAvailable(stockRaw, allIng, cookDateFor(monday, 0))
     return Object.fromEntries(Object.entries(a).map(([k, v]) => [k, Math.round(v)]).sort())
   }, [stockRaw, allIng, wk]) // eslint-disable-line react-hooks/exhaustive-deps
-  const smart = useSmartWeeks({ allIng, allCombos, people, priority, vegMin, seed, shown, exclude, prefs: dishPrefs, recent, stock, source, country: country === 'all' ? null : country, pairPrefs, sessions: sessions.map(x => x.days), locks: locks?.locks ?? {} }, tab === 'smart')
+  const smart = useSmartWeeks({ allIng, allCombos, people, priority, vegMin, seed, shown, exclude, prefs: dishPrefs, recent, stock, source, country: country === 'all' ? null : country, pairPrefs, sessions: sessions.map(x => x.days), locks: locks?.locks ?? {} }, tab === 'smart' && source !== 'date')
   const smartSel = smart.results[Math.min(pick, smart.results.length - 1)] ?? null
   // Lo ya planificado en la semana destino (solo los días de batch), para comparar.
   const planned = useMemo(() => {
@@ -234,7 +235,15 @@ export default function ModelWeekSheet({ initialTarget = 1, initialTab = 'smart'
           </div>
         )}
 
-        {tab === 'smart' && (
+        {tab === 'smart' && source === 'date' && (
+          <>
+            <div className="sw-controls" style={{ paddingBottom: 0 }}>
+              <Segmented label="Build from" value={source} onChange={pickSource} options={SOURCE_OPTS} />
+            </div>
+            <DateNightPanel wk={wk} monday={monday} people={people} allIng={allIng} allCombos={allCombos} target={target} onLoaded={onLoaded} onClose={onClose} />
+          </>
+        )}
+        {tab === 'smart' && source !== 'date' && (
           <>
             <div className="sw-controls">
               <Segmented label="Build from" value={source} onChange={pickSource} options={SOURCE_OPTS} />

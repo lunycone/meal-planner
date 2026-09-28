@@ -35,7 +35,7 @@ export function median(xs) { const s = [...xs].sort((a, b) => a - b); return s.l
 export function learnPortions(allCombos) {
   const seen = {}
   for (const c of Object.values(allCombos)) {
-    if (!(c.meals ?? []).some(m => m === 'comida' || m === 'cena') || c.isCustom) continue
+    if (!(c.meals ?? []).some(m => m === 'comida' || m === 'cena') || c.isCustom || c.date) continue
     for (const it of c.items ?? []) {
       const p = it.p ?? {}
       const slot = (seen[it.k] ??= { grams: [], units: [], ml: [] })
