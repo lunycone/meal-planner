@@ -87,7 +87,7 @@ export default function DateNightPanel({ wk, monday, people, allIng, allCombos, 
         {options.length === 0 && <div className="mp-empty" style={{ padding: 40 }}>No date dishes left — press New ideas.</div>}
         {options.map((o, i) => {
           const on = i === pick
-          const cost = o.a.cost * PORTIONS + (withDessert && o.da ? o.da.cost * PORTIONS : 0)
+          const one = o.a.cost + (withDessert && o.da ? o.da.cost : 0) // una ración (con postre si va)
           return (
             <div key={o.k} className={`sw-card mp-in${on ? ' is-on' : ''}`} style={{ animationDelay: `${i * 70}ms` }}>
               <button type="button" className="sw-hit" aria-pressed={on} aria-label={`Option ${i + 1}: ${o.c.name}`} onClick={() => setPick(i)} />
@@ -100,7 +100,8 @@ export default function DateNightPanel({ wk, monday, people, allIng, allCombos, 
                   </span>
                 </span>
                 <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                  <span className="mp-num" style={{ fontSize: 20, fontWeight: 700 }}>{fmtMoney(cost)}<small className="mp-muted" style={{ fontSize: 12, fontWeight: 500 }}> · 4 portions</small></span>
+                  <span className="mp-num" style={{ fontSize: 20, fontWeight: 700 }}>{fmtMoney(one)}<small className="mp-muted" style={{ fontSize: 12, fontWeight: 500 }}> / person</small></span>
+                  <span className="mp-muted mp-num" style={{ fontSize: 11.5 }}>{fmtMoney(one * 2)} for 2 · {fmtMoney(one * PORTIONS)} for 4 portions</span>
                   <span className="mp-muted mp-num" style={{ fontSize: 11.5 }}>≈ {Math.round(o.a.kcal)} kcal · {Math.round(o.a.prot)} g protein per base portion</span>
                 </span>
               </div>
