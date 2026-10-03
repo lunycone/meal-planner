@@ -688,9 +688,11 @@ const useStore = create(
       storage: createStorageAdapter(),
       // v1 (26 sep 2026): getISOWeek corregido — las claves de weekPlan
       // guardadas con la formula vieja se renumeran una sola vez.
+      // v4 (3 oct 2026): se elimina la ficha duplicada 'cranberry-beans' (se llamaba
+      // igual que 'romano-beans'): sus referencias pasan a 'romano-beans'.
       // v3 (3 oct 2026): la compra del Costco Business entra una sola vez en la
       // despensa (ver BUSINESS_TRIP_STOCK); si ya hay algo de eso, no se toca.
-      version: 3,
+      version: 4,
       migrate(state, version) {
         let st = state
         if (version < 1 && st?.weekPlan) st = { ...st, weekPlan: migrateWeekKeys(st.weekPlan) }
@@ -700,6 +702,7 @@ const useStore = create(
           for (const [k, v] of Object.entries(BUSINESS_TRIP_STOCK)) if (!stock[k]) stock[k] = v
           st = { ...st, stock }
         }
+        if (version < 4 && st) st = JSON.parse(JSON.stringify(st).replaceAll('"cranberry-beans"', '"romano-beans"'))
         return st
       },
       skipHydration: true,

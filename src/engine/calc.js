@@ -311,7 +311,7 @@ const MAX_COOKED_BASE_GRAMS = 300
 // ~120g secos, coherente con el resto de legumbres.
 export const DRY_TO_COOKED = {
   'chickpeas': 2.5, 'black-beans': 2.5, 'red-lentils': 2.5, 'green-lentils': 2.0,
-  'white-beans': 2.5, 'cranberry-beans': 2.5, 'kidney-beans': 2.5, 'romano-beans': 2.5,
+  'white-beans': 2.5, 'kidney-beans': 2.5, 'romano-beans': 2.5,
   'rice': 2.8, 'pasta': 2.5, 'buckwheat': 2.6,
 }
 

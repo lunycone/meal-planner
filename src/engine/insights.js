@@ -9,7 +9,7 @@ import {
 } from '../lib/mealplan'
 import { nextBatch, sessionDates, daysSinceCook } from '../lib/batchConfig'
 
-const SOAK_KEYS = new Set(['chickpeas', 'black-beans', 'white-beans', 'kidney-beans', 'cranberry-beans', 'romano-beans'])
+const SOAK_KEYS = new Set(['chickpeas', 'black-beans', 'white-beans', 'kidney-beans', 'romano-beans'])
 const OVERNIGHT_KEYS = new Set(['oats'])
 
 function batchSlots(weekPlan, dates, profiles, allCombos) {

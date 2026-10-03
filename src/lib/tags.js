@@ -25,7 +25,7 @@ export const DEFAULT_TAGS = {
   'sourdough-bread': T('starch'), 'bagel-queenst': T('starch'), oats: T('starch'), 'barley-flakes': T('starch'), 'kamut-flakes': T('starch'),
   buckwheat: T('starch'), flour: T('starch'), 'chickpea-flour': T('legume'), 'masa-harina': T('starch'), sugar: T(),
   'red-lentils': T('legume', 'starch'), 'green-lentils': T('legume', 'starch'), chickpeas: T('legume', 'starch'), 'black-beans': T('legume', 'starch'),
-  'white-beans': T('legume', 'starch'), 'kidney-beans': T('legume', 'starch'), 'romano-beans': T('legume', 'starch'), 'cranberry-beans': T('legume', 'starch'),
+  'white-beans': T('legume', 'starch'), 'kidney-beans': T('legume', 'starch'), 'romano-beans': T('legume', 'starch'),
   'whole-milk': T('dairy'), 'skim-milk': T('dairy'), 'whey-protein': T('dairy'), avocado: T('fruit'),
   passata: T('veg'), 'peeled-tomatoes': T('veg'), 'yellow-onion': T('veg', 'fructan'), 'red-onion': T('veg', 'fructan'), beet: T('veg'),
   lettuce: T('veg'), arugula: T('veg'), carrot: T('veg'), 'frozen-spinach': T('veg'), 'frozen-peas': T('veg', 'legume'), leek: T('veg', 'fructan'),

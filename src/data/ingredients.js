@@ -30,7 +30,6 @@ export const ING = {
   'white-beans': { name: 'White beans',   cat: 'legumbre', per100: 0.299, kc: 330, carb: 60, prot: 22,  fat: 1,   fib: 6.3, fibSol: 1.6, brand: 'Dunya Harvest Great Northern Beans', store: 'FreshCo',   pack: '900 g · $2.69',   per: '80g dry → $0.24' },
   'kidney-beans':   { name: 'Red kidney beans',     cat: 'legumbre', per100: 0.333, kc: 333, carb: 60, prot: 22,  fat: 1.2, fib: 7.4, fibSol: 1.6, brand: 'Divya Red Kidney Beans',           store: 'Food Basics', pack: '1.8 kg · $5.99',  per: '80g dry → $0.27' },
   'romano-beans':    { name: 'Romano beans (pinto)', cat: 'legumbre', per100: 0.399, kc: 335, carb: 62, prot: 21,  fat: 1.2, fib: 7.0, fibSol: 1.5, gi: 38, brand: 'Cedar Romano Beans',              store: 'Food Basics', pack: '1 kg · $3.99',    per: '80g dry → $0.32' },
-  'cranberry-beans':         { name: 'Romano beans',      cat: 'legumbre', per100: 0.399, kc: 335, carb: 60, prot: 22,  fat: 1,   fib: 7.0, fibSol: 1.5, brand: 'Cedar Romano Beans',               store: 'Food Basics', pack: '1 kg · $3.99',    per: '80g dry → $0.32' },
 
   // FRESCOS
   'whole-milk':             { name: 'Whole milk',      cat: 'fresco',   per100: 0.188, kc: 61, carb: 4.8,  prot: 3.2, fat: 3.3, fib: 0,    pack: '4L · $7.50',           per: '300ml → $0.56 · 183 kcal' },
