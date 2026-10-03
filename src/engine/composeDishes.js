@@ -69,7 +69,7 @@ const priced = (key, ing) => ing && !ing.pend && !ing.hideInTable &&
   (ing.per100 != null || ing.perUnit != null || ing.perML != null) &&
   (ing.kc != null || ing.kcu != null)
 
-const SHORT = { 'butternut-squash': 'Butternut squash', 'canned-tomatoes': 'Tomatoes', carrot: 'Carrots' }
+const SHORT = { 'butternut-squash': 'Butternut squash', 'canned-tomatoes': 'Canned tomatoes', carrot: 'Carrots' }
 export function vegName(key, ing) {
   if (SHORT[key]) return SHORT[key]
   let n = prettyName(ing).split(',')[0]
@@ -82,6 +82,8 @@ export function prettyName(ing) {
   const m = /^(\w+), (\w+)$/.exec(n) // «Squash, butternut» → «Butternut squash»
   return m ? `${m[2].charAt(0).toUpperCase()}${m[2].slice(1)} ${m[1].toLowerCase()}` : n
 }
+// Nombre corto para el plato: sin «, marca» ni la segunda opción tras « / ».
+export const shortName = ing => prettyName(ing).split(',')[0].split(' / ')[0].trim()
 export const lower = s => s.charAt(0).toLowerCase() + s.slice(1)
 const sentence = s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
 function joinVeg(names) { return names.length === 2 ? `${names[0]} & ${names[1]}` : names[0] }
@@ -90,6 +92,8 @@ function joinVeg(names) { return names.length === 2 ? `${names[0]} & ${names[1]}
  * Ingredientes candidatos por papel: { proteins, eggs, bases, legumes, veg }.
  * Cada uno { key, ing, p (ración), kind, cost, prot, kcal }.
  */
+const metricOf = (x, stock) => (x.role === 'protein' || x.role === 'egg' ? (x.cost - pantryOff(x, stock)) / Math.max(1, x.prot) : (x.cost - pantryOff(x, stock)) / Math.max(1, x.kcal))
+
 export function ingredientPools(allIng, allCombos, { allowBase = null, stock = {} } = {}) {
   const learned = learnPortions(allCombos)
   const best = {} // kind → candidato más barato por g de proteína (o por kcal)
@@ -98,8 +102,9 @@ export function ingredientPools(allIng, allCombos, { allowBase = null, stock = {
     const cost = ingCost(key, p, allIng), prot = ingProt(key, p, allIng), kcal = ingKcal(key, p, allIng)
     if (!(kcal > 0)) return
     const c = { key, ing, p, role, kind: `${role}:${kindOf(key)}`, cost, prot, kcal, tags: tagsOf(key, allIng) }
-    const metric = x => role === 'protein' || role === 'egg' ? x.cost / Math.max(1, x.prot) : x.cost / Math.max(1, x.kcal)
-    if (!best[c.kind] || metric(c) < metric(best[c.kind])) best[c.kind] = c
+    // Lo que ya tienes en casa cuenta como más barato: si hay stock de una variante
+    // que no es la más barata de su tipo, es esa la que se usa.
+    if (!best[c.kind] || metricOf(c, stock) < metricOf(best[c.kind], stock)) best[c.kind] = c
   }
   for (const [key, ing] of Object.entries(allIng)) {
     if (!priced(key, ing)) continue
@@ -113,7 +118,15 @@ export function ingredientPools(allIng, allCombos, { allowBase = null, stock = {
     else if (tags.includes('starch')) { const t = `${key} ${ing.name}`; if (!NOT_BASE.test(t) || allowBase?.test(t)) add('base', key, ing) }
     else if (tags.includes('veg') && !tags.includes('fructan')) { if (!NOT_BATCH_VEG.test(key)) add('veg', key, ing) }
   }
-  const all = Object.values(best)
+  // Dos ingredientes con el mismo nombre son el mismo producto (otra tienda, o
+  // una ficha duplicada): una sola, la mejor, para no generar platos gemelos.
+  const byName = {}
+  for (const c of Object.values(best)) {
+    const nk = `${c.role}:${prettyName(c.ing).toLowerCase()}`
+    const m = byName[nk]
+    if (!m || metricOf(c, stock) < metricOf(m, stock)) byName[nk] = c
+  }
+  const all = Object.values(byName)
   return {
     proteins: all.filter(c => c.role === 'protein'), eggs: all.filter(c => c.role === 'egg'),
     bases: all.filter(c => c.role === 'base'), legumes: all.filter(c => c.role === 'legume'),
@@ -127,8 +140,8 @@ function makeDish(main, base, vegs, allIng) {
   const id = 'gen-' + parts.map(c => c.key).join('+') + vegs.map(v => `~${v.p.grams ?? ''}`).join('')
   const vegNames = vegs.map(v => lower(vegName(v.key, v.ing)))
   let name
-  if (main && base) name = `${sentence(prettyName(main.ing))} with ${prettyName(base.ing).toLowerCase()}`
-  else name = sentence(prettyName((main ?? base).ing))
+  if (main && base) name = `${sentence(shortName(main.ing))} with ${shortName(base.ing).toLowerCase()}`
+  else name = sentence(shortName((main ?? base).ing))
   if (vegNames.length) name += ` (${joinVeg(vegNames)})`
   const items = parts.map(c => ({ k: c.key, p: { ...c.p } }))
   items.push({ k: 'evoo', p: { ml: 15 } })
@@ -140,9 +153,24 @@ function makeDish(main, base, vegs, allIng) {
  * Compone platos y devuelve los mejores (con variedad) como { key: combo }.
  * stock: despensa disponible { ingKey: amount } — lo que hay en casa pesa a favor.
  */
+// Lo que ya está en casa sale «gratis» (hasta lo que usa el plato × 10 raciones).
+function pantryOff(c, stock) {
+  const have = stock[c.key] ?? 0
+  if (!(have > 0)) return 0
+  const pack = packOf(c.ing)
+  if (!(pack?.price && pack.amount)) return 0
+  // La ración, en la unidad en la que se compra el paquete (g, ml o unidades).
+  const ug = c.ing.unitGrams
+  const used = pack.dim === 'unit' ? (c.p.units ?? (ug ? (c.p.grams ?? 0) / ug : 0))
+    : pack.dim === 'ml' ? (c.p.ml ?? 0)
+    : (c.p.grams ?? (ug ? (c.p.units ?? 0) * ug : 0))
+  return Math.min(have, used * 10) * (pack.price / pack.amount) / 10
+}
+
 export function composeDishes(allIng, allCombos, { stock = {}, limit = 90, pairPrefs = {}, priority = 'balanced' } = {}) {
   const P = ingredientPools(allIng, allCombos, { stock })
   const cheap = priority === 'price'
+  const evooCost = ingCost('evoo', { ml: 15 }, allIng) // el AOVE también cuesta
   // Con 0, 1 o 2 verduras: en modo precio no se paga más verdura de la que
   // hace falta (la semana ya penaliza quedarse corto de verdura).
   const vegSets = priority === 'veg' ? [] : [[]]
@@ -152,19 +180,7 @@ export function composeDishes(allIng, allCombos, { stock = {}, limit = 90, pairP
   }
   const mains = [...P.proteins, ...P.eggs]
   const bases = [...P.bases, ...P.legumes]
-  // Lo que ya está en casa sale «gratis» (hasta lo que usa el plato × 10 raciones).
-  const pantryOff = c => {
-    const have = stock[c.key] ?? 0
-    if (!(have > 0)) return 0
-    const pack = packOf(c.ing)
-    if (!(pack?.price && pack.amount)) return 0
-    // La ración, en la unidad en la que se compra el paquete (g, ml o unidades).
-    const ug = c.ing.unitGrams
-    const used = pack.dim === 'unit' ? (c.p.units ?? (ug ? (c.p.grams ?? 0) / ug : 0))
-      : pack.dim === 'ml' ? (c.p.ml ?? 0)
-      : (c.p.grams ?? (ug ? (c.p.units ?? 0) * ug : 0))
-    return Math.min(have, used * 10) * (pack.price / pack.amount) / 10
-  }
+  const off = c => pantryOff(c, stock)
   // El mismo ingrediente con otra cantidad (y su coste, kcal y proteína al día).
   const resize = (c, grams) => {
     if (c.p.grams == null || c.p.grams === grams) return c
@@ -180,7 +196,7 @@ export function composeDishes(allIng, allCombos, { stock = {}, limit = 90, pairP
         if (cheap) vegs = vegs.map(v => resize(v, vegs.length === 1 ? 150 : 100))
         const parts = [main, base, ...vegs].filter(Boolean)
         const kcal = parts.reduce((s, c) => s + c.kcal, 0) + 135
-        const cost = parts.reduce((s, c) => s + c.cost - pantryOff(c), 0)
+        const cost = parts.reduce((s, c) => s + c.cost - off(c), 0) + evooCost
         const prot = parts.reduce((s, c) => s + c.prot, 0)
         const veg = vegs.reduce((s, v) => s + (v.p.grams ?? 0), 0)
         const flags = parts.reduce((s, c) => s + (c.tags.includes('legume') ? 1 : 0) + (c.tags.includes('insoluble') ? 1 : 0), 0)
