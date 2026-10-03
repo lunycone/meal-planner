@@ -385,7 +385,7 @@ export function generateSmartWeeks({
   // salen siempre del catálogo.
   let generated = null, poolKeys = null
   if (source === 'ingredients') {
-    generated = composeDishes(allIng, allCombos, { stock, pairPrefs })
+    generated = composeDishes(allIng, allCombos, { stock, pairPrefs, priority, limit: 130 })
     poolKeys = new Set(Object.keys(generated))
   } else if (source === 'country') {
     generated = cuisineDishes(allIng, allCombos, { country, stock, pairPrefs })

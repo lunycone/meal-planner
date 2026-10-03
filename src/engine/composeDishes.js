@@ -23,8 +23,8 @@ import { conceptOf, setFit } from './pairing'
 export const GEN_PREFIX = 'custom-gen-'
 
 // Ingredientes que no son el centro de un plato de batch.
-const NOT_MAIN = /bacon|cold-cuts|cooked-ham|ham-hock|smoked-salmon|liver|suet|half-can|quarter-can|whole-chicken/i
-const NOT_BASE = /flour|flake|oats|masa|sugar|bun|bagel|nacho|bread|loaf|corn/i
+const NOT_MAIN = /bacon|cold-cuts|cooked-ham|ham-hock|smoked-salmon|liver|suet|half-can|quarter-can|whole-chicken|pepperoni|striploin/i
+const NOT_BASE = /flour|flake|oats|masa|sugar|bun|bagel|nacho|bread|loaf|corn|ravioli|lasagna|brioche|gnocchi/i
 const NOT_BATCH_VEG = /parsley|jalape|lettuce|arugula|radish|cucumber|black-pepper|celery/i
 // Variantes del mismo producto en otra tienda: una sola, la más barata.
 const kindOf = key => key.replace(/-(costco|foodland|farmboy|beretta|organic|generic|a1|ref|boneless)\b/g, '')
@@ -71,7 +71,7 @@ const priced = (key, ing) => ing && !ing.pend && !ing.hideInTable &&
 const SHORT = { 'butternut-squash': 'Butternut squash', 'canned-tomatoes': 'Tomatoes', carrot: 'Carrots' }
 export function vegName(key, ing) {
   if (SHORT[key]) return SHORT[key]
-  let n = prettyName(ing)
+  let n = prettyName(ing).split(',')[0]
   if (n.includes(' / ')) n = n.split(' / ').pop()
   n = n.replace(/\b(organic|frozen|fresh|A1)\b/gi, '').replace(/\s+/g, ' ').trim()
   return n.charAt(0).toUpperCase() + n.slice(1)
@@ -136,9 +136,12 @@ function makeDish(main, base, vegs, allIng) {
  * Compone platos y devuelve los mejores (con variedad) como { key: combo }.
  * stock: despensa disponible { ingKey: amount } — lo que hay en casa pesa a favor.
  */
-export function composeDishes(allIng, allCombos, { stock = {}, limit = 90, pairPrefs = {} } = {}) {
+export function composeDishes(allIng, allCombos, { stock = {}, limit = 90, pairPrefs = {}, priority = 'balanced' } = {}) {
   const P = ingredientPools(allIng, allCombos, { stock })
-  const vegSets = []
+  const cheap = priority === 'price'
+  // Con 0, 1 o 2 verduras: en modo precio no se paga más verdura de la que
+  // hace falta (la semana ya penaliza quedarse corto de verdura).
+  const vegSets = priority === 'veg' ? [] : [[]]
   for (let i = 0; i < P.veg.length; i++) {
     vegSets.push([P.veg[i]])
     for (let j = i + 1; j < P.veg.length; j++) vegSets.push([P.veg[i], P.veg[j]])
@@ -154,11 +157,19 @@ export function composeDishes(allIng, allCombos, { stock = {}, limit = 90, pairP
     const per = pack?.price && pack.amount ? pack.price / pack.amount : 0
     return Math.min(have, g * 10) * per / 10
   }
+  // El mismo ingrediente con otra cantidad (y su coste, kcal y proteína al día).
+  const resize = (c, grams) => {
+    if (c.p.grams == null || c.p.grams === grams) return c
+    const p = { ...c.p, grams }
+    return { ...c, p, cost: ingCost(c.key, p, allIng), kcal: ingKcal(c.key, p, allIng), prot: ingProt(c.key, p, allIng) }
+  }
   const out = []
   // Siempre con proteína: la legumbre sola deja corta la proteína del día.
   for (const main of mains) {
     for (const base of bases) {
-      for (const vegs of vegSets) {
+      for (let vegs of vegSets) {
+        // Modo precio: la verdura justa (150 g si es una sola, 100 g cada una si son dos).
+        if (cheap) vegs = vegs.map(v => resize(v, vegs.length === 1 ? 150 : 100))
         const parts = [main, base, ...vegs].filter(Boolean)
         const kcal = parts.reduce((s, c) => s + c.kcal, 0) + 135
         const cost = parts.reduce((s, c) => s + c.cost - pantryOff(c), 0)
@@ -169,7 +180,10 @@ export function composeDishes(allIng, allCombos, { stock = {}, limit = 90, pairP
         // semana inteligente hace la cuenta de verdad después.
         // Qué combina con qué (todas las cocinas) y lo que has rechazado.
         const pair = setFit(parts.map(c => (c.c ??= conceptOf(c.key, c.ing))), null, pairPrefs)
-        const score = cost / kcal * 700 - prot * 0.02 - veg * 0.01 + flags * 0.4 + (vegs.length === 2 ? -0.2 : 0) - pair * 0.5
+        // Modo precio: solo cuesta, con la proteína y la pareja como desempate.
+        const score = cheap
+          ? cost / kcal * 700 - prot * 0.004 + flags * 0.4 - pair * 0.15
+          : cost / kcal * 700 - prot * 0.02 - veg * 0.01 + flags * 0.4 + (vegs.length === 2 ? -0.2 : 0) - pair * 0.5
         out.push({ main, base, vegs, score })
       }
     }
@@ -179,15 +193,17 @@ export function composeDishes(allIng, allCombos, { stock = {}, limit = 90, pairP
   // Variedad: pocas por proteína, una por pareja proteína+base, y la misma
   // verdura (o pareja de verduras) en pocos platos.
   const perMain = {}, perPair = new Set(), perBase = {}, perVegSet = {}, perVeg = {}
-  const vegCap = Math.max(4, Math.ceil(limit / Math.max(1, P.veg.length) * 2))
+  // (en modo precio, la verdura barata puede repetirse: es lo que se pide)
+  const vegCap = cheap ? limit : Math.max(4, Math.ceil(limit / Math.max(1, P.veg.length) * 2))
   const picked = {}
   let n = 0
   for (const d of out) {
     const mk = d.main?.kind ?? 'veggie', bk = starchFamily(d.base.key, allIng) ?? d.base.key
-    const pair = `${mk}|${d.base.kind}`
+    // Por pareja proteína+base, uno sin verdura y otro con verdura (así hay de las dos).
+    const pair = `${mk}|${d.base.kind}|${d.vegs.length ? 'v' : '0'}`
     const vs = d.vegs.map(v => v.key).join('+')
-    if (perPair.has(pair) || (perMain[mk] ?? 0) >= 4 || (perBase[bk] ?? 0) >= Math.ceil(limit / 3)) continue
-    if ((perVegSet[vs] ?? 0) >= 2 || d.vegs.some(v => (perVeg[v.key] ?? 0) >= vegCap)) continue
+    if (perPair.has(pair) || (perMain[mk] ?? 0) >= 6 || (perBase[bk] ?? 0) >= Math.ceil(limit / 3)) continue
+    if ((perVegSet[vs] ?? 0) >= (vs ? (cheap ? 6 : 2) : 8) || d.vegs.some(v => (perVeg[v.key] ?? 0) >= vegCap)) continue
     perPair.add(pair); perMain[mk] = (perMain[mk] ?? 0) + 1; perBase[bk] = (perBase[bk] ?? 0) + 1
     perVegSet[vs] = (perVegSet[vs] ?? 0) + 1; d.vegs.forEach(v => { perVeg[v.key] = (perVeg[v.key] ?? 0) + 1 })
     const g = makeDish(d.main, d.base, d.vegs, allIng)
