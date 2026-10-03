@@ -175,7 +175,9 @@ export function prepAgg(prep, allIng) {
 // (e.g. 'otros' salads) → those stay identical for everyone.
 export function comboScalableKey(combo, allIng) {
   if (!combo) return null
-  if (combo.scalable) return combo.scalable
+  // La base fijada a mano solo vale si el ingrediente sigue existiendo (si lo
+  // borraste o renombraste, se deduce sola de los ingredientes del plato).
+  if (combo.scalable && allIng[combo.scalable]) return combo.scalable
   let best = null, bestKcal = -1
   for (const it of combo.items) {
     if (!tagsOf(it.k, allIng).includes('starch')) continue
@@ -438,7 +440,8 @@ export function personMealScale(day, mealType, person, allIng, allCombos, opts =
 
   // ── Falta, y hay base escalable: subirla, con el mismo tope de siempre ──
   const ing = allIng[key]
-  const kcalPerGram = ing.kc / 100
+  if (!ing) return null
+  const kcalPerGram = (ing.kc ?? 0) / 100
   const item = combo.items.find(it => it.k === key)
   const defaultGrams = item?.p?.grams ?? 0
   if (!kcalPerGram) return null
