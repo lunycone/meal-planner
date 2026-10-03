@@ -27,6 +27,14 @@ const emptyPerMeal = (val) => Object.fromEntries(MEAL_KEYS.map(k => [k, val()]))
 // Vistas validas para restaurar desde localStorage -- si un dia cambian los
 // ids de tab y localStorage tiene guardado uno viejo, mejor caer a 'home'
 // que dejar la pantalla en blanco (activeConfigTab/activeView sin match).
+// Compra del Costco Business del 3 oct 2026, en g (zucchini 21 lb, champiñones
+// 2.27 kg, 2 bolsas de pimientos de 1.13 kg, almendras 3 kg).
+const BUSINESS_TRIP_STOCK = {
+  'zucchini-costco':      { amount: 9525, addedAt: '2026-10-03T12:00:00.000Z' },
+  'mushrooms-costco':     { amount: 2270, addedAt: '2026-10-03T12:00:00.000Z' },
+  'yellow-pepper-costco': { amount: 2260, addedAt: '2026-10-03T12:00:00.000Z' },
+  'almonds-costco':       { amount: 3000, addedAt: '2026-10-03T12:00:00.000Z' },
+}
 const VALID_VIEWS = ['home', 'meal', 'platos', 'ingredientes', 'planificador', 'compra', 'batch', 'mas', 'pantry']
 
 // 26 sep 2026 -- la tab activa se guarda SOLO en localStorage (por
@@ -680,11 +688,18 @@ const useStore = create(
       storage: createStorageAdapter(),
       // v1 (26 sep 2026): getISOWeek corregido — las claves de weekPlan
       // guardadas con la formula vieja se renumeran una sola vez.
-      version: 2,
+      // v3 (3 oct 2026): la compra del Costco Business entra una sola vez en la
+      // despensa (ver BUSINESS_TRIP_STOCK); si ya hay algo de eso, no se toca.
+      version: 3,
       migrate(state, version) {
         let st = state
         if (version < 1 && st?.weekPlan) st = { ...st, weekPlan: migrateWeekKeys(st.weekPlan) }
         if (version < 2) st = migrateKeysV2(st)
+        if (version < 3 && st) {
+          const stock = { ...(st.stock ?? {}) }
+          for (const [k, v] of Object.entries(BUSINESS_TRIP_STOCK)) if (!stock[k]) stock[k] = v
+          st = { ...st, stock }
+        }
         return st
       },
       skipHydration: true,
