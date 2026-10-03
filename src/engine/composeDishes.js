@@ -18,6 +18,7 @@
 import { ingCost, ingKcal, ingProt } from './calc'
 import { tagsOf, starchFamily } from '../lib/tags'
 import { packOf } from '../lib/packs'
+import { rotationHeld, rotationPaused } from '../lib/rotation'
 import { conceptOf, setFit } from './pairing'
 
 export const GEN_PREFIX = 'custom-gen-'
@@ -106,8 +107,10 @@ export function ingredientPools(allIng, allCombos, { allowBase = null, stock = {
     // que no es la más barata de su tipo, es esa la que se usa.
     if (!best[c.kind] || metricOf(c, stock) < metricOf(best[c.kind], stock)) best[c.kind] = c
   }
+  const held = rotationHeld(allIng, stock)
   for (const [key, ing] of Object.entries(allIng)) {
     if (!priced(key, ing)) continue
+    if (rotationPaused(key, ing, stock, held)) continue // otra del grupo está en la despensa
     // Temporales (una compra suelta, p. ej. del Business Centre): solo si hay en la despensa.
     if (ing.temporary && !(stock[key] > 0)) continue
     if (ing.dateOnly) continue // ingredientes de las cenas de cita (data/dateNight.js)

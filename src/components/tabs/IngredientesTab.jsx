@@ -7,6 +7,8 @@ import IngredienteSheet from '../meal/IngredienteSheet'
 import { ING } from '../../data/ingredients'
 import { ingredientUnitType } from '../../engine/calc'
 import { storeOf, storeColor, storesIn, NO_STORE } from '../../lib/stores'
+import { stockAvailable } from '../../lib/needs'
+import { rotationHeld, rotationPaused } from '../../lib/rotation'
 
 // ─── helpers ──────────────────────────────────────────────────────────────
 
@@ -51,7 +53,7 @@ function isBaseIng(key) { return !!ING[key] }
 // ─── Tarjeta ────────────────────────────────────────────────────────────────
 // Toda la tarjeta abre la ficha; la pastilla de tienda abre un menú para
 // cambiarla sin entrar.
-function IngCard({ ingKey, ing, modified, stores, menuOpen, onMenu, onPickStore, onOpen }) {
+function IngCard({ ingKey, ing, modified, paused, stores, menuOpen, onMenu, onPickStore, onOpen }) {
   const store = storeOf(ing)
   const c = storeColor(store)
   return (
@@ -64,6 +66,7 @@ function IngCard({ ingKey, ing, modified, stores, menuOpen, onMenu, onPickStore,
           <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
         </button>
         {ing.temporary && <span className="mp-tag" title="One-off buy: smart weeks only use it while it's in the pantry" style={{ background: 'rgba(224,162,27,0.18)', color: '#8A5E08' }}>temporary</span>}
+        {ing.rotation && <span className="mp-tag" title={paused ? 'Rotation: another one of the group is in the pantry, so smart weeks skip this one for now' : 'Rotation: bulk veg that takes turns in the freezer — smart weeks use it when none of its group is in the pantry, or while it is'} style={paused ? { background: 'rgba(110,80,50,0.10)', color: 'var(--c-ink-3)' } : { background: 'rgba(60,110,200,0.14)', color: '#2A58A8' }}>{paused ? 'rotation · paused' : 'rotation'}</span>}
         {ing.organic && <span className="mp-tag" style={{ background: 'rgba(47,158,91,0.13)', color: '#1F7A45' }}>organic</span>}
         {ing.est && !ing.pend && <span className="mp-tag" style={{ background: 'rgba(110,80,50,0.08)', color: 'var(--c-ink-3)' }}>estimated</span>}
         {modified && <span className="mp-tag" style={{ background: 'rgba(224,162,27,0.16)', color: '#8A5E08' }}>edited</span>}
@@ -104,6 +107,9 @@ export default function IngredientesTab() {
   const catOrder = useStore(selectCatOrder)
   const extraStores = useStore(s => s.extraStores)
   useStore(s => s.storeColors); useStore(s => s.catColors) // repintar al cambiar colores
+  const stockRaw = useStore(s => s.stock)
+  const avail = useMemo(() => stockAvailable(stockRaw, allIng), [stockRaw, allIng])
+  const heldRot = useMemo(() => rotationHeld(allIng, avail), [allIng, avail])
   const deletedIngredients  = useStore(s => s.deletedIngredients)
   const restoreIngredient   = useStore(s => s.restoreIngredient)
   const setIngredientOverride = useStore(s => s.setIngredientOverride)
@@ -188,7 +194,7 @@ export default function IngredientesTab() {
           <div className="ig-grid">
             {sec.keys.map(k => (
               <IngCard key={k} ingKey={k} ing={allIng[k]} stores={stores}
-                modified={!!(ingredientOverrides[k] || priceOverrides[k])}
+                modified={!!(ingredientOverrides[k] || priceOverrides[k])} paused={rotationPaused(k, allIng[k], avail, heldRot)}
                 menuOpen={menu === k} onMenu={() => setMenu(menu === k ? null : k)}
                 onPickStore={name => { setIngredientOverride(k, { store: name }); setMenu(null) }}
                 onOpen={() => { setMenu(null); setOpen(k) }} />
