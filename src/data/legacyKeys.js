@@ -19,7 +19,7 @@ export const ING_KEYS = {
 "garbanzos": "chickpeas",
 "alubias-blancas": "white-beans",
 "alubias-rojas": "kidney-beans",
-"cranberry": "cranberry-beans",
+"cranberry": "romano-beans",
 "leche": "whole-milk",
 "leche-desnatada": "skim-milk",
 "proteina-polvo": "whey-protein",

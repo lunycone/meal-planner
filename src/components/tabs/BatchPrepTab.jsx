@@ -116,7 +116,6 @@ const BASE_COOK = {
   'oats':           { resource: 'none', overnight: true, cookMin: 0, label: 'Fridge (night before)', emoji: '❄️' },
   'frozen-corn':            { resource: 'stove',    cookMin: 10, label: 'Pot/pan',     emoji: '🌽' },
   'white-beans': { resource: 'pressure', cookMin: 35, label: 'Pressure cooker',    emoji: '⚗️', soak: true },
-  'cranberry-beans': { resource: 'pressure', cookMin: 35, label: 'Pressure cooker',    emoji: '⚗️', soak: true },
   'kidney-beans':   { resource: 'pressure', cookMin: 35, label: 'Pressure cooker',    emoji: '⚗️', soak: true },
 }
 
