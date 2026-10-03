@@ -172,7 +172,7 @@ function joinAnd(xs) { return xs.length <= 1 ? xs.join('') : `${xs.slice(0, -1).
 
 function composeFor(prof, allIng, allCombos, { stock = {}, limit = 24, pairPrefs = {} } = {}) {
   const learned = learnPortions(allCombos)
-  const pools = ingredientPools(allIng, allCombos, { allowBase: prof.allowBase })
+  const pools = ingredientPools(allIng, allCombos, { allowBase: prof.allowBase, stock })
   const withAff = (list, which) => list.map(c => ({ ...c, a: aff(prof[which], c.key, c.ing), c: conceptOf(c.key, c.ing) })).filter(c => c.a > 0)
   const mains = withAff([...pools.proteins, ...pools.eggs], 'protein')
   const bases = withAff([...pools.bases, ...pools.legumes], 'base')

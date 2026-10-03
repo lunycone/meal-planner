@@ -63,6 +63,7 @@ function IngCard({ ingKey, ing, modified, stores, menuOpen, onMenu, onPickStore,
           <span className="mp-dot" style={{ background: store ? c : 'rgba(110,80,50,0.35)' }} />{store ?? 'No store'}
           <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
         </button>
+        {ing.temporary && <span className="mp-tag" title="One-off buy: smart weeks only use it while it's in the pantry" style={{ background: 'rgba(224,162,27,0.18)', color: '#8A5E08' }}>temporary</span>}
         {ing.organic && <span className="mp-tag" style={{ background: 'rgba(47,158,91,0.13)', color: '#1F7A45' }}>organic</span>}
         {ing.est && !ing.pend && <span className="mp-tag" style={{ background: 'rgba(110,80,50,0.08)', color: 'var(--c-ink-3)' }}>estimated</span>}
         {modified && <span className="mp-tag" style={{ background: 'rgba(224,162,27,0.16)', color: '#8A5E08' }}>edited</span>}

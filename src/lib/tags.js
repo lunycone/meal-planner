@@ -57,6 +57,7 @@ export const DEFAULT_TAGS = {
   'pasta-dimartino': T('starch'), striploin: T('red-meat'), shrimp: T('seafood'), 'brioche-buns': T('starch'), 'heavy-cream': T('dairy'),
   'salmon-fillet': T('fish'), arborio: T('starch'), gnocchi: T('starch'), mascarpone: T('dairy'), ladyfingers: T(), 'cream-cheese': T('dairy'),
   'digestive-biscuits': T(), espresso: T(), yeast: T(), sage: T(),
+  'zucchini-costco': T('veg'), 'mushrooms-costco': T('veg'), 'yellow-pepper-costco': T('veg'), 'almonds-costco': T('nut', 'insoluble'),
   parmesan: T('dairy'), mozzarella: T('dairy'), gouda: T('dairy'), 'balsamic-vinegar': T(), worcestershire: T(), 'coconut-milk': T(), 'soy-sauce': T(), 'butternut-squash': T('veg'), radishes: T('veg'), apple: T('fruit'), applesauce: T('fruit'), quince: T('fruit'),
   eggs: T('egg'), 'eggs-organic': T('egg'), 'canned-tomatoes': T('veg'), honey: T(),
   'mackerel-half-can': T('fish'), 'sardines-half-can': T('fish'), 'sardines-quarter-can': T('fish'),
