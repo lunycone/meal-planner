@@ -42,7 +42,7 @@ function draftOf(ing, unit, key) {
   const nutAt = field => field && ing?.[field] != null ? show(ing[field] * (dim === 'ml' ? 100 : 1)) : ''
   const portion = ing?.portionG != null ? String(ing.portionG) : (/^\s*(\d+(?:\.\d+)?)\s*(g|ml)\b/.exec(ing?.per ?? '')?.[1] ?? '')
   return {
-    name: ing?.name ?? '', cat: ing?.cat ?? 'otro', store: ing ? (storeOf(ing) ?? '') : '', organic: !!ing?.organic,
+    name: ing?.name ?? '', cat: ing?.cat ?? 'otro', store: ing ? (storeOf(ing) ?? '') : '', organic: !!ing?.organic, temporary: !!ing?.temporary,
     price: show(ing?.[U.price], U.f), pack: ing?.pack ?? '', per: ing?.per ?? '',
     packQty: okPack ? String(pk.qty) : '', packUnit: okPack ? pk.unit : (dim === 'g' ? 'kg' : dim === 'ml' ? 'L' : 'unit'),
     packPrice: okPack && pk.price != null ? String(pk.price) : '',
@@ -138,7 +138,7 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
   function save() {
     if (!draft.name.trim()) return
     const store = draft.store.trim()
-    const data = { name: draft.name.trim(), cat: draft.cat, store, organic: draft.organic, tags: shownTags }
+    const data = { name: draft.name.trim(), cat: draft.cat, store, organic: draft.organic, temporary: draft.temporary, tags: shownTags }
     if (legacy) {
       data.pack = draft.pack
       data.per = draft.per
@@ -299,12 +299,17 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
                   </div>
                 </div>
 
-                <div className="ig-grid2" style={{ alignItems: 'end' }}>
+                <div className="ig-grid3" style={{ alignItems: 'end' }}>
                   <label className="ig-input"><span>Usual portion ({dim === 'unit' ? 'units' : BASIS_UNIT[dim]})</span>
                     <input inputMode="decimal" value={draft.portion} onChange={e => set('portion', e.target.value)} placeholder={dim === 'unit' ? '1' : '100'} /></label>
                   <button type="button" className={`ig-chip${draft.organic ? ' is-on' : ''}`} aria-pressed={draft.organic} onClick={() => set('organic', !draft.organic)}
                     style={{ height: 44, justifyContent: 'center', ...(draft.organic ? { background: '#2F9E5B', color: '#fff' } : {}) }}>
                     <Icon name="leaf" size={14} />Organic
+                  </button>
+                  <button type="button" className={`ig-chip${draft.temporary ? ' is-on' : ''}`} aria-pressed={draft.temporary} onClick={() => set('temporary', !draft.temporary)}
+                    title="A one-off buy (e.g. from a far store). Smart weeks only plan with it while it's in the pantry."
+                    style={{ height: 44, justifyContent: 'center', ...(draft.temporary ? { background: '#C1850C', color: '#fff' } : {}) }}>
+                    <Icon name="warn" size={14} />Temporary
                   </button>
                 </div>
                 {portionNote && <span className="ig-derived mp-num" style={{ marginTop: -8 }}>{portionNote}</span>}

@@ -88,7 +88,7 @@ function joinVeg(names) { return names.length === 2 ? `${names[0]} & ${names[1]}
  * Ingredientes candidatos por papel: { proteins, eggs, bases, legumes, veg }.
  * Cada uno { key, ing, p (ración), kind, cost, prot, kcal }.
  */
-export function ingredientPools(allIng, allCombos, { allowBase = null } = {}) {
+export function ingredientPools(allIng, allCombos, { allowBase = null, stock = {} } = {}) {
   const learned = learnPortions(allCombos)
   const best = {} // kind → candidato más barato por g de proteína (o por kcal)
   const add = (role, key, ing) => {
@@ -101,6 +101,8 @@ export function ingredientPools(allIng, allCombos, { allowBase = null } = {}) {
   }
   for (const [key, ing] of Object.entries(allIng)) {
     if (!priced(key, ing)) continue
+    // Temporales (una compra suelta, p. ej. del Business Centre): solo si hay en la despensa.
+    if (ing.temporary && !(stock[key] > 0)) continue
     const tags = tagsOf(key, allIng)
     if (tags.includes('egg')) add('egg', key, ing)
     else if (['white-meat', 'red-meat', 'fish', 'seafood'].some(t => tags.includes(t))) { if (!NOT_MAIN.test(key)) add('protein', key, ing) }
@@ -135,7 +137,7 @@ function makeDish(main, base, vegs, allIng) {
  * stock: despensa disponible { ingKey: amount } — lo que hay en casa pesa a favor.
  */
 export function composeDishes(allIng, allCombos, { stock = {}, limit = 90, pairPrefs = {} } = {}) {
-  const P = ingredientPools(allIng, allCombos)
+  const P = ingredientPools(allIng, allCombos, { stock })
   const vegSets = []
   for (let i = 0; i < P.veg.length; i++) {
     vegSets.push([P.veg[i]])
