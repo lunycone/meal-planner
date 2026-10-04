@@ -30,7 +30,8 @@ export const SLOT_RULES = {
 
 // Nadie por debajo de este porcentaje de su objetivo de kcal en el hueco
 const MIN_FILL = 0.65
-const OPTIONAL_PROB = { protein: 0.2, fiber: 0.3 }
+// No protein powder: the user dropped it everywhere (Smart weeks exclude it too).
+const OPTIONAL_PROB = { protein: 0, fiber: 0.3 }
 const MARIA_PORTABLE_DAYS = MARIA_NO_BATIDO_CASERO   // Mon/Wed: she works, no blender or cooking
 
 // ─── utilidades ──────────────────────────────────────────────────────────────
@@ -402,6 +403,14 @@ export const PRIORITIES = {
 }
 const keyOfSol = s => s.profileId + '|' + s.archId
 
+// How convenient a recipe is for a priority, in «dollars» per day (lower = better).
+function solValue(s, w, persons, days, maxBatchDays) {
+  const span = s.kind === 'batch' ? Math.max(1, Math.min(s.shelfDays, maxBatchDays, days)) : 1
+  const cost = s.kind === 'batch' ? Math.ceil(s.portionsPerDay * span / s.yield) * s.batchCost / span : s.costPerUse
+  const prot = persons.reduce((a, P) => a + s.persons[P.id].prot, 0)
+  return w.cost * cost + w.kcal * (s.dev ?? 0) - w.prot * prot / 10
+}
+
 // Everything that does not depend on the week: candidates solved for both people.
 // opts: { allIng, dishes, persons:[J,M], mealSlot, candidateSeed, maxBatchDays }
 export function buildPool(opts) {
@@ -446,10 +455,7 @@ export function assemble(pool, opts) {
   if (baseWeek) for (const P of persons) { const bw = Array.isArray(baseWeek) ? baseWeek : (baseWeek[P.id] ?? null); if (bw) baseKeys[P.id] = new Set(weekViolations(bw, allIng, P).map(keyOf)) }
   const value = new Map()
   for (const s of sols) {
-    const span = s.kind === 'batch' ? Math.max(1, Math.min(s.shelfDays, maxBatchDays, days)) : 1
-    const cost = s.kind === 'batch' ? Math.ceil(s.portionsPerDay * span / s.yield) * s.batchCost / span : s.costPerUse
-    const prot = persons.reduce((a, P) => a + s.persons[P.id].prot, 0)
-    value.set(s.id, w.cost * cost + w.kcal * (s.dev ?? 0) - w.prot * prot / 10 + (avoidSet.has(keyOfSol(s)) ? avoidWeight : 0))
+    value.set(s.id, solValue(s, w, persons, days, maxBatchDays) + (avoidSet.has(keyOfSol(s)) ? avoidWeight : 0))
   }
 
   let best = null
@@ -585,4 +591,54 @@ export function generateWeek(opts) {
   const out = generateOptions({ ...opts, count: 1, priority: opts.priority ?? 'price', candidateSeed: opts.candidateSeed ?? opts.seed ?? 1 })
   if (!out.options.length) return { error: out.error, candidates: out.recipes }
   return { ...out.options[0], candidatesTried: out.recipes }
+}
+
+
+// ─── Load model week → Smart ─────────────────────────────────────────────────
+// Smart picks ONE snack per person for the whole batch, comparing it with the lunch/dinner
+// pair. Here the generator hands it recipes built from your ingredients (already sized for
+// each person) to compete with the catalog. Only the best few go in, so Smart stays fast:
+//   · `keep` recipes made of ingredients you have already used in your dishes;
+//   · plus up to 3 recipes that share ONE new ingredient (never two new ones in a week).
+// Returns { combos, byPerson, count, novelty } or null (needs exactly two people).
+const hash36 = str => { let h = 2166136261; for (const c of str) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619) } return (h >>> 0).toString(36) }
+
+export function smartSnackCandidates({ allIng, tried, people, priority = 'price', seed = 1, novelty = 1, keep = 8, mealSlot = 'merienda' }) {
+  const persons = [...people].sort((a, b) => (b.digestive ? 1 : 0) - (a.digestive ? 1 : 0))
+  if (persons.length !== 2) return null
+  const pool = buildPool({ allIng, dishes: tried, persons, mealSlot, candidateSeed: seed || 1 })
+  if (!pool.sols.length) return null
+  const w = PRIORITIES[priority] ?? PRIORITIES.price
+  const scored = pool.sols.map(s => ({ s, v: solValue(s, w, persons, 5, 5), novel: pool.novel[s.id] })).sort((a, b) => a.v - b.v)
+  // Variety: at most 3 per archetype, 2 per main ingredient, one flavor profile each.
+  const take = (list, n) => {
+    const out = [], arch = {}, main = {}, prof = new Set(), labels = new Set()
+    for (const x of list) {
+      if (out.length >= n) break
+      const m = x.s.mainKey
+      // different flavor profile AND a different name (two profiles can read the same: «Banana & cinnamon oats»)
+      if ((arch[x.s.archId] ?? 0) >= 3 || (m && (main[m] ?? 0) >= 2) || prof.has(x.s.profileId) || labels.has(x.s.label)) continue
+      arch[x.s.archId] = (arch[x.s.archId] ?? 0) + 1
+      if (m) main[m] = (main[m] ?? 0) + 1
+      prof.add(x.s.profileId); labels.add(x.s.label); out.push(x)
+    }
+    return out
+  }
+  let chosen = take(scored.filter(x => x.novel.size === 0), keep)
+  if (novelty >= 1) {
+    const byNew = {}
+    for (const x of scored) if (x.novel.size === 1) (byNew[[...x.novel][0]] ??= []).push(x)
+    const best = Object.values(byNew).sort((a, b) => a[0].v - b[0].v)[0]
+    if (best) chosen = [...chosen, ...take(best, 3)]
+  }
+  const combos = {}, byPerson = {}
+  for (const x of chosen) {
+    for (const P of persons) {
+      const id = `gen-snk-${hash36(x.s.id)}-${P.id}`
+      const key = 'custom-' + id
+      combos[key] = { name: `${x.s.label} · ${P.name}`, meals: [mealSlot], items: x.s.persons[P.id].combo.items.map(i => ({ k: i.k, p: i.p })), generated: true, isCustom: true, customId: id }
+      ;(byPerson[P.id] ??= []).push(key)
+    }
+  }
+  return { combos, byPerson, count: chosen.length, novelty: [...new Set(chosen.flatMap(x => [...x.novel]))] }
 }
