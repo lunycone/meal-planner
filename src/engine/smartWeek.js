@@ -23,8 +23,8 @@
 //     cebolla/ajo ni fibra insoluble;
 //   · fibra soluble ≥10 g/día y verdura ≥ vegMin g/día por persona;
 //   · proteína ≥ objetivo y ≤ techo (protCap); PCOS: desayuno nunca «alto».
-// Paquetes y despensa (solo en la fase exacta): lo que ya hay en casa sale
-// gratis; de lo que caduca en la semana (calabacín, verdura fresca) cuenta
+// Paquetes y despensa (solo en la fase exacta): la despensa NO abarata el plato (vale lo mismo);
+// de lo que caduca en la semana (calabacín, verdura fresca) cuenta
 // un 30 % de lo que sobraría del paquete; lo que aguanta (la bolsa de
 // cebollas, huevos, yogur, congelados) pasa a la semana siguiente sin coste.
 // Y lo que aprende: platos rechazados («Not this one») pesan menos, los que
@@ -64,7 +64,6 @@ const W = {
   pref: 2.5,          // por punto de gusto (−: rechazado, +: cargado), por semana
   reuse: 8,           // plato (o variante) ya enseñado en «New ideas»
   waste: 0.3,         // por $ de paquete fresco que sobraría y se tiraría
-  pantry: 1,          // por $ de despensa que se gasta (ya está pagado)
   sameVeg: 0.5,       // comida y cena con la misma verdura (por verdura, persona y día)
 }
 const BONUS = { protein: 0.02, veg: 0.012 } // por g, según la prioridad
@@ -302,7 +301,7 @@ export function evaluatePlan(plan, people, allIng, allCombos, ctx) {
   }
 
   const pk = packScore(slots, people, allIng, allCombos, ctx.stock ?? {}, days)
-  score += W.waste * pk.waste - W.pantry * pk.pantry
+  score += W.waste * pk.waste
 
   const warnings = []
   const group = (list, text) => {
