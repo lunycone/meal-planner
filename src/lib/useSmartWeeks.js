@@ -10,6 +10,9 @@ function getWorker() {
   return worker
 }
 
+// Starts the worker while the app is idle, so opening «Load model week» does not have to fetch and parse it.
+export function warmSmartWorker() { getWorker() }
+
 export default function useSmartWeeks(args, enabled = true) {
   const [state, setState] = useState({ busy: true, results: [], tried: 0, ms: 0, error: null })
   const seq = useRef(0)

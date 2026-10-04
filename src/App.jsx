@@ -16,6 +16,8 @@ import Icon                from './components/ui/Icon'
 import { computeInsights } from './engine/insights'
 import MobileApp from './mobile/MobileApp'
 import useIsMobile from './mobile/useIsMobile'
+import { warmSmartWorker } from './lib/useSmartWeeks'
+import { warmSnackWorker } from './lib/useSnackWeeks'
 import { PERSON_COLOR, activeProfilesOn } from './lib/mealplan'
 
 const TABS = [
@@ -143,6 +145,15 @@ function AppShell() {
   }
 
   useEffect(() => { window.scrollTo({ top: 0 }) }, [view.value])
+
+  // Starts the generator workers while the app is idle: the first click on «Load model week» or
+  // «Plan snacks» then has nothing left to download or parse.
+  useEffect(() => {
+    const idle = window.requestIdleCallback ?? (f => setTimeout(f, 1500))
+    const cancel = window.cancelIdleCallback ?? clearTimeout
+    const id = idle(() => { warmSmartWorker(); warmSnackWorker() })
+    return () => cancel(id)
+  }, [])
 
   const isMobile = useIsMobile()
   if (isMobile) {

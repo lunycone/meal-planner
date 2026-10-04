@@ -153,6 +153,8 @@ export default function PlannerView() {
   const [sheet, setSheet] = useState(null)    // { dayIdx, mealType }
   const [models, setModels] = useState(false)
   const [snacks, setSnacks] = useState(false)
+  const [note, setNote] = useState(null)   // «Snacks added to this week»
+  useEffect(() => { if (!note) return; const t = setTimeout(() => setNote(null), 3200); return () => clearTimeout(t) }, [note])
   const [confirmClear, setConfirmClear] = useState(false)
   const [saving, setSaving] = useState(false)
   const [savedName, setSavedName] = useState(null)
@@ -256,6 +258,7 @@ export default function PlannerView() {
                   <button className="mp-btn mp-btn-glass mp-btn-sm" onClick={() => setConfirmClear(false)}>No</button>
                 </span>
               : <button className="mp-btn mp-btn-glass mp-btn-sm" onClick={() => setConfirmClear(true)}><Icon name="trash" size={14} />Clear week</button>)}
+            {note && <span className="mp-chip mp-in" style={{ color: 'var(--c-green)' }}><Icon name="check" size={13} stroke={2.6} />{note}</span>}
             {savedName && <span className="mp-chip mp-in" style={{ color: 'var(--c-green)' }}><Icon name="check" size={13} stroke={2.6} />Saved as “{savedName}”</span>}
             {!savedName && linked && (
               <span className="mp-chip" style={{ color: '#5B3FC4' }} title="Changes you make here can be saved to that model week">
@@ -339,7 +342,7 @@ export default function PlannerView() {
           initialWho={picker.who} currentKey={picker.currentKey} onClose={() => setPicker(null)} />
       )}
       {saving && <SaveWeekSheet weekKey={wk} monday={monday} onClose={() => setSaving(false)} onSaved={setSavedName} />}
-      {snacks && <SnackPlannerSheet wk={wk} week={week} monday={monday} onClose={() => setSnacks(false)} />}
+      {snacks && <SnackPlannerSheet wk={wk} week={week} monday={monday} onClose={() => setSnacks(false)} onApplied={setNote} />}
       {models && <ModelWeekSheet initialTarget={weekOffset} onClose={() => setModels(false)} onLoaded={t => { setWeekOffset(t); setPlannerDay(null) }} />}
     </div>
   )

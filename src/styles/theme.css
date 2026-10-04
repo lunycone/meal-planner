@@ -98,7 +98,8 @@ button, input, select, textarea { font-family: var(--c-font); color: inherit; }
 @keyframes mp-rise { from { opacity: 0; transform: translateY(18px) scale(.985); } }
 @keyframes mp-in   { from { opacity: 0; transform: translateX(-8px); } }
 @keyframes mp-fade { from { opacity: 0; } }
-@keyframes mp-pop  { from { opacity: 0; transform: translateY(-10px) scale(.96); filter: blur(8px); } }
+/* Sin filter:blur: animarlo sobre una ficha con backdrop-filter obliga a re-desenfocar el fondo en cada fotograma (tirones al abrir). */
+@keyframes mp-pop  { from { opacity: 0; transform: translateY(-10px) scale(.96); } }
 @keyframes mp-pulse { 0% { box-shadow: 0 0 0 0 rgba(214,69,69,.45); } 100% { box-shadow: 0 0 0 9px rgba(214,69,69,0); } }
 @keyframes mp-spin { to { --mp-a: 360deg; } }
 @keyframes mp-grow { from { width: 0; } }

@@ -601,3 +601,46 @@
 
 .pl-store-dot { width: 8px; height: 8px; flex-shrink: 0; margin-right: 7px; display: inline-block; vertical-align: 1px; }
 .pl-store-dot.is-none { background: transparent; box-shadow: inset 0 0 0 1.5px rgba(110,80,50,0.28); }
+
+
+/* ── Carga de fichas (SheetGate) ────────────────────────────────────────────
+   Todo con transform/opacity: lo anima el compositor y sigue fluido aunque el
+   hilo principal esté montando la ficha. */
+.mp-spinner { display: block; animation: mp-spinner .9s linear infinite; }
+@keyframes mp-spinner { to { transform: rotate(360deg); } }
+.sl-card {
+  width: 100%; max-width: 300px; padding: 28px 24px 24px; border-radius: 30px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
+  background: rgba(255,255,255,0.94); box-shadow: 0 30px 70px rgba(80,55,30,0.26); animation: mp-pop .35s cubic-bezier(.2,.9,.25,1.12) both;
+}
+.sl-ring { position: relative; width: 64px; height: 64px; margin-bottom: 8px; }
+.sl-ring .mp-spinner { position: absolute; inset: 0; }
+.sl-bubble { position: absolute; inset: 15px; border-radius: 50%; display: grid; place-items: center; color: #7154DA; background: rgba(139,111,232,0.14); animation: sl-breathe 1.6s ease-in-out infinite; }
+@keyframes sl-breathe { 50% { transform: scale(1.1); } }
+.sl-title { font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
+.sl-hint { font-size: 12.5px; line-height: 1.4; }
+.sl-inline { display: inline-flex; align-items: center; gap: 8px; }
+@media (prefers-reduced-motion: reduce) { .mp-spinner, .sl-bubble { animation-duration: 4s; } }
+
+/* ── Plan snacks (mismo lenguaje que Load model week) ──────────────────── */
+.sw-act { pointer-events: auto; flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 9px; margin-left: 6px; border: 0; border-radius: 999px; background: rgba(31,27,22,0.06); color: var(--c-ink-2); font: inherit; font-size: 11.5px; font-weight: 600; cursor: pointer; transition: background .2s, transform .25s var(--c-spring); }
+.sw-act:hover { background: rgba(31,27,22,0.11); transform: scale(1.04); }
+.sw-act.is-on { background: rgba(224,162,27,0.16); color: #8A5E08; }
+.sw-act:disabled { cursor: default; transform: none; opacity: .75; }
+.sw-sub { display: block; font-size: 11.5px; font-weight: 500; line-height: 1.4; color: var(--c-ink-3); }
+.sw-days { display: inline-block; min-width: 54px; margin-right: 8px; font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--c-ink-3); }
+.sw-recipe { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 14px; background: rgba(31,27,22,0.04); font-size: 12.5px; line-height: 1.5; color: var(--c-ink-2); }
+.sw-recipe ol { margin: 2px 0 0; padding-left: 18px; }
+.sw-grp { display: flex; align-items: flex-start; gap: 4px; flex-wrap: wrap; }
+.sw-grp > .sw-dish { flex: 1 1 220px; }
+
+@media (max-width: 760px) {
+  .snk-note { display: none; }
+  .mw-sheet .mw-bar { gap: 8px; padding-bottom: 8px; }
+  .mw-sheet .sw-controls { gap: 8px; padding-bottom: 8px; }
+  .sw-grp > .sw-dish { flex-basis: 100%; }
+  .sw-grp { gap: 6px; }
+  .sw-grp > .sw-no, .sw-grp > .sw-act { margin-left: 0; }
+}
+@media (max-width: 760px) {
+  .sl-card { max-width: none; border-radius: 30px 30px 0 0; padding-bottom: calc(30px + env(safe-area-inset-bottom, 0px)); }
+}
