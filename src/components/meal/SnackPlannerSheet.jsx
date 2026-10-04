@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import useStore, { selectAllIng, selectAllCombos } from '../../store/useStore'
 import Overlay from '../ui/Overlay'
 import Icon from '../ui/Icon'
@@ -78,6 +78,10 @@ export default function SnackPlannerSheet({ wk, week, monday, onClose, onApplied
     setError(null); setResult(r)
   }
 
+  // The week is built as soon as the sheet opens, and again when you change an option
+  // (nothing is written to your plan until «Apply»).
+  useEffect(() => { run({ keepPins: false, newCands: true }) }, [slot, batches, novelty]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const togglePin = d => setPinned(p => {
     const n = { ...p }
     if (n[d.startDay] === d.candidateId) delete n[d.startDay]; else n[d.startDay] = d.candidateId
@@ -132,7 +136,7 @@ export default function SnackPlannerSheet({ wk, week, monday, onClose, onApplied
 
         <div className="mp-sheet-body" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-            <Segmented label="Meal" value={slot} onChange={v => { setSlot(v); setResult(null); setPinned({}) }}
+            <Segmented label="Meal" value={slot} onChange={v => { setSlot(v); setPinned({}) }}
               options={[{ value: 'merienda', label: 'Snack' }, { value: 'desayuno', label: 'Breakfast' }]} />
             <Segmented label="Batches" value={batches} onChange={setBatches}
               options={[{ value: 'auto', label: 'Auto' }, { value: 'yes', label: 'Batch Mon–Fri' }, { value: 'no', label: 'No batches' }]} />
@@ -142,7 +146,7 @@ export default function SnackPlannerSheet({ wk, week, monday, onClose, onApplied
             {result && Object.keys(pinned).length > 0 && (
               <button className="mp-btn mp-btn-glass mp-btn-sm" onClick={() => run({ keepPins: true, newCands: false })}>Regenerate the rest</button>
             )}
-            <button className="mp-btn mp-btn-dark mp-btn-sm" onClick={() => run({ keepPins: false, newCands: true })}><Icon name="sparkle" size={14} />{result ? 'Another week' : 'Plan the week'}</button>
+            <button className="mp-btn mp-btn-dark mp-btn-sm" onClick={() => run({ keepPins: false, newCands: true })}><Icon name="sparkle" size={14} />Another week</button>
           </div>
 
           {error && <span className="mp-chip" style={{ color: '#B7791F' }}><Icon name="warn" size={13} />{error}</span>}
