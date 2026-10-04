@@ -64,7 +64,7 @@ export const ING = {
   // pero en la tienda se compra por pieza, no pesada -- la lista de la compra
   // usa esto para mostrar "~N ud" en vez de gramos sueltos.
   banana:            { name: 'Banana',            cat: 'fresco',   per100: 0.110, kc: 89, carb: 23,  prot: 1.1, fat: 0.3, fib: 2.6, fibSol: 0.7, gi: 51, unitGrams: 120, store: 'Costco', pack: '3 lb (1.36 kg, Costco) · $1.50', per: '120g → $0.13 · 107 kcal' },
-  mandarin:         { name: 'Mandarin / Clementine', cat: 'fresco', per100: 0.660, kc: 53, carb: 13, prot: 0.9, fat: 0.2, fib: 1.7, fibSol: 1.0, pack: '907g · $5.99',          per: 'ea ~74g → $0.49 · 39 kcal' },
+  mandarin:         { name: 'Mandarin / Clementine', cat: 'fresco', unitGrams: 74, per100: 0.660, kc: 53, carb: 13, prot: 0.9, fat: 0.2, fib: 1.7, fibSol: 1.0, pack: '907g · $5.99',          per: 'ea ~74g → $0.49 · 39 kcal' },
   orange:           { name: 'Orange',           cat: 'fresco',   per100: 0.440, kc: 47, carb: 12,  prot: 0.9, fat: 0.1, fib: 2.4, fibSol: 1.4, pack: '1.36kg · $5.99',        per: '½ ea ~100g → $0.44 · 47 kcal' },
   cantaloupe: { name: 'Cantaloupe',  cat: 'fresco',   per100: 0.233, kc: 34, carb: 8,  prot: 0.8, fat: 0.2, fib: 0.9, fibSol: 0.3, pack: '~1.5kg · $3.50 est.',   per: '200g → $0.47 · 68 kcal', est: true },
   hazelnuts:          { name: 'Hazelnuts (raw)',   cat: 'fresco',   per100: 2.203, kc: 628, carb: 17, prot: 15,  fat: 61,  fib: 9.7, fibSol: 1.2, store: 'Costco', pack: '908 g (Costco) · $20.00', per: '20g → $0.44 · 126 kcal' },
@@ -93,7 +93,7 @@ export const ING = {
   // OTROS
   'olive-oil':           { name: 'Olive oil',  cat: 'otro', flat: 0,    kcf: 0,  pack: 'already have',        per: '~120 kcal/cda · NOT counted' },
   evoo:             { name: 'EVOO',              cat: 'otro', perML: 0,    kcml: 9, carbml: 0, protml: 0, fatml: 1, pack: 'already bought — $0, kcal counted', per: '20ml → $0 · 180 kcal · 20g grasa' },
-  'coconut-oil':    { name: 'Organic virgin coconut oil (Costco)', cat: 'otro', per100: 1.043, kc: 892, carb: 0, fib: 0, prot: 0, fat: 99.5, pack: '2.3 kg (Costco) · $24.00', per: '15g → $0.16 · 134 kcal', organic: true },
+  'coconut-oil':    { name: 'Organic virgin coconut oil (Costco)', cat: 'otro', per100: 1.022, kc: 892, carb: 0, fib: 0, prot: 0, fat: 99.5, pack: '2.3 kg (Costco) · $23.50', per: '15g → $0.15 · 134 kcal', organic: true },
   'beef-suet':             { name: 'Beef Suet',        cat: 'otro', per100: 1.768, kc: 895, carb: 0, fib: 0, prot: 0, fat: 99.5, pack: '2.2lb · $17.64',  per: '15g → $0.27' },
   cinnamon:           { name: 'Cinnamon',           cat: 'otro', flat: 0.05, kcf: 5, carbf: 1.6, fibf: 1,  pack: 'spice',          per: 'use → $0.05', est: true },
   'dark-chocolate':{ name: 'Dark chocolate (chips)', cat: 'otro', per100: 3.00, kc: 550, carb: 60, prot: 6, fat: 32, fib: 10.9, gi: 23, pack: 'estimate',   per: '20g → $0.60', est: true },
@@ -109,6 +109,12 @@ export const ING = {
   'ground-pork':   { name: 'Ground pork (Heritage Linton · Eataly)', cat: 'carne', per100: 1.899, kc: 260, carb: 0, fib: 0, prot: 17, fat: 18, pack: 'kg · $18.99 (Eataly)', per: '100g → $1.90 · 260 kcal · 17g prot' },
   'cold-cuts': { name: 'Italian cold cuts (Citterio Panini: capocollo, mortadella, prosciutto cotto)', cat: 'carne', per100: 1.665, kc: 220, carb: 1, prot: 19, fat: 15, pack: '900 g (Costco) · $14.99', per: '40g → $0.67 · 88 kcal — for snacks', brand: 'Citterio', store: 'Costco', est: true },
   'cooked-ham': { name: 'Extra lean cooked ham (Costco)', cat: 'carne', per100: 1.399, kc: 105, carb: 1.5, prot: 19, fat: 2.5, pack: '1 kg (Costco) · $13.99', per: '40g → $0.56 · 42 kcal — for snacks', store: 'Costco', est: true },
+  // Added with the snack generator (3 Oct 2026). Macros estimated (est: true) until the label is known.
+  salami:       { name: 'Assorted salami (Freybe)', cat: 'carne', per100: 2.132, kc: 400, carb: 1, prot: 22, fat: 33, pack: '3×375 g · $23.99', per: '30g → $0.64 · 120 kcal — for snacks', brand: 'Freybe', est: true },
+  vanilla:      { name: 'Vanilla extract', cat: 'otro', flat: 0, kcf: 1, carbf: 0.1, pack: 'already at home', per: 'dash → $0' },
+  walnuts:      { name: 'California walnuts (Yupik, Costco Business)', cat: 'fresco', per100: 1.025, kc: 654, carb: 14, prot: 15.2, fat: 65, fib: 6.7, pack: '2 kg (Costco Business) · $20.50', per: '20g → $0.21 · 131 kcal', est: true },
+  'ground-flaxseed': { name: 'Organic milled golden flaxseed (CanMar, Costco)', cat: 'fresco', per100: 0.833, kc: 534, carb: 29, prot: 18, fat: 42, fib: 27, fibSol: 9, pack: '1.2 kg (Costco) · $10.00', per: '10g → $0.08 · 53 kcal', est: true },
+  'peanut-butter': { name: 'Natural creamy peanut butter (Kirkland, Costco)', cat: 'otro', per100: 0.55, kc: 594, carb: 20, prot: 25, fat: 50, fib: 7, pack: '2×1 kg (Costco) · $11.00', per: '30g → $0.17 · 178 kcal · 7.5g prot', est: true },
   'smoked-salmon': { name: 'Smoked salmon (Costco)', cat: 'carne', per100: 3.426, kc: 117, carb: 0, fib: 0, prot: 18.3, fat: 4.3, pack: '1.08 kg (Costco) · $37.00', per: '50g → $1.71 · 59 kcal', store: 'Costco', est: true },
   // CARNES Y PESCADO — ordenados por precio ascendente
   'ham-hock':               { name: 'Smoked ham hock',                  cat: 'carne', per100: 1.80,  kc: 200, carb: 0, fib: 0, prot: 20, fat: 12, pack: '~700g ea · $4.50 (→ ~250g usable meat)', per: '40g → $0.72 · 80 kcal · 8g prot' },

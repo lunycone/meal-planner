@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import useStore, { selectAllIng, selectAllCats, selectCatOrder } from '../../store/useStore'
+import { customWithoutRole } from '../../data/snackRoles'
 import StoresSheet from '../meal/StoresSheet'
 import Icon from '../ui/Icon'
 import Segmented from '../ui/Segmented'
@@ -100,6 +101,7 @@ function readPref(k, fb) { try { return localStorage.getItem(k) || fb } catch { 
 // ─── Main tab ─────────────────────────────────────────────────────────────
 export default function IngredientesTab() {
   const allIng  = useStore(selectAllIng)
+  const noSnackRole = customWithoutRole(allIng)   // your own ingredients «Plan snacks» can't see yet
   const allCats = useStore(selectAllCats)
   const priceOverrides      = useStore(s => s.priceOverrides)
   const ingredientOverrides = useStore(s => s.ingredientOverrides)
@@ -157,6 +159,7 @@ export default function IngredientesTab() {
         <div className="mp-page-title">
           <h1>Ingredients</h1>
           <span>{keys.length} ingredients · {stores.length} stores{noStore ? ` · ${noStore} without a store` : ''}</span>
+          {noSnackRole.length > 0 && <span title={noSnackRole.map(r => r.name).join(', ')}>{noSnackRole.length} of yours without a snack role (open one to set it): {noSnackRole.slice(0, 3).map(r => r.name.replace(/\s*\(.*$/, '')).join(', ')}{noSnackRole.length > 3 ? '…' : ''}</span>}
         </div>
         <div className="mp-page-tools">
           <label className="mp-search" style={{ width: 260 }}>

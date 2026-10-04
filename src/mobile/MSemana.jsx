@@ -4,6 +4,7 @@ import Icon, { MEAL_ICON } from '../components/ui/Icon'
 import DishPicker from '../components/meal/DishPicker'
 import MealSheet from '../components/meal/MealSheet'
 import ModelWeekSheet from '../components/meal/ModelWeekSheet'
+import SnackPlannerSheet from '../components/meal/SnackPlannerSheet'
 import SaveWeekSheet from '../components/meal/SaveWeekSheet'
 import { clearFor, weekWith, cleanWeek } from '../lib/planActions'
 import {
@@ -38,6 +39,7 @@ export default function MSemana({ unseen, onIdeas }) {
   const [picker, setPicker] = useState(null)
   const [sheet, setSheet] = useState(null)
   const [models, setModels] = useState(false)
+  const [snacks, setSnacks] = useState(false)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -84,6 +86,7 @@ export default function MSemana({ unseen, onIdeas }) {
       </div>
       <div className="ms-actions">
         <button type="button" onClick={() => setModels(true)}><Icon name="layers" size={16} color="#7154DA" />Model weeks</button>
+        <button type="button" onClick={() => setSnacks(true)}><Icon name="sparkle" size={16} />Plan snacks</button>
         <button type="button" onClick={() => setSaving(true)} disabled={!planned}><Icon name="sparkle" size={16} />Save week</button>
       </div>
 
@@ -145,6 +148,7 @@ export default function MSemana({ unseen, onIdeas }) {
         <DishPicker weekKey={wk} weekData={week} dayKey={pd.dk} date={pd.date} mealType={picker.m}
           initialWho={who} currentKey={picker.currentKey} onClose={() => setPicker(null)} />
       )}
+      {snacks && <SnackPlannerSheet wk={wk} week={week} monday={monday} onClose={() => setSnacks(false)} />}
       {models && <ModelWeekSheet initialTarget={weekOffset} onClose={() => setModels(false)} onLoaded={t => { setWeekOffset(t); setOpen(0) }} />}
       {saving && <SaveWeekSheet weekKey={wk} monday={monday} onClose={() => setSaving(false)} />}
     </div>

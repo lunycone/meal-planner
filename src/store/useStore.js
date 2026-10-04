@@ -208,6 +208,15 @@ const useStore = create(
         const id = Date.now().toString()
         set(s => ({ customCombos: [...s.customCombos, { ...combo, id }] }))
       },
+      // Varios platos propios de una vez, con ids unicos (addCustomCombo usa
+      // Date.now() y colisionaria en un bucle). Los usa el generador de meriendas.
+      // Devuelve los ids.
+      addCustomCombos(list) {
+        const base = Date.now()
+        const ids = list.map((_, i) => 'snk-' + (base + i))
+        set(s => ({ customCombos: [...s.customCombos, ...list.map((c, i) => ({ ...c, id: ids[i] }))] }))
+        return ids
+      },
       // Platos compuestos por el generador por ingredientes ({ 'custom-gen-…': combo }):
       // se guardan como platos tuyos con su id fijo (`gen-…`), una sola vez.
       addGeneratedCombos(map) {
@@ -777,7 +786,7 @@ export function selectAllCombos(s) {
   }
   for (const c of s.customCombos) {
     const key = 'custom-' + c.id
-    if (!deleted.has(key)) result[key] = { name: c.name, items: c.items, meals: c.meals ?? [], isCustom: true, customId: c.id }
+    if (!deleted.has(key)) result[key] = { name: c.name, items: c.items, meals: c.meals ?? [], isCustom: true, customId: c.id, ...(c.snack ? { snack: true } : {}), ...(c.snackGenerated ? { snackGenerated: true } : {}) }
   }
   return result
 }

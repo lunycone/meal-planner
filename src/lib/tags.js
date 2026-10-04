@@ -59,6 +59,7 @@ export const DEFAULT_TAGS = {
   'digestive-biscuits': T(), espresso: T(), yeast: T(), sage: T(),
   'zucchini-costco': T('veg'), 'butternut-squash-costco': T('veg'), 'green-beans-costco': T('veg'), 'green-peas-costco': T('veg', 'legume'), 'mushrooms-costco': T('veg'), 'yellow-pepper-costco': T('veg'), 'almonds-costco': T('nut', 'insoluble'),
   parmesan: T('dairy'), mozzarella: T('dairy'), gouda: T('dairy'), 'balsamic-vinegar': T(), worcestershire: T(), 'coconut-milk': T(), 'soy-sauce': T(), 'butternut-squash': T('veg'), radishes: T('veg'), apple: T('fruit'), applesauce: T('fruit'), quince: T('fruit'),
+  vanilla: T(), 'peanut-butter': T(), 'ground-flaxseed': T(), walnuts: T('nut', 'insoluble'), salami: T('red-meat'),
   eggs: T('egg'), 'eggs-organic': T('egg'), 'canned-tomatoes': T('veg'), honey: T(),
   'mackerel-half-can': T('fish'), 'sardines-half-can': T('fish'), 'sardines-quarter-can': T('fish'),
 }
