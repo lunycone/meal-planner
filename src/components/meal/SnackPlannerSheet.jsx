@@ -14,7 +14,7 @@ import { DAY_KEYS, DAY_SHORT, MEALS, activeProfilesOn, addDays, fmtMoney } from 
 // «Save» (turns a snack you liked into your own dish, so it counts as tried).
 
 const short = n => n.replace(/\s*\(.*$/, '').toLowerCase()
-const line = it => `${short(it.name)} ${it.qty} ${it.unit}`
+const line = it => it.unit === 'taste' ? `${short(it.name)} to taste` : `${short(it.name)} ${it.qty} ${it.unit}`
 
 export default function SnackPlannerSheet({ wk, week, monday, onClose, onApplied }) {
   const allIng = useStore(selectAllIng)

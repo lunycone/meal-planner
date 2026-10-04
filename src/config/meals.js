@@ -41,7 +41,9 @@ export const MEALS = {
     color:     '#7a6a52',
     colorBg:   '#f5f0e8',
     colorBorder:'#d0c4b0',
-    kcalTarget: [150, 250],
+    // Measured on dishes.js (3 Oct 2026): the 12 base smoothies run 640-900 kcal
+    // (Julio); Maria eats them scaled down. It said [150, 250], which matched no real dish.
+    kcalTarget: [600, 900],
     defaultSchedule: {
       batches: [
         { cookDay: 'dom', covers: ['lun','mar','mie','jue','vie','sab'] },

@@ -132,7 +132,7 @@ export function buildCandidates({ allIng, mealSlot, rnd, variantsPer = 3, archet
 export function fillSteps(arch, items, allIng) {
   const bySlot = Object.fromEntries(items.map(i => [i.slotId, i]))
   const name = i => allIng[i.k].name.replace(/\s*\(.*$/, '').trim().toLowerCase()
-  const fmtI = i => `${name(i)} (${i.q} ${i.unit})`
+  const fmtI = i => i.unit === 'taste' ? `${name(i)} (to taste)` : `${name(i)} (${i.q} ${i.unit})`
   const list = xs => (xs.length <= 1 ? xs.join('') : xs.slice(0, -1).join(', ') + ' and ' + xs[xs.length - 1])
   const out = []
   for (const step of arch.steps) {
@@ -170,7 +170,9 @@ export function labelFor(arch, items, allIng) {
 // ─── 2. cantidades ───────────────────────────────────────────────────────────
 function itemsFrom(arch, picks, qty, allIng) {
   return arch.slots.filter(s => picks[s.id] != null && qty[s.id] > 0)
-    .map(s => ({ k: picks[s.id], slotId: s.id, unit: s.unit, q: qty[s.id], ug: allIng[picks[s.id]].unitGrams, p: portionFor(allIng[picks[s.id]], s.unit, qty[s.id]) }))
+    // Spices and vanilla are priced as a flat amount, not per gram: showing 10 g of nutmeg
+    // would be wrong (and unsafe), so they are «to taste» and carry no quantity.
+    .map(s => ({ k: picks[s.id], slotId: s.id, unit: allIng[picks[s.id]].flat != null ? 'taste' : s.unit, q: allIng[picks[s.id]].flat != null ? 1 : qty[s.id], ug: allIng[picks[s.id]].unitGrams, p: portionFor(allIng[picks[s.id]], s.unit, qty[s.id]) }))
 }
 
 function aggOf(items, allIng) {

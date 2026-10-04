@@ -93,7 +93,7 @@ export const ING = {
   // OTROS
   'olive-oil':           { name: 'Olive oil',  cat: 'otro', flat: 0,    kcf: 0,  pack: 'already have',        per: '~120 kcal/cda · NOT counted' },
   evoo:             { name: 'EVOO',              cat: 'otro', perML: 0,    kcml: 9, carbml: 0, protml: 0, fatml: 1, pack: 'already bought — $0, kcal counted', per: '20ml → $0 · 180 kcal · 20g grasa' },
-  'coconut-oil':    { name: 'Organic virgin coconut oil (Costco)', cat: 'otro', per100: 1.043, kc: 892, carb: 0, fib: 0, prot: 0, fat: 99.5, pack: '2.3 kg (Costco) · $24.00', per: '15g → $0.16 · 134 kcal', organic: true },
+  'coconut-oil':    { name: 'Organic virgin coconut oil (Costco)', cat: 'otro', per100: 1.022, kc: 892, carb: 0, fib: 0, prot: 0, fat: 99.5, pack: '2.3 kg (Costco) · $23.50', per: '15g → $0.15 · 134 kcal', organic: true },
   'beef-suet':             { name: 'Beef Suet',        cat: 'otro', per100: 1.768, kc: 895, carb: 0, fib: 0, prot: 0, fat: 99.5, pack: '2.2lb · $17.64',  per: '15g → $0.27' },
   cinnamon:           { name: 'Cinnamon',           cat: 'otro', flat: 0.05, kcf: 5, carbf: 1.6, fibf: 1,  pack: 'spice',          per: 'use → $0.05', est: true },
   'dark-chocolate':{ name: 'Dark chocolate (chips)', cat: 'otro', per100: 3.00, kc: 550, carb: 60, prot: 6, fat: 32, fib: 10.9, gi: 23, pack: 'estimate',   per: '20g → $0.60', est: true },
