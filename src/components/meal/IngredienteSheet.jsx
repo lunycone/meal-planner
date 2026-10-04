@@ -8,6 +8,7 @@ import Icon from '../ui/Icon'
 import Segmented from '../ui/Segmented'
 import { storeOf, storeColor, storesIn } from '../../lib/stores'
 import { TAGS, TAG_LABEL, TAG_HINT, tagsOf, guessTags } from '../../lib/tags'
+import { ROLES, TASTES, snackRoleOf, suggestRole } from '../../data/snackRoles'
 import { packOf, dimOf, toBase, formatPack, keepsOf, KEEPS, KEEPS_LABEL, WEIGHT_UNITS, VOLUME_UNITS } from '../../lib/packs'
 
 // ─── Ficha de ingrediente: ver y editar son lo mismo ───────────────────────
@@ -50,6 +51,8 @@ function draftOf(ing, unit, key) {
     basis: String(basis), kc: nutAt(U.nut[0]), prot: nutAt(U.nut[1]), fat: nutAt(U.nut[2]), carb: nutAt(U.nut[3]), fib: nutAt(U.nut[4]),
     portion,
     tags: ing ? [...tagsOf(key, { [key]: ing })] : [],
+    snackRole: snackRoleOf(key ?? '', { [key ?? '']: ing })?.role ?? '',
+    snackTaste: snackRoleOf(key ?? '', { [key ?? '']: ing })?.taste ?? 'neutral',
   }
 }
 
@@ -139,6 +142,8 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
     if (!draft.name.trim()) return
     const store = draft.store.trim()
     const data = { name: draft.name.trim(), cat: draft.cat, store, organic: draft.organic, temporary: draft.temporary, rotation: draft.rotation || '', tags: shownTags }
+    // Snack role: only written when you change it (the generator ignores ingredients without a role)
+    if (draft.snackRole !== initial.snackRole || draft.snackTaste !== initial.snackTaste) { data.snackRole = draft.snackRole; data.snackTaste = draft.snackTaste }
     if (legacy) {
       data.pack = draft.pack
       data.per = draft.per
@@ -247,6 +252,26 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
                   const on = shownTags.includes(t)
                   return <button key={t} type="button" className={`ig-chip ig-tag${on ? ' is-on' : ''}`} aria-pressed={on} title={TAG_HINT[t]} onClick={() => toggleTag(t)}>{on && <Icon name="check" size={11} stroke={3} />}{TAG_LABEL[t]}</button>
                 })}
+              </div>
+            </div>
+
+            <div className="ig-field">
+              <span className="ig-field-head"><span className="mp-eyebrow">Snack role</span><span className="mp-muted" style={{ fontSize: 11.5 }}>Used by «Plan snacks». No role = it is never picked</span></span>
+              <div className="ig-chips" style={{ alignItems: 'center' }}>
+                <select className="ig-input" style={{ minWidth: 190 }} value={draft.snackRole} onChange={e => set('snackRole', e.target.value)} aria-label="Snack role">
+                  <option value="">— none</option>
+                  {Object.entries(ROLES).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+                </select>
+                {draft.snackRole && (
+                  <select className="ig-input" value={draft.snackTaste} onChange={e => set('snackTaste', e.target.value)} aria-label="Taste">
+                    {Object.entries(TASTES).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+                  </select>
+                )}
+                {!draft.snackRole && suggestRole({ name: draft.name }) && (
+                  <button type="button" className="ig-chip" onClick={() => { const sg = suggestRole({ name: draft.name }); set('snackRole', sg.role); set('snackTaste', sg.taste) }}>
+                    Suggested: {ROLES[suggestRole({ name: draft.name }).role]}
+                  </button>
+                )}
               </div>
             </div>
 

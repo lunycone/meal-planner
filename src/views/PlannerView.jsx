@@ -5,6 +5,7 @@ import Segmented from '../components/ui/Segmented'
 import DishPicker from '../components/meal/DishPicker'
 import MealSheet from '../components/meal/MealSheet'
 import ModelWeekSheet from '../components/meal/ModelWeekSheet'
+import SnackPlannerSheet from '../components/meal/SnackPlannerSheet'
 import SaveWeekSheet from '../components/meal/SaveWeekSheet'
 import { clearFor, weekWith, cleanWeek } from '../lib/planActions'
 import {
@@ -151,6 +152,7 @@ export default function PlannerView() {
   const [picker, setPicker] = useState(null)  // { dayIdx, mealType, currentKey, who }
   const [sheet, setSheet] = useState(null)    // { dayIdx, mealType }
   const [models, setModels] = useState(false)
+  const [snacks, setSnacks] = useState(false)
   const [confirmClear, setConfirmClear] = useState(false)
   const [saving, setSaving] = useState(false)
   const [savedName, setSavedName] = useState(null)
@@ -242,6 +244,7 @@ export default function PlannerView() {
         <>
           <div className="plan-actions mp-rise" style={{ animationDelay: '60ms' }}>
             <button className="mp-btn mp-btn-glass mp-btn-sm" onClick={() => setModels(true)}><Icon name="layers" size={14} />Load model week</button>
+            <button className="mp-btn mp-btn-glass mp-btn-sm" onClick={() => setSnacks(true)} title="Build snacks or breakfasts from ingredients: batches, new-ingredient cap, lock days"><Icon name="sparkle" size={14} />Plan snacks</button>
             <button className="mp-btn mp-btn-glass mp-btn-sm" disabled={!planned} onClick={() => setSaving(true)} title={planned ? 'Save it with a name to load it again later' : 'The week is empty'}>
               <Icon name="sparkle" size={14} />{linked ? `Save changes to “${linked.name.length > 20 ? linked.name.slice(0, 18) + '…' : linked.name}”` : 'Save week'}
             </button>
@@ -336,6 +339,7 @@ export default function PlannerView() {
           initialWho={picker.who} currentKey={picker.currentKey} onClose={() => setPicker(null)} />
       )}
       {saving && <SaveWeekSheet weekKey={wk} monday={monday} onClose={() => setSaving(false)} onSaved={setSavedName} />}
+      {snacks && <SnackPlannerSheet wk={wk} week={week} monday={monday} onClose={() => setSnacks(false)} />}
       {models && <ModelWeekSheet initialTarget={weekOffset} onClose={() => setModels(false)} onLoaded={t => { setWeekOffset(t); setPlannerDay(null) }} />}
     </div>
   )

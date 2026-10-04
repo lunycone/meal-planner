@@ -86,7 +86,7 @@ export const DISHES = {
   },
   'd-high-protein-goat-yogurt-with-mandarin': {
     name: 'High-protein goat yogurt with mandarin', meals: ['desayuno'],
-    items: [{ k: 'goat-yogurt', p: { grams: 350 } }, { k: 'whey-protein', p: { grams: 35 } }, { k: 'mandarin', p: { units: 1 } }],
+    items: [{ k: 'goat-yogurt', p: { grams: 350 } }, { k: 'whey-protein', p: { grams: 35 } }, { k: 'mandarin', p: { grams: 74 } }],
   },
   'd-yogurt-banana-oats': {
     name: 'Yogurt + banana + oats', meals: ['desayuno'],
@@ -349,7 +349,7 @@ export const DISHES = {
   },
   'c-pork-tenderloin-black-beans-egg-salsa-verde': {
     name: 'Pork tenderloin + black beans + egg + salsa verde', meals: ['comida'],
-    items: [{ k: 'pork-tenderloin', p: { grams: 200 } }, { k: 'black-beans', p: { grams: 120 } }, { k: 'eggs', p: { units: 1 } }, { k: 'dried-parsley', p: {} }, { k: 'jalapeno', p: { units: 1 } }, { k: 'lemon', p: { units: 0.5 } }, { k: 'evoo', p: { ml: 30 } }], scalable: 'black-beans',
+    items: [{ k: 'pork-tenderloin', p: { grams: 200 } }, { k: 'black-beans', p: { grams: 120 } }, { k: 'eggs', p: { units: 1 } }, { k: 'dried-parsley', p: {} }, { k: 'jalapeno', p: { grams: 40 } }, { k: 'lemon', p: { units: 0.5 } }, { k: 'evoo', p: { ml: 30 } }], scalable: 'black-beans',
   },
   'c-turkey-chickpeas-egg-tomato-onion-sofrito': {
     name: 'Turkey + chickpeas + egg + tomato-onion sofrito', meals: ['comida'],
@@ -373,7 +373,7 @@ export const DISHES = {
   },
   'c-black-beans-avocado-cheddar-and-turkey-homemade-red': {
     name: 'Black beans, avocado, cheddar and turkey + homemade red salsa', meals: ['comida'],
-    items: [{ k: 'turkey-drumstick', p: { grams: 150 } }, { k: 'black-beans', p: { grams: 100 } }, { k: 'avocado', p: { units: 0.5 } }, { k: 'cheddar', p: { grams: 20 } }, { k: 'canned-tomatoes', p: { grams: 100 } }, { k: 'jalapeno', p: { units: 1 } }, { k: 'yellow-onion', p: { grams: 40 } }, { k: 'lemon', p: { units: 0.5 } }, { k: 'cumin', p: {} }, { k: 'evoo', p: { ml: 15 } }], scalable: 'black-beans',
+    items: [{ k: 'turkey-drumstick', p: { grams: 150 } }, { k: 'black-beans', p: { grams: 100 } }, { k: 'avocado', p: { units: 0.5 } }, { k: 'cheddar', p: { grams: 20 } }, { k: 'canned-tomatoes', p: { grams: 100 } }, { k: 'jalapeno', p: { grams: 40 } }, { k: 'yellow-onion', p: { grams: 40 } }, { k: 'lemon', p: { units: 0.5 } }, { k: 'cumin', p: {} }, { k: 'evoo', p: { ml: 15 } }], scalable: 'black-beans',
   },
   'c-cantaloupe-feta-avocado-and-pork-tenderloin': {
     name: 'Cantaloupe, feta, avocado and pork tenderloin', meals: ['comida'],
@@ -593,7 +593,7 @@ export const DISHES = {
   },
   'b-citrus-shake': {
     name: 'Citrus shake', meals: ['merienda'],
-    items: [{ k: 'oats', p: { grams: 100 } }, { k: 'goat-yogurt', p: { grams: 150 } }, { k: 'mandarin', p: { units: 1 } }, { k: 'blueberries', p: { grams: 80 } }, { k: 'butter', p: { grams: 12 } }], // mantequilla recortada 25->12g
+    items: [{ k: 'oats', p: { grams: 100 } }, { k: 'goat-yogurt', p: { grams: 150 } }, { k: 'mandarin', p: { grams: 74 } }, { k: 'blueberries', p: { grams: 80 } }, { k: 'butter', p: { grams: 12 } }], // mantequilla recortada 25->12g
   },
   'm-protein-shake-to-go': {
     // 6 sep 2026: merienda de Maria para lunes/miercoles (trabaja, sin
@@ -615,7 +615,7 @@ export const DISHES = {
   },
   'b-nut-shake': {
     name: 'Nut shake', meals: ['merienda'],
-    items: [{ k: 'oats', p: { grams: 100 } }, { k: 'kefir', p: { ml: 150 } }, { k: 'banana', p: { grams: 120 } }, { k: 'hazelnuts', p: { grams: 20 } }, { k: 'butter', p: { grams: 15 } }],
+    items: [{ k: 'oats', p: { grams: 100 } }, { k: 'kefir', p: { grams: 150 } }, { k: 'banana', p: { grams: 120 } }, { k: 'hazelnuts', p: { grams: 20 } }, { k: 'butter', p: { grams: 15 } }],
   },
   // Semana 12 (astringente/diarrea) — sin lacteos (leche/yogur/mantequilla),
   // sin frutos secos/semillas (INSOLUBLE_KEYS), sin citricos. Platano bien
