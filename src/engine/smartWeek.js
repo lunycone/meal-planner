@@ -48,6 +48,7 @@ export const PRIORITIES = ['price', 'protein', 'veg']
 export const PLAN_DAYS = [0, 1, 2, 3, 4] // por defecto lunes–viernes; los de verdad vienen de Ajustes (ctx.days)
 const EXCLUDE_KEYS = new Set(['b-gentle-shake-bad-stomach-day', 'm-sourdough-toast-with-boiled-apple-and-honey-binding']) // para días malos de estómago
 const TOP_PAIRS = 60
+const SNACK_VARIETY_SLACK = 4   // how much worse (in «dollars» of score) an option may get to show a different snack
 
 // Pesos de la puntuación, en dólares equivalentes.
 const W = {
@@ -125,7 +126,8 @@ function pools(allCombos, allIng, people, ctx) {
     if (p.pcos) b = b.filter(d => d.pcosB !== 'red')
     if (!b.length) b = B
     const mine = (ctx.snackPool?.byPerson?.[p.id] ?? []).filter(k => !ctx.exclude.has(k)).map(st)
-    per[p.id] = { B: lock(b, ctx.locks.B?.[p.id]), S: lock([...(S.length ? S : B), ...mine], ctx.locks.S?.[p.id]) }
+    const catalogS = S.length ? S : B
+    per[p.id] = { B: lock(b, ctx.locks.B?.[p.id]), S: lock(ctx.snackMode === 'new' && mine.length ? mine : [...catalogS, ...mine], ctx.locks.S?.[p.id]) }
   }
   return { L, D, per }
 }
@@ -352,26 +354,32 @@ function packScore(slots, people, allIng, allCombos, stock, days) {
 
 // Alternativas de verdad: no repiten la pareja (ni en variante) y cada plato
 // comida distinta en cada opción (la cena puede repetirse una vez).
-function pickDiverse(exact, count, fam, locked) {
-  const out = [], nL = {}, nD = {}
-  for (const r of exact) {
-    const lf = fam(r.plan.L), df = fam(r.plan.D)
-    if (out.some(o => fam(o.plan.L) === lf && fam(o.plan.D) === df)) continue
-    if (!locked.L && (nL[lf] ?? 0) >= 1) continue
-    if (!locked.D && (nD[df] ?? 0) >= 2) continue
-    nL[lf] = (nL[lf] ?? 0) + 1; nD[df] = (nD[df] ?? 0) + 1
-    out.push(r)
-    if (out.length >= count) break
+function pickDiverse(exact, count, fam, locked, snackClash = null) {
+  const run = strict => {
+    const out = [], nL = {}, nD = {}
+    for (const r of exact) {
+      const lf = fam(r.plan.L), df = fam(r.plan.D)
+      if (out.some(o => fam(o.plan.L) === lf && fam(o.plan.D) === df)) continue
+      if (!locked.L && (nL[lf] ?? 0) >= 1) continue
+      if (!locked.D && (nD[df] ?? 0) >= 2) continue
+      // With new snack recipes in the mix, also try to show a different snack in each option.
+      if (strict && snackClash && out.some(o => snackClash(o, r))) continue
+      nL[lf] = (nL[lf] ?? 0) + 1; nD[df] = (nD[df] ?? 0) + 1
+      out.push(r)
+      if (out.length >= count) break
+    }
+    return out
   }
-  return out
+  const out = run(true)
+  return out.length >= count || !snackClash ? out : run(false)
 }
 
 // ── Meriendas nuevas (opcional): recetas hechas con tus ingredientes ─────────
 // Se calculan una vez por petición y se guardan entre peticiones (rechazar un plato o cambiar
 // de prioridad repite los mismos candidatos; «New ideas» cambia la semilla y salen otros).
 let snackMemo = null
-function snackPoolFor({ allIng, allCombos, people, priority, source, seed = 0, newSnacks, snackNovelty = 1, snackKeep = 8 }) {
-  if (!newSnacks || people.length !== 2) return null
+function snackPoolFor({ allIng, allCombos, people, priority, source, seed = 0, snackMode = 'catalog', snackNovelty = 1, snackKeep = 8 }) {
+  if (snackMode === 'catalog' || people.length !== 2) return null
   const prio = source === 'surprise' || source === 'country' ? 'variety' : priority === 'protein' ? 'protein' : 'price'
   // «Probado» = en un plato tuyo. Los compuestos por la app y los de cita no cuentan.
   const tried = {}
@@ -400,7 +408,7 @@ function snackPoolFor({ allIng, allCombos, people, priority, source, seed = 0, n
 export function generateSmartWeeks({
   allIng, allCombos, people, priority = 'price', vegMin = VEG_DAILY_MIN, seed = 0,
   shown = [], exclude = [], prefs = {}, recent = [], locks = {}, stock = {}, source = 'dishes', country = null, pairPrefs = {}, days = PLAN_DAYS, count = 3,
-  snackPool = null,
+  snackPool = null, snackMode = 'catalog',
 }) {
   const t0 = performance.now()
   // Fuentes de comidas y cenas:
@@ -429,10 +437,17 @@ export function generateSmartWeeks({
   if (generated) allCombos = { ...allCombos, ...generated }
   // Azar reproducible por semilla: en «surprise» pesa tanto como el precio.
   const amp = source === 'surprise' ? 12 : source === 'country' ? 3 : 0
+  // Your «tastes» (prefs) go up every time you load a week, so the shakes you have loaded often
+  // would always beat a recipe that has never been shown (it starts at 0). The new snack recipes
+  // start with the same score as your current favorite snack, so they compete on cost and fit.
+  if (snackPool) {
+    const fav = Math.max(0, ...Object.entries(allCombos).filter(([, c]) => (c.meals ?? []).includes('merienda')).map(([k]) => prefOf(prefs, k)))
+    if (fav > 0) { prefs = { ...prefs }; for (const k of Object.keys(snackPool.combos)) prefs[k] = Math.max(prefs[k] ?? 0, fav) }
+  }
   const jit = amp ? k => (k ? (hash(`${seed}:j:${k}`) / 4294967295 * 2 - 1) * amp : 0) : () => 0
   const ctx = {
     days, priority: source === 'surprise' || source === 'country' ? 'price' : priority, vegMin, seed, prefs, locks, stock, source, poolKeys, jit, solMin: SOLUBLE_FIBER_DAILY_MIN,
-    shown: new Set(shown), exclude: new Set(exclude), recent: new Set(recent), snackPool,
+    shown: new Set(shown), exclude: new Set(exclude), recent: new Set(recent), snackPool, snackMode,
     recentFam: new Set(recent.map(k => famOfKey(k, allCombos)).filter(Boolean)),
   }
   const fam = k => famOfKey(k, allCombos)
@@ -455,7 +470,31 @@ export function generateSmartWeeks({
     S: Object.fromEntries(people.map(p => [p.id, x.choice[p.id].s])),
   }, people, allIng, allCombos, ctx))
   exact.sort((x, y) => x.score - y.score)
-  const results = pickDiverse(exact, count, fam, locks)
+  const results = pickDiverse(exact, count, fam, locks, snackPool ? (a, b) => people.some(p => a.plan.S[p.id] === b.plan.S[p.id]) : null)
+  // Smart keeps only the best snack per lunch/dinner pair, so options with the same pair would
+  // all show the same snack. In options 2 and 3, swap in the best snack not shown yet, as long as
+  // the plan does not get much worse (SNACK_VARIETY_SLACK).
+  if (snackPool && results.length > 1) {
+    const seen = Object.fromEntries(people.map(p => [p.id, new Set([results[0].plan.S[p.id]])]))
+    for (let i = 1; i < results.length; i++) {
+      const r = results[i]
+      const plan = { ...r.plan, S: { ...r.plan.S } }
+      const l = P.L.find(x => x.key === plan.L), d = P.D.find(x => x.key === plan.D)
+      let changed = false
+      for (const p of people) {
+        if (!seen[p.id].has(plan.S[p.id])) { seen[p.id].add(plan.S[p.id]); continue }
+        const b = P.per[p.id].B.find(x => x.key === plan.B[p.id])
+        const rest = P.per[p.id].S.filter(x => !seen[p.id].has(x.key))
+        if (!l || !d || !b || !rest.length) continue
+        const alt = bestForPerson(p, ctx, { B: [b], S: rest }, l, d)
+        if (alt) { plan.S[p.id] = alt.s.key; seen[p.id].add(alt.s.key); changed = true }
+      }
+      if (changed) {
+        const ev = evaluatePlan(plan, people, allIng, allCombos, ctx)
+        if (ev.score <= r.score + SNACK_VARIETY_SLACK) results[i] = ev
+      }
+    }
+  }
   // Los platos compuestos que usa cada opción viajan con ella (para poder
   // enseñarlos y guardarlos como platos tuyos al cargar la semana).
   // (and the snack recipes the option picked, so they can be saved too)
@@ -481,7 +520,7 @@ export function generateSmartPlan({ sessions = [PLAN_DAYS], locks = {}, count = 
   const partLocks = i => locks.parts?.[i] ?? {}
   const multi = sessions.length > 1
   const snackPool = snackPoolFor(args)
-  const runs = sessions.map((days, i) => generateSmartWeeks({ ...args, snackPool, days, locks: partLocks(i), count: multi ? count * 2 : count }))
+  const runs = sessions.map((days, i) => generateSmartWeeks({ ...args, snackPool, snackMode: args.snackMode ?? 'catalog', days, locks: partLocks(i), count: multi ? count * 2 : count }))
   const fam = (k, r) => familyOf((r.newDishes?.[k] ?? args.allCombos[k])?.name ?? k)
   const results = [], seenSets = new Set()
   for (const first of runs[0].results) {

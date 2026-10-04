@@ -15,7 +15,7 @@ export function warmSmartWorker() { getWorker() }
 export default function useSmartWeeks(args, enabled = true) {
   const [state, setState] = useState({ busy: true, results: [], tried: 0, ms: 0, error: null })
   const seq = useRef(0)
-  const key = enabled ? JSON.stringify([args.priority, args.vegMin, args.seed, args.shown, args.exclude, args.locks, args.prefs, args.recent, args.stock, args.source, args.country, args.pairPrefs, args.sessions, args.people?.map(p => p.id), args.newSnacks]) : null
+  const key = enabled ? JSON.stringify([args.priority, args.vegMin, args.seed, args.shown, args.exclude, args.locks, args.prefs, args.recent, args.stock, args.source, args.country, args.pairPrefs, args.sessions, args.people?.map(p => p.id), args.snackMode]) : null
 
   useEffect(() => {
     if (!enabled) return

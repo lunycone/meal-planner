@@ -612,14 +612,15 @@ export function smartSnackCandidates({ allIng, tried, people, priority = 'price'
   const scored = pool.sols.map(s => ({ s, v: solValue(s, w, persons, 5, 5), novel: pool.novel[s.id] })).sort((a, b) => a.v - b.v)
   // Variety: at most 3 per archetype, 2 per main ingredient, one flavor profile each.
   const take = (list, n) => {
-    const out = [], arch = {}, main = {}, prof = new Set()
+    const out = [], arch = {}, main = {}, prof = new Set(), labels = new Set()
     for (const x of list) {
       if (out.length >= n) break
       const m = x.s.mainKey
-      if ((arch[x.s.archId] ?? 0) >= 3 || (m && (main[m] ?? 0) >= 2) || prof.has(x.s.profileId)) continue
+      // different flavor profile AND a different name (two profiles can read the same: «Banana & cinnamon oats»)
+      if ((arch[x.s.archId] ?? 0) >= 3 || (m && (main[m] ?? 0) >= 2) || prof.has(x.s.profileId) || labels.has(x.s.label)) continue
       arch[x.s.archId] = (arch[x.s.archId] ?? 0) + 1
       if (m) main[m] = (main[m] ?? 0) + 1
-      prof.add(x.s.profileId); out.push(x)
+      prof.add(x.s.profileId); labels.add(x.s.label); out.push(x)
     }
     return out
   }

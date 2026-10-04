@@ -28,8 +28,8 @@ const allKeys = r => (r.parts ?? [r]).flatMap(p => planKeys(p.plan))
 const mainKeys = r => (r.parts ?? [r]).flatMap(p => [p.plan.L, p.plan.D])
 const PRIORITY_BEST = { price: 'Best price', protein: 'Most protein', veg: 'Most veg' }
 const VEG_OPTS = [100, 150, 200].map(v => ({ value: v, label: `${v} g veg/day` }))
-// Snacks: only your dishes, or also recipes built from your ingredients (engine/snackGen.js).
-const SNACK_OPTS = [{ value: true, label: 'New snack recipes' }, { value: false, label: 'My dishes only' }]
+// Snacks: your dishes, new recipes built from your ingredients (engine/snackGen.js), or both.
+const SNACK_OPTS = [{ value: 'mix', label: 'Dishes + new recipes' }, { value: 'new', label: 'New recipes only' }, { value: 'catalog', label: 'My dishes only' }]
 
 // Semanas modelo, en tres pestañas:
 //  · Smart: la app genera la semana con los precios de hoy (engine/smartWeek)
@@ -61,7 +61,7 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
   const [confirmDel, setConfirmDel] = useState(null)
   const [priority, setPriority] = useState('price')
   const [vegMin, setVegMin] = useState(VEG_DAILY_MIN)
-  const [newSnacks, setNewSnacks] = useState(true)
+  const [snackMode, setSnackMode] = useState('mix')
   const [seed, setSeed] = useState(0)
   const [shown, setShown] = useState([])       // parejas 'L|D' ya enseñadas (New ideas)
   const [exclude, setExclude] = useState([])   // rechazados en esta sesión
@@ -110,7 +110,7 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
     const a = stockAvailable(stockRaw, allIng, cookDateFor(monday, 0))
     return Object.fromEntries(Object.entries(a).map(([k, v]) => [k, Math.round(v)]).sort())
   }, [stockRaw, allIng, wk]) // eslint-disable-line react-hooks/exhaustive-deps
-  const smart = useSmartWeeks({ allIng, allCombos, people, priority, vegMin, seed, shown, exclude, prefs: dishPrefs, recent, stock, source, country: country === 'all' ? null : country, pairPrefs, sessions: sessions.map(x => x.days), locks: locks?.locks ?? {}, newSnacks }, tab === 'smart' && source !== 'date')
+  const smart = useSmartWeeks({ allIng, allCombos, people, priority, vegMin, seed, shown, exclude, prefs: dishPrefs, recent, stock, source, country: country === 'all' ? null : country, pairPrefs, sessions: sessions.map(x => x.days), locks: locks?.locks ?? {}, snackMode }, tab === 'smart' && source !== 'date')
   const smartSel = smart.results[Math.min(pick, smart.results.length - 1)] ?? null
   // Lo ya planificado en la semana destino (solo los días de batch), para comparar.
   const planned = useMemo(() => {
@@ -253,7 +253,7 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
               <Segmented label="Build from" value={source} onChange={pickSource} options={SOURCE_OPTS} />
               {(source === 'dishes' || source === 'ingredients') && <Segmented label="Priority" value={priority} onChange={changeOpt(setPriority)} options={PRIORITY_OPTS} />}
               <Segmented label="Vegetables per day" value={vegMin} onChange={changeOpt(setVegMin)} options={VEG_OPTS} />
-              <Segmented label="Snacks" value={newSnacks} onChange={changeOpt(setNewSnacks)} options={SNACK_OPTS} />
+              <Segmented label="Snacks" value={snackMode} onChange={changeOpt(setSnackMode)} options={SNACK_OPTS} />
               <button type="button" className="mp-btn mp-btn-dark mp-btn-sm sw-new" onClick={newIdeas} disabled={smart.busy}><Icon name={source === 'surprise' ? 'shuffle' : 'repeat'} size={14} />{source === 'surprise' ? 'Surprise me again' : 'New ideas'}</button>
               {source === 'country' && (
                 <div className="sw-countries" role="group" aria-label="Country">
