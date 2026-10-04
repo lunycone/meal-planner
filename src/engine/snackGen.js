@@ -120,7 +120,9 @@ export function buildCandidates({ allIng, mealSlot, rnd, variantsPer = 3, archet
         const sig = pid + '|' + aid + '|' + Object.entries(picks).map(([a, b]) => a + b).join(',')
         if (sigs.has(sig)) continue
         sigs.add(sig)
-        cands.push({ id: sig, profileId: pid, profileName: prof.name, archId: aid, kind: arch.kind, picks })
+        // main ingredient (what the recipe is «about»): used to avoid a week that is all banana
+        const mainKey = picks.fruit ?? picks.filling ?? picks.cured ?? picks.crunch ?? null
+        cands.push({ id: sig, profileId: pid, profileName: prof.name, archId: aid, kind: arch.kind, picks, mainKey })
       }
     }
   }
@@ -154,7 +156,7 @@ export function fillSteps(arch, items, allIng) {
 }
 
 // Recipe name from what it REALLY contains (not from the profile).
-const SHORT = { 'barley-flakes': 'barley', 'dark-chocolate': 'dark chocolate', 'butternut-squash': 'butternut', 'pumpkin-seeds': 'pumpkin seed', 'shredded-coconut': 'coconut', 'cooked-ham': 'ham', 'cold-cuts': 'cold cuts', 'peanut-butter': 'peanut butter', strawberries: 'strawberry', blueberries: 'blueberry', walnuts: 'walnut', hazelnuts: 'hazelnut', almonds: 'almond' }
+const SHORT = { cocoa: 'cocoa', vanilla: 'vanilla', cinnamon: 'cinnamon', 'barley-flakes': 'barley', 'dark-chocolate': 'dark chocolate', 'butternut-squash': 'butternut', 'pumpkin-seeds': 'pumpkin seed', 'shredded-coconut': 'coconut', 'cooked-ham': 'ham', 'cold-cuts': 'cold cuts', 'peanut-butter': 'peanut butter', strawberries: 'strawberry', blueberries: 'blueberry', walnuts: 'walnut', hazelnuts: 'hazelnut', almonds: 'almond' }
 function shortName(k, allIng) {
   if (SHORT[k]) return SHORT[k]
   return allIng[k].name.replace(/\s*\(.*$/, '').split(' / ')[0].trim().toLowerCase()
@@ -390,15 +392,22 @@ function digestiveOk(sol, d, baseWeek, persons, mealSlot, allIng) {
   return true
 }
 
-// opts: { allIng, dishes, persons:[J,M], mealSlot, seed, noveltyMax, restarts, days, baseWeek, weights,
-//         pinned: { [dayIdx]: candidateId } }
-export function generateWeek(opts) {
-  const { allIng, dishes, persons, mealSlot = 'merienda', seed = 1, noveltyMax = 1, restarts = 400, days = 7, baseWeek = null, weights = null, pinned = {},
-          batchStartDays = [0], maxBatchDays = 5, batches = 'auto', candidateSeed = seed } = opts
-  const rnd = rngFrom(seed)
+// ─── Priorities (like «Best price / Most protein» in Smart weeks) ───────────
+// The score is in «dollars»: cost counts, kcal off-target counts, and the rest are
+// small rewards. Each priority only shifts the weights.
+export const PRIORITIES = {
+  price:   { label: 'Cheapest',      best: 'Best price',   cost: 1,    kcal: 2.5, prot: 0,    variety: 0.6, profile: 0.15, main: 0.8 },
+  protein: { label: 'More protein',  best: 'Most protein', cost: 0.35, kcal: 2.5, prot: 0.3,  variety: 0.6, profile: 0.15, main: 0.8 },
+  variety: { label: 'More variety',  best: 'Most variety', cost: 0.5,  kcal: 2.5, prot: 0,    variety: 2.2, profile: 0.6,  main: 2 },
+}
+const keyOfSol = s => s.profileId + '|' + s.archId
+
+// Everything that does not depend on the week: candidates solved for both people.
+// opts: { allIng, dishes, persons:[J,M], mealSlot, candidateSeed, maxBatchDays }
+export function buildPool(opts) {
+  const { allIng, dishes, persons, mealSlot = 'merienda', candidateSeed = 1, maxBatchDays = 5 } = opts
   const rules = SLOT_RULES[mealSlot]
   const tested = testedIngredients(dishes)
-  const J = persons[0]
   const targets = {}, protGoals = {}
   for (const P of persons) {
     const mean = [0, 1, 2, 3, 4, 5, 6].reduce((s, d) => s + personTargetForDay(P, d), 0) / 7
@@ -406,40 +415,74 @@ export function generateWeek(opts) {
     protGoals[P.id] = (P.proteinTarget ?? 100) * rules.protGoalShare
   }
   const ctx = { allIng, persons, tested, mealSlot, rules, targets, protGoals, maxBatchDays }
-
   const cands = buildCandidates({ allIng, mealSlot, rnd: rngFrom(candidateSeed) })
   const sols = []
-  for (const c of cands) { const s = solveCandidate(c, ctx); if (s) sols.push(s) }
-  if (!sols.length) return { error: 'No hay candidatos viables', candidates: cands.length }
-  const byId = Object.fromEntries(sols.map(s => [s.id, s]))
-  const novel = Object.fromEntries(sols.map(s => [s.id, noveltyKeysOf(s, tested)]))
+  for (const c of cands) {
+    const sol = solveCandidate(c, ctx)
+    if (sol) sols.push(sol)
+  }
+  return {
+    sols, byId: Object.fromEntries(sols.map(x => [x.id, x])), novel: Object.fromEntries(sols.map(x => [x.id, noveltyKeysOf(x, tested)])),
+    tested, targets, ctx, candidateSeed, candidates: cands.length,
+  }
+}
+
+// One week from a pool. opts: { seed, noveltyMax, restarts, days, baseWeek, weights, pinned:{day:id},
+//   batches, batchStartDays, maxBatchDays, avoid:[«profile|arch»], avoidWeight }
+export function assemble(pool, opts) {
+  const { sols, byId, novel, targets, ctx } = pool
+  const { allIng, persons, mealSlot } = ctx
+  const { seed = 1, noveltyMax = 1, restarts = 300, days = 7, baseWeek = null, pinned = {}, batchStartDays = [0], maxBatchDays = 5,
+          batches = 'auto', avoid = [], avoidWeight = 2.5, banned = [], mainCap = 3 } = opts
+  const w = { ...PRIORITIES.price, ...(opts.weights ?? {}) }
+  const avoidSet = new Set(avoid)
+  const banSet = new Set(banned)
+  const rnd = rngFrom(seed)
+
+  // Value of each recipe for this priority (lower = better), per day it covers. The search
+  // tries the most convenient recipes first, with growing noise so it does not get stuck.
+  const keyOf = x => x.rule + ':' + (x.day ?? '') + ':' + (x.slots?.join('+') ?? x.slot ?? '')
+  const baseKeys = {}
+  if (baseWeek) for (const P of persons) { const bw = Array.isArray(baseWeek) ? baseWeek : (baseWeek[P.id] ?? null); if (bw) baseKeys[P.id] = new Set(weekViolations(bw, allIng, P).map(keyOf)) }
+  const value = new Map()
+  for (const s of sols) {
+    const span = s.kind === 'batch' ? Math.max(1, Math.min(s.shelfDays, maxBatchDays, days)) : 1
+    const cost = s.kind === 'batch' ? Math.ceil(s.portionsPerDay * span / s.yield) * s.batchCost / span : s.costPerUse
+    const prot = persons.reduce((a, P) => a + s.persons[P.id].prot, 0)
+    value.set(s.id, w.cost * cost + w.kcal * (s.dev ?? 0) - w.prot * prot / 10 + (avoidSet.has(keyOfSol(s)) ? avoidWeight : 0))
+  }
 
   let best = null
   for (let r = 0; r < restarts; r++) {
     const slots = Array(days).fill(null)         // { sol, startDay, len }
-    const used = { profile: {}, arch: {} }
+    const used = { profile: {}, arch: {}, main: {} }
     const noveltyUsed = new Set()
     let cost = 0, ok = true
     for (let d = 0; d < days && ok; d++) {
       if (slots[d]) continue
       let chosen = null
-      let order = pinned[d] && byId[pinned[d]] ? [byId[pinned[d]]] : [...sols].sort(() => rnd() - 0.5)
+      const noise = [0.4, 1.5, 4, 12][r % 4]
+      let order = pinned[d] && byId[pinned[d]] ? [byId[pinned[d]]]
+        : sols.map(x => [value.get(x.id) + noise * rnd(), x]).sort((a, b) => a[0] - b[0]).map(x => x[1])
       if (batches === 'no') order = order.filter(x => x.kind !== 'batch')
       if (batches === 'yes' && d === batchStartDays[0] && !pinned[d]) order = order.filter(x => x.kind === 'batch')
       for (const s of order) {
         const prev = slots[d - 1]?.sol
+        if (banSet.has(keyOfSol(s)) && pinned[d] !== s.id) continue   // «Not this one» (never where it was pinned)
         if (prev && (prev.id === s.id || prev.profileId === s.profileId)) continue
         if ((used.profile[s.profileId] ?? 0) >= 2 || (used.arch[s.archId] ?? 0) >= 2) continue
+        if (s.mainKey && (used.main[s.mainKey] ?? 0) >= mainCap) continue   // not banana every day
         const nk = novel[s.id]
-        const total = new Set([...noveltyUsed, ...nk])
-        if (total.size > noveltyMax) continue
-        if (s.kind === 'batch' && !batchStartDays.includes(d)) continue   // se cocina el domingo
+        if (new Set([...noveltyUsed, ...nk]).size > noveltyMax) continue
+        if (s.kind === 'batch' && !batchStartDays.includes(d)) continue   // cooked on Sunday
         const len = s.kind === 'batch' ? Math.min(s.shelfDays, maxBatchDays, days - d) : 1
-        // lunes/miercoles de Maria: solo portables
+        // Maria's work days: only portable recipes
         let bad = false
         for (let i = d; i < d + len; i++) if (MARIA_PORTABLE_DAYS.includes(i) && !portableOnMariaDay(s)) bad = true
         if (bad) continue
         if (s.kind === 'batch' && slots.slice(d, d + len).some(Boolean)) continue
+        // a batch never runs over days that are pinned (kept) by «Not this one»
+        if (s.kind === 'batch') { let over = false; for (let i = d + 1; i < d + len; i++) if (pinned[i]) over = true; if (over) continue }
         // digestive rule per day, against what is already planned
         let digestive = true
         for (let i = d; i < d + len; i++) if (!digestiveOk(s, i, baseWeek, persons, mealSlot, allIng)) digestive = false
@@ -452,50 +495,94 @@ export function generateWeek(opts) {
       for (let i = d; i < d + len; i++) slots[i] = { sol: s, startDay: d, len }
       used.profile[s.profileId] = (used.profile[s.profileId] ?? 0) + 1
       used.arch[s.archId] = (used.arch[s.archId] ?? 0) + 1
+      if (s.mainKey) used.main[s.mainKey] = (used.main[s.mainKey] ?? 0) + 1
       nk.forEach(k => noveltyUsed.add(k))
       if (s.kind === 'batch') {
-        const portions = s.portionsPerDay * len
-        const batches = Math.ceil(portions / s.yield)
-        cost += batches * s.batchCost
-        slots[d].batches = batches
-        // leche acompanante, cada dia
+        const batchesNeeded = Math.ceil(s.portionsPerDay * len / s.yield)
+        cost += batchesNeeded * s.batchCost
+        slots[d].batches = batchesNeeded
+        // milk that goes with the batch, every day
         for (const P of persons) cost += (s.persons[P.id].items[0]?.qty ?? 0) > 0 ? len * s.persons[P.id].items.reduce((a, it) => a + it.qty * (allIng[it.k].per100 ?? 0) / 100, 0) : 0
       } else {
         cost += s.costPerUse
       }
     }
     if (!ok) continue
-    // puntuacion: coste + desvio de kcal + variedad
-    let score = cost
-    const w = weights ?? { kcal: 2.5 }   // $ por unidad de desvio relativo de kcal y dia
-    for (const sl of slots) if (sl) score += w.kcal * (sl.sol.dev ?? 0)
-    const profiles = new Set(slots.map(s => s.sol.profileId)).size
-    score -= 0.15 * profiles + 0.6 * new Set(slots.map(s => s.sol.archId)).size
+
+    // score: cost + kcal off target − protein/variety rewards + notes + ideas to avoid
+    let score = cost * w.cost
+    let prot = 0
+    for (const sl of slots) if (sl) { score += w.kcal * (sl.sol.dev ?? 0); for (const P of persons) prot += sl.sol.persons[P.id].prot }
+    score -= w.prot * prot / 10
+    const starts = slots.filter((sl, d) => sl && sl.startDay === d)
+    score -= w.profile * new Set(slots.map(x => x.sol.profileId)).size + w.variety * new Set(slots.map(x => x.sol.archId)).size
+    score -= w.main * new Set(slots.map(x => x.sol.mainKey).filter(Boolean)).size
+    for (const sl of starts) if (avoidSet.has(keyOfSol(sl.sol))) score += avoidWeight
     const violations = []
     if (baseWeek) {
       for (const P of persons) {
         const bw = Array.isArray(baseWeek) ? baseWeek : (baseWeek[P.id] ?? null)
         if (!bw) continue
         const week = slots.map((sl, i) => ({ ...(bw[i] ?? {}), [mealSlot]: sl.sol.persons[P.id].combo }))
-        const base = new Set(weekViolations(bw, allIng, P).map(x => x.rule + ':' + (x.day ?? '') + ':' + (x.slots?.join('+') ?? x.slot ?? '')))
-        const v = weekViolations(week, allIng, P).filter(x => !base.has(x.rule + ':' + (x.day ?? '') + ':' + (x.slots?.join('+') ?? x.slot ?? '')))
+        const v = weekViolations(week, allIng, P).filter(x => !baseKeys[P.id].has(keyOf(x)))
         score += 5 * v.length
         v.forEach(x => violations.push({ person: P.id, ...x }))
       }
     }
     if (!best || score < best.score) best = { score, slots, cost, novelty: [...noveltyUsed], violations }
   }
-  if (!best) return { error: 'No se encontro semana valida con estas reglas', candidates: sols.length }
+  if (!best) return { error: 'No week fits these rules.' }
 
   const outDays = []
   for (let d = 0; d < days; d++) {
     const sl = best.slots[d]; const s = sl.sol
     outDays.push({
-      dayIdx: d, candidateId: s.id, label: s.label, archetype: s.archId, profile: s.profileId,
+      dayIdx: d, candidateId: s.id, candidateKey: keyOfSol(s), label: s.label, archetype: s.archId, profile: s.profileId,
       kind: s.kind, isStart: sl.startDay === d, startDay: sl.startDay, coverDays: sl.len, batches: sl.batches ?? null,
       persons: Object.fromEntries(persons.map(P => [P.id, s.persons[P.id]])),
       novelty: [...novel[s.id]], steps: s.steps,
     })
   }
-  return { seed, cost: best.cost, score: best.score, novelty: best.novelty, violations: best.violations, days: outDays, targets, candidatesTried: sols.length }
+  // Per person: average kcal and protein per day, days within ±12% of the target, soluble fiber the snack adds.
+  const perPerson = persons.map(P => {
+    const t = targets[P.id]
+    const xs = outDays.map(d => d.persons[P.id])
+    const avg = k => Math.round(xs.reduce((a, x) => a + x[k], 0) / xs.length)
+    return { id: P.id, target: t, kcal: avg('kcal'), prot: avg('prot'), hit: xs.filter(x => Math.abs(x.kcal - t) / t <= 0.12).length, days: xs.length,
+      cost: xs.reduce((a, x, i) => a + (outDays[i].kind === 'batch' ? 0 : x.cost), 0) }
+  })
+  return { seed, cost: best.cost, score: best.score, novelty: best.novelty, violations: best.violations, warnings: best.violations.map(v => ({ person: v.person, msg: v.msg })),
+    days: outDays, targets, perPerson }
+}
+
+const signature = r => r.days.map(d => d.candidateId).join('|')
+
+// Several different weeks for one priority (the three cards).
+// opts: everything buildPool/assemble take + { priority, count, avoidKeys, avoidWeight }
+export function generateOptions(opts) {
+  const { priority = 'price', count = 3, avoidKeys = [], avoidWeight = 2.5, restarts = 300, seed = 1 } = opts
+  const pool = opts.pool ?? buildPool(opts)
+  if (!pool.sols.length) return { options: [], tried: 0, recipes: 0, candSeed: pool.candidateSeed, error: 'No recipe fits your rules and ingredients.' }
+  const options = []
+  let avoid = [...avoidKeys]
+  for (let i = 0; i < count; i++) {
+    let r = null
+    for (let attempt = 0; attempt < 3; attempt++) {
+      r = assemble(pool, { ...opts, weights: PRIORITIES[priority], avoid, avoidWeight, seed: seed + i * 7919 + attempt * 104729 })
+      if (r.error || !options.some(o => signature(o) === signature(r))) break
+    }
+    if (!r || r.error || options.some(o => signature(o) === signature(r))) break
+    r.candSeed = pool.candidateSeed
+    options.push(r)
+    avoid = [...avoid, ...r.days.filter(d => d.isStart).map(d => d.candidateKey)]
+  }
+  return { options, tried: restarts * Math.max(options.length, 1), recipes: pool.sols.length, candSeed: pool.candidateSeed,
+    error: options.length ? null : 'No week fits these rules.' }
+}
+
+// Single week (kept for tests and simple callers).
+export function generateWeek(opts) {
+  const out = generateOptions({ ...opts, count: 1, priority: opts.priority ?? 'price', candidateSeed: opts.candidateSeed ?? opts.seed ?? 1 })
+  if (!out.options.length) return { error: out.error, candidates: out.recipes }
+  return { ...out.options[0], candidatesTried: out.recipes }
 }

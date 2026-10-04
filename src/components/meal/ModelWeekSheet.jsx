@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import useStore, { selectAllIng, selectAllCombos } from '../../store/useStore'
 import { MODEL_WEEKS } from '../../data/modelWeeks'
 import Overlay from '../ui/Overlay'
+import SheetGate from '../ui/SheetGate'
 import Icon, { MEAL_ICON } from '../ui/Icon'
 import Segmented from '../ui/Segmented'
 import { buildModelWeekSlots } from '../../lib/planActions'
@@ -34,7 +35,7 @@ const VEG_OPTS = [100, 150, 200].map(v => ({ value: v, label: `${v} g veg/day` }
 //  · Saved: las tuyas (guardadas con «Save week») y las de fábrica. Se cargan,
 //    se renombran, se editan en el Planificador o se archivan.
 //  · Archive: lo archivado se restaura o se borra para siempre.
-export default function ModelWeekSheet({ initialTarget = 1, initialTab = 'smart', onClose, onLoaded }) {
+function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, onLoaded }) {
   const allIng      = useStore(selectAllIng)
   const allCombos   = useStore(selectAllCombos)
   const profiles    = useStore(s => s.profiles)
@@ -502,5 +503,14 @@ function SmartCard({ r, i, on, busy, best, people, allCombos, vegMin, planned, o
         </div>
       )}
     </div>
+  )
+}
+
+// The backdrop and a loading card appear at once; the (heavy) sheet mounts a frame or two later.
+export default function ModelWeekSheet(props) {
+  return (
+    <SheetGate title="Model weeks" hint="Getting your weeks ready…" icon="layers" onClose={props.onClose}>
+      <ModelWeekSheetBody {...props} />
+    </SheetGate>
   )
 }

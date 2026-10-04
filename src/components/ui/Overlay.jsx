@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { createContext, useContext, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 
 // Fondo de las fichas (sheets). Se monta en <body> con un portal: dentro de
@@ -10,10 +10,15 @@ import { createPortal } from 'react-dom'
 // categorías dentro de un ingrediente), guardar/restaurar el overflow de
 // cada una dejaba la página sin scroll al cerrarlas. Esc solo cierra la de
 // más arriba.
+//
+// Un Overlay dentro de otro Overlay NO crea un segundo fondo: pinta sus hijos
+// tal cual. Lo usa SheetGate: el fondo y la animación de carga se quedan y la
+// ficha entra dentro, sin parpadeo ni segundo desenfoque.
 let open = 0
 const stack = []
+const InOverlay = createContext(false)
 
-export default function Overlay({ onClose, children }) {
+function OverlayRoot({ onClose, children }) {
   const closeRef = useRef(onClose)
   closeRef.current = onClose
 
@@ -31,7 +36,14 @@ export default function Overlay({ onClose, children }) {
   }, [])
 
   return createPortal(
-    <div className="mp-overlay" onClick={e => { e.stopPropagation(); closeRef.current?.() }}>{children}</div>,
+    <InOverlay.Provider value={true}>
+      <div className="mp-overlay" onClick={e => { e.stopPropagation(); closeRef.current?.() }}>{children}</div>
+    </InOverlay.Provider>,
     document.body
   )
+}
+
+export default function Overlay({ onClose, children }) {
+  const nested = useContext(InOverlay)
+  return nested ? children : <OverlayRoot onClose={onClose}>{children}</OverlayRoot>
 }
