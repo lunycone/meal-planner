@@ -365,6 +365,40 @@
 .pl-delta-sm { margin-left: 4px; font-size: 10.5px; font-weight: 700; color: #8A5E08; }
 .pl-del { background: transparent; color: #B53333; }
 .pl-del:hover { background: rgba(214,69,69,0.10); }
+
+/* ── Vitaminas y minerales del plato (MicrosCard) ──────────────────────── */
+.pm-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pm-toggle { display: inline-flex; align-items: center; gap: 4px; border: 0; background: transparent; padding: 2px 4px; font: inherit; font-size: 12px; font-weight: 600; color: var(--c-ink-2); cursor: pointer; border-radius: 8px; }
+.pm-toggle:hover { background: rgba(110,80,50,0.07); }
+.pm-slots { display: flex; flex-wrap: wrap; gap: 6px; }
+.pm-slot { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border: 0; border-radius: 999px; background: rgba(110,80,50,0.06); font: inherit; font-size: 12px; font-weight: 600; color: var(--c-ink-2); cursor: pointer; transition: background .2s var(--c-ease), box-shadow .2s var(--c-ease); }
+.pm-slot:hover { background: rgba(110,80,50,0.10); }
+.pm-slot.is-on { background: #fff; box-shadow: 0 2px 8px rgba(110,80,50,0.14); color: var(--c-ink); }
+.pm-verdict { display: inline-flex; align-items: center; gap: 4px; font-weight: 650; }
+.pm-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.pm-body { display: flex; flex-direction: column; gap: 10px; }
+.pm-headline { margin: 0; font-size: 13px; line-height: 1.5; color: var(--c-ink); }
+.pm-note, .pm-warn { margin: 0; display: flex; gap: 6px; align-items: flex-start; font-size: 12px; line-height: 1.45; }
+.pm-note svg, .pm-warn svg { flex: none; margin-top: 2px; }
+.pm-note { color: #2F7A55; }
+.pm-warn { color: #B53333; }
+.pm-focus { margin: -4px 0 0; font-size: 11.5px; }
+.pm-legend { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 11px; }
+.pm-tick-key { display: inline-block; width: 2px; height: 9px; margin-right: 5px; vertical-align: -1px; background: var(--c-ink); border-radius: 1px; }
+.pm-rows { display: flex; flex-direction: column; }
+.pm-row { border-top: 1px solid var(--c-line); }
+.pm-row:first-child { border-top: 0; }
+.pm-rowbtn { display: grid; grid-template-columns: 84px minmax(0, 1fr) 64px 38px; align-items: center; gap: 8px; width: 100%; padding: 6px 0; border: 0; background: transparent; font: inherit; font-size: 12px; color: var(--c-ink); text-align: left; cursor: pointer; }
+.pm-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pm-bar { position: relative; height: 7px; border-radius: 4px; background: rgba(110,80,50,0.08); }
+.pm-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 4px; transition: width .5s var(--c-ease), background .3s var(--c-ease); }
+.pm-tick { position: absolute; top: -2px; bottom: -2px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--c-ink); opacity: .75; }
+.pm-val { text-align: right; color: var(--c-ink-2); white-space: nowrap; }
+.pm-pct { text-align: right; font-weight: 700; }
+.pm-src { display: flex; flex-direction: column; gap: 3px; padding: 2px 0 8px 92px; font-size: 11.5px; }
+.pm-src > span { display: flex; justify-content: space-between; gap: 8px; }
+.pm-foot { margin: 0; font-size: 10.5px; line-height: 1.5; }
+@media (max-width: 520px) { .pm-rowbtn { grid-template-columns: 74px minmax(0, 1fr) 56px 34px; } .pm-src { padding-left: 82px; } }
 @media (max-width: 900px) {
   .pl-body { grid-template-columns: minmax(0, 1fr); overflow-y: auto; }
   .pl-row { grid-template-columns: minmax(0, 1fr) 16px; }

@@ -13,6 +13,7 @@ function StoreDot({ ing }) {
 }
 import { storeOf, storeColor } from '../../lib/stores'
 import Icon, { MEAL_ICON } from '../ui/Icon'
+import MicrosCard from './MicrosCard'
 import {
   MEALS, MEAL_LABEL, MEAL_STYLE, PCOS_STYLE, fmtMoney, fmtRange, addDays, mondayOf, dishUsage, DAY_KEYS, DAY_SHORT,
 } from '../../lib/mealplan'
@@ -323,6 +324,8 @@ export default function PlatoSheet({ comboKey = null, onClose }) {
                 )}
               </div>
             )}
+
+            {draft.items.length > 0 && <MicrosCard items={draft.items} meals={draft.meals} kcal={agg.kcal} profiles={profiles} allIng={allIng} />}
 
             {!isNew && (
               <div className="pl-card" style={{ gap: 6 }}>
