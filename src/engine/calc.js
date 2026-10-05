@@ -19,6 +19,12 @@ export function ingredientUnitType(ing) {
   return null
 }
 
+// Parte comestible (0-1) de un ingrediente que se compra con hueso (drumsticks,
+// costillas…). El precio y la cantidad del plato son del peso comprado (con
+// hueso); kcal, macros, fibra y micros son de la parte que se come. Sin campo
+// `edible` es 1 (nada cambia). Solo aplica a las cantidades en gramos.
+export const edibleOf = i => (i?.edible > 0 && i.edible <= 1 ? i.edible : 1)
+
 export function ingCost(key, p, allIng) {
   const i = allIng[key]
   if (!i) return 0
@@ -33,7 +39,7 @@ export function ingCost(key, p, allIng) {
 export function ingKcal(key, p, allIng) {
   const i = allIng[key]
   if (!i) return 0
-  if (i.kc   != null && p.grams != null) return i.kc * p.grams / 100
+  if (i.kc != null && p.grams != null) return i.kc * p.grams * edibleOf(i) / 100
   if (i.kcu  != null && p.units != null) return i.kcu * p.units
   if (i.kcml != null && p.ml    != null) return i.kcml * p.ml
   if (i.kcs  != null) return i.kcs * (p.serv ?? 1)
@@ -44,7 +50,7 @@ export function ingKcal(key, p, allIng) {
 export function ingProt(key, p, allIng) {
   const i = allIng[key]
   if (!i) return 0
-  if (i.prot  != null && p.grams != null) return i.prot * p.grams / 100
+  if (i.prot != null && p.grams != null) return i.prot * p.grams * edibleOf(i) / 100
   if (i.protu != null && p.units != null) return i.protu * p.units
   if (i.protml != null && p.ml   != null) return i.protml * p.ml
   if (i.prots != null) return i.prots * (p.serv ?? 1)
@@ -55,7 +61,7 @@ export function ingProt(key, p, allIng) {
 export function ingFat(key, p, allIng) {
   const i = allIng[key]
   if (!i) return 0
-  if (i.fat   != null && p.grams != null) return i.fat * p.grams / 100
+  if (i.fat != null && p.grams != null) return i.fat * p.grams * edibleOf(i) / 100
   if (i.fatu  != null && p.units != null) return i.fatu * p.units
   if (i.fatml != null && p.ml    != null) return i.fatml * p.ml
   if (i.fats  != null) return i.fats * (p.serv ?? 1)
@@ -68,7 +74,7 @@ export function ingFat(key, p, allIng) {
 export function ingCarb(key, p, allIng) {
   const i = allIng[key]
   if (!i) return 0
-  if (i.carb   != null && p.grams != null) return i.carb * p.grams / 100
+  if (i.carb != null && p.grams != null) return i.carb * p.grams * edibleOf(i) / 100
   if (i.carbu  != null && p.units != null) return i.carbu * p.units
   if (i.carbml != null && p.ml    != null) return i.carbml * p.ml
   if (i.carbs  != null && i.kcs   != null) return i.carbs * (p.serv ?? 1)
@@ -79,7 +85,7 @@ export function ingCarb(key, p, allIng) {
 export function ingFib(key, p, allIng) {
   const i = allIng[key]
   if (!i) return 0
-  if (i.fib  != null && p.grams != null) return i.fib * p.grams / 100
+  if (i.fib != null && p.grams != null) return i.fib * p.grams * edibleOf(i) / 100
   if (i.fibu != null && p.units != null) return i.fibu * p.units
   if (i.fibs != null) return i.fibs * (p.serv ?? 1)
   if (i.fibf != null) return i.fibf
@@ -184,7 +190,7 @@ export function comboScalableKey(combo, allIng) {
     if (it.p?.grams == null) continue
     const ing = allIng[it.k]
     if (!ing || ing.kc == null) continue
-    const kc = ing.kc * it.p.grams / 100
+    const kc = ing.kc * it.p.grams * edibleOf(ing) / 100
     if (kc > bestKcal) { bestKcal = kc; best = it.k }
   }
   return best
@@ -659,7 +665,7 @@ export function dishGlycemicLoad(combo, allIng) {
     const ing = allIng[it.k]
     if (!ing) continue
     let kc, prot, fat
-    if (it.p.grams != null) { kc = (ing.kc || 0) * it.p.grams / 100; prot = (ing.prot || 0) * it.p.grams / 100; fat = (ing.fat || 0) * it.p.grams / 100 }
+    if (it.p.grams != null) { const g = it.p.grams * edibleOf(ing); kc = (ing.kc || 0) * g / 100; prot = (ing.prot || 0) * g / 100; fat = (ing.fat || 0) * g / 100 }
     else if (it.p.units != null) { kc = (ing.kcu || 0) * it.p.units; prot = (ing.protu || 0) * it.p.units; fat = (ing.fatu || 0) * it.p.units }
     else if (it.p.ml != null) { kc = (ing.kcml || 0) * it.p.ml; prot = 0; fat = 0 }
     else { kc = (ing.kcf || 0); prot = (ing.protf || 0); fat = (ing.fatf || 0) }
@@ -762,7 +768,7 @@ const SOLUBLE_FIBER_DAILY_MIN = 10  // g/dia — suelo terapeutico en SII-M (ver
 export function ingFibSol(key, p, allIng) {
   const i = allIng[key]
   if (!i) return 0
-  if (i.fibSol != null && p.grams != null) return i.fibSol * p.grams / 100
+  if (i.fibSol != null && p.grams != null) return i.fibSol * p.grams * edibleOf(i) / 100
   if (i.fibSolu != null && p.units != null) return i.fibSolu * p.units
   return ingFib(key, p, allIng) * SOLUBLE_FALLBACK_SHARE
 }

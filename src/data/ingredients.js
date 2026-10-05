@@ -266,3 +266,25 @@ export const CAT_LABELS = {
 }
 
 export const CAT_ORDER = ['proteina', 'base', 'legumbre', 'fresco', 'lacteo', 'carne', 'otro']
+
+// ─── Parte comestible de lo que se compra con hueso ──────────────────────────
+// Fracción (0-1) del peso comprado que se come. Las kcal/macros de arriba son
+// de la carne cruda SIN hueso (USDA); el precio y las cantidades de los platos
+// son del peso con hueso. La app multiplica kcal, macros y fibra por este
+// número; el precio no cambia. Cada corte tiene el suyo (un drumstick no pierde
+// lo mismo que unas costillas) y se puede corregir en la ficha del ingrediente.
+//   · verificado: alitas 54 % (46 % hueso).
+//   · drumstick 67 %: ~33 % hueso/cartílago (Health Canada, según el usuario).
+//   · el resto: estimación razonable, SIN verificar contra tablas — revisar.
+const EDIBLE = {
+  'chicken-drumstick': 0.67, 'chicken-drumstick-generic': 0.67, 'chicken-drumstick-farmboy': 0.67, 'chicken-drumstick-organic': 0.67,
+  'chicken-thigh-foodland': 0.78, 'chicken-thigh-beretta': 0.78, 'chicken-thigh-farmboy': 0.78,
+  'chicken-leg': 0.72, 'chicken-leg-generic': 0.72,                    // muslo + contramuslo
+  'chicken-wings': 0.54, 'chicken-wings-organic': 0.54,
+  'whole-chicken-organic': 0.68,
+  'turkey-drumstick': 0.65,                                            // más hueso y tendones que el de pollo
+  'ham-hock': 0.36,                                                    // la propia nota de la ficha: ~250 g útiles de ~700 g
+  'pork-ribs': 0.65, 'pork-side-ribs-costco': 0.65, 'pork-back-ribs-costco': 0.60, 'pork-rib-rack': 0.70,
+  'pork-loin-costco': 0.85, 'pork-shoulder-costco': 0.82,              // con hueso
+}
+for (const [k, v] of Object.entries(EDIBLE)) if (ING[k]) ING[k].edible = v
