@@ -304,12 +304,12 @@ const AOVE_TOPUP_ML = 30   // chorro máximo por plato (270 kcal), antes de los 
 // Tope de AOVE (el aceite cuesta $0 en la app, así que sin tope el algoritmo
 // lo usaría para cerrar cualquier hueco de kcal): el chorro que se añade para
 // cerrar kcal respeta
-//   · máx. MAX_MEAL_OIL_ML por plato EN TOTAL (el del propio plato + el chorro), y
+//   · máx. MAX_MEAL_OIL_ML (45 ml) por plato EN TOTAL (el del propio plato + el chorro), y
 //   · máx. MAX_DAY_OIL_ML por día EN TOTAL (todos los platos + chorros), repartido
 //     a partes iguales entre la comida y la cena, que son las que escalan.
-// 75 ml/día ≈ 5 cucharadas (~675 kcal): ya es mucho aceite, aunque Julio come ~3.100 kcal. Antes de este tope Julio llegaba a ~100-120 ml/día.
-export const MAX_MEAL_OIL_ML = 40
-export const MAX_DAY_OIL_ML = 75
+// 90 ml/día ≈ 6 cucharadas (~810 kcal): elegido por el usuario (80-100); Julio come ~3.100 kcal. Antes de este tope Julio llegaba a ~100-120 ml/día.
+export const MAX_MEAL_OIL_ML = 45
+export const MAX_DAY_OIL_ML = 90
 const OIL_KEY = /^(evoo|olive-oil)$/
 
 // ml de AOVE que lleva un plato por sí mismo (a ración por defecto).
