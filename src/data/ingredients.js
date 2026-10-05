@@ -91,7 +91,8 @@ export const ING = {
   nachos:         { name: 'Nachos',          cat: 'lacteo', per100: 1.83, kc: 500, carb: 63, prot: 7, fat: 25, fib: 4.5, pack: '240 g · $4.39',   per: '40g → $0.73 · 200 kcal' },
 
   // OTROS
-  'olive-oil':           { name: 'Olive oil',  cat: 'otro', flat: 0,    kcf: 0,  pack: 'already have',        per: '~120 kcal/cda · NOT counted' },
+  // Oculto en Ingredientes (usa EVOO). Sigue definido solo para que un plato guardado con la clave antigua no se rompa.
+  'olive-oil':           { name: 'Olive oil (legacy, same as EVOO)', cat: 'otro', hideInTable: true, flat: 0, kcf: 120, protf: 0, carbf: 0, fatf: 14, pack: 'already bought — $0, kcal counted', per: '1 tbsp → $0 · 120 kcal · 14g fat' },
   evoo:             { name: 'EVOO',              cat: 'otro', perML: 0,    kcml: 9, carbml: 0, protml: 0, fatml: 1, pack: 'already bought — $0, kcal counted', per: '20ml → $0 · 180 kcal · 20g grasa' },
   'coconut-oil':    { name: 'Organic virgin coconut oil (Costco)', cat: 'otro', per100: 1.022, kc: 892, carb: 0, fib: 0, prot: 0, fat: 99.5, pack: '2.3 kg (Costco) · $23.50', per: '15g → $0.15 · 134 kcal', organic: true },
   'beef-suet':             { name: 'Beef Suet',        cat: 'otro', per100: 1.768, kc: 895, carb: 0, fib: 0, prot: 0, fat: 99.5, pack: '2.2lb · $17.64',  per: '15g → $0.27' },
@@ -266,3 +267,26 @@ export const CAT_LABELS = {
 }
 
 export const CAT_ORDER = ['proteina', 'base', 'legumbre', 'fresco', 'lacteo', 'carne', 'otro']
+
+// ─── Parte comestible de lo que se compra con hueso ──────────────────────────
+// Fracción (0-1) del peso comprado que se come. Las kcal/macros de arriba son
+// de la carne cruda SIN hueso (USDA); el precio y las cantidades de los platos
+// son del peso con hueso. La app multiplica kcal, macros y fibra por este
+// número; el precio no cambia. Cada corte tiene el suyo (un drumstick no pierde
+// lo mismo que unas costillas) y se puede corregir en la ficha del ingrediente.
+//   · verificado: alitas 54 % (46 % hueso).
+//   · drumstick 67 %: ~33 % hueso/cartílago (Health Canada, según el usuario).
+//   · el resto: estimación razonable, SIN verificar contra tablas — revisar.
+const EDIBLE = {
+  'chicken-drumstick': 0.67, 'chicken-drumstick-generic': 0.67, 'chicken-drumstick-farmboy': 0.67, 'chicken-drumstick-organic': 0.67,
+  'chicken-thigh-foodland': 0.78, 'chicken-thigh-beretta': 0.78, 'chicken-thigh-farmboy': 0.78,
+  'chicken-leg': 0.72, 'chicken-leg-generic': 0.72,                    // muslo + contramuslo
+  'chicken-wings': 0.54, 'chicken-wings-organic': 0.54,
+  'whole-chicken-organic': 0.68,
+  'turkey-drumstick': 0.65,                                            // más hueso y tendones que el de pollo
+  'mussels': 0.19,                                                     // en concha: carne cocida ~19 % del peso (mejillón de cultivo, NOAA); las kcal de la ficha son de la carne cocida
+  'ham-hock': 0.36,                                                    // la propia nota de la ficha: ~250 g útiles de ~700 g
+  'pork-ribs': 0.65, 'pork-side-ribs-costco': 0.65, 'pork-back-ribs-costco': 0.60, 'pork-rib-rack': 0.70,
+  'pork-loin-costco': 0.85, 'pork-shoulder-costco': 0.82,              // con hueso
+}
+for (const [k, v] of Object.entries(EDIBLE)) if (ING[k]) ING[k].edible = v

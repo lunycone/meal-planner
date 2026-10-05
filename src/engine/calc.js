@@ -19,6 +19,12 @@ export function ingredientUnitType(ing) {
   return null
 }
 
+// Parte comestible (0-1) de un ingrediente que se compra con hueso (drumsticks,
+// costillas…). El precio y la cantidad del plato son del peso comprado (con
+// hueso); kcal, macros, fibra y micros son de la parte que se come. Sin campo
+// `edible` es 1 (nada cambia). Solo aplica a las cantidades en gramos.
+export const edibleOf = i => (i?.edible > 0 && i.edible <= 1 ? i.edible : 1)
+
 export function ingCost(key, p, allIng) {
   const i = allIng[key]
   if (!i) return 0
@@ -33,7 +39,7 @@ export function ingCost(key, p, allIng) {
 export function ingKcal(key, p, allIng) {
   const i = allIng[key]
   if (!i) return 0
-  if (i.kc   != null && p.grams != null) return i.kc * p.grams / 100
+  if (i.kc != null && p.grams != null) return i.kc * p.grams * edibleOf(i) / 100
   if (i.kcu  != null && p.units != null) return i.kcu * p.units
   if (i.kcml != null && p.ml    != null) return i.kcml * p.ml
   if (i.kcs  != null) return i.kcs * (p.serv ?? 1)
@@ -44,7 +50,7 @@ export function ingKcal(key, p, allIng) {
 export function ingProt(key, p, allIng) {
   const i = allIng[key]
   if (!i) return 0
-  if (i.prot  != null && p.grams != null) return i.prot * p.grams / 100
+  if (i.prot != null && p.grams != null) return i.prot * p.grams * edibleOf(i) / 100
   if (i.protu != null && p.units != null) return i.protu * p.units
   if (i.protml != null && p.ml   != null) return i.protml * p.ml
   if (i.prots != null) return i.prots * (p.serv ?? 1)
@@ -55,7 +61,7 @@ export function ingProt(key, p, allIng) {
 export function ingFat(key, p, allIng) {
   const i = allIng[key]
   if (!i) return 0
-  if (i.fat   != null && p.grams != null) return i.fat * p.grams / 100
+  if (i.fat != null && p.grams != null) return i.fat * p.grams * edibleOf(i) / 100
   if (i.fatu  != null && p.units != null) return i.fatu * p.units
   if (i.fatml != null && p.ml    != null) return i.fatml * p.ml
   if (i.fats  != null) return i.fats * (p.serv ?? 1)
@@ -68,7 +74,7 @@ export function ingFat(key, p, allIng) {
 export function ingCarb(key, p, allIng) {
   const i = allIng[key]
   if (!i) return 0
-  if (i.carb   != null && p.grams != null) return i.carb * p.grams / 100
+  if (i.carb != null && p.grams != null) return i.carb * p.grams * edibleOf(i) / 100
   if (i.carbu  != null && p.units != null) return i.carbu * p.units
   if (i.carbml != null && p.ml    != null) return i.carbml * p.ml
   if (i.carbs  != null && i.kcs   != null) return i.carbs * (p.serv ?? 1)
@@ -79,7 +85,7 @@ export function ingCarb(key, p, allIng) {
 export function ingFib(key, p, allIng) {
   const i = allIng[key]
   if (!i) return 0
-  if (i.fib  != null && p.grams != null) return i.fib * p.grams / 100
+  if (i.fib != null && p.grams != null) return i.fib * p.grams * edibleOf(i) / 100
   if (i.fibu != null && p.units != null) return i.fibu * p.units
   if (i.fibs != null) return i.fibs * (p.serv ?? 1)
   if (i.fibf != null) return i.fibf
@@ -184,7 +190,7 @@ export function comboScalableKey(combo, allIng) {
     if (it.p?.grams == null) continue
     const ing = allIng[it.k]
     if (!ing || ing.kc == null) continue
-    const kc = ing.kc * it.p.grams / 100
+    const kc = ing.kc * it.p.grams * edibleOf(ing) / 100
     if (kc > bestKcal) { bestKcal = kc; best = it.k }
   }
   return best
@@ -207,7 +213,7 @@ const AOVE_FLAT_KCAL = 235
 
 function aoveFlatKcal(combo) {
   if (!combo || combo.noAove) return 0
-  if (combo.items?.some(it => it.k === 'evoo')) return 0   // ya contado por ml
+  if (combo.items?.some(it => it.k === 'evoo' || it.k === 'olive-oil')) return 0   // ya contado por ml
   return AOVE_FLAT_KCAL
 }
 
@@ -293,7 +299,32 @@ const KCAL_PER_OIL_TBSP = 120         // olive oil, not counted in combos
 // objetivo (hasta -500) en los mismos dias que el HTML daba casi exacto.
 // Mismo tope que alli: 30ml por plato, 9 kcal/ml.
 const AOVE_KCAL_ML = 9
-const AOVE_AUTOCLOSE_CAP_KCAL = 30 * AOVE_KCAL_ML // 270 kcal ~ 30ml
+const AOVE_TOPUP_ML = 30   // chorro máximo por plato (270 kcal), antes de los topes de abajo
+
+// Tope de AOVE (el aceite cuesta $0 en la app, así que sin tope el algoritmo
+// lo usaría para cerrar cualquier hueco de kcal): el chorro que se añade para
+// cerrar kcal respeta
+//   · máx. MAX_MEAL_OIL_ML (45 ml) por plato EN TOTAL (el del propio plato + el chorro), y
+//   · máx. MAX_DAY_OIL_ML por día EN TOTAL (todos los platos + chorros), repartido
+//     a partes iguales entre la comida y la cena, que son las que escalan.
+// 90 ml/día ≈ 6 cucharadas (~810 kcal): elegido por el usuario (80-100); Julio come ~3.100 kcal. Antes de este tope Julio llegaba a ~100-120 ml/día.
+export const MAX_MEAL_OIL_ML = 45
+export const MAX_DAY_OIL_ML = 90
+const OIL_KEY = /^(evoo|olive-oil)$/
+
+// ml de AOVE que lleva un plato por sí mismo (a ración por defecto).
+export function comboOilMl(combo) {
+  return (combo?.items ?? []).reduce((s, it) => s + (OIL_KEY.test(it.k) ? (it.p?.ml ?? (it.k === 'olive-oil' ? 15 : 0)) : 0), 0)
+}
+
+// kcal de chorro de AOVE que se pueden añadir a este plato sin pasar los topes.
+function oilTopUpCapKcal(day, combo, allCombos) {
+  const dishOil = comboOilMl(combo)
+  const dayOil = Object.values(day || {}).reduce((sum, m) => sum + (m?.type === 'desayuno' ? comboOilMl(allCombos[m.recipeKey]) : 0), 0)
+  const scalingMeals = Math.max(1, ['comida', 'cena'].filter(k => day?.[k]).length)
+  const room = Math.min(AOVE_TOPUP_ML, MAX_MEAL_OIL_ML - dishOil, (MAX_DAY_OIL_ML - dayOil) / scalingMeals)
+  return Math.max(0, Math.floor(room)) * AOVE_KCAL_ML
+}
 
 // Physical ceiling: what actually fits in a tupper once cooked. Grains/legumes
 // expand a lot when cooked, so the cap must live in COOKED grams, not dry — a
@@ -367,7 +398,7 @@ export function personTargetForDay(person, dayIdx) {
 export function comboScaleCapacity(combo, allIng) {
   const key = comboScalableKey(combo, allIng)
   const ing = key ? allIng[key] : null
-  const oilKcal = AOVE_AUTOCLOSE_CAP_KCAL
+  const oilKcal = Math.max(0, Math.min(AOVE_TOPUP_ML, MAX_MEAL_OIL_ML - comboOilMl(combo))) * AOVE_KCAL_ML
   if (!ing || !ing.kc) return { key: null, upKcal: oilKcal, costPerKcal: 0, protPerKcal: 0, floor: WHOLE_DISH_FLOOR }
   const kcalPerGram = ing.kc / 100
   const defaultGrams = combo.items.find(it => it.k === key)?.p?.grams ?? 0
@@ -402,6 +433,7 @@ export function personMealScale(day, mealType, person, allIng, allCombos, opts =
   const otherFixedKcal = totalKcal - mealAgg.kcal            // todo el dia MENOS este plato
   const neededFromMeal = target - otherFixedKcal             // lo que este plato tiene que aportar
   const key = comboScalableKey(combo, allIng)
+  const oilCap = oilTopUpCapKcal(day, combo, allCombos)
 
   // ── Sobra: el plato a racion normal ya cubre (o se pasa de) lo que hace falta ──
   if (neededFromMeal <= mealAgg.kcal) {
@@ -424,7 +456,7 @@ export function personMealScale(day, mealType, person, allIng, allCombos, opts =
   if (!key) {
     const rawDayKcal = otherFixedKcal + mealAgg.kcal
     const rawDeficit = target - rawDayKcal
-    const oilKcal = Math.max(0, Math.min(AOVE_AUTOCLOSE_CAP_KCAL, rawDeficit))
+    const oilKcal = Math.max(0, Math.min(oilCap, rawDeficit))
     const dayKcalAchieved = Math.round(rawDayKcal + oilKcal)
     const deficitKcal = Math.max(0, target - dayKcalAchieved)
     return {
@@ -468,7 +500,7 @@ export function personMealScale(day, mealType, person, allIng, allCombos, opts =
   // Si el almidon ya esta al tope (o el objetivo no da ni para eso) y aun
   // falta, cerrar con un chorro de AOVE -- mismo tope que el generador de
   // las semanas modelo (30ml/plato), antes de reportar un hueco real.
-  const oilKcal = Math.max(0, Math.min(AOVE_AUTOCLOSE_CAP_KCAL, rawDeficit))
+  const oilKcal = Math.max(0, Math.min(oilCap, rawDeficit))
   const dayKcalAchieved = Math.round(rawDayKcal + oilKcal)
   const deficitKcal = Math.max(0, target - dayKcalAchieved)
   const oilTbsp = deficitKcal > 0 ? Math.round(deficitKcal / KCAL_PER_OIL_TBSP) : 0
@@ -659,7 +691,7 @@ export function dishGlycemicLoad(combo, allIng) {
     const ing = allIng[it.k]
     if (!ing) continue
     let kc, prot, fat
-    if (it.p.grams != null) { kc = (ing.kc || 0) * it.p.grams / 100; prot = (ing.prot || 0) * it.p.grams / 100; fat = (ing.fat || 0) * it.p.grams / 100 }
+    if (it.p.grams != null) { const g = it.p.grams * edibleOf(ing); kc = (ing.kc || 0) * g / 100; prot = (ing.prot || 0) * g / 100; fat = (ing.fat || 0) * g / 100 }
     else if (it.p.units != null) { kc = (ing.kcu || 0) * it.p.units; prot = (ing.protu || 0) * it.p.units; fat = (ing.fatu || 0) * it.p.units }
     else if (it.p.ml != null) { kc = (ing.kcml || 0) * it.p.ml; prot = 0; fat = 0 }
     else { kc = (ing.kcf || 0); prot = (ing.protf || 0); fat = (ing.fatf || 0) }
@@ -762,7 +794,7 @@ const SOLUBLE_FIBER_DAILY_MIN = 10  // g/dia — suelo terapeutico en SII-M (ver
 export function ingFibSol(key, p, allIng) {
   const i = allIng[key]
   if (!i) return 0
-  if (i.fibSol != null && p.grams != null) return i.fibSol * p.grams / 100
+  if (i.fibSol != null && p.grams != null) return i.fibSol * p.grams * edibleOf(i) / 100
   if (i.fibSolu != null && p.units != null) return i.fibSolu * p.units
   return ingFib(key, p, allIng) * SOLUBLE_FALLBACK_SHARE
 }

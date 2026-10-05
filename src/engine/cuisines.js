@@ -13,7 +13,6 @@
 import { GEN_PREFIX, ingredientPools, learnPortions, median, prettyName, vegName, lower } from './composeDishes'
 import { conceptOf, link, setFit, closestExample } from './pairing'
 import { tagsOf, starchFamily } from '../lib/tags'
-import { packOf } from '../lib/packs'
 
 const P = (id, label, flag, adj, prof) => ({ id, label, flag, adj, ...prof })
 
@@ -189,19 +188,11 @@ function composeFor(prof, allIng, allCombos, { stock = {}, limit = 24, pairPrefs
     vegSets.push([veg[i]])
     for (let j = i + 1; j < veg.length; j++) if (familyOfIng(veg[i].key, veg[i].ing) !== familyOfIng(veg[j].key, veg[j].ing)) vegSets.push([veg[i], veg[j]])
   }
-  const pantryOff = c => {
-    const have = stock[c.key] ?? 0
-    if (!(have > 0)) return 0
-    const pack = packOf(c.ing)
-    const per = pack?.price && pack.amount ? pack.price / pack.amount : 0
-    const g = c.p.grams ?? (c.p.units ?? 0) * (c.ing.unitGrams ?? 1)
-    return Math.min(have, g * 10) * per / 10
-  }
   const out = [], fitMemo = new Map() // muchos cortes son el mismo concepto («pork»)
   for (const m of mains) for (const b of bases) for (const vs of vegSets) {
     const parts = [m, b, ...vs]
     const kcal = parts.reduce((s, c) => s + c.kcal, 0) + 135
-    const cost = parts.reduce((s, c) => s + c.cost - pantryOff(c), 0)
+    const cost = parts.reduce((s, c) => s + c.cost, 0)
     const prot = parts.reduce((s, c) => s + c.prot, 0)
     const vg = vs.reduce((s, v) => s + (v.p.grams ?? 0), 0)
     const flags = parts.reduce((s, c) => s + (c.tags.includes('legume') ? 1 : 0) + (c.tags.includes('insoluble') ? 1 : 0), 0)

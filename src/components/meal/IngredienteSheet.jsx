@@ -50,6 +50,7 @@ function draftOf(ing, unit, key) {
     keeps: ing ? keepsOf(key ?? '', ing) : 'week',
     basis: String(basis), kc: nutAt(U.nut[0]), prot: nutAt(U.nut[1]), fat: nutAt(U.nut[2]), carb: nutAt(U.nut[3]), fib: nutAt(U.nut[4]),
     portion,
+    edible: ing?.edible != null && ing.edible < 1 ? String(Math.round(ing.edible * 100)) : '',
     tags: ing ? [...tagsOf(key, { [key]: ing })] : [],
     snackRole: snackRoleOf(key ?? '', { [key ?? '']: ing })?.role ?? '',
     snackTaste: snackRoleOf(key ?? '', { [key ?? '']: ing })?.taste ?? 'neutral',
@@ -144,6 +145,8 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
     const data = { name: draft.name.trim(), cat: draft.cat, store, organic: draft.organic, temporary: draft.temporary, rotation: draft.rotation || '', tags: shownTags }
     // Snack role: only written when you change it (the generator ignores ingredients without a role)
     if (draft.snackRole !== initial.snackRole || draft.snackTaste !== initial.snackTaste) { data.snackRole = draft.snackRole; data.snackTaste = draft.snackTaste }
+    // Parte comestible (solo para lo que se pesa en gramos): kcal y macros son de lo que se come, el precio del peso comprado.
+    if (unit === 'per100') { const e = num(draft.edible); data.edible = e > 0 && e < 100 ? e / 100 : 1 }
     if (legacy) {
       data.pack = draft.pack
       data.per = draft.per
@@ -321,6 +324,7 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
                     {T.nut[2] && <label className="ig-input"><span>Fat (g)</span><input inputMode="decimal" value={draft.fat} onChange={e => setNut('fat', e.target.value)} placeholder="0" /></label>}
                     {T.nut[3] && <label className="ig-input"><span>Carbs (g)</span><input inputMode="decimal" value={draft.carb} onChange={e => setNut('carb', e.target.value)} placeholder="0" /></label>}
                     {T.nut[4] && <label className="ig-input"><span>Fiber (g)</span><input inputMode="decimal" value={draft.fib} onChange={e => setNut('fib', e.target.value)} placeholder="0" /></label>}
+                    {unit === 'per100' && <label className="ig-input" title="Share of the weight you buy that you actually eat. Bone-in cuts: the label values are for the meat, the price is for the whole piece."><span>Edible part (%)</span><input inputMode="decimal" value={draft.edible} onChange={e => set('edible', e.target.value)} placeholder="100" /></label>}
                   </div>
                 </div>
 
