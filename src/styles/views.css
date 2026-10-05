@@ -399,6 +399,26 @@
 .pm-src > span { display: flex; justify-content: space-between; gap: 8px; }
 .pm-foot { margin: 0; font-size: 10.5px; line-height: 1.5; }
 @media (max-width: 520px) { .pm-rowbtn { grid-template-columns: 74px minmax(0, 1fr) 56px 34px; } .pm-src { padding-left: 82px; } }
+
+/* ── Vitaminas del batch (BatchVitamins) ───────────────────────────────── */
+.bv-card { display: flex; flex-direction: column; gap: 12px; padding: 18px 20px; }
+.bv-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.bv-body { display: flex; flex-direction: column; gap: 14px; }
+.bv-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 22px; }
+.bv-row { display: grid; grid-template-columns: 88px minmax(0, 1fr) 40px 62px; align-items: center; gap: 8px; padding: 5px 0; font-size: 12.5px; }
+.bv-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bv-bar { height: 7px; border-radius: 4px; background: rgba(110,80,50,0.08); overflow: hidden; }
+.bv-bar > span { display: block; height: 100%; border-radius: 4px; transition: width .5s var(--c-ease); }
+.bv-pct { text-align: right; font-weight: 700; }
+.bv-days { display: flex; gap: 3px; justify-content: flex-end; }
+.bv-dot { width: 8px; height: 8px; border-radius: 50%; }
+.bv-sugs { display: flex; flex-direction: column; gap: 8px; }
+.bv-sug { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 10px 12px; border-radius: 16px; background: rgba(255,255,255,0.7); }
+.bv-sug-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; font-size: 13px; }
+.bv-sug-sub { font-size: 12px; }
+.bv-eff { font-size: 12px; line-height: 1.4; color: var(--c-ink-2); }
+.bv-sug-btns { display: flex; gap: 6px; }
+@media (max-width: 760px) { .bv-grid { grid-template-columns: minmax(0, 1fr); } .bv-sug { grid-template-columns: 26px minmax(0, 1fr); } .bv-sug-btns { grid-column: 2; } }
 @media (max-width: 900px) {
   .pl-body { grid-template-columns: minmax(0, 1fr); overflow-y: auto; }
   .pl-row { grid-template-columns: minmax(0, 1fr) 16px; }
