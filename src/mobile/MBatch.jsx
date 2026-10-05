@@ -8,6 +8,8 @@ import { MEALS, MEAL_LABEL, MEAL_STYLE, PERSON_COLOR, DAY_KEYS, addDays, fmtRang
 import { slotForPerson } from '../engine/calc'
 import { MHeader } from './MobileApp'
 import CookedButton from '../components/meal/CookedButton'
+import BatchVitamins from '../components/meal/BatchVitamins'
+import { stockAvailable } from '../lib/needs'
 import useBatchNav from '../lib/useBatchNav'
 import { cookDateFor, sessionDates, rangeLabel, DAY_LONG_EN } from '../lib/batchConfig'
 
@@ -121,6 +123,9 @@ export default function MBatch({ unseen, onIdeas }) {
   const daysLabel = rangeLabel(batchDays.map(b => DAY_KEYS.indexOf(b.dayKey)))
   const batchData = useMemo(() => Object.fromEntries(MEALS.map(mt => [mt, computeBatchMeal(mt, batchDays, profiles, allIng, allCombos, weekPlan)])), [batchDays, profiles, allIng, allCombos, weekPlan])
   const schedule = useMemo(() => buildSchedule(MEALS.flatMap(mt => (batchData[mt] || []).map(g => ({ meal: g.meal, batchData: g })))), [batchData])
+  const stockRaw = useStore(s => s.stock)
+  const stockNow = useMemo(() => stockAvailable(stockRaw, allIng, cookDate), [stockRaw, allIng, +cookDate]) // eslint-disable-line react-hooks/exhaustive-deps
+  const batchPeople = useMemo(() => activeProfilesOn(profiles, batchDays[0].date).filter(p => p.id !== 'all'), [profiles, batchDays])
   const tups = new Set(batchTups?.[wk] ?? [])
   const week = weekPlan[wk] ?? {}
 
@@ -176,6 +181,7 @@ export default function MBatch({ unseen, onIdeas }) {
           {schedule.vispera.length > 0 && (
             <span className="mb-vispera"><Icon name="moon" size={16} color="#7154DA" style={{ flexShrink: 0, marginTop: 1 }} /><span><strong>Night before:</strong> {visperaLine(schedule.vispera)}</span></span>
           )}
+          <BatchVitamins weekKey={wk} weekData={week} batchDays={batchDays} people={batchPeople} allIng={allIng} allCombos={allCombos} stock={stockNow} />
           <section className="mb-list" ref={listRef}>
             {rows.map((r, n) => {
               const id = `${r.mt}-${r.key}`, isOpen = open === id

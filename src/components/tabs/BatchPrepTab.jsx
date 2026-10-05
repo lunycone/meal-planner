@@ -1,4 +1,6 @@
 import CookedButton from '../meal/CookedButton'
+import BatchVitamins from '../meal/BatchVitamins'
+import { stockAvailable } from '../../lib/needs'
 import useBatchNav from '../../lib/useBatchNav'
 import { cookDateFor, sessionDates, rangeLabel, DAY_LONG_EN } from '../../lib/batchConfig'
 import { useState, useEffect, useMemo } from 'react'
@@ -1109,6 +1111,9 @@ export default function BatchPrepTab() {
   , [batchData])
 
   // Tuppers hechos: en el guardado compartido (lo que llena uno lo ve el otro)
+  const stockRaw = useStore(s => s.stock)
+  const stockNow = useMemo(() => stockAvailable(stockRaw, allIng, cookDate), [stockRaw, allIng, +cookDate]) // eslint-disable-line react-hooks/exhaustive-deps
+  const batchPeople = useMemo(() => profilesActiveOn(profiles, batchDays[0].date).filter(p => p.id !== 'all'), [profiles, batchDays])
   const batchTups = useStore(s => s.batchTups)
   const toggleBatchTup = useStore(s => s.toggleBatchTup)
   const tups = useMemo(() => new Set(batchTups?.[weekKey] ?? []), [batchTups, weekKey])
@@ -1190,6 +1195,8 @@ export default function BatchPrepTab() {
             <button className="mp-btn mp-btn-dark" style={{ marginTop: 14 }} onClick={() => openPlanner(nav.weekOffset, ALL_DAY_KEYS.indexOf(batchDays[0].dayKey))}><Icon name="cal" size={14} />Plan the week</button>
           </div>
         )}
+        {hasPlan && <BatchVitamins weekKey={weekKey} weekData={weekData} batchDays={batchDays} people={batchPeople} allIng={allIng} allCombos={allCombos} stock={stockNow} />}
+
         <section className="bt-cards" aria-label="Batch dishes">
           {cards.map((c, n) => {
             const st = MEAL_STYLE[c.mt]

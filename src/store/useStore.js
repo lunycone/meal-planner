@@ -786,7 +786,7 @@ export function selectAllCombos(s) {
   }
   for (const c of s.customCombos) {
     const key = 'custom-' + c.id
-    if (!deleted.has(key)) result[key] = { name: c.name, items: c.items, meals: c.meals ?? [], isCustom: true, customId: c.id, ...(c.snack ? { snack: true } : {}), ...(c.snackGenerated ? { snackGenerated: true } : {}) }
+    if (!deleted.has(key)) result[key] = { name: c.name, items: c.items, meals: c.meals ?? [], isCustom: true, customId: c.id, ...(c.snack ? { snack: true } : {}), ...(c.snackGenerated ? { snackGenerated: true } : {}), ...(c.scalable ? { scalable: c.scalable } : {}), ...(c.scalableMax != null ? { scalableMax: c.scalableMax } : {}), ...(c.noAove ? { noAove: true } : {}), ...(c.optionalItems ? { optionalItems: c.optionalItems } : {}) }
   }
   return result
 }
