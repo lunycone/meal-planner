@@ -115,10 +115,9 @@ export default function MicrosCard({ items, meals, kcal, profiles, allIng }) {
             })}
           </div>
 
-          <p className="pm-foot mp-muted">
-            Per portion as written, from approximate USDA values{micros.est ? ' (≈ = estimated)' : ''}; bone, shell and peel are not counted.
-            {micros.missing.length > 0 && <> No data for: {micros.missing.slice(0, 4).join(', ')}{micros.missing.length > 4 ? '…' : ''}.</>} A food guide, not medical advice. Vitamin D is left out (you take it as a supplement).
-          </p>
+          {micros.missing.length > 0 && (
+            <p className="pm-foot mp-muted">No vitamin data for: {micros.missing.slice(0, 4).join(', ')}{micros.missing.length > 4 ? '…' : ''}.</p>
+          )}
         </div>
       )}
     </div>
