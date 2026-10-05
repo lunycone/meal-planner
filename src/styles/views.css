@@ -59,7 +59,7 @@
 .hoy-dots { position: absolute; left: 0; right: 0; bottom: 4px; display: flex; justify-content: center; align-items: center; gap: 10px; }
 
 .hoy-apps {
-  grid-area: apps; align-self: start;
+  grid-area: apps; align-self: center;
   display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(8px, 1.6vh, 16px) 18px;
 }
 .hoy-app {
