@@ -91,7 +91,7 @@ export const ING = {
   nachos:         { name: 'Nachos',          cat: 'lacteo', per100: 1.83, kc: 500, carb: 63, prot: 7, fat: 25, fib: 4.5, pack: '240 g · $4.39',   per: '40g → $0.73 · 200 kcal' },
 
   // OTROS
-  'olive-oil':           { name: 'Olive oil',  cat: 'otro', flat: 0,    kcf: 0,  pack: 'already have',        per: '~120 kcal/cda · NOT counted' },
+  'olive-oil':           { name: 'Extra virgin olive oil', cat: 'otro', flat: 0,    kcf: 120, protf: 0, carbf: 0, fatf: 14, pack: 'already bought — $0, kcal counted', per: '1 tbsp → $0 · 120 kcal · 14g fat' },
   evoo:             { name: 'EVOO',              cat: 'otro', perML: 0,    kcml: 9, carbml: 0, protml: 0, fatml: 1, pack: 'already bought — $0, kcal counted', per: '20ml → $0 · 180 kcal · 20g grasa' },
   'coconut-oil':    { name: 'Organic virgin coconut oil (Costco)', cat: 'otro', per100: 1.022, kc: 892, carb: 0, fib: 0, prot: 0, fat: 99.5, pack: '2.3 kg (Costco) · $23.50', per: '15g → $0.15 · 134 kcal', organic: true },
   'beef-suet':             { name: 'Beef Suet',        cat: 'otro', per100: 1.768, kc: 895, carb: 0, fib: 0, prot: 0, fat: 99.5, pack: '2.2lb · $17.64',  per: '15g → $0.27' },
@@ -283,6 +283,7 @@ const EDIBLE = {
   'chicken-wings': 0.54, 'chicken-wings-organic': 0.54,
   'whole-chicken-organic': 0.68,
   'turkey-drumstick': 0.65,                                            // más hueso y tendones que el de pollo
+  'mussels': 0.19,                                                     // en concha: carne cocida ~19 % del peso (mejillón de cultivo, NOAA); las kcal de la ficha son de la carne cocida
   'ham-hock': 0.36,                                                    // la propia nota de la ficha: ~250 g útiles de ~700 g
   'pork-ribs': 0.65, 'pork-side-ribs-costco': 0.65, 'pork-back-ribs-costco': 0.60, 'pork-rib-rack': 0.70,
   'pork-loin-costco': 0.85, 'pork-shoulder-costco': 0.82,              // con hueso

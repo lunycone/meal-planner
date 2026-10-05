@@ -213,7 +213,7 @@ const AOVE_FLAT_KCAL = 235
 
 function aoveFlatKcal(combo) {
   if (!combo || combo.noAove) return 0
-  if (combo.items?.some(it => it.k === 'evoo')) return 0   // ya contado por ml
+  if (combo.items?.some(it => it.k === 'evoo' || it.k === 'olive-oil')) return 0   // ya contado por ml
   return AOVE_FLAT_KCAL
 }
 
