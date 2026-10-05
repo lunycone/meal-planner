@@ -9,7 +9,7 @@ import Segmented from '../ui/Segmented'
 import { storeOf, storeColor, storesIn } from '../../lib/stores'
 import { TAGS, TAG_LABEL, TAG_HINT, tagsOf, guessTags } from '../../lib/tags'
 import { ROLES, TASTES, snackRoleOf, suggestRole } from '../../data/snackRoles'
-import { packOf, dimOf, toBase, formatPack, keepsOf, KEEPS, KEEPS_LABEL, WEIGHT_UNITS, VOLUME_UNITS } from '../../lib/packs'
+import { packOf, dimOf, toBase, formatPack, keepsOf, KEEPS, KEEPS_LABEL } from '../../lib/packs'
 
 // ─── Ficha de ingrediente: ver y editar son lo mismo ───────────────────────
 // Tienda, categoría, precio, pack y nutrientes se tocan en su sitio. A la
@@ -31,7 +31,6 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b)
 // Tipo de precio del motor según la dimensión del paquete.
 const TYPE_OF_DIM = { g: 'per100', ml: 'perML', unit: 'perUnit' }
 const DIM_OF_TYPE = { per100: 'g', perML: 'ml', perUnit: 'unit' }
-const UNITS_OF_DIM = { g: Object.keys(WEIGHT_UNITS), ml: Object.keys(VOLUME_UNITS), unit: ['unit'] }
 const BASIS_UNIT = { g: 'g', ml: 'ml', unit: 'unit' }
 
 function draftOf(ing, unit, key) {
@@ -146,7 +145,7 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
     // Snack role: only written when you change it (the generator ignores ingredients without a role)
     if (draft.snackRole !== initial.snackRole || draft.snackTaste !== initial.snackTaste) { data.snackRole = draft.snackRole; data.snackTaste = draft.snackTaste }
     // Parte comestible (solo para lo que se pesa en gramos): kcal y macros son de lo que se come, el precio del peso comprado.
-    if (unit === 'per100') { const e = num(draft.edible); data.edible = e > 0 && e < 100 ? e / 100 : 1 }
+    if (!legacy && dim === 'g') { const e = num(draft.edible); data.edible = e > 0 && e < 100 ? e / 100 : 1 }
     if (legacy) {
       data.pack = draft.pack
       data.per = draft.per
@@ -154,6 +153,9 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
       const n = [num(draft.kc), num(draft.prot), num(draft.fat), num(draft.carb), num(draft.fib)]
       U.nut.forEach((field, i) => { if (field && n[i] != null) data[field] = n[i] / U.f })
     } else {
+      // Cambiar de peso a volumen (o a unidades) en uno que ya existe: se vacían los campos
+      // de la medida antigua, si no el precio por 100 g mandaría sobre el de litros.
+      for (const t of ['per100', 'perUnit', 'perML']) if (t !== type) for (const f of [UNIT[t].price, ...UNIT[t].nut]) if (f) data[f] = null
       if (priceVal != null) data[T.price] = priceVal
       T.nut.forEach((field, i) => { if (field && nut[i] != null) data[field] = nut[i] })
       if (packOk) Object.assign(data, { packQty: pQty, packUnit: draft.packUnit, packPrice: pPrice, pack: formatPack({ qty: pQty, unit: draft.packUnit, price: pPrice }) })
@@ -297,7 +299,7 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
                     <label className="ig-input ig-pack-qty"><span>Amount</span><input inputMode="decimal" value={draft.packQty} onChange={e => set('packQty', e.target.value)} placeholder={dim === 'unit' ? '30' : '1'} /></label>
                     <div className="ig-input ig-pack-unit"><span>Unit</span>
                       <Segmented label="Pack unit" value={draft.packUnit} onChange={v => set('packUnit', v)}
-                        options={(isNew ? ['g', 'kg', 'lb', 'oz', 'ml', 'L', 'unit'] : UNITS_OF_DIM[dim]).map(u => ({ value: u, label: u === 'unit' ? 'units' : u }))} />
+                        options={['g', 'kg', 'lb', 'oz', 'ml', 'L', 'unit'].map(u => ({ value: u, label: u === 'unit' ? 'units' : u }))} />
                     </div>
                     <label className="ig-input ig-pack-price"><span>Price paid ($)</span><input inputMode="decimal" value={draft.packPrice} onChange={e => set('packPrice', e.target.value)} placeholder="14.00" /></label>
                   </div>
@@ -324,7 +326,7 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
                     {T.nut[2] && <label className="ig-input"><span>Fat (g)</span><input inputMode="decimal" value={draft.fat} onChange={e => setNut('fat', e.target.value)} placeholder="0" /></label>}
                     {T.nut[3] && <label className="ig-input"><span>Carbs (g)</span><input inputMode="decimal" value={draft.carb} onChange={e => setNut('carb', e.target.value)} placeholder="0" /></label>}
                     {T.nut[4] && <label className="ig-input"><span>Fiber (g)</span><input inputMode="decimal" value={draft.fib} onChange={e => setNut('fib', e.target.value)} placeholder="0" /></label>}
-                    {unit === 'per100' && <label className="ig-input" title="Share of the weight you buy that you actually eat. Bone-in cuts: the label values are for the meat, the price is for the whole piece."><span>Edible part (%)</span><input inputMode="decimal" value={draft.edible} onChange={e => set('edible', e.target.value)} placeholder="100" /></label>}
+                    {!legacy && dim === 'g' && <label className="ig-input" title="Share of the weight you buy that you actually eat. Bone-in cuts: the label values are for the meat, the price is for the whole piece."><span>Edible part (%)</span><input inputMode="decimal" value={draft.edible} onChange={e => set('edible', e.target.value)} placeholder="100" /></label>}
                   </div>
                 </div>
 
