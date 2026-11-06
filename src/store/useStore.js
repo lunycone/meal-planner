@@ -776,7 +776,19 @@ useStore.subscribe(s => applyColorOverrides(s.storeColors, s.catColors))
 
 // ─── SELECTORS ───────────────────────────────────────────────────────────────
 
-export function selectAllIng(s) {
+// Sync status and unrelated planner edits must not invalidate the generator's inputs.
+function catalogSelector(keys, build) {
+  let previous, result
+  return state => {
+    if (!previous || keys.some((key, i) => state[key] !== previous[i])) {
+      result = build(state)
+      previous = keys.map(key => state[key])
+    }
+    return result
+  }
+}
+
+export const selectAllIng = catalogSelector(['deletedIngredients', 'customIngredients', 'ingredientOverrides', 'priceOverrides'], s => {
   const deleted = new Set(s.deletedIngredients)
   const base    = { ...ING, ...s.customIngredients }
   const merged  = {}
@@ -786,9 +798,9 @@ export function selectAllIng(s) {
     merged[k] = withEstimatedNutrition(k, { ...v, ...s.ingredientOverrides[k], ...s.priceOverrides[k] })
   }
   return merged
-}
+})
 
-export function selectAllCombos(s) {
+export const selectAllCombos = catalogSelector(['deletedCombos', 'comboOverrides', 'customCombos'], s => {
   const deleted = new Set(s.deletedCombos)
   const result  = {}
   for (const [k, v] of Object.entries(COMBO)) {
@@ -800,7 +812,7 @@ export function selectAllCombos(s) {
     if (!deleted.has(key)) result[key] = { name: c.name, items: c.items, meals: c.meals ?? [], isCustom: true, customId: c.id, ...(c.ownerId && { ownerId: c.ownerId }), ...(c.snack ? { snack: true } : {}), ...(c.snackGenerated ? { snackGenerated: true } : {}), ...(c.scalable ? { scalable: c.scalable } : {}), ...(c.scalableMax != null ? { scalableMax: c.scalableMax } : {}), ...(c.noAove ? { noAove: true } : {}), ...(c.optionalItems ? { optionalItems: c.optionalItems } : {}) }
   }
   return result
-}
+})
 
 export function selectAllCats(s) {
   const base = {}

@@ -16,7 +16,6 @@ import Icon                from './components/ui/Icon'
 import { computeInsights } from './engine/insights'
 import MobileApp from './mobile/MobileApp'
 import useIsMobile from './mobile/useIsMobile'
-import { warmSmartWorker } from './lib/useSmartWeeks'
 import { warmSnackWorker } from './lib/useSnackWeeks'
 import { PERSON_COLOR, activeProfilesOn } from './lib/mealplan'
 
@@ -151,7 +150,7 @@ function AppShell() {
   useEffect(() => {
     const idle = window.requestIdleCallback ?? (f => setTimeout(f, 1500))
     const cancel = window.cancelIdleCallback ?? clearTimeout
-    const id = idle(() => { warmSmartWorker(); warmSnackWorker() })
+    const id = idle(warmSnackWorker)
     return () => cancel(id)
   }, [])
 
