@@ -1,3 +1,6 @@
+import { reviewDay } from '../lib/reviewWeek'
+import { DAY_KEYS, dayForPerson } from '../lib/mealplan'
+import { packOf } from '../lib/packs'
 // Generador de desayunos/meriendas. Modulo PURO (sin React ni store): recibe
 // los datos ya resueltos (allIng = selectAllIng, dishes, perfiles de persona)
 // y devuelve un plan. Asi se puede probar desde Node.
@@ -563,6 +566,61 @@ export function assemble(pool, opts) {
 
 const signature = r => r.days.map(d => d.candidateId).join('|')
 
+// Individual recipes for the moments when choosing an entire week is unnecessary.
+export function snackShortlist(pool, noveltyMax = 1, context = {}) {
+  const { persons, allIng } = pool.ctx
+  const { dayIndex = 0, week = {}, allCombos = {}, stock = {}, openPacks = [], feedback = {}, portable = false, eggsReady = false, banned = [] } = context
+  const dayKey = DAY_KEYS[dayIndex]
+  const menus = persons.map(p => dayForPerson(week, dayKey, p.id))
+  const candidates = []
+  for (const s of pool.sols) {
+    const key = keyOfSol(s)
+    if (pool.novel[s.id].size > noveltyMax || banned.includes(key) || (portable && !s.arch.portable)) continue
+    const catalog = Object.create(allCombos)
+    let errors = 0, deficit = 0, hunger = 0, repeats = 0
+    const daily = {}, needs = {}
+    for (const [i,p] of persons.entries()) {
+      const recipe = s.persons[p.id].combo
+      catalog.__snack = recipe
+      const day = { ...menus[i], merienda: { type: 'desayuno', recipeKey: '__snack' } }
+      const { totals, issues } = reviewDay(day,p,dayIndex,allIng,catalog)
+      daily[p.id] = { kcal: totals.kcal, target: totals.target, protein: totals.prot, count: totals.planned, notes: issues.map(x=>x.text) }
+      errors += issues.filter(x => x.required && x.rule !== 'incomplete').length
+      deficit += totals.planned === 4 ? Math.abs(totals.kcal - totals.target) / totals.target : Math.max(0, pool.ctx.protGoals[p.id] - s.persons[p.id].prot) / 20
+      hunger += feedback[p.id]?.[key] === 'hungry' ? 1 : feedback[p.id]?.[key] === 'enough' ? -1 : 0
+      const previous = dayIndex > 0 && dayForPerson(week, DAY_KEYS[dayIndex-1], p.id).merienda
+      if (previous && allCombos[previous.recipeKey]?.name?.includes(s.label)) repeats++
+      for (const {k,p:q} of recipe.items) {
+        const pack = packOf(allIng[k])
+        const amount = pack?.dim === 'ml' ? q.ml : pack?.dim === 'unit' ? q.units : pack?.dim === 'g' ? q.grams : null
+        if (amount > 0) needs[k] = (needs[k] ?? 0) + amount
+      }
+    }
+    const available = Object.keys(needs).filter(k => stock[k] >= needs[k])
+    const coverage = available.length / Math.max(1,Object.keys(needs).length)
+    const readyEggs = s.archId === 'egg-sandwich' && eggsReady
+    const open = available.filter(k => openPacks.includes(k))
+    candidates.push({ s, key, open, errors, deficit, hunger, repeats, coverage, available, daily, readyEggs })
+  }
+  candidates.sort((a,b) => a.errors-b.errors || a.hunger-b.hunger || a.repeats-b.repeats || b.open.length-a.open.length || b.coverage-a.coverage || a.deficit-b.deficit || a.s.dev-b.s.dev)
+  const situations = [
+    ['Ready in 5 minutes', c => c.readyEggs || (c.s.kind === 'portion' && c.s.arch.minutes <= 5 && c.s.archId !== 'overnight-oats')],
+    ['Pack for work', c => c.s.kind === 'portion' && c.s.arch.portable],
+    ['Savory option', c => c.s.arch.taste === 'savory'],
+    ['Prepare ahead', c => c.s.kind === 'batch' || ['overnight-oats','baked-oats'].includes(c.s.archId)],
+  ]
+  const chosen = []
+  for (const [situation, fits] of situations) {
+    const c = candidates.find(c => fits(c) && !chosen.some(x => x.archetype === c.s.archId))
+    if (!c) continue
+    const { s } = c
+    chosen.push({ situation, key:c.key, label:s.label, archetype:s.archId, persons:s.persons, daily:c.daily,
+      available:c.available, open:c.open, steps:c.readyEggs ? ['Slice the boiled eggs.', ...s.steps.slice(1)] : s.steps,
+      kind:s.kind, yield:s.yield, novelty:[...pool.novel[s.id]] })
+  }
+  return chosen
+}
+
 // Several different weeks for one priority (the three cards).
 // opts: everything buildPool/assemble take + { priority, count, avoidKeys, avoidWeight }
 export function generateOptions(opts) {
@@ -582,7 +640,7 @@ export function generateOptions(opts) {
     options.push(r)
     avoid = [...avoid, ...r.days.filter(d => d.isStart).map(d => d.candidateKey)]
   }
-  return { options, tried: restarts * Math.max(options.length, 1), recipes: pool.sols.length, candSeed: pool.candidateSeed,
+  return { options, quick: opts.mealSlot === 'merienda' ? snackShortlist(pool, opts.noveltyMax, {...opts.quickContext, banned:opts.banned}) : [], tried: restarts * Math.max(options.length, 1), recipes: pool.sols.length, candSeed: pool.candidateSeed,
     error: options.length ? null : 'No week fits these rules.' }
 }
 
@@ -634,9 +692,9 @@ export function smartSnackCandidates({ allIng, tried, people, priority = 'price'
   const combos = {}, byPerson = {}
   for (const x of chosen) {
     for (const P of persons) {
-      const id = `gen-snk-${hash36(x.s.id)}-${P.id}`
+      const id = `gen-snk-${hash36(x.s.id + JSON.stringify(x.s.persons[P.id].combo.items))}-${P.id}`
       const key = 'custom-' + id
-      combos[key] = { name: `${x.s.label} · ${P.name}`, meals: [mealSlot], items: x.s.persons[P.id].combo.items.map(i => ({ k: i.k, p: i.p })), generated: true, isCustom: true, customId: id }
+      combos[key] = { name: `${x.s.label} · ${P.name}`, meals: [mealSlot], items: x.s.persons[P.id].combo.items.map(i => ({ k: i.k, p: i.p })), generated: true, isCustom: true, ownerId: P.id, customId: id }
       ;(byPerson[P.id] ??= []).push(key)
     }
   }

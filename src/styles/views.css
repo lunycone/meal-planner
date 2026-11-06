@@ -698,3 +698,9 @@
 @media (max-width: 760px) {
   .sl-card { max-width: none; border-radius: 30px 30px 0 0; padding-bottom: calc(30px + env(safe-area-inset-bottom, 0px)); }
 }
+
+.sw-detail { pointer-events: auto; font-size: 13px; line-height: 1.55; }
+.sw-detail summary { cursor: pointer; font-weight: 650; }
+.sw-detail-select { display: flex; flex-wrap: wrap; gap: 12px; margin: 10px 0; }
+.sw-detail select { font: inherit; padding: 4px; }
+.sw-detail ul { margin: 6px 0; padding-left: 20px; }

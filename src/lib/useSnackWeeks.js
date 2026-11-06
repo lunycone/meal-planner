@@ -15,7 +15,7 @@ export function warmSnackWorker() { getWorker() }
 export default function useSnackWeeks(args, enabled = true) {
   const [state, setState] = useState({ busy: enabled, out: null, error: null })
   const seq = useRef(0)
-  const key = enabled ? JSON.stringify([args.mealSlot, args.noveltyMax, args.batches, args.priority, args.seed, args.candidateSeed, args.avoidKeys, args.banned, args.pinned, args.avoidWeight, args.count, args.persons?.map(p => p.id)]) : ''
+  const key = enabled ? JSON.stringify([args.mealSlot, args.noveltyMax, args.batches, args.priority, args.seed, args.candidateSeed, args.avoidKeys, args.banned, args.pinned, args.avoidWeight, args.quickContext?.dayIndex, args.quickContext?.portable, args.quickContext?.eggsReady, args.quickContext?.feedback, args.quickContext?.stock, args.quickContext?.openPacks, args.count, args.persons?.map(p => p.id)]) : ''
 
   useEffect(() => {
     if (!enabled) return
@@ -35,7 +35,7 @@ export default function useSnackWeeks(args, enabled = true) {
     w.addEventListener('message', onMsg)
     w.postMessage({ id, args })
     return () => w.removeEventListener('message', onMsg)
-  }, [key, args.allIng, args.dishes, args.baseWeek, args.dataKey, enabled]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [key, args.allIng, args.dishes, args.baseWeek, args.quickContext?.week, args.quickContext?.allCombos, args.dataKey, enabled]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return state
 }

@@ -1,3 +1,4 @@
+import { servingItems } from '../../lib/portions'
 import CookedButton from '../meal/CookedButton'
 import BatchVitamins from '../meal/BatchVitamins'
 import { stockAvailable } from '../../lib/needs'
@@ -253,7 +254,7 @@ export function computeBatchMeal(mealType, batchDays, profiles, allIng, allCombo
       if (!g.personMap[person.id]) {
         g.personMap[person.id] = {
           person, activeDays: 0,
-          baseGrams: 0, baseKey: scalableKey,
+          baseGrams: 0, baseKey: scalableKey, cookYield: allIng[scalableKey]?.cookYield ?? COOK_RATIO[scalableKey],
           baseName: scalableKey ? (allIng[scalableKey]?.name ?? scalableKey) : null,
           recipeServings: 0,
           proteinGrams: 0, proteinUnits: 0, proteinServings: 0, // legacy 'plato' fields — se quedan a 0
@@ -262,63 +263,24 @@ export function computeBatchMeal(mealType, batchDays, profiles, allIng, allCombo
       const pt = g.personMap[person.id]
       pt.activeDays++
 
-      if (mealType === 'desayuno' || mealType === 'merienda' || !scalableKey) {
-        // desayuno/merienda: una racion del plato, sin escalado por persona
-        // (mismo criterio de siempre). Sin base escalable (p.ej. pescado sin
-        // patata): tambien se cuenta como racion fija.
-        pt.recipeServings += 1
-      } else {
-        // comida/cena: dos pasadas alternas (personMealScalesTwoPass) -- las
-        // mismas cantidades exactas que ya usa el kcal mostrado en
-        // Planificador, no un calculo aparte que podria no coincidir.
+      const scalesMeal = mealType === 'comida' || mealType === 'cena'
+      let scale
+      if (scalesMeal) {
         const target = personTargetForDay(person, dayIdx)
-        const dayForPerson = Object.fromEntries(
-          MEALS.map(m => [m, slotForPerson(weekData[`${dayKey}-${m}`] ?? null, person.id)])
-        )
-        const twoPass = personMealScalesTwoPass(dayForPerson, person, allIng, allCombos, target)
-        const scale = mealType === 'comida' ? twoPass.comida : twoPass.cena
-        const defaultGrams = comboRef.items.find(it => it.k === scalableKey)?.p?.grams ?? 0
-        if (scale?.grams != null) {
-          pt.baseGrams += scale.grams
-        } else if (scale?.wholeDishFactor != null && scale.wholeDishFactor < 1) {
-          // El plato entero se reduce (sobra kcal) -- aqui solo se refleja en
-          // la base; carne/queso/aceite del lote compartido no bajan por
-          // persona (se sirve algo menos de todo al emplatar, a ojo).
-          pt.baseGrams += Math.round(defaultGrams * scale.wholeDishFactor)
-        } else {
-          pt.baseGrams += defaultGrams
+        const day = Object.fromEntries(MEALS.map(m => [m, slotForPerson(weekData[`${dayKey}-${m}`], person.id)]))
+        scale = personMealScalesTwoPass(day, person, allIng, allCombos, target)[mealType]
+      }
+      if (!scalesMeal || !scalableKey) pt.recipeServings++
+      for (const { k, p } of servingItems(comboRef, meal, scale)) {
+        if (scalesMeal && scalableKey === k && p.grams != null) {
+          pt.baseGrams += p.grams
+          continue
         }
-      }
-    }
-
-    // Items compartidos del dia, multiplicados por cuantas personas de CADA
-    // grupo comen ese dia concreto (no por todos los perfiles del dia).
-    for (const g of Object.values(groups)) {
-      const peopleToday = dayProfiles.filter(p => slotForPerson(rawSlot, p.id)?.recipeKey === g.meal.recipeKey).length
-      if (peopleToday === 0) continue
-      const addShared = (k, p) => {
-        if (!g.sharedAcc[k]) g.sharedAcc[k] = { name: allIng[k]?.name ?? k, grams: 0, ml: 0, units: 0, serv: 0 }
-        g.sharedAcc[k].grams += (p.grams ?? 0) * peopleToday
-        g.sharedAcc[k].ml    += (p.ml    ?? 0) * peopleToday
-        g.sharedAcc[k].units += (p.units ?? 0) * peopleToday
-        // Ingredientes de precio fijo por racion (p.ej. sardinas ½ lata,
-        // portion {}): sin gramos/ml/ud desaparecian del lote.
-        if (p.grams == null && p.ml == null && p.units == null) g.sharedAcc[k].serv += (p.serv ?? 1) * peopleToday
-      }
-      // 6 sep 2026 -- BUG: esto excluia el ingrediente "escalable" (auto-
-      // detectado por comboScalableKey, corre SIEMPRE, no solo en comida/
-      // cena) de sharedItems sin mirar mealType. En desayuno/merienda esa
-      // base nunca se trackea aparte (linea 252: solo se cuenta
-      // recipeServings, nunca baseGrams) -- asi que el ingrediente
-      // desaparecia por completo del batch y de la compra. Le paso a
-      // "Tostada con platano, AOVE y sal": comboScalableKey elegia el pan
-      // masa madre (mas kcal que el platano) y el pan simplemente no
-      // aparecia en ningun lado. Solo excluir aqui cuando de verdad se
-      // trackea aparte (comida/cena).
-      const isPerPersonScaled = mealType === 'comida' || mealType === 'cena'
-      for (const it of g.comboRef.items) {
-        if (isPerPersonScaled && it.k === g.scalableKey) continue
-        addShared(it.k, it.p)
+        const total = (g.sharedAcc[k] ??= { name: allIng[k]?.name ?? k, grams: 0, ml: 0, units: 0, serv: 0 })
+        total.grams += p.grams ?? 0
+        total.ml += p.ml ?? 0
+        total.units += p.units ?? 0
+        if (p.grams == null && p.ml == null && p.units == null) total.serv += p.serv ?? 1
       }
     }
   }
@@ -369,7 +331,7 @@ export function buildSchedule(mealDataList) {
       : `${pt.proteinServings} serv.` }))
 
   const baseSplit = (bd, baseKey) => {
-    const ratio = COOK_RATIO[baseKey]
+    const ratio = bd.personTotals[0]?.cookYield
     return bd.personTotals.filter(pt => pt.baseGrams > 0)
       .map(pt => ({ name: pt.person.name, label: ratio ? `${Math.round(pt.baseGrams * ratio)}g` : `${Math.round(pt.baseGrams)}g` }))
   }
@@ -444,7 +406,7 @@ export function buildSchedule(mealDataList) {
           seenJob.add('b-' + baseKey)
           const bc = BASE_COOK[baseKey]
           const totalDry = Math.round(batchData.personTotals.reduce((s, p) => s + p.baseGrams, 0))
-          const cooked   = COOK_RATIO[baseKey] ? Math.round(totalDry * COOK_RATIO[baseKey]) : null
+          const cooked   = batchData.personTotals[0]?.cookYield ? Math.round(totalDry * batchData.personTotals[0].cookYield) : null
           const qtyLabel = cooked ? `${totalDry}g dry → ~${cooked}g cooked` : `${totalDry}g`
           if (bc?.soak)      vispera.push({ emoji: '💧', text: `Soak ${totalDry}g of ${baseName} — cover with plenty of water for 8–12 h.` })
           if (bc?.overnight) vispera.push({ emoji: '❄️', text: `Leave ${baseName} in the fridge the night before (${qtyLabel}).` })
@@ -480,7 +442,7 @@ export function buildSchedule(mealDataList) {
           seenJob.add('b-' + meal.recipeKey)
           const bc = BASE_COOK[baseKey]
           const totalDry = Math.round(batchData.personTotals.reduce((s, p) => s + p.baseGrams, 0))
-          const cooked   = COOK_RATIO[baseKey] ? Math.round(totalDry * COOK_RATIO[baseKey]) : null
+          const cooked   = batchData.personTotals[0]?.cookYield ? Math.round(totalDry * batchData.personTotals[0].cookYield) : null
           // 6 sep 2026 -- BUG: el numero de "Repartir" (1200g Julio, 1000g
           // Maria...) es la BASE escalable (patata/arroz/etc), pero en
           // ninguna parte de la tarjeta se decia que ese numero era eso --
@@ -657,7 +619,7 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
             let baseName = null, baseQty = null, baseTotalG = 0
             if (batchData.hasBase) {
               baseTotalG = persons.reduce((s, p) => s + p.baseGrams, 0)
-              const ratio = COOK_RATIO[baseKey]
+              const ratio = persons[0]?.cookYield
               baseName = persons[0]?.baseName
               // 6 sep 2026 -- "seco" pegado siempre, aunque la base fuera
               // patata (se pesa cruda, no es un seco que se hidrata como el
@@ -730,7 +692,7 @@ function MealSection({ mealType, batchData, showMealLabel = true, groupLabel = n
                 const gPerDay = R(pt.baseGrams / pt.activeDays)
                 if (blend && blend.base) { blendGrams += gPerDay }
                 else {
-                  const ratio = COOK_RATIO[baseKey]
+                  const ratio = persons[0]?.cookYield
                   baseName_ = pt.baseName
                   baseQty_ = `${gPerDay}g${ratio ? ` dry (~${R(gPerDay * ratio)}g cooked)` : ''}`
                   baseGramsPerDay = gPerDay

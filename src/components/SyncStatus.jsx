@@ -1,50 +1,30 @@
 import { useEffect, useState } from 'react'
+import { syncError } from '../store/storage'
+import useStore from '../store/useStore'
 
-export default function SyncStatus() {
-  const [status, setStatus] = useState('synced') // synced, error
-  // 5 sep 2026 -- antes el punto solo tenia un titulo generico ("Error de
-  // sincronizacion"), asi que un fallo real de guardado (permisos, tabla mal
-  // configurada, etc.) pasaba desapercibido salvo que alguien abriera la
-  // consola del navegador. Ahora guarda el mensaje real que devuelve
-  // Supabase y lo pone en el title -- pasa el raton por encima del punto
-  // rojo para verlo, sin abrir devtools.
-  const [errorDetail, setErrorDetail] = useState(null)
-
+export default function SyncStatus({ errorsOnly = false }) {
+  const [error, setError] = useState(syncError)
   useEffect(() => {
-    const handleSyncError = (e) => {
-      setStatus('error')
-      setErrorDetail(e.detail?.message || e.detail?.hint || e.detail?.code || null)
-    }
-
-    const handleSyncSuccess = () => {
-      setStatus('synced')
-      setErrorDetail(null)
-    }
-
-    window.addEventListener('syncError', handleSyncError)
-    window.addEventListener('syncSuccess', handleSyncSuccess)
-
+    const refresh = () => setError(syncError)
+    refresh()
+    window.addEventListener('syncError', refresh)
+    window.addEventListener('syncSuccess', refresh)
     return () => {
-      window.removeEventListener('syncError', handleSyncError)
-      window.removeEventListener('syncSuccess', handleSyncSuccess)
+      window.removeEventListener('syncError', refresh)
+      window.removeEventListener('syncSuccess', refresh)
     }
   }, [])
-
-  const color = status === 'synced' ? '#22c55e' : '#ef4444'
-  const title = status === 'synced'
-    ? 'Synced'
-    : `Sync error — changes were NOT saved${errorDetail ? `: ${errorDetail}` : ''}`
-
-  return (
-    <div
-      style={{
-        width: '8px',
-        height: '8px',
-        borderRadius: '50%',
-        backgroundColor: color,
-        flexShrink: 0,
-      }}
-      title={title}
-    />
-  )
+  function download() {
+    const { partialize, version } = useStore.persist.getOptions()
+    const backup = JSON.stringify({ version, state: partialize(useStore.getState()) })
+    const url = URL.createObjectURL(new Blob([backup], { type: 'application/json' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'meal-planner-local-copy.json'
+    link.click()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }
+  if (error) return <div role="alert" className="mp-chip"><span>{error.message || 'Could not sync changes.'}</span><button type="button" onClick={download}>Download local copy</button></div>
+  if (errorsOnly) return null
+  return <span title="Synced" style={{ width: 8, height: 8, borderRadius: '50%', background: '#22c55e' }} />
 }

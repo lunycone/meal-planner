@@ -100,6 +100,8 @@ export const FLAVOR_PROFILES = {
     pick: { fruit: ['banana'], flavor: ['cinnamon'], crunch: ['pumpkin-seeds'], fat: ['tahini'], sweetener: ['honey'] } },
 
   // ── Savory ───────────────────────────────────────────────────────────────
+  'egg-ricotta': { name: 'Egg and ricotta', taste: 'savory', suits: ['egg-sandwich'],
+    pick: { bread: ['sourdough-bread'], binder: ['eggs'], yogurt: ['ricotta'] } },
   'cooked-ham':   { name: 'Cooked ham on toast', taste: 'savory', suits: ['savory-toast'],
     pick: { cured: ['cooked-ham'], fat: ['evoo'], yogurt: ['ricotta'] } },
   'cold-cuts':    { name: 'Italian cold cuts on toast', taste: 'savory', suits: ['savory-toast'],

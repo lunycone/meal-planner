@@ -1,3 +1,4 @@
+import { stockAvailable } from '../../lib/needs'
 import { useMemo, useRef, useState } from 'react'
 import useStore, { selectAllIng, selectAllCombos } from '../../store/useStore'
 import Overlay from '../ui/Overlay'
@@ -7,7 +8,7 @@ import Segmented from '../ui/Segmented'
 import Spinner from '../ui/Spinner'
 import useSnackWeeks from '../../lib/useSnackWeeks'
 import { comboAgg, makeByPersonSlot, slotForPerson } from '../../engine/calc'
-import { DAY_KEYS, DAY_SHORT, MEALS, MEAL_STYLE, PERSON_COLOR, activeProfilesOn, addDays, fmtMoney, fmtRange } from '../../lib/mealplan'
+import { weekKeyOf, dayTotals, dayForPerson, DAY_KEYS, DAY_SHORT, MEALS, MEAL_STYLE, PERSON_COLOR, activeProfilesOn, addDays, fmtMoney, fmtRange } from '../../lib/mealplan'
 
 // «Plan snacks»: same look and flow as «Load model week → Smart».
 //  · Three different weeks for the priority you pick (cheapest / more protein / more variety).
@@ -139,6 +140,14 @@ function SnackPlannerBody({ wk, week, monday, onClose, onApplied }) {
   const addCustomCombos = useStore(s => s.addCustomCombos)
   const removeCustomCombo = useStore(s => s.removeCustomCombo)
 
+  const [dayIndex, setDayIndex] = useState(() => wk === weekKeyOf(new Date()) ? (new Date().getDay()+6)%7 : 0)
+  const [portable,setPortable] = useState(false)
+  const [eggsReady,setEggsReady] = useState(false)
+  const inventory = useStore(s => s.stock)
+  const feedback = useStore(s => s.snackFeedback)
+  const rateSnack = useStore(s => s.rateSnack)
+  const openPacks = useMemo(()=>Object.keys(inventory).filter(k=>inventory[k]?.open),[inventory])
+  const available = useMemo(() => stockAvailable(inventory,allIng,addDays(monday,dayIndex)),[inventory,allIng,wk,dayIndex])
   const [tab, setTab] = useState('ideas')
   const [slot, setSlot] = useState('merienda')
   const [priority, setPriority] = useState('price')
@@ -171,7 +180,9 @@ function SnackPlannerBody({ wk, week, monday, onClose, onApplied }) {
   const baseWeek = useMemo(() => {
     const out = {}
     for (const p of persons) {
-      out[p.id] = DAY_KEYS.map(dk => {
+      out[p.id] = DAY_KEYS.map((dk, i) => {
+        const totals = dayTotals(dayForPerson(week, dk, p.id), p, i, allIng, allCombos)
+        if (totals.resolved) return totals.resolved
         const day = {}
         MEALS.forEach(m => {
           const sl = slotForPerson(week[`${dk}-${m}`], p.id)
@@ -182,7 +193,7 @@ function SnackPlannerBody({ wk, week, monday, onClose, onApplied }) {
       })
     }
     return out
-  }, [persons, week, allCombos])
+  }, [persons, week, allCombos, allIng])
 
   // The options are built from the data as it was when the sheet opened. Saving a snack changes
   // your dishes (and so what counts as «tried»): without this the options would reshuffle
@@ -195,9 +206,10 @@ function SnackPlannerBody({ wk, week, monday, onClose, onApplied }) {
   const dataKey = useMemo(() => randomSeed(), [data.allIng, data.tried, data.persons]) // eslint-disable-line react-hooks/exhaustive-deps
   const args = useMemo(() => ({
     allIng: data.allIng, dishes: data.tried, persons: data.persons, dataKey, mealSlot: slot, baseWeek: data.baseWeek, noveltyMax: novelty, batches, priority, seed,
+    quickContext: {week, allCombos, stock:available, openPacks, dayIndex, portable, eggsReady, feedback},
     candidateSeed: lock ? lock.candSeed : candSeed, avoidKeys: shown, banned, pinned: lock ? lock.pins : {},
     avoidWeight: lock ? 8 : 2.5, count: 3, restarts: 300,
-  }), [data, dataKey, slot, novelty, batches, priority, seed, candSeed, shown, banned, lock])
+  }), [data, dataKey, slot, novelty, batches, priority, seed, candSeed, shown, banned, lock, week, allCombos, available, openPacks, dayIndex, portable, eggsReady, feedback])
   const snack = useSnackWeeks(args, data.persons.length === 2 && tab === 'ideas')
   const results = snack.out?.options ?? []
   const sel = results[Math.min(pick, results.length - 1)] ?? null
@@ -219,9 +231,17 @@ function SnackPlannerBody({ wk, week, monday, onClose, onApplied }) {
   }
   function backToWeeks() { setLock(null); setPick(0); setSeed(s => s + 1); setSaved({}); setOpenRecipes({}) }
 
+  function applyQuick(g) {
+    const ids = addCustomCombos(persons.map(p => ({ name: g.label + ' · ' + p.name, items: g.persons[p.id].combo.items,
+      ownerId:p.id, meals:['merienda'], snackGenerated:true })))
+    const byPerson = Object.fromEntries(persons.map((p,i)=>[p.id,{type:'desayuno', recipeKey:'custom-'+ids[i]}]))
+    setMealSlots(wk,{ [DAY_KEYS[dayIndex]+'-merienda']:makeByPersonSlot(byPerson) })
+    onApplied?.('Snack added for ' + DAY_SHORT[dayIndex])
+    onClose()
+  }
   function saveGroups(r, gs) {
     addCustomCombos(gs.flatMap(g => Object.keys(g.persons).map(pid => ({
-      name: `★ ${g.label} · ${nameOf(pid)}`, items: g.persons[pid].combo.items, snack: true, meals: [slot],
+      name: `★ ${g.label} · ${nameOf(pid)}`, items: g.persons[pid].combo.items, ownerId: pid, snack: true, meals: [slot],
     }))))
     setSaved(m => ({ ...m, ...Object.fromEntries(gs.map(g => [g.candidateId, true])) }))
   }
@@ -232,7 +252,7 @@ function SnackPlannerBody({ wk, week, monday, onClose, onApplied }) {
     const uniq = new Map()
     sel.days.forEach(d => Object.keys(d.persons).forEach(pid => {
       const k = keyOf(d, pid)
-      if (!uniq.has(k)) uniq.set(k, { name: `${d.label} · ${nameOf(pid)}`, items: d.persons[pid].combo.items, snackGenerated: true })
+      if (!uniq.has(k)) uniq.set(k, { name: `${d.label} · ${nameOf(pid)}`, items: d.persons[pid].combo.items, ownerId: pid, meals: [slot], snackGenerated: true })
     }))
     const entries = [...uniq.entries()]
     const ids = addCustomCombos(entries.map(([, v]) => v))
@@ -285,6 +305,32 @@ function SnackPlannerBody({ wk, week, monday, onClose, onApplied }) {
               </button>
             </div>
             <div className="mp-sheet-body" style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 2 }}>
+              {slot === 'merienda' && persons.length === 2 && <details className="sw-detail">
+                <summary>What can we snack on today?</summary>
+                <label>Day <select value={dayIndex} onChange={e=>setDayIndex(Number(e.target.value))}>{DAY_SHORT.map((d,i)=><option key={d} value={i}>{d}</option>)}</select></label>
+                <label><input type="checkbox" checked={portable} onChange={e=>setPortable(e.target.checked)} /> Must travel well</label>
+                <label><input type="checkbox" checked={eggsReady} onChange={e=>setEggsReady(e.target.checked)} /> Eggs already boiled for both</label>
+                {snack.busy && <p>Checking the planned meals…</p>}
+                {!snack.busy && !snack.out?.quick?.length && <p>No matching snack found.</p>}
+                {!snack.busy && snack.out?.quick?.map(g => <section key={g.situation} className="sw-recipe">
+                  <strong>{g.situation} · {g.label}</strong>
+                  {!!g.open.length && <div>Uses an open pack · {g.open.map(k=>allIng[k]?.name ?? k).join(', ')}</div>}
+                  {!!g.available.length && <div>Enough recorded in pantry · {g.available.map(k=>allIng[k]?.name ?? k).join(', ')}</div>}
+                  {persons.map(p => {
+                    const projection = g.daily[p.id]
+                    const x = g.persons[p.id]
+                    return <div key={p.id}>{p.name} · {x.kcal} kcal · {x.prot} g protein<br />
+                      {g.kind === 'batch' && `${plural(x.portions, 'serving')} · `}{x.items.map(line).join(' · ')}
+                      <div>{projection.count}/4 meals planned · {projection.kcal}/{projection.target} kcal · {projection.protein} g protein</div>
+                      {projection.notes.length > 0 && <div>{projection.notes.join(' · ')}</div>}
+                      <div>Last time, {p.name} felt {['enough','hungry'].map(v=><button key={v} type="button" className="sw-act" aria-pressed={feedback?.[p.id]?.[g.key] === v} onClick={()=>rateSnack(p.id,g.key,v)}>{v==='enough'?'full until dinner':'hungry again'}{feedback?.[p.id]?.[g.key]===v?' ✓':''}</button>)}</div></div>
+                  })}
+                  {g.kind === 'batch' && <div>One batch ({g.yield} servings) · {g.persons[persons[0].id].slotsOfBatch.map(line).join(' · ')}</div>}
+                  <ol>{g.steps.map((step,i) => <li key={i}>{g.kind === 'batch' ? step : step.replace(/ \(\d+(?:\.\d+)? (?:g|ml|ea)\)/g, '')}</li>)}</ol>
+                  <button type="button" className="sw-act" disabled={snack.busy} onClick={()=>applyQuick(g)}>Use for {DAY_SHORT[dayIndex]} snack</button>
+                  {!!g.novelty.length && <span>New ingredient · {g.novelty.map(k=>allIng[k]?.name ?? k).join(', ')}</span>}
+                </section>)}
+              </details>}
               {persons.length !== 2 && <div className="mp-empty" style={{ padding: 40 }}>Plan snacks needs exactly two active profiles this week.</div>}
               {persons.length === 2 && !lock && (
                 <span className="sw-srcnote snk-note mp-in"><Icon name="leaf" size={13} /><span>New {SLOT_NAME[slot]} recipes made from your ingredients: an idea (oats, bowl, toast, cake…) with flavors that go together, sized to each person’s kcal. Open an option and tap <strong>Not this one</strong> on anything you don’t like.</span></span>

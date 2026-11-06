@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:portions": "esbuild scripts/check-smart-portions.mjs --bundle --platform=node --format=cjs --packages=external --jsx=automatic --define:import.meta.env={} --outfile=node_modules/.cache/meal-planner/check-portions.cjs && node node_modules/.cache/meal-planner/check-portions.cjs",
+    "check:storage": "esbuild scripts/check-storage.mjs --bundle --platform=node --format=cjs --packages=external --jsx=automatic --define:import.meta.env={} --outfile=node_modules/.cache/meal-planner/check-storage.cjs && node node_modules/.cache/meal-planner/check-storage.cjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.1",

@@ -20,6 +20,8 @@ const firstDay = s => (s.cook === 6 ? 0 : s.cook + 1)
 const same = (a, b) => JSON.stringify(normalizeBatch(a).sessions) === JSON.stringify(normalizeBatch(b).sessions)
 
 export default function SettingsSheet({ onClose }) {
+  const profiles = useStore(s => s.profiles)
+  const updateProfile = useStore(s => s.updateProfile)
   const settings = useStore(s => s.batchSettings) ?? DEFAULT_BATCH
   const setBatch = useStore(s => s.setBatchSettings)
   const cur = normalizeBatch(settings)
@@ -60,6 +62,25 @@ export default function SettingsSheet({ onClose }) {
         </div>
 
         <div className="mp-sheet-body" style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingTop: 0 }}>
+          <details className="st-section">
+            <summary>Smart daily rules by person</summary>
+            {profiles.filter(p => !p.validoHasta || new Date(p.validoHasta) >= new Date()).map(p => (
+              <fieldset key={p.id} style={{ marginTop: 12 }}>
+                <legend>{p.name}</legend>
+                <p>Checked rules are required in “Verified daily targets only”. Other targets still appear as notes.</p>
+                {Object.entries({ kcal: 'Calories within 5%', veg: 'Vegetable target', sol: 'Soluble fiber minimum',
+                  ...(p.proteinTarget ? { protLow: `Protein minimum · ${p.proteinTarget} g` } : {}),
+                  ...(p.protCap ? { protHigh: `Protein ceiling · ${p.protCap} g` } : {}),
+                }).map(([key,label]) => <label key={key} style={{ display: 'block' }}>
+                  <input type="checkbox" checked={p.smartRequired?.[key] !== false} onChange={e => updateProfile(p.id, {
+                    smartRequired: { ...p.smartRequired, [key]: e.target.checked }, smartRulesUpdated: new Date().toISOString(),
+                  })} /> {label}
+                </label>)}
+                {p.pcos && <p>Smart checks breakfast and dinner glycemic load and flags missing GI.</p>}
+                {p.digestive && <p>Smart checks breakfast limits and daily digestive food groups.</p>}
+              </fieldset>
+            ))}
+          </details>
           <section className="st-section">
             <span className="st-title"><Icon name="pot" size={16} color="#D9486A" />Batch cooking</span>
             <span className="mp-muted" style={{ fontSize: 13, lineHeight: 1.5 }}>

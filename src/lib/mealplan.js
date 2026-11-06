@@ -3,10 +3,11 @@
 // que cualquier cifra en pantalla sea la misma que ya usa el resto de la app.
 
 import {
-  comboAgg, comboAggScaled, personMealScalesTwoPass, personTargetForDay,
+  comboAgg, personMealScalesTwoPass, personTargetForDay,
   personDayKcal, personDayCost, personDayProt, slotForPerson, slotIsUniform,
   pcosCarbLevel,
 } from '../engine/calc'
+import { servingItems } from './portions'
 import { getISOWeek } from '../utils/date'
 
 export const DAY_KEYS   = ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom']
@@ -93,39 +94,26 @@ export function mealInfo(day, mealType, person, dayIdx, allIng, allCombos) {
   const combo = allCombos[meal.recipeKey]
   if (!combo) return null
   const agg = comboAgg(combo, allIng, meal.comboVariants || {}, {}, meal.comboOptionals || [])
-  let kcal = agg.kcal, cost = agg.cost, prot = agg.prot ?? 0, fat = agg.fat ?? 0, carb = agg.carb ?? 0
+  const target = personTargetForDay(person, dayIdx)
+  const portionScale = ['comida','cena'].includes(mealType) ? personMealScalesTwoPass(day, person, allIng, allCombos, target)[mealType] : null
+  const dish = { items: servingItems(combo, meal, portionScale) }
+  const { kcal, prot, cost, fat, carb: carbs } = comboAgg(dish, allIng)
   let portion = 'Base portion', scaled = null
-  if (mealType === 'comida' || mealType === 'cena') {
-    const tp = personMealScalesTwoPass(day, person, allIng, allCombos, personTargetForDay(person, dayIdx))
-    const sc = tp[mealType]
-    if (sc) {
-      kcal = sc.mealKcalAchieved ?? kcal
-      cost = sc.mealCostAchieved ?? cost
-      if (sc.grams != null && sc.ingKey) {
-        const a = comboAgg(combo, allIng, meal.comboVariants || {}, { [sc.ingKey]: sc.grams })
-        prot = a.prot ?? prot
-        fat = a.fat ?? fat
-        carb = a.carb ?? carb
-        portion = `${sc.ingName} ${sc.grams} g`
-        scaled = { ingName: sc.ingName, grams: sc.grams, defaultGrams: sc.defaultGrams, oilMl: sc.oilMlApplied ?? 0 }
-        fat += sc.oilMlApplied ?? 0
-      } else if (sc.wholeDishFactor != null && sc.wholeDishFactor < 0.995) {
-        const sa = comboAggScaled(combo, allIng, sc.wholeDishFactor)
-        prot = sa.prot ?? prot; fat = sa.fat ?? fat; carb = sa.carb ?? carb
-        portion = `Portion ×${sc.wholeDishFactor.toFixed(2)}`
-        scaled = { factor: sc.wholeDishFactor }
-      } else if ((sc.oilMlApplied ?? 0) > 0) {
-        portion = `Base portion + ${sc.oilMlApplied} ml EVOO`
-        scaled = { oilMl: sc.oilMlApplied }
-        fat += sc.oilMlApplied
-      }
-    }
+  if (portionScale?.ingKey && portionScale.grams != null) {
+    const { ingName, grams, defaultGrams, oilMlApplied } = portionScale
+    portion = `${ingName} ${grams} g`
+    scaled = { ingName, grams, defaultGrams, oilMl: oilMlApplied ?? 0 }
+  } else if (portionScale?.wholeDishFactor < 0.995) {
+    portion = `Portion ×${portionScale.wholeDishFactor.toFixed(2)}`
+    scaled = { factor: portionScale.wholeDishFactor }
+  } else if (portionScale?.oilMlApplied > 0) {
+    portion = `Base portion + ${portionScale.oilMlApplied} ml EVOO`
+    scaled = { oilMl: portionScale.oilMlApplied }
   }
-  const carbs = carb
   return {
     key: meal.recipeKey, combo, name: combo.name, kcal: Math.round(kcal), prot: Math.round(prot), cost,
     fat: Math.round(fat), carbs: Math.round(carbs), baseKcal: Math.round(agg.kcal),
-    pcos: pcosCarbLevel(combo, allIng, mealType), portion, scaled,
+    pcos: pcosCarbLevel(dish, allIng, mealType), portion, scaled,
   }
 }
 
@@ -133,6 +121,14 @@ export function mealInfo(day, mealType, person, dayIdx, allIng, allCombos) {
 export function dayTotals(day, person, dayIdx, allIng, allCombos) {
   const any = MEALS.some(m => day?.[m])
   if (!any) return { kcal: 0, prot: 0, cost: 0, target: personTargetForDay(person, dayIdx), planned: 0 }
+  const meals = Object.entries(day).filter(([,meal]) => meal)
+  if (meals.every(([,meal]) => meal.type === 'desayuno' && allCombos[meal.recipeKey])) {
+    const target = personTargetForDay(person, dayIdx)
+    const scales = personMealScalesTwoPass(day, person, allIng, allCombos, target)
+    const resolved = Object.fromEntries(meals.map(([slot, meal]) => [slot, { items: servingItems(allCombos[meal.recipeKey], meal, scales[slot]) }]))
+    const total = comboAgg({ items: Object.values(resolved).flatMap(dish => dish.items) }, allIng)
+    return { kcal: Math.round(total.kcal), prot: Math.round(total.prot), rawProtein: total.prot, cost: total.cost, target, planned: meals.length, resolved }
+  }
   return {
     kcal: personDayKcal(day, person, allIng, allCombos, dayIdx),
     prot: Math.round(personDayProt(day, person, allIng, allCombos, dayIdx)),

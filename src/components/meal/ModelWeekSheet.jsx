@@ -1,3 +1,4 @@
+import { reviewSaved } from '../../lib/reviewWeek'
 import { useMemo, useState } from 'react'
 import useStore, { selectAllIng, selectAllCombos } from '../../store/useStore'
 import { MODEL_WEEKS } from '../../data/modelWeeks'
@@ -8,6 +9,7 @@ import Segmented from '../ui/Segmented'
 import { buildModelWeekSlots } from '../../lib/planActions'
 import { addDays, mondayOf, weekKeyOf, fmtRange, fmtMoney, fmtShortDate, activeProfilesOn, weekStats, MEAL_STYLE, PERSON_COLOR, MEALS as MEALS_ALL, DAY_KEYS, dayForPerson, dayTotals } from '../../lib/mealplan'
 import useSmartWeeks from '../../lib/useSmartWeeks'
+import SmartDayDetail from './SmartDayDetail'
 import DateNightPanel from './DateNightPanel'
 import { COUNTRIES, COUNTRY_LABEL, missingFor } from '../../engine/cuisines'
 import { dishPairs } from '../../engine/pairing'
@@ -25,8 +27,7 @@ const PRIORITY_OPTS = [{ value: 'price', label: 'Cheapest' }, { value: 'protein'
 const planKeys = plan => [plan.L, plan.D, ...Object.values(plan.B), ...Object.values(plan.S)]
 // Todas las claves de una opción (con varios días de batch, de cada sesión).
 const allKeys = r => (r.parts ?? [r]).flatMap(p => planKeys(p.plan))
-const mainKeys = r => (r.parts ?? [r]).flatMap(p => [p.plan.L, p.plan.D])
-const PRIORITY_BEST = { price: 'Best price', protein: 'Most protein', veg: 'Most veg' }
+const PRIORITY_BEST = { price: 'Recommended', protein: 'Most protein', veg: 'Most veg' }
 const VEG_OPTS = [100, 150, 200].map(v => ({ value: v, label: `${v} g veg/day` }))
 // Snacks: your dishes, new recipes built from your ingredients (engine/snackGen.js), or both.
 const SNACK_OPTS = [{ value: 'mix', label: 'Dishes + new recipes' }, { value: 'new', label: 'New recipes only' }, { value: 'catalog', label: 'My dishes only' }]
@@ -42,7 +43,7 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
   const allCombos   = useStore(selectAllCombos)
   const profiles    = useStore(s => s.profiles)
   const weekPlan    = useStore(s => s.weekPlan)
-  const replaceWeek = useStore(s => s.replaceWeek)
+  const setMealSlots = useStore(s => s.setMealSlots)
   const customWeeks = useStore(s => s.customWeeks) ?? []
   const hidden      = useStore(s => s.hiddenModelWeeks) ?? []
   const deleted     = useStore(s => s.deletedModelWeeks) ?? []
@@ -61,6 +62,8 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
   const [confirmDel, setConfirmDel] = useState(null)
   const [priority, setPriority] = useState('price')
   const [vegMin, setVegMin] = useState(VEG_DAILY_MIN)
+  const { strictRules, dinners } = useStore(s => s.smartSettings)
+  const setSmartSetting = useStore(s => s.setSmartSetting)
   const [snackMode, setSnackMode] = useState('mix')
   const [seed, setSeed] = useState(0)
   const [shown, setShown] = useState([])       // parejas 'L|D' ya enseñadas (New ideas)
@@ -73,7 +76,7 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
   const wk = weekKeyOf(monday)
   const people = activeProfilesOn(profiles, addDays(monday, 2))
   const existing = Object.keys(weekPlan[wk] ?? {}).filter(k => weekPlan[wk][k]).length
-  const peopleKey = people.map(p => p.id).join()
+  const peopleKey = JSON.stringify(people)
 
   // ── Smart ──
   const dishPrefs = useStore(s => s.dishPrefs) ?? {}
@@ -89,7 +92,15 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
   const rejected = Object.values(dishPrefs).filter(v => v < 0).length
   // Días de batch (Ajustes): cada sesión se genera con sus días.
   const batchSettingsV = useStore(s => s.batchSettings)
-  const sessions = useMemo(() => batchSessions(), [batchSettingsV])
+  const batches = useMemo(() => batchSessions(), [batchSettingsV])
+  const canSplit = batches.length === 1 && batches[0].days.length > 1
+  const splitDinners = canSplit && dinners === 2
+  const sessions = useMemo(() => {
+    if (!splitDinners) return batches
+    const [batch] = batches
+    const cut = Math.ceil(batch.days.length / 2)
+    return [batch.days.slice(0, cut), batch.days.slice(cut)].map(days => ({ ...batch, days, label: rangeLabel(days) }))
+  }, [batches, splitDinners])
   const covered = useMemo(() => coveredDays(), [batchSettingsV])
   // Batch de las 2 semanas anteriores a la de destino: no se repite.
   const recent = useMemo(() => {
@@ -110,7 +121,7 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
     const a = stockAvailable(stockRaw, allIng, cookDateFor(monday, 0))
     return Object.fromEntries(Object.entries(a).map(([k, v]) => [k, Math.round(v)]).sort())
   }, [stockRaw, allIng, wk]) // eslint-disable-line react-hooks/exhaustive-deps
-  const smart = useSmartWeeks({ allIng, allCombos, people, priority, vegMin, seed, shown, exclude, prefs: dishPrefs, recent, stock, source, country: country === 'all' ? null : country, pairPrefs, sessions: sessions.map(x => x.days), locks: locks?.locks ?? {}, snackMode }, tab === 'smart' && source !== 'date')
+  const smart = useSmartWeeks({ allIng, allCombos, people, priority, vegMin, seed, shown, exclude, prefs: dishPrefs, recent, stock, source, country: country === 'all' ? null : country, pairPrefs, splitDinners, strictRules, sessions: sessions.map(x => x.days), locks: locks?.locks ?? {}, snackMode }, tab === 'smart' && source !== 'date')
   const smartSel = smart.results[Math.min(pick, smart.results.length - 1)] ?? null
   // Lo ya planificado en la semana destino (solo los días de batch), para comparar.
   const planned = useMemo(() => {
@@ -138,7 +149,14 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
     const keep = full(plan)
     if (slot === 'L' || slot === 'D') delete keep[slot]
     else delete keep[slot][pid]
-    const partsLocks = parts.map((p, j) => (j === pi ? keep : full(p.plan)))
+    const partsLocks = parts.map((p, j) => {
+      const lock = j === pi ? keep : full(p.plan)
+      if (splitDinners && slot !== 'D') {
+        if (pid) delete lock[slot][pid]
+        else delete lock[slot]
+      }
+      return lock
+    })
     const who = pid ? people.find(p => p.id === pid)?.name : null
     const what = { L: 'lunch', D: 'dinner', B: `${who}'s breakfast`, S: `${who}'s snack` }[slot]
     const label = parts.length > 1 ? `${what} (${sessions[pi]?.label ?? ''} batch)` : what
@@ -148,19 +166,16 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
   // «Surprise»: cada vez una semilla nueva al azar.
   const pickSource = v => { changeOpt(setSource)(v); if (v === 'surprise') setSeed(randomSeed()) }
   function saveSmart() {
-    if (!smartSel) return
+    if (!smartSel || smart.busy || smart.error) return
     addGeneratedCombos(smartSel.newDishes)
     const name = `Smart · ${PRIORITY_OPTS.find(o => o.value === priority).label.toLowerCase()} · ${fmtShortDate(new Date())}`
     saveCustomWeek({ name, slots: JSON.parse(JSON.stringify(smartSel.slots)) })
-    rateDishes(allKeys(smartSel), 1)
-    ratePlanPairs(smartSel, mainKeys(smartSel), 0.5)
     setSavedAs(name)
   }
   function loadSmart() {
-    if (!smartSel) return
+    if (!smartSel || smart.busy || smart.error) return
     addGeneratedCombos(smartSel.newDishes)
-    replaceWeek(wk, JSON.parse(JSON.stringify(smartSel.slots)))
-    if (!savedAs) { rateDishes(allKeys(smartSel), 1); ratePlanPairs(smartSel, mainKeys(smartSel), 0.5) }
+    setMealSlots(wk, JSON.parse(JSON.stringify(smartSel.slots)))
     setEditingWeek(null)
     onLoaded?.(target)
     onClose()
@@ -185,9 +200,14 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
   const selRow = rows.find(r => r.key === sel)
   const mineCount = rows.filter(r => r.kind === 'custom').length
 
+  const review = row => reviewSaved(row.slots, weekPlan[wk], people, allIng, allCombos, vegMin)
+  const selectedReview = selRow ? review(selRow) : null
   function load(row = selRow, edit = false) {
     if (!row) return
-    replaceWeek(wk, JSON.parse(JSON.stringify(row.slots)))
+    const checked = review(row)
+    if (!Object.keys(checked.incoming).length || (checked.required && strictRules)) { setSel(row.key); return }
+    if (row.key !== sel && (checked.notes.length || checked.skipped.length)) { setSel(row.key); return }
+    setMealSlots(wk, structuredClone(checked.incoming))
     setEditingWeek(edit ? { kind: row.kind, id: row.id, name: row.name, weekKey: wk } : null)
     onLoaded?.(target)
     onClose()
@@ -235,7 +255,7 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
         </div>
         {tab !== 'archive' && existing > 0 && (
           <div style={{ padding: '0 24px 10px' }}>
-            <span className="mp-chip" style={{ color: '#B7791F' }}><Icon name="warn" size={13} />Loading replaces the {existing} meals already planned that week</span>
+            <span className="mp-chip" style={{ color: '#B7791F' }}><Icon name="warn" size={13} />Loading updates the meal slots included in the selected plan</span>
           </div>
         )}
 
@@ -252,6 +272,9 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
             <div className="sw-controls">
               <Segmented label="Build from" value={source} onChange={pickSource} options={SOURCE_OPTS} />
               {(source === 'dishes' || source === 'ingredients') && <Segmented label="Priority" value={priority} onChange={changeOpt(setPriority)} options={PRIORITY_OPTS} />}
+              <span className="mp-chip">Pasta-free dinners</span>
+              <Segmented label="Daily rules" value={strictRules} onChange={changeOpt(v => setSmartSetting('strictRules', v))} options={[{value: false, label: 'Show closest matches'}, {value: true, label: 'Verified daily targets only'}]} />
+              {canSplit && <Segmented label="Dinners per batch" value={dinners} onChange={changeOpt(v => setSmartSetting('dinners', v))} options={[{value: 1, label: 'One dinner'}, {value: 2, label: 'Two dinner bases'}]} />}
               <Segmented label="Vegetables per day" value={vegMin} onChange={changeOpt(setVegMin)} options={VEG_OPTS} />
               <Segmented label="Snacks" value={snackMode} onChange={changeOpt(setSnackMode)} options={SNACK_OPTS} />
               <button type="button" className="mp-btn mp-btn-dark mp-btn-sm sw-new" onClick={newIdeas} disabled={smart.busy}><Icon name={source === 'surprise' ? 'shuffle' : 'repeat'} size={14} />{source === 'surprise' ? 'Surprise me again' : 'New ideas'}</button>
@@ -274,7 +297,7 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
                 </span></span>
               )}
               {source === 'ingredients' && !locks && (
-                <span className="sw-srcnote mp-in"><Icon name="leaf" size={13} />New lunches and dinners made from your ingredients — a protein, a base and two vegetables — using the pantry first and whole packs. Loading or saving a week adds its new dishes to Dishes.</span>
+                <span className="sw-srcnote mp-in"><Icon name="leaf" size={13} />New lunches and dinners made from your ingredients — a protein and a base, with vegetables where selected — using the pantry first and whole packs. Loading or saving a week adds its new dishes to Dishes.</span>
               )}
               {locks && (
                 <div className="sw-lockbar mp-in">
@@ -284,11 +307,11 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
               )}
               {smart.busy && !smart.results.length && <SmartSkeleton />}
               {smart.error && <div className="mp-empty">Couldn't build a week: {smart.error}</div>}
-              {!smart.busy && !smart.error && !smart.results.length && <div className="mp-empty" style={{ padding: 40 }}>{source === 'ingredients' ? 'Not enough tagged ingredients to compose dishes. Tag proteins, bases and vegetables in Ingredients.' : 'Not enough dishes to build a week. Add lunches and dinners in Dishes.'}</div>}
+              {!smart.busy && !smart.error && !smart.results.length && <div className="mp-empty" style={{ padding: 40 }}>{strictRules ? 'No verified match found with these settings. Show closest matches to see which targets or data are missing.' : splitDinners ? 'No matching pair of dinners found with different bases. Try One dinner or change your ingredient selection.' : source === 'ingredients' ? 'Not enough tagged ingredients to compose dishes. Tag proteins, bases and vegetables in Ingredients.' : 'Not enough dishes to build a week. Add lunches and dinners in Dishes.'}</div>}
               {smart.results.map((r, i) => (
                 <SmartCard key={allKeys(r).join() + i} r={r} i={i} on={i === pick} busy={smart.busy} onReject={(slot, pid, pi) => reject(r, slot, pid, pi)} sessions={sessions} covered={covered}
-                  best={source === 'surprise' ? 'Surprise' : source === 'country' ? (country === 'all' ? 'World week' : COUNTRY_LABEL[country]) : PRIORITY_BEST[priority]} people={people} allCombos={r.newDishes ? { ...allCombos, ...r.newDishes } : allCombos} vegMin={vegMin}
-                  planned={planned} onPick={() => setPick(i)} />
+                  best={source === 'surprise' ? 'Surprise' : source === 'country' ? (country === 'all' ? 'World week' : COUNTRY_LABEL[country]) : PRIORITY_BEST[priority]} people={people} allIng={allIng} allCombos={r.newDishes ? { ...allCombos, ...r.newDishes } : allCombos} vegMin={vegMin}
+                  planned={planned} onPick={() => { setPick(i); setSavedAs(null) }} />
               ))}
             </div>
             <div className="mp-sheet-foot" style={{ justifyContent: 'space-between' }}>
@@ -299,8 +322,8 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
                 {rejected > 0 && !savedAs && <> · {rejected} dish{rejected > 1 ? 'es' : ''} you said no to <button type="button" className="ig-manage" onClick={() => resetDishPrefs(true)}>Reset</button></>}
               </span>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button className="mp-btn mp-btn-glass" disabled={!smartSel || !!savedAs} onClick={saveSmart}><Icon name="sparkle" size={14} />Save</button>
-                <button className="mp-btn mp-btn-dark" disabled={!smartSel || smart.busy} onClick={loadSmart}>Load into {target === 0 ? 'this week' : target === 1 ? 'next batch' : 'that week'}</button>
+                <button className="mp-btn mp-btn-glass" disabled={!smartSel || smart.busy || !!smart.error || !!savedAs} onClick={saveSmart}><Icon name="sparkle" size={14} />Save</button>
+                <button className="mp-btn mp-btn-dark" disabled={!smartSel || smart.busy || !!smart.error} onClick={loadSmart}>Load into {target === 0 ? 'this week' : target === 1 ? 'next batch' : 'that week'}</button>
               </div>
             </div>
           </>
@@ -359,11 +382,14 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
             </div>
             <div className="mp-sheet-foot" style={{ justifyContent: 'space-between' }}>
               <span className="mp-muted" style={{ fontSize: 12.5, maxWidth: 440, lineHeight: 1.4 }}>
+                {selectedReview && <details><summary>{selectedReview.notes.length} person-days to review</summary>{selectedReview.notes.map(n=><div key={n}>{n}</div>)}</details>}
+                {!!selectedReview?.skipped.length && <strong>Pasta dinners skipped · {selectedReview.skipped.join(', ')}. </strong>}
+                {strictRules && selectedReview?.required && <strong>Outside your required daily rules. </strong>}
                 {selRow?.note ? (selRow.note.split('.')[0] + '.') : selRow ? 'Double-click a week to load it directly.' : `Whole-week cost for ${people.map(p => p.name).join(' and ')}, at today’s prices.`}
               </span>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button className="mp-btn mp-btn-glass" onClick={onClose}>Cancel</button>
-                <button className="mp-btn mp-btn-dark" disabled={!selRow} onClick={() => load()}>{selRow ? `Load “${selRow.name.length > 28 ? selRow.name.slice(0, 26) + '…' : selRow.name}”` : 'Load week'}</button>
+                <button className="mp-btn mp-btn-dark" disabled={!selRow || !Object.keys(selectedReview.incoming).length || (strictRules && selectedReview.required)} onClick={() => load()}>{selRow ? `Load “${selRow.name.length > 28 ? selRow.name.slice(0, 26) + '…' : selRow.name}”` : 'Load week'}</button>
               </div>
             </div>
           </>
@@ -425,7 +451,7 @@ function SmartSkeleton() {
   )
 }
 
-function SmartCard({ r, i, on, busy, best, people, allCombos, vegMin, planned, onPick, onReject, sessions, covered }) {
+function SmartCard({ r, i, on, busy, best, people, allIng, allCombos, vegMin, planned, onPick, onReject, sessions, covered }) {
   const name = k => allCombos[k]?.name ?? k
   const ok = r.warnings.length === 0
   const colorOf = p => PERSON_COLOR[Math.max(0, people.findIndex(x => x.id === p.id)) % PERSON_COLOR.length]
@@ -435,7 +461,7 @@ function SmartCard({ r, i, on, busy, best, people, allCombos, vegMin, planned, o
   const multi = parts.length > 1
   const free = [0, 1, 2, 3, 4, 5, 6].filter(x => !covered.includes(x))
   const No = ({ slot, pid, what, pi = 0 }) => on ? (
-    <button type="button" className="sw-no" title={`Not this one — find another ${what}`} aria-label={`Not this ${what}`} onClick={() => onReject(slot, pid, pi)}>
+    <button disabled={busy} type="button" className="sw-no" title={`Not this one — find another ${what}`} aria-label={`Not this ${what}`} onClick={() => onReject(slot, pid, pi)}>
       <Icon name="x" size={9} stroke={3} />Not this one
     </button>
   ) : null
@@ -453,11 +479,12 @@ function SmartCard({ r, i, on, busy, best, people, allCombos, vegMin, planned, o
         <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <span className="sw-radio" aria-hidden="true" />
           <span style={{ fontSize: 13, fontWeight: 700 }}>{i === 0 ? best : `Option ${i + 1}`}</span>
-          <span className={`mp-tag ${ok ? 'sw-ok' : 'sw-warn'}`}>{ok ? '✓ All rules met' : `${r.warnings.length} note${r.warnings.length > 1 ? 's' : ''}`}</span>
+          <span className={`mp-tag ${ok ? 'sw-ok' : 'sw-warn'}`}>{r.violations ? 'Daily target missed' : r.uncertainty ? 'GI uncertain' : ok ? 'Daily targets met' : `${r.warnings.length} note${r.warnings.length > 1 ? 's' : ''}`}</span>
           {r.packs?.pantry >= 0.5 && <span className="mp-tag sw-pantry" title="Already paid for: it’s in the pantry"><Icon name="home" size={11} />{fmtMoney(r.packs.pantry)} from the pantry</span>}
         </span>
         <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-          <span className="mp-num" style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em' }}>{fmtMoney(r.cost)}<small className="mp-muted" style={{ fontSize: 12, fontWeight: 500 }}> {rangeLabel(covered)}</small></span>
+          <span className="mp-num" style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.02em' }}>{fmtMoney(r.cost)}<small className="mp-muted" style={{ fontSize: 12, fontWeight: 500 }}> food · {rangeLabel(covered)}</small></span>
+          <span className="mp-muted mp-num" title={r.packs.unpriced.join(', ')}>{fmtMoney(r.packs.checkout)} in whole packs{r.packs.unpriced.length > 0 && ` + ${r.packs.unpriced.length} unpriced`}</span>
           <span className="mp-muted mp-num" style={{ fontSize: 11.5 }} title={free.length ? 'If the free days were eaten the same way' : 'The whole week'}>
             {free.length ? `≈ ${fmtMoney(r.weekCost)}/week` : 'whole week'}{saving != null && Math.abs(saving) >= 1 ? ` · ${saving > 0 ? `${fmtMoney(saving)} less` : `${fmtMoney(-saving)} more`} than planned` : ''}
           </span>
@@ -479,7 +506,7 @@ function SmartCard({ r, i, on, busy, best, people, allCombos, vegMin, planned, o
               <div key={p.id} className="sw-person">
                 <span className="sw-person-head">
                   <span className="mp-dot" style={{ width: 9, height: 9, background: colorOf(p) }} /><strong>{p.name}</strong>
-                  <span className="mp-muted mp-num">{s.kcal} / {s.target} kcal · {s.hit}/{covered.length} days on target</span>
+                  <span className="mp-muted mp-num">{s.kcal} / {s.target} kcal · {s.hit}/{covered.length} days on kcal target</span>
                 </span>
                 {parts.map((part, pi) => (
                   <span key={pi} style={{ display: 'contents' }}>
@@ -502,7 +529,7 @@ function SmartCard({ r, i, on, busy, best, people, allCombos, vegMin, planned, o
           {r.packs?.notes.length > 0 && (
             <ul className="sw-packs">{r.packs.notes.map(w => <li key={w}>{w}</li>)}</ul>
           )}
-          {ok && <span className="sw-why">Legumes, onion/garlic and insoluble fiber at most once a day, no red meat at dinner, a different base at lunch and dinner, fiber and veg above the minimum, protein within limits and portions on target.</span>}
+          <SmartDayDetail result={r} people={people} days={covered} allIng={allIng} allCombos={allCombos} />
           {free.length > 0 && <span className="mp-muted" style={{ fontSize: 12 }}>{rangeLabel(free)} stay{free.length === 1 ? 's' : ''} free — not planned or shopped for. Change it in Settings.</span>}
         </div>
       )}
