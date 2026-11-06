@@ -121,3 +121,33 @@ for(const choice of quick) {
 }
 assert.ok(snackShortlist(pool,1,{banned:quick.map(c=>c.key)}).every(c=>!quick.some(old=>old.key===c.key)))
 console.log('Verified saved-week pasta guard, portable snacks, daily totals and rejected recipes.')
+
+const { cafeMenu } = require('../src/engine/cafeSnacks')
+const { default: cafeStore, selectAllCombos } = require('../src/store/useStore')
+const cafeArgs = { person:people[1], dayIndex:2, week:{}, allIng:ING, allCombos:COMBO, tried:COMBO,
+  stock:{ricotta:500}, openPacks:['ricotta'], noveltyMax:6 }
+const cafe = cafeMenu(cafeArgs)
+assert.equal(cafe.length,6)
+assert.deepEqual([...new Set(cafe.map(r=>r.taste))].sort(), ['Savory','Sweet'])
+assert.ok(cafeMenu({...cafeArgs,toGo:true}).every(r=>r.travel))
+const withDeletedIngredient = {...ING}
+delete withDeletedIngredient.ricotta
+assert.ok(cafeMenu({...cafeArgs,allIng:withDeletedIngredient}).every(r=>r.items.every(i=>i.k!=='ricotta')))
+const large = cafeMenu({...cafeArgs, larger:true}).find(r=>r.id==='salmon-ribbons')
+assert.ok(large.macros.kcal > cafe.find(r=>r.id===large.id).macros.kcal)
+const cafeWeek = '2026-W45', cafeSlot = DAY_KEYS[2] + '-merienda'
+cafeStore.persist.setOptions({ storage: { getItem: () => null, setItem() {}, removeItem() {} } })
+const state = () => cafeStore.getState()
+const priorSnack = {type:'desayuno',recipeKey:Object.keys(COMBO)[0]}
+state().setMealSlot(cafeWeek,cafeSlot,priorSnack)
+const cafeRecipe = {id:large.id,size:'large',name:large.name,items:large.items}
+state().applyCafeSnack(cafeWeek,cafeSlot,'maria',cafeRecipe,['julio','maria'])
+const slots = state().weekPlan[cafeWeek]
+assert.deepEqual(slots[cafeSlot].byPerson.julio,priorSnack)
+const applied = dayTotals(dayForPerson(slots,DAY_KEYS[2],'maria'),people[1],2,ING,selectAllCombos(state()))
+assert.deepEqual(applied.resolved.merienda.items,large.items)
+assert.equal(applied.kcal,large.totals.kcal)
+const nCafeDishes = state().customCombos.length
+state().applyCafeSnack(cafeWeek,cafeSlot,'maria',cafeRecipe,['julio','maria'])
+assert.equal(state().customCombos.length,nCafeDishes)
+console.log('Verified café portions, filters, and an idempotent update to María’s snack preserving Julio’s.')
