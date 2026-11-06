@@ -92,6 +92,11 @@ assert.equal(locked.results.length,0,'A locked dinner must still respect the pas
 const strict = generateSmartPlan({ allIng: ING, allCombos: COMBO, people, source:'ingredients', snackMode:'new', strictRules:true })
 assert.ok(strict.results.length)
 assert.ok(strict.results.every(r=>!r.violations && !r.uncertainty))
+const catalogOnly = generateSmartPlan({ allIng: ING, allCombos: COMBO, people, days: [0], source: 'dishes' })
+assert.ok(catalogOnly.results.length && catalogOnly.results.every(r => !Object.keys(r.newDishes ?? {}).length))
+const blocked = generateSmartPlan({ allIng: ING, allCombos: COMBO, people, source: 'dishes', vegMin: 10000, strictRules: true })
+assert.equal(blocked.results.length, 0)
+assert.ok(blocked.closest?.warnings.some(note => note.includes('veg')))
 const pasta = {items:[{ k:'pasta-dimartino',p:{grams:100} }]}
 assert.equal(glycemicCheck(pasta,ING,'cena').status,'unknown')
 assert.equal(glycemicCheck(pasta,{...ING,'pasta-dimartino':{...ING['pasta-dimartino'],gi:100}},'cena').status,'exceeded')

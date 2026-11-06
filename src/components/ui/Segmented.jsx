@@ -13,7 +13,7 @@ export default function Segmented({ options, value, onChange, className = 'mp-se
 
   return (
     <div ref={ref} className={className} role="group" aria-label={label}>
-      <span aria-hidden="true" className={thumbClass} style={{ left: thumb.left, width: thumb.width }} />
+      {options.some(o => o.value === value) && <span aria-hidden="true" className={thumbClass} style={{ left: thumb.left, width: thumb.width }} />}
       {options.map(o => (
         <button key={o.value} type="button" data-v={o.value} aria-pressed={o.value === value}
           aria-current={className.includes('mp-nav') && o.value === value ? 'page' : undefined}

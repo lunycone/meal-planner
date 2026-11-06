@@ -20,7 +20,17 @@ import { VEG_DAILY_MIN, SOLUBLE_FIBER_DAILY_MIN } from '../../engine/weekRules'
 // Titles shout in CAPS ('WEIGHT GAIN — …'): calm them down, keep acronyms.
 const pretty = t => { const s = t.replace(/\b[A-Z]{3,}\b/g, w => w === 'PCOS' ? w : w.toLowerCase()); return s.charAt(0).toUpperCase() + s.slice(1) }
 
-const SOURCE_OPTS = [{ value: 'dishes', label: 'Dishes' }, { value: 'ingredients', label: 'Ingredients' }, { value: 'surprise', label: 'Surprise' }, { value: 'country', label: 'Countries' }, { value: 'date', label: '♥ Date night' }]
+const SOURCE_OPTS = [{ value: 'dishes', label: 'My dishes' }, { value: 'ingredients', label: 'From ingredients' }]
+const SPECIAL_OPTS = [{ value: 'surprise', label: 'Surprise' }, { value: 'country', label: 'Countries' }, { value: 'date', label: '♥ Date night' }]
+function RecipeSource({ source, onChange }) {
+  return <>
+    <Segmented label="Build from" value={source} onChange={onChange} options={SOURCE_OPTS} />
+    <details open={SPECIAL_OPTS.some(option => option.value === source) || undefined}>
+      <summary>Special menus</summary>
+      <Segmented label="Special menus" value={source} onChange={onChange} options={SPECIAL_OPTS} />
+    </details>
+  </>
+}
 const COUNTRY_OPTS = [{ value: 'all', label: '🌍 All' }, ...COUNTRIES.map(c => ({ value: c.id, label: `${c.flag} ${c.label}` }))]
 const randomSeed = () => 1 + Math.floor(Math.random() * 1e9)
 const PRIORITY_OPTS = [{ value: 'price', label: 'Cheapest' }, { value: 'protein', label: 'More protein' }, { value: 'veg', label: 'More veg' }]
@@ -29,9 +39,6 @@ const planKeys = plan => [plan.L, plan.D, ...Object.values(plan.B), ...Object.va
 const allKeys = r => (r.parts ?? [r]).flatMap(p => planKeys(p.plan))
 const PRIORITY_BEST = { price: 'Recommended', protein: 'Most protein', veg: 'Most veg' }
 const VEG_OPTS = [100, 150, 200].map(v => ({ value: v, label: `${v} g veg/day` }))
-// Snacks: your dishes, new recipes built from your ingredients (engine/snackGen.js), or both.
-const SNACK_OPTS = [{ value: 'mix', label: 'Dishes + new recipes' }, { value: 'new', label: 'New recipes only' }, { value: 'catalog', label: 'My dishes only' }]
-
 // Semanas modelo, en tres pestañas:
 //  · Smart: la app genera la semana con los precios de hoy (engine/smartWeek)
 //    y enseña las 3 mejores, con su coste y por qué.
@@ -64,7 +71,6 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
   const [vegMin, setVegMin] = useState(VEG_DAILY_MIN)
   const { strictRules, dinners } = useStore(s => s.smartSettings)
   const setSmartSetting = useStore(s => s.setSmartSetting)
-  const [snackMode, setSnackMode] = useState('mix')
   const [seed, setSeed] = useState(0)
   const [shown, setShown] = useState([])       // parejas 'L|D' ya enseñadas (New ideas)
   const [exclude, setExclude] = useState([])   // rechazados en esta sesión
@@ -121,7 +127,7 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
     const a = stockAvailable(stockRaw, allIng, cookDateFor(monday, 0))
     return Object.fromEntries(Object.entries(a).map(([k, v]) => [k, Math.round(v)]).sort())
   }, [stockRaw, allIng, wk]) // eslint-disable-line react-hooks/exhaustive-deps
-  const smart = useSmartWeeks({ allIng, allCombos, people, priority, vegMin, seed, shown, exclude, prefs: dishPrefs, recent, stock, source, country: country === 'all' ? null : country, pairPrefs, splitDinners, strictRules, sessions: sessions.map(x => x.days), locks: locks?.locks ?? {}, snackMode }, tab === 'smart' && source !== 'date')
+  const smart = useSmartWeeks({ allIng, allCombos, people, priority, vegMin, seed, shown, exclude, prefs: dishPrefs, recent, stock, source, country: country === 'all' ? null : country, pairPrefs, splitDinners, strictRules, sessions: sessions.map(x => x.days), locks: locks?.locks ?? {}, snackMode: source === 'dishes' ? 'catalog' : 'mix' }, tab === 'smart' && source !== 'date')
   const smartSel = smart.results[Math.min(pick, smart.results.length - 1)] ?? null
   // Lo ya planificado en la semana destino (solo los días de batch), para comparar.
   const planned = useMemo(() => {
@@ -262,7 +268,7 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
         {tab === 'smart' && source === 'date' && (
           <>
             <div className="sw-controls" style={{ paddingBottom: 0 }}>
-              <Segmented label="Build from" value={source} onChange={pickSource} options={SOURCE_OPTS} />
+              <RecipeSource source={source} onChange={pickSource} />
             </div>
             <DateNightPanel wk={wk} monday={monday} people={people} allIng={allIng} allCombos={allCombos} target={target} onLoaded={onLoaded} onClose={onClose} />
           </>
@@ -270,13 +276,11 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
         {tab === 'smart' && source !== 'date' && (
           <>
             <div className="sw-controls">
-              <Segmented label="Build from" value={source} onChange={pickSource} options={SOURCE_OPTS} />
+              <RecipeSource source={source} onChange={pickSource} />
               {(source === 'dishes' || source === 'ingredients') && <Segmented label="Priority" value={priority} onChange={changeOpt(setPriority)} options={PRIORITY_OPTS} />}
-              <span className="mp-chip">Pasta-free dinners</span>
               <Segmented label="Daily rules" value={strictRules} onChange={changeOpt(v => setSmartSetting('strictRules', v))} options={[{value: false, label: 'Show closest matches'}, {value: true, label: 'Verified daily targets only'}]} />
               {canSplit && <Segmented label="Dinners per batch" value={dinners} onChange={changeOpt(v => setSmartSetting('dinners', v))} options={[{value: 1, label: 'One dinner'}, {value: 2, label: 'Two dinner bases'}]} />}
               <Segmented label="Vegetables per day" value={vegMin} onChange={changeOpt(setVegMin)} options={VEG_OPTS} />
-              <Segmented label="Snacks" value={snackMode} onChange={changeOpt(setSnackMode)} options={SNACK_OPTS} />
               <button type="button" className="mp-btn mp-btn-dark mp-btn-sm sw-new" onClick={newIdeas} disabled={smart.busy}><Icon name={source === 'surprise' ? 'shuffle' : 'repeat'} size={14} />{source === 'surprise' ? 'Surprise me again' : 'New ideas'}</button>
               {source === 'country' && (
                 <div className="sw-countries" role="group" aria-label="Country">
@@ -307,7 +311,12 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
               )}
               {smart.busy && !smart.results.length && <SmartSkeleton />}
               {smart.error && <div className="mp-empty">Couldn't build a week: {smart.error}</div>}
-              {!smart.busy && !smart.error && !smart.results.length && <div className="mp-empty" style={{ padding: 40 }}>{strictRules ? 'No verified match found with these settings. Show closest matches to see which targets or data are missing.' : splitDinners ? 'No matching pair of dinners found with different bases. Try One dinner or change your ingredient selection.' : source === 'ingredients' ? 'Not enough tagged ingredients to compose dishes. Tag proteins, bases and vegetables in Ingredients.' : 'Not enough dishes to build a week. Add lunches and dinners in Dishes.'}</div>}
+              {!smart.busy && !smart.error && !smart.results.length && <div className="mp-empty" style={{ padding: 40 }}>{smart.closest ? <>
+                <strong>No fully verified week found.</strong>
+                <p>The closest option for a blocked batch had these issues:</p>
+                <ul>{smart.closest.warnings.map(note => <li key={note}>{note}</li>)}</ul>
+                <button className="mp-btn mp-btn-glass" onClick={() => changeOpt(v => setSmartSetting('strictRules', v))(false)}>Show closest matches</button>
+              </> : splitDinners ? 'No matching pair of dinners found with different bases. Try One dinner or change your ingredient selection.' : source === 'ingredients' ? 'Not enough tagged ingredients to compose dishes. Tag proteins, bases and vegetables in Ingredients.' : 'Not enough dishes to build a week. Add lunches and dinners in Dishes.'}</div>}
               {smart.results.map((r, i) => (
                 <SmartCard key={allKeys(r).join() + i} r={r} i={i} on={i === pick} busy={smart.busy} onReject={(slot, pid, pi) => reject(r, slot, pid, pi)} sessions={sessions} covered={covered}
                   best={source === 'surprise' ? 'Surprise' : source === 'country' ? (country === 'all' ? 'World week' : COUNTRY_LABEL[country]) : PRIORITY_BEST[priority]} people={people} allIng={allIng} allCombos={r.newDishes ? { ...allCombos, ...r.newDishes } : allCombos} vegMin={vegMin}
