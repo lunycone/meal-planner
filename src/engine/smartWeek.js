@@ -595,7 +595,8 @@ export function generateSmartWeeks({
       r.newDishes = nd
     }
   }
-  return { results, tried, ms: Math.round(performance.now() - t0), composed: generated ? Object.keys(generated).length : 0 }
+  const closest = strictRules && !results.length && exact.length ? { warnings: exact[0].warnings } : null
+  return { results, closest, tried, ms: Math.round(performance.now() - t0), composed: generated ? Object.keys(generated).length : 0 }
 }
 
 // ── Varios días de batch ─────────────────────────────────────────────────────
@@ -616,6 +617,7 @@ export function generateSmartPlan({ sessions = [PLAN_DAYS], locks = {}, count = 
     const first = run(sessions[0], partLocks(0), count * 4)
     const candidates = []
     let tried = first.tried
+    let closest = first.closest
     const base = part => {
       const combo = part.newDishes?.[part.plan.D] ?? args.allCombos[part.plan.D]
       const key = comboScalableKey(combo, args.allIng)
@@ -625,6 +627,7 @@ export function generateSmartPlan({ sessions = [PLAN_DAYS], locks = {}, count = 
       const shared = { ...partLocks(1), L: a.plan.L, B: a.plan.B, S: a.plan.S }
       const second = run(sessions[1], shared, count * 2, base(a))
       tried += second.tried
+      closest ??= second.closest
       for (const b of second.results) candidates.push(combineParts([a,b], args))
     }
     candidates.sort((a,b) => compareFit(a,b) || a.score-b.score)
@@ -640,7 +643,7 @@ export function generateSmartPlan({ sessions = [PLAN_DAYS], locks = {}, count = 
       seenPairs.add(pair(pick))
       candidates.splice(candidates.indexOf(pick),1)
     }
-    return { results: results.slice(0,count), tried, ms: Math.round(performance.now()-t0), composed: first.composed, snacks: snackPool?.count ?? 0 }
+    return { results: results.slice(0,count), closest: results.length ? null : closest, tried, ms: Math.round(performance.now()-t0), composed: first.composed, snacks: snackPool?.count ?? 0 }
   }
   const runs = sessions.map((days, i) => generateSmartWeeks({ ...args, snackPool, snackMode: args.snackMode ?? 'catalog', days, locks: partLocks(i), count: multi ? count * 2 : count }))
   const fam = (k, r) => familyOf((r.newDishes?.[k] ?? args.allCombos[k])?.name ?? k)
@@ -664,6 +667,7 @@ export function generateSmartPlan({ sessions = [PLAN_DAYS], locks = {}, count = 
     results.push(combined)
   }
   return {
+    closest: results.length ? null : runs.find(run => run.closest)?.closest,
     results: results.sort((a, b) => compareFit(a, b) || a.score - b.score), tried: runs.reduce((t, r) => t + r.tried, 0), ms: Math.round(performance.now() - t0),
     composed: runs[0].composed ?? 0, snacks: snackPool?.count ?? 0,
   }
