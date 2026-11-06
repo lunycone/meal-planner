@@ -88,6 +88,16 @@ export const ARCHETYPES = {
     steps: ['Toast {bread}.', 'Spread {yogurt}.', 'Top with {fruit}, {crunch}, {sweetener} and {flavor}.'],
   },
 
+  'egg-sandwich': {
+    label: 'egg & ricotta sandwich', kind: 'portion', taste: 'savory', gear: [], portable: true, shelfDays: 1, minutes: 12,
+    slots: [
+      { id: 'bread', role: 'bread', unit: 'g', qty: [60, 120, 20] },
+      { id: 'egg', role: 'binder', unit: 'ea', qty: [1, 2, 1] },
+      { id: 'cheese', role: 'yogurt', unit: 'g', qty: [20, 80, 10] },
+    ],
+    steps: ['Hard-boil {egg}, peel and slice.', 'Spread {cheese} on {bread}, add the sliced egg and close the sandwich.'],
+  },
+
   'savory-toast': {
     label: 'savory toast', kind: 'portion', taste: 'savory', gear: [], portable: true, shelfDays: 0, minutes: 5,
     slots: [

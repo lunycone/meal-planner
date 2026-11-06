@@ -343,7 +343,7 @@ const MAX_COOKED_BASE_GRAMS = 300
 export const DRY_TO_COOKED = {
   'chickpeas': 2.5, 'black-beans': 2.5, 'red-lentils': 2.5, 'green-lentils': 2.0,
   'white-beans': 2.5, 'kidney-beans': 2.5, 'romano-beans': 2.5,
-  'rice': 2.8, 'pasta': 2.5, 'buckwheat': 2.6,
+  'rice': 2.8, 'arborio': 2.8, 'pasta': 2.5, 'pasta-dimartino': 2.5, 'buckwheat': 2.6,
 }
 
 // Given a full day plan + a person, returns how many grams of the LUNCH's
@@ -402,7 +402,7 @@ export function comboScaleCapacity(combo, allIng) {
   if (!ing || !ing.kc) return { key: null, upKcal: oilKcal, costPerKcal: 0, protPerKcal: 0, floor: WHOLE_DISH_FLOOR }
   const kcalPerGram = ing.kc / 100
   const defaultGrams = combo.items.find(it => it.k === key)?.p?.grams ?? 0
-  const cookRatio = DRY_TO_COOKED[key] ?? 1
+  const cookRatio = ing.cookYield ?? DRY_TO_COOKED[key] ?? 1
   const factorCap = Math.max(defaultGrams * SCALE_CAP_FACTOR, MIN_SCALE_CAP_GRAMS)
   const max = combo.scalableMax ?? Math.max(defaultGrams, Math.min(factorCap, MAX_COOKED_BASE_GRAMS / cookRatio))
   return {
@@ -482,7 +482,7 @@ export function personMealScale(day, mealType, person, allIng, allCombos, opts =
   const neededKcal = target - fixedKcal
 
   const min = opts.min ?? 0
-  const cookRatio = DRY_TO_COOKED[key] ?? 1
+  const cookRatio = allIng[key]?.cookYield ?? DRY_TO_COOKED[key] ?? 1
   const cookedCapDry = MAX_COOKED_BASE_GRAMS / cookRatio
   const factorCap = Math.max(defaultGrams * SCALE_CAP_FACTOR, MIN_SCALE_CAP_GRAMS)
   // combo.scalableMax (6 sep 2026): tope explicito por plato, para bases sin
@@ -682,7 +682,7 @@ export function dishMacroPct(combo, allIng) {
 // tables, order-of-magnitude accuracy, not lab-measured). Ingredients
 // without an explicit `gi` default to 20 (low-impact) rather than being
 // silently skipped, so nothing carb-bearing gets missed by omission again.
-const GI_DEFAULT = 20
+export const GI_DEFAULT = 20
 
 export function dishGlycemicLoad(combo, allIng) {
   let gl = 0
@@ -690,15 +690,20 @@ export function dishGlycemicLoad(combo, allIng) {
     if (it.k === 'evoo') continue
     const ing = allIng[it.k]
     if (!ing) continue
-    let kc, prot, fat
-    if (it.p.grams != null) { const g = it.p.grams * edibleOf(ing); kc = (ing.kc || 0) * g / 100; prot = (ing.prot || 0) * g / 100; fat = (ing.fat || 0) * g / 100 }
-    else if (it.p.units != null) { kc = (ing.kcu || 0) * it.p.units; prot = (ing.protu || 0) * it.p.units; fat = (ing.fatu || 0) * it.p.units }
-    else if (it.p.ml != null) { kc = (ing.kcml || 0) * it.p.ml; prot = 0; fat = 0 }
-    else { kc = (ing.kcf || 0); prot = (ing.protf || 0); fat = (ing.fatf || 0) }
-    const carbG = Math.max(0, kc - prot * 4 - fat * 9) / 4
-    gl += (ing.gi ?? GI_DEFAULT) * carbG / 100
+    const carbG = Math.max(0, ingCarb(it.k, it.p, allIng) - ingFib(it.k, it.p, allIng))
+    gl += (ing.gi ?? ing.giComparable ?? GI_DEFAULT) * carbG / 100
   }
   return gl
+}
+
+// Separate the known contribution from the estimate used to display a meal.
+export function glycemicCheck(combo, allIng, slot) {
+  const limit = PCOS_GL_BANDS[slot]?.yellow
+  const estimated = dishGlycemicLoad(combo, allIng)
+  const unknown = combo.items.filter(it => !allIng[it.k] || (allIng[it.k].gi == null && ingCarb(it.k,it.p,allIng) > ingFib(it.k,it.p,allIng)))
+  const known = estimated - dishGlycemicLoad({ items: unknown }, allIng)
+  const status = known > limit ? 'exceeded' : unknown.length ? 'unknown' : 'within'
+  return { estimated, limit, status, unknown: unknown.map(it => it.k) }
 }
 
 // mealType must be passed explicitly, not inferred from combo.meals — several
@@ -714,7 +719,7 @@ export function dishGlycemicLoad(combo, allIng) {
 // yellow 10-25 (lentejas/garbanzo-without-patata cluster), red >25 (anything
 // pairing legumbre+patata, or arroz/patata-heavy rancho/burrito dishes).
 const PCOS_GL_MAX = { desayuno: 10, cena: 10 }
-const PCOS_GL_BANDS = {
+export const PCOS_GL_BANDS = {
   desayuno: { yellow: 20 }, // ≤10 green, 10-20 yellow, >20 red
   cena:     { yellow: 25 }, // ≤10 green, 10-25 yellow, >25 red
 }

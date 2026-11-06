@@ -29,6 +29,7 @@ const dimOfUnit = u => (u in WEIGHT_UNITS ? 'g' : u in VOLUME_UNITS ? 'ml' : 'un
 
 function Row({ k, ing, entry, allIng }) {
   const setStock = useStore(s => s.setStock)
+  const setStockOpen = useStore(s => s.setStockOpen)
   const pack = packOf(ing)
   const unit = editUnit(ing)
   const dim = dimOfUnit(unit)
@@ -59,6 +60,7 @@ function Row({ k, ing, entry, allIng }) {
           onChange={e => setDraft(e.target.value)} onBlur={commit} onKeyDown={e => e.key === 'Enter' && e.currentTarget.blur()} />
         <span className="mp-muted">{UNIT_LABEL[unit] ?? unit}</span>
       </label>
+      <label><input type="checkbox" checked={!!entry.open} onChange={e=>setStockOpen(k,e.target.checked)} /> Open pack</label>
       <button type="button" className="mw-act" aria-label={`Remove ${ing.name}`} title="Used up / remove" onClick={() => setStock(k, 0)}><Icon name="x" size={11} stroke={3} /></button>
       <span className="sr-only">{fmtAmount(entry.amount, dim)}</span>
     </div>

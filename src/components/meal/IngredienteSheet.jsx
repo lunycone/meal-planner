@@ -48,6 +48,7 @@ function draftOf(ing, unit, key) {
     packPrice: okPack && pk.price != null ? String(pk.price) : '',
     keeps: ing ? keepsOf(key ?? '', ing) : 'week',
     basis: String(basis), kc: nutAt(U.nut[0]), prot: nutAt(U.nut[1]), fat: nutAt(U.nut[2]), carb: nutAt(U.nut[3]), fib: nutAt(U.nut[4]),
+    gi: show(ing?.gi), giSource: ing?.giSource ?? '', cookYield: show(ing?.cookYield),
     portion,
     edible: ing?.edible != null && ing.edible < 1 ? String(Math.round(ing.edible * 100)) : '',
     tags: ing ? [...tagsOf(key, { [key]: ing })] : [],
@@ -138,10 +139,19 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
       })()
     : null
 
+  const gi = draft.gi.trim() === '' ? null : Number(draft.gi.replace(',', '.'))
+  const ratio = draft.cookYield.trim() === '' ? null : Number(draft.cookYield.replace(',', '.'))
+  const sourceRequired = gi != null && draft.gi !== initial.gi
+  const valid = draft.name.trim() && (gi == null || (Number.isFinite(gi) && gi >= 0)) &&
+    (ratio == null || (Number.isFinite(ratio) && ratio > 0)) && (!sourceRequired || draft.giSource.trim())
   function save() {
-    if (!draft.name.trim()) return
+    if (!valid) return
     const store = draft.store.trim()
     const data = { name: draft.name.trim(), cat: draft.cat, store, organic: draft.organic, temporary: draft.temporary, rotation: draft.rotation || '', tags: shownTags }
+    if (draft.gi !== initial.gi || draft.giSource !== initial.giSource) {
+      Object.assign(data, { gi, giSource: gi == null ? null : draft.giSource.trim(), giUpdated: new Date().toISOString().slice(0, 10) })
+    }
+    if (draft.cookYield !== initial.cookYield) data.cookYield = ratio
     // Snack role: only written when you change it (the generator ignores ingredients without a role)
     if (draft.snackRole !== initial.snackRole || draft.snackTaste !== initial.snackTaste) { data.snackRole = draft.snackRole; data.snackTaste = draft.snackTaste }
     // Parte comestible (solo para lo que se pesa en gramos): kcal y macros son de lo que se come, el precio del peso comprado.
@@ -330,6 +340,11 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
                   </div>
                 </div>
 
+                <div className="ig-grid3">
+                  <label className="ig-input"><span>Glycemic index</span><input inputMode="decimal" value={draft.gi} placeholder="Unknown" onChange={e => set('gi', e.target.value)} /></label>
+                  <label className="ig-input"><span>GI source {sourceRequired && '(required)'}</span><input value={draft.giSource} placeholder="Study or product reference" onChange={e => set('giSource', e.target.value)} /></label>
+                  {dim === 'g' && <label className="ig-input"><span>Cooked g per dry g</span><input inputMode="decimal" value={draft.cookYield} placeholder="Unknown" onChange={e => set('cookYield', e.target.value)} /></label>}
+                </div>
                 <div className="ig-grid3" style={{ alignItems: 'end' }}>
                   <label className="ig-input"><span>Usual portion ({dim === 'unit' ? 'units' : BASIS_UNIT[dim]})</span>
                     <input inputMode="decimal" value={draft.portion} onChange={e => set('portion', e.target.value)} placeholder={dim === 'unit' ? '1' : '100'} /></label>
@@ -386,7 +401,7 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
               <span style={{ display: 'flex', gap: 8 }}>
                 <button className="mp-btn mp-btn-glass" onClick={onClose}>Discard</button>
                 <button className="mp-btn mp-btn-glass" onClick={() => setAskClose(false)}>Keep editing</button>
-                <button className="mp-btn mp-btn-dark" disabled={!draft.name.trim()} onClick={save}>Save</button>
+                <button className="mp-btn mp-btn-dark" disabled={!valid} onClick={save}>Save</button>
               </span>
             </>
           ) : askDelete ? (
@@ -404,7 +419,7 @@ export default function IngredienteSheet({ ingKey = null, onClose }) {
                 {isNew && !draft.name.trim() && <span className="mp-muted" style={{ fontSize: 12.5 }}>Name missing</span>}
                 {dirty && !isNew && <button className="mp-btn mp-btn-glass" onClick={() => setDraft(initial)}>Discard</button>}
                 {(dirty || isNew)
-                  ? <button className="mp-btn mp-btn-dark" disabled={!draft.name.trim()} onClick={save}>{isNew ? 'Add ingredient' : 'Save changes'}</button>
+                  ? <button className="mp-btn mp-btn-dark" disabled={!valid} onClick={save}>{isNew ? 'Add ingredient' : 'Save changes'}</button>
                   : <button className="mp-btn mp-btn-dark" onClick={onClose}>Done</button>}
               </span>
             </>

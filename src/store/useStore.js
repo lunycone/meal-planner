@@ -223,7 +223,7 @@ const useStore = create(
         set(s => {
           const have = new Set(s.customCombos.map(c => c.id))
           const add = Object.values(map ?? {}).filter(c => c.customId && !have.has(c.customId))
-            .map(c => ({ id: c.customId, name: c.name, items: c.items, meals: c.meals ?? ['comida', 'cena'] }))
+            .map(c => ({ id: c.customId, name: c.name, items: c.items, ...(c.ownerId && { ownerId: c.ownerId }), meals: c.meals ?? ['comida', 'cena'] }))
           return add.length ? { customCombos: [...s.customCombos, ...add] } : {}
         })
       },
@@ -261,6 +261,12 @@ const useStore = create(
         })
       },
       // Días de batch (Ajustes): [{ cook: 0..6, days }] — ver lib/batchConfig.js.
+      snackFeedback: {},
+      rateSnack(person, key, value) {
+        set(s => ({ snackFeedback: { ...s.snackFeedback, [person]: { ...s.snackFeedback?.[person], [key]: value } } }))
+      },
+      smartSettings: { dinners: 2, strictRules: false },
+      setSmartSetting(key, value) { set(s => ({ smartSettings: { ...s.smartSettings, [key]: value } })) },
       batchSettings: DEFAULT_BATCH,
       setBatchSettings(next) { set({ batchSettings: normalizeBatch(next) }) },
 
@@ -558,11 +564,14 @@ const useStore = create(
       stockLog:      {},   // { checksKey: { ingKey: amount } }
       cookedBatches: {},   // { weekKey: { ingKey: amount } }
 
+      setStockOpen(key, open) {
+        set(s => s.stock[key] ? { stock: { ...s.stock, [key]: { ...s.stock[key], open } } } : {})
+      },
       setStock(ingKey, amount, addedAt) {
         set(s => {
           const stock = { ...s.stock }
           if (!(amount > 0.0001)) delete stock[ingKey]
-          else stock[ingKey] = { amount, addedAt: addedAt ?? stock[ingKey]?.addedAt ?? new Date().toISOString() }
+          else stock[ingKey] = { ...stock[ingKey], amount, addedAt: addedAt ?? stock[ingKey]?.addedAt ?? new Date().toISOString() }
           return { stock }
         })
       },
@@ -579,7 +588,7 @@ const useStore = create(
             }
             delete log[ingKey]
           } else if (amount > 0) {
-            stock[ingKey] = { amount: (stock[ingKey]?.amount ?? 0) + amount, addedAt: new Date().toISOString() }
+            stock[ingKey] = { ...stock[ingKey], amount: (stock[ingKey]?.amount ?? 0) + amount, addedAt: new Date().toISOString() }
             log[ingKey] = amount
           }
           const stockLog = { ...s.stockLog, [checksKey]: log }
@@ -611,7 +620,7 @@ const useStore = create(
           const took = s.cookedBatches?.[weekKey]
           if (!took) return {}
           const stock = { ...s.stock }
-          for (const [k, t] of Object.entries(took)) stock[k] = { amount: (stock[k]?.amount ?? 0) + t, addedAt: stock[k]?.addedAt ?? new Date().toISOString() }
+          for (const [k, t] of Object.entries(took)) stock[k] = { ...stock[k], amount: (stock[k]?.amount ?? 0) + t, addedAt: stock[k]?.addedAt ?? new Date().toISOString() }
           const cookedBatches = { ...s.cookedBatches }; delete cookedBatches[weekKey]
           return { stock, cookedBatches }
         })
@@ -728,6 +737,8 @@ const useStore = create(
         dishPrefs:           s.dishPrefs,
         pairPrefs:           s.pairPrefs,
         batchSettings:       s.batchSettings,
+        smartSettings:       s.smartSettings,
+        snackFeedback:       s.snackFeedback,
         storeColors:         s.storeColors,
         catColors:           s.catColors,
         catLabels:           s.catLabels,
@@ -786,7 +797,7 @@ export function selectAllCombos(s) {
   }
   for (const c of s.customCombos) {
     const key = 'custom-' + c.id
-    if (!deleted.has(key)) result[key] = { name: c.name, items: c.items, meals: c.meals ?? [], isCustom: true, customId: c.id, ...(c.snack ? { snack: true } : {}), ...(c.snackGenerated ? { snackGenerated: true } : {}), ...(c.scalable ? { scalable: c.scalable } : {}), ...(c.scalableMax != null ? { scalableMax: c.scalableMax } : {}), ...(c.noAove ? { noAove: true } : {}), ...(c.optionalItems ? { optionalItems: c.optionalItems } : {}) }
+    if (!deleted.has(key)) result[key] = { name: c.name, items: c.items, meals: c.meals ?? [], isCustom: true, customId: c.id, ...(c.ownerId && { ownerId: c.ownerId }), ...(c.snack ? { snack: true } : {}), ...(c.snackGenerated ? { snackGenerated: true } : {}), ...(c.scalable ? { scalable: c.scalable } : {}), ...(c.scalableMax != null ? { scalableMax: c.scalableMax } : {}), ...(c.noAove ? { noAove: true } : {}), ...(c.optionalItems ? { optionalItems: c.optionalItems } : {}) }
   }
   return result
 }

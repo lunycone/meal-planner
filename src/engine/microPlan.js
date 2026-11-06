@@ -1,3 +1,4 @@
+import { servingItems } from '../lib/portions'
 // ─── Vitaminas del DÍA y del batch + sugerencias ─────────────────────────────
 // Las necesidades (RDA/AI) son diarias, así que aquí se mira el día entero de
 // cada persona (con su ración real: base escalada y chorro de AOVE) y el
@@ -14,28 +15,6 @@ import { comboMicros, NUTRIENTS, sexOf } from './micros'
 import { tagsOf } from '../lib/tags'
 import { MEALS } from '../lib/mealplan'
 
-const OIL = { k: 'evoo' }
-
-// Los ingredientes de un plato tal como se comen: ración de la persona (base
-// escalada, plato reducido o chorro de AOVE), variantes y extras elegidos.
-function scaledItems(meal, combo, sc) {
-  const variants = meal.comboVariants || {}
-  const factor = sc?.wholeDishFactor != null && sc.wholeDishFactor < 0.995 ? sc.wholeDishFactor : 1
-  const items = combo.items.map(it => {
-    let p = { ...it.p }
-    if (variants[it.k] != null && p.units != null) p.units = variants[it.k]
-    if (sc?.ingKey === it.k && sc.grams != null && p.grams != null) p.grams = sc.grams
-    else if (factor !== 1) { if (p.grams != null) p.grams *= factor; if (p.ml != null) p.ml *= factor; if (p.units != null) p.units *= factor }
-    return { k: it.k, p }
-  })
-  for (const k of meal.comboOptionals ?? []) {
-    const oi = combo.optionalItems?.find(o => o.k === k)
-    if (oi) items.push({ k, p: { ...oi.p } })
-  }
-  if (sc?.oilMlApplied > 0) items.push({ ...OIL, p: { ml: sc.oilMlApplied } })
-  return items
-}
-
 /** Micronutrientes, kcal y coste del día de una persona (ración real). */
 export function personDayMicros(day, person, dayIdx, allIng, allCombos) {
   const target = personTargetForDay(person, dayIdx)
@@ -45,7 +24,7 @@ export function personDayMicros(day, person, dayIdx, allIng, allCombos) {
     const meal = day?.[m]
     const combo = meal?.type === 'desayuno' ? allCombos[meal.recipeKey] : null
     if (!combo) continue
-    items.push(...scaledItems(meal, combo, m === 'comida' || m === 'cena' ? tp[m] : null))
+    items.push(...servingItems(combo, meal, m === 'comida' || m === 'cena' ? tp[m] : null))
   }
   return { ...comboMicros(items, allIng), kcal: personDayKcal(day, person, allIng, allCombos, dayIdx), cost: personDayCost(day, person, allIng, allCombos, dayIdx), target }
 }

@@ -124,8 +124,10 @@ export function computeInsights({ weekPlan, profiles, allIng, allCombos, today =
   // 7 · Reglas digestivas de semana (perfiles con digestive)
   profiles.filter(p => p.digestive).forEach(person => {
     const mon = mondayOf(t), week = weekPlan[weekKeyOf(mon)] ?? {}
-    const days = DAY_KEYS.map(dk => {
+    const days = DAY_KEYS.map((dk,i) => {
       const d = dayForPerson(week, dk, person.id)
+      const totals = dayTotals(d, person, i, allIng, allCombos)
+      if (totals.resolved) return totals.resolved
       return Object.fromEntries(MEALS.map(m => [m, d[m]?.type === 'desayuno' ? allCombos[d[m].recipeKey] : null]))
     })
     const v = weekViolations(days, allIng, {}).filter(x => x.rule.startsWith('dosis-'))

@@ -2,7 +2,8 @@
 // Lo que se come de verdad (raciones escaladas por persona y día, AOVE de
 // autocierre incluido) sumado por ingrediente. Lo usan la Compra, el Batch
 // («cocinado» descuenta de la despensa) y la semana inteligente (paquetes).
-import { ingCost, ingKcal, ingProt, ingFat, comboScalableKey, personMealScalesTwoPass, personTargetForDay, slotForPerson } from '../engine/calc'
+import { ingCost, ingKcal, ingProt, ingFat, personMealScalesTwoPass, personTargetForDay, slotForPerson } from '../engine/calc'
+import { servingItems } from './portions'
 import { DAY_KEYS, activeProfilesOn } from './mealplan'
 import { packOf, keepsOf, KEEPS_DAYS } from './packs'
 
@@ -50,15 +51,6 @@ export function aggregateIngredients({ weekPlan, windowDates, profiles, people, 
       trackPerson(ingKey, person, portion)
     }
 
-    function scalePortion(p, factor) {
-      if (factor === 1) return p
-      const out = { ...p }
-      if (out.grams != null) out.grams = Math.round(out.grams * factor)
-      if (out.ml    != null) out.ml    = Math.round(out.ml    * factor)
-      if (out.units != null) out.units = Math.round(out.units * factor * 2) / 2
-      return out
-    }
-
     windowDates.forEach(({ date, wk, dayKey }) => {
       const weekData = weekPlan[wk] ?? {}
       const dayProfiles = people ?? activeProfilesOn(profiles, date)
@@ -78,9 +70,7 @@ export function aggregateIngredients({ weekPlan, windowDates, profiles, people, 
           if (!combo) return
 
           let scale = null
-          let scalableKey = null
           if (isScalable) {
-            scalableKey = comboScalableKey(combo, allIng)
             const ck = `${wk}|${dayKey}|${person.id}`
             let twoPass = passCache.get(ck)
             if (!twoPass) {
@@ -94,25 +84,8 @@ export function aggregateIngredients({ weekPlan, windowDates, profiles, people, 
             scale = mealType === 'comida' ? twoPass.comida : twoPass.cena
           }
 
-          const wholeFactor = (scale?.wholeDishFactor != null && scale.wholeDishFactor < 1) ? scale.wholeDishFactor : 1
-
-          combo.items.forEach(it => {
-            if (it.k === scalableKey && scale?.grams != null) {
-              addForPerson(it.k, { ...it.p, grams: scale.grams }, mealTag, person)
-            } else {
-              addForPerson(it.k, scalePortion(it.p, wholeFactor), mealTag, person)
-            }
-          })
-          if (combo.optionalItems && meal.comboOptionals?.length > 0) {
-            combo.optionalItems
-              .filter(oi => meal.comboOptionals.includes(oi.k))
-              .forEach(it => addForPerson(it.k, scalePortion(it.p, wholeFactor), mealTag, person))
-          }
-          // AOVE de autocierre (personMealScale): el chorro extra que cierra
-          // el hueco de kcal cuando la base ya esta al tope — mismo aceite
-          // que ya se cuenta en Planificador/Batch, aqui como ingrediente mas.
-          if (scale?.oilMlApplied > 0) {
-            addForPerson('evoo', { ml: scale.oilMlApplied }, mealTag, person)
+          for (const { k, p } of servingItems(combo, meal, scale)) {
+            addForPerson(k, p, mealTag, person)
           }
         })
       }    // end mealType loop

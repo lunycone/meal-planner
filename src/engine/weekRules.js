@@ -11,7 +11,7 @@
 
 import {
   dishHasGOS, dishHasAllium, dishHasInsolubleFiber,
-  comboFibSol, comboAgg,
+  comboFibSol, comboAgg, glycemicCheck,
 } from './calc'
 import { tagsOf } from '../lib/tags'
 
@@ -79,16 +79,23 @@ export function weekViolations(week, allIng, person = {}) {
   // grasa), el mas caro por caloria, y el excedente no absorbido alimenta la
   // fermentacion proteolitica en colon — gas sulfuroso, que es exactamente lo
   // que el registro del 20 de agosto documenta antes de la peor deposicion.
-  if (person.weightKg) {
-    const cap = person.weightKg * PROTEIN_DAILY_MAX_G_PER_KG
-    week.forEach((day, i) => {
-      const prot = slots.reduce((s, k) => s + (day?.[k] ? comboAgg(day[k], allIng).prot : 0), 0)
-      if (prot > cap) out.push({
-        rule: 'proteina-excesiva', day: i, value: Math.round(prot),
-        msg: `${DAY_EN[i] ?? `Day ${i + 1}`}: ${Math.round(prot)} g protein (ceiling ${Math.round(cap)} g at ${person.weightKg} kg).`,
-      })
-    })
-  }
+  const cap = person.protCap ?? (person.weightKg ? person.weightKg * PROTEIN_DAILY_MAX_G_PER_KG : null)
+  week.forEach((day, i) => {
+    const dishes = slots.map(k => day?.[k]).filter(Boolean)
+    const prot = dishes.reduce((sum,dish) => sum + comboAgg(dish, allIng).prot, 0)
+    if (cap && prot > cap) out.push({ rule: 'proteina-excesiva', day: i, value: prot, msg: `${DAY_EN[i]}: ${prot.toFixed(1)} g protein (ceiling ${cap} g).` })
+    if (dishes.length === slots.length && person.proteinTarget && prot < person.proteinTarget) {
+      out.push({ rule: 'proteina-baja', day: i, value: prot, msg: `${DAY_EN[i]}: ${prot.toFixed(1)} g protein (target ${person.proteinTarget} g).` })
+    }
+    if (!person.pcos) return
+    for (const slot of ['desayuno', 'cena']) {
+      if (!day?.[slot]) continue
+      const check = glycemicCheck(day[slot], allIng, slot)
+      if (check.status === 'within') continue
+      const detail = check.status === 'unknown' ? 'incomplete GI data' : `glycemic load exceeds ${check.limit}`
+      out.push({ rule: `gl-${slot}-${check.status}`, day: i, msg: `${DAY_EN[i]} ${SLOT_EN[slot]}: ${detail}.` })
+    }
+  })
 
   return out
 }

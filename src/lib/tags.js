@@ -117,3 +117,10 @@ export function starchFamily(key, allIng) {
   for (const [re, fam] of FAMILY) if (re.test(text)) return fam
   return key
 }
+
+export function hasPasta(combo, allIng) {
+  return (combo?.items ?? []).some(({ k }) => {
+    if (['pasta', 'pasta-dimartino', 'lasagna-sheets'].includes(k)) return true
+    return starchFamily(k, allIng) === 'pasta' || /\b(?:noodles?|spaghetti|macaroni|fettuccine|tagliatelle|ravioli|tortellini|linguine|penne|rigatoni|lasagna sheets)\b/i.test(allIng[k]?.name ?? k)
+  })
+}

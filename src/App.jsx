@@ -158,12 +158,12 @@ function AppShell() {
   const isMobile = useIsMobile()
   if (isMobile) {
     return (
-      <MobileApp unseen={unseen} ideasOpen={ideasOpen} setIdeasOpen={setIdeasOpen}
+      <><SyncStatus errorsOnly /><MobileApp unseen={unseen} ideasOpen={ideasOpen} setIdeasOpen={setIdeasOpen}
         ideasPanel={ideasOpen && (
           <IdeasPanel ideas={ideas} hiddenCount={allIdeas.length - ideas.length}
             onClose={() => setIdeasOpen(false)} onDismiss={dismiss} onRestore={restoreDismissed}
             onPick={v => { setView(v); setIdeasOpen(false) }} />
-        )} />
+        )} /></>
     )
   }
 
@@ -222,14 +222,14 @@ export default function App() {
 
   useEffect(() => {
     if (!supabase) return
-    supabase.auth.getSession().then(({ data }) => setAuthed(!!data.session))
+    supabase.auth.getSession().then(({ data }) => setAuthed(!!data.session)).catch(() => setAuthed(false))
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       setAuthed(!!session)
     })
     return () => sub.subscription.unsubscribe()
   }, [])
 
-  if (authed === null) return null // esperando a saber si hay sesión
+  if (authed === null) return <p role="status" style={{ padding: 24 }}>Checking your session…</p>
 
   if (!authed) {
     return (
