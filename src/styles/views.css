@@ -705,26 +705,59 @@
 .sw-detail select { font: inherit; padding: 4px; }
 .sw-detail ul { margin: 6px 0; padding-left: 20px; }
 
-/* María's café menu */
-.cafe-menu { background: #faf7f1; color: #342b29; }
-.cafe-filters, .cafe-feedback { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; }
-.cafe-filters { margin:4px 0 16px; }
-.cafe-filters label { font-size:13px; display:flex; align-items:center; gap:6px; }
-.cafe-filters select { font:inherit; color:inherit; border:1px solid #d6cbc1; border-radius:7px; background:#fffdfa; padding:5px; }
-.cafe-columns { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
-.cafe-columns h3 { font:italic 25px Georgia,serif; margin:0 0 8px; color:#704533; }
-.cafe-columns section { min-width:0; }
+/* María's personal snack collection */
+.cafe-menu { background:#faf7f1; color:#342b29; padding-top:16px; }
+.cafe-controls { background:#fffdfa; border:1px solid #e6dbce; padding:16px; border-radius:18px; margin-bottom:20px; }
+.cafe-control-label { font-size:12px; font-weight:650; color:#806650; }
+.cafe-day-row { display:flex; align-items:center; gap:18px; }
+.cafe-days { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:5px; flex:1; }
+.cafe-days button { border:1px solid transparent; border-radius:12px; padding:8px 4px; color:#756454; background:transparent; cursor:pointer; font:inherit; display:flex; flex-direction:column; align-items:center; gap:3px; }
+.cafe-days button span { font-size:11px; }
+.cafe-days button strong { font-size:17px; font-weight:600; }
+.cafe-days button[aria-pressed="true"] { color:#fffaf1; background:#805b45; }
+.cafe-days button:hover:not([aria-pressed="true"]) { background:#f2eadf; }
+.cafe-options { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin-top:14px; padding-top:14px; border-top:1px solid #eee5da; }
+.cafe-serving { display:flex; border:1px solid #e4d7c8; background:#f6f0e8; border-radius:24px; padding:3px; }
+.cafe-serving button,.cafe-takeaway,.cafe-filter-options button { border:0; border-radius:20px; padding:8px 12px; font-family:inherit; font-weight:500; font-size:12px; line-height:1.25; cursor:pointer; background:transparent; color:#765b49; }
+.cafe-serving button[aria-pressed="true"] { background:#fffefa; box-shadow:0 1px 4px #4d34231c; color:#3e3027; }
+.cafe-takeaway { border:1px solid #e4d7c8; background:#fffdfa; }
+.cafe-takeaway[aria-pressed="true"] { background:#e8eedf; border-color:#acba99; color:#435737; }
+.cafe-ingredient-filter { margin-left:auto; position:relative; }
+.cafe-ingredient-filter summary { font-size:12px; cursor:pointer; padding:9px 5px; list-style:none; color:#765b49; }
+.cafe-ingredient-filter summary::-webkit-details-marker { display:none; }
+.cafe-filter-options { display:flex; flex-wrap:wrap; gap:4px; padding:8px 0 2px; }
+.cafe-filter-options button { border:1px solid #dfd1c1; }
+.cafe-filter-options button[aria-pressed="true"] { background:#805b45; color:#fff; }
+.cafe-browse { display:flex; gap:18px; margin-bottom:16px; border-bottom:1px solid #e4d8ca; }
+.cafe-browse button { display:flex; align-items:center; gap:7px; cursor:pointer; padding:0 0 10px; border:0; border-bottom:2px solid transparent; background:transparent; font:600 15px Georgia,serif; color:#8e7a68; }
+.cafe-browse button[aria-pressed="true"] { color:#503b2b; border-bottom-color:#805b45; }
+.cafe-browse button span { font:11px system-ui,sans-serif; padding:2px 6px; border-radius:20px; background:#eee6db; }
+.cafe-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; align-items:start; }
 .cafe-current { font-size:13px; margin:0 0 12px; }
-.cafe-dish { border-top:1px solid #dbcec1; }
-.cafe-dish summary { display:flex; align-items:center; gap:12px; padding:12px 0; cursor:pointer; list-style:none; }
+.cafe-dish { overflow:hidden; background:#fffdfa; border:1px solid #e9dfd2; border-radius:16px; }
+.cafe-dish summary { display:block; cursor:pointer; list-style:none; }
 .cafe-dish summary::-webkit-details-marker { display:none; }
-.cafe-dish summary:focus-visible { outline:2px solid #85583e; outline-offset:2px; }
-.cafe-dish summary img { width:clamp(80px,9vw,112px); height:92px; object-fit:cover; border-radius:8px; }
-.cafe-dish summary strong { font:600 18px/1.15 Georgia,serif; }
-.cafe-description,.cafe-dish summary small { display:block; font-size:13px; line-height:1.4; margin-top:4px; }
-.cafe-dish summary small { color:#705d53; font-size:12px; }
-.cafe-recipe { padding:0 0 16px; font-size:13px; line-height:1.5; }
+.cafe-menu button:focus-visible,.cafe-menu summary:focus-visible { outline:2px solid #805b45; outline-offset:3px; }
+.cafe-dish summary img { display:block; width:100%; height:190px; object-fit:cover; }
+.cafe-dish-copy { display:block; padding:14px 16px; }
+.cafe-kind { display:block; font-size:10px; letter-spacing:.09em; text-transform:uppercase; color:#8c725b; margin-bottom:7px; }
+.cafe-dish summary strong { font:500 22px/1.15 Georgia,serif; display:block; }
+.cafe-description { display:block; font-size:13px; line-height:1.5; color:#786553; margin-top:7px; }
+.cafe-dish summary small { display:block; font-size:12px; margin-top:12px; color:#6b5848; }
+.cafe-view-recipe { display:flex; justify-content:space-between; font-size:12px; font-weight:650; margin-top:14px; color:#684b36; }
+.cafe-dish details[open] .cafe-view-recipe span { transform:rotate(90deg); }
+.cafe-recipe { border-top:1px solid #eee4d7; margin:0 16px; padding:10px 0 16px; font-size:13px; line-height:1.55; }
 .cafe-recipe ol { padding-left:20px; }
-.cafe-recipe p,.cafe-recipe li { margin:6px 0; }
-.cafe-feedback { margin:10px 0; }
-@media(max-width:680px){ .cafe-columns { grid-template-columns:1fr; } .cafe-dish summary img { width:100px; } }
+.cafe-recipe p,.cafe-recipe li { margin:8px 0; }
+.cafe-feedback { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:12px 0; }
+.cafe-empty { padding:24px 0; text-align:center; }
+@media(max-width:560px){
+ .cafe-grid { gap:12px; grid-template-columns:1fr; }
+ .cafe-dish summary img { height:210px; }
+ .cafe-day-row { display:block; }
+ .cafe-control-label { display:block; margin-bottom:6px; }
+ .cafe-controls { padding:12px; }
+ .cafe-ingredient-filter { margin-left:0; }
+ .cafe-days { gap:2px; }
+ .cafe-options { gap:8px; }
+}

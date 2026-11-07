@@ -28,13 +28,22 @@ export default function useSnackWeeks(args, enabled = true) {
       const t = setTimeout(() => { import('../engine/snackGen').then(m => done(m.generateOptions(args))).catch(e => fail(String(e))) }, 30)
       return () => clearTimeout(t)
     }
+    let pending = true
     const onMsg = e => {
       if (e.data.id !== id) return
+      pending = false
       if (e.data.ok) done(e.data.out); else fail(e.data.error)
     }
     w.addEventListener('message', onMsg)
     w.postMessage({ id, args })
-    return () => w.removeEventListener('message', onMsg)
+    return () => {
+      ++seq.current
+      w.removeEventListener('message', onMsg)
+      if (pending) {
+        w.terminate()
+        if (worker === w) worker = null
+      }
+    }
   }, [key, args.allIng, args.dishes, args.baseWeek, args.quickContext?.week, args.quickContext?.allCombos, args.dataKey, enabled]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return state
