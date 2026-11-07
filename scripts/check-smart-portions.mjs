@@ -127,7 +127,14 @@ const { default: cafeStore, selectAllCombos } = require('../src/store/useStore')
 const cafeArgs = { person:people[1], dayIndex:2, week:{}, allIng:ING, allCombos:COMBO, tried:COMBO,
   stock:{ricotta:500}, openPacks:['ricotta'], noveltyMax:6 }
 const cafe = cafeMenu(cafeArgs)
-assert.equal(cafe.length,6)
+assert.equal(cafe.length,18)
+assert.equal(cafe.filter(r=>r.taste === 'Sweet').length,9)
+assert.equal(cafe.filter(r=>r.taste === 'Savory').length,9)
+const avocadoToast = cafe.find(r=>r.id === 'avocado-egg-toast')
+assert.equal(avocadoToast.items.find(i=>i.k === 'eggs').p.units,1)
+assert.equal(avocadoToast.items.find(i=>i.k === 'avocado').p.units,0.5)
+assert.equal(cafe.find(r=>r.id === 'caprese-skewers').items.find(i=>i.k === 'evoo').p.ml,5)
+assert.ok(cafe.every(r=>r.macros.kcal > 250 && r.macros.kcal < 700))
 assert.deepEqual([...new Set(cafe.map(r=>r.taste))].sort(), ['Savory','Sweet'])
 assert.ok(cafeMenu({...cafeArgs,toGo:true}).every(r=>r.travel))
 const withDeletedIngredient = {...ING}

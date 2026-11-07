@@ -11,9 +11,9 @@ function CafeDish({ recipe, allIng, rate, use, current }) {
   return <article className="cafe-dish">
     <details>
       <summary>
-        <img src={`/cafe/${recipe.id}.webp`} alt="" width="112" height="96" loading="lazy" />
-        <span><strong>{name}</strong><span className="cafe-description">{description}</span>
-          <small>{recipe.prep ?? recipe.minutes + ' min'} · {macros.hasEst && '≈'}{fmtMoney(macros.cost)} · Recipe ▾</small></span>
+        <img src={`/cafe/${recipe.id}.webp`} alt="" width="640" height="400" loading="lazy" />
+        <span className="cafe-dish-copy"><span className="cafe-kind">{recipe.taste}</span><strong>{name}</strong><span className="cafe-description">{description}</span>
+          <small>{recipe.prep ?? recipe.minutes + ' min'} · {macros.hasEst && '≈'}{fmtMoney(macros.cost)}</small><span className="cafe-view-recipe">View recipe <span aria-hidden="true">↗</span></span></span>
       </summary>
       <div className="cafe-recipe">
         <p>{items.map(({k,p}) => (allIng[k].flat != null ? 'Pinch' : fmtPortion(p)) + ' ' + shortName(allIng[k].name).toLowerCase()).join(' · ')}</p>
@@ -37,16 +37,21 @@ function CafeDish({ recipe, allIng, rate, use, current }) {
 }
 
 export default function MariaCafe({ wk, week, monday, profiles, allIng, allCombos, tried, stock, openPacks, feedback,
-  dayIndex, setDayIndex, initialNovelty, onApplied, onClose }) {
+  dayIndex, setDayIndex, onApplied, onClose }) {
   const [larger, setLarger] = useState(false)
+  const [taste, setTaste] = useState('All')
   const [toGo, setToGo] = useState(false)
-  const [noveltyMax, setNovelty] = useState(initialNovelty)
+  const [noveltyMax, setNovelty] = useState(99)
   const applyCafeSnack = useStore(s => s.applyCafeSnack)
   const rateSnack = useStore(s => s.rateSnack)
   const people = activeProfilesOn(profiles, addDays(monday,dayIndex))
   const person = people.find(p => p.id === 'maria')
   const menu = useMemo(() => person ? cafeMenu({ person, dayIndex, week, allIng, allCombos, tried, stock, openPacks,
     feedback, noveltyMax, larger, toGo }) : [], [person, dayIndex, week, allIng, allCombos, tried, stock, openPacks, feedback, noveltyMax, larger, toGo])
+  const sweet = menu.filter(r => r.taste === 'Sweet')
+  const savory = menu.filter(r => r.taste === 'Savory')
+  const visible = taste === 'Sweet' ? sweet : taste === 'Savory' ? savory :
+    Array.from({ length: Math.max(sweet.length, savory.length) }, (_, i) => [sweet[i], savory[i]]).flat().filter(Boolean)
   const slotKey = DAY_KEYS[dayIndex] + '-merienda'
   const current = person && slotForPerson(week[slotKey],person.id)
   function apply(r) {
@@ -55,22 +60,39 @@ export default function MariaCafe({ wk, week, monday, profiles, allIng, allCombo
     onClose()
   }
   return <div className="mp-sheet-body cafe-menu">
-    <div className="cafe-filters">
-      <label>Day <select value={dayIndex} onChange={e=>setDayIndex(Number(e.target.value))}>{DAY_SHORT.map((d,i)=><option key={d} value={i}>{d}</option>)}</select></label>
-      <label>Serving <select value={larger ? 'large' : 'regular'} onChange={e=>setLarger(e.target.value === 'large')}><option value="regular">Regular</option><option value="large">More filling</option></select></label>
-      <label>Ingredients <select value={noveltyMax} onChange={e=>setNovelty(Number(e.target.value))}>
-        <option value={0}>Already tried</option><option value={1}>Up to 1 new</option><option value={6}>Full café menu</option>
-      </select></label>
-      <label><input type="checkbox" checked={toGo} onChange={e=>setToGo(e.target.checked)} /> To go</label>
+    <div className="cafe-controls">
+      <div className="cafe-day-row">
+        <span className="cafe-control-label">Plan for</span>
+        <div className="cafe-days" role="group" aria-label="Snack day">
+          {DAY_SHORT.map((d,i)=><button key={d} type="button" aria-pressed={dayIndex === i} onClick={()=>setDayIndex(i)}>
+            <span>{d}</span><strong>{addDays(monday,i).getDate()}</strong>
+          </button>)}
+        </div>
+      </div>
+      <div className="cafe-options">
+        <div className="cafe-serving" role="group" aria-label="Serving">
+          {[false,true].map(value=><button key={String(value)} type="button" aria-pressed={larger === value} onClick={()=>setLarger(value)}>{value ? 'More filling' : 'Regular'}</button>)}
+        </div>
+        <button type="button" className="cafe-takeaway" aria-pressed={toGo} onClick={()=>setToGo(v=>!v)}><span aria-hidden="true">↗</span> To go {toGo && '✓'}</button>
+        <details className="cafe-ingredient-filter">
+          <summary>{noveltyMax === 0 ? 'Already tried' : noveltyMax === 1 ? 'Up to 1 new' : 'Ingredient filters'} <span aria-hidden="true">⌄</span></summary>
+          <div className="cafe-filter-options" role="group" aria-label="Ingredient familiarity">
+            {[[99,'All recipes'],[1,'Up to 1 new'],[0,'Already tried']].map(([value,label])=>
+              <button key={value} type="button" aria-pressed={noveltyMax===value} onClick={()=>setNovelty(value)}>{label}</button>)}
+          </div>
+        </details>
+      </div>
+    </div>
+    <div className="cafe-browse" role="group" aria-label="Snack taste">
+      {[['All',menu.length],['Sweet',sweet.length],['Savory',savory.length]].map(([label,count])=>
+        <button key={label} type="button" aria-pressed={taste===label} onClick={()=>setTaste(label)}>{label}<span>{count}</span></button>)}
     </div>
     {current && <p className="cafe-current">{DAY_SHORT[dayIndex]} · María already has {allCombos[current.recipeKey]?.name ?? 'a snack'} planned.</p>}
-    {!person ? <p>María’s profile is inactive on this date.</p> : !menu.length ? <div><p>No recipe matches the current catalog and filters.</p>
-      {(toGo || noveltyMax < 6) && <button className="sw-act" onClick={() => { setToGo(false); setNovelty(6) }}>Explore full café menu</button>}</div> : <div className="cafe-columns">
-      {['Sweet','Savory'].map(taste => <section key={taste}>
-        <h3>{taste}</h3>
-        {menu.filter(r=>r.taste === taste).map(r => <CafeDish key={r.id} recipe={r} allIng={allIng} current={current} rate={(key,value)=>rateSnack(person.id,key,value)} use={()=>apply(r)} />)}
-        {!menu.some(r=>r.taste === taste) && <p>No {taste.toLowerCase()} recipe matches your ingredients and filters.</p>}
-      </section>)}
+    {!person ? <p>María’s profile is inactive on this date.</p> : !visible.length ? <div className="cafe-empty">
+      <p>No recipe matches these filters and your ingredient catalog.</p>
+      {(toGo || noveltyMax < 99 || taste !== 'All') && <button className="mp-btn mp-btn-glass" onClick={() => { setToGo(false); setNovelty(99); setTaste('All') }}>Show all recipes</button>}
+    </div> : <div className="cafe-grid">
+      {visible.map(r => <CafeDish key={r.id} recipe={r} allIng={allIng} current={current} rate={(key,value)=>rateSnack(person.id,key,value)} use={()=>apply(r)} />)}
     </div>}
   </div>
 }

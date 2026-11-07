@@ -271,7 +271,7 @@ function SnackPlannerBody({ wk, week, monday, onClose, onApplied }) {
   }
 
   const savedCombos = Object.entries(allCombos).filter(([, c]) => c.snack)
-  const subtitle = tab === 'cafe' ? 'Yorkville and California café snacks, made at home.' : tab === 'ideas' ? 'Built from your ingredients, following your rules.' : 'Snacks you liked. Their ingredients count as tried.'
+  const subtitle = tab === 'cafe' ? 'Yorkville-inspired snacks, made in your kitchen.' : tab === 'ideas' ? 'Built from your ingredients, following your rules.' : 'Snacks you liked. Their ingredients count as tried.'
   const empty = !snack.busy && !snack.error && !results.length
 
   return (
@@ -281,7 +281,7 @@ function SnackPlannerBody({ wk, week, monday, onClose, onApplied }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span className="mp-bubble" style={{ width: 42, height: 42, background: 'rgba(139,111,232,0.15)', color: '#7154DA' }}><Icon name="sparkle" size={20} stroke={2.2} /></span>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.02em' }}>{tab === 'ideas' ? (slot === 'merienda' ? 'Snack ideas' : 'Breakfast ideas') : tab === 'cafe' ? 'María’s café' : 'Saved snacks'}</span>
+              <span style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.02em' }}>{tab === 'ideas' ? (slot === 'merienda' ? 'Snack ideas' : 'Breakfast ideas') : tab === 'cafe' ? 'María’s picks' : 'Saved snacks'}</span>
               <span className="mp-muted" style={{ fontSize: 13 }}>{subtitle}</span>
             </div>
           </div>
@@ -290,7 +290,7 @@ function SnackPlannerBody({ wk, week, monday, onClose, onApplied }) {
 
         <div className="mw-bar">
           <Segmented label="Section" value={tab} onChange={v => { setTab(v); setConfirmDel(null) }}
-            options={[{ value: 'ideas', label: 'Ideas' }, ...(profiles.some(p=>p.id === 'maria') ? [{ value:'cafe', label:'María’s café' }] : []), { value: 'saved', label: `Saved · ${savedCombos.length}` }]} />
+            options={[{ value: 'ideas', label: 'Ideas' }, ...(profiles.some(p=>p.id === 'maria') ? [{ value:'cafe', label:'María’s picks' }] : []), { value: 'saved', label: `Saved · ${savedCombos.length}` }]} />
           {tab === 'ideas' && <Segmented label="Meal" value={slot} onChange={changeOpt(setSlot)} options={[{ value: 'merienda', label: 'Snack' }, { value: 'desayuno', label: 'Breakfast' }]} />}
           <span className="mp-muted" style={{ fontSize: 12.5 }}>Week of {fmtRange(monday, addDays(monday, 6))}</span>
         </div>
@@ -373,7 +373,7 @@ function SnackPlannerBody({ wk, week, monday, onClose, onApplied }) {
 
         {tab === 'cafe' && <MariaCafe wk={wk} week={week} monday={monday} profiles={profiles} allIng={allIng} allCombos={allCombos}
           tried={tried} stock={available} openPacks={openPacks} feedback={feedback} dayIndex={dayIndex} setDayIndex={setDayIndex}
-          initialNovelty={novelty} onApplied={onApplied} onClose={onClose} />}
+          onApplied={onApplied} onClose={onClose} />}
         {tab === 'saved' && (
           <>
             <div className="mp-sheet-body" style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 0 }}>

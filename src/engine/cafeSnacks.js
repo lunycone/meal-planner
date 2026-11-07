@@ -6,9 +6,9 @@ import { packOf } from '../lib/packs'
 import { reviewDay } from '../lib/reviewWeek'
 import { testedIngredients } from './tolerance'
 
-const piece = new Set(['lemon', 'apple'])
-const pinch = new Set(['basil', 'cinnamon'])
-const portion = (key, amount) => pinch.has(key) ? {} : piece.has(key) ? { units: amount } : { grams: amount }
+const piece = new Set(['lemon', 'apple', 'eggs', 'avocado'])
+const pinch = new Set(['basil', 'cinnamon', 'black-pepper'])
+const portion = (key, amount) => pinch.has(key) ? {} : piece.has(key) ? { units: amount } : key === 'evoo' ? { ml: amount } : { grams: amount }
 
 // Food, preview and planner all use the same items. Culinary quantities don't
 // change unit when the household edits a price or switches to a different pack.
