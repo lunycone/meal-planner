@@ -65,6 +65,7 @@ export const ING = {
   // usa esto para mostrar "~N ud" en vez de gramos sueltos.
   banana:            { name: 'Banana',            cat: 'fresco',   per100: 0.110, kc: 89, carb: 23,  prot: 1.1, fat: 0.3, fib: 2.6, fibSol: 0.7, gi: 51, unitGrams: 120, store: 'Costco', pack: '3 lb (1.36 kg, Costco) · $1.50', per: '120g → $0.13 · 107 kcal' },
   mandarin:         { name: 'Mandarin / Clementine', cat: 'fresco', unitGrams: 74, per100: 0.660, kc: 53, carb: 13, prot: 0.9, fat: 0.2, fib: 1.7, fibSol: 1.0, pack: '907g · $5.99',          per: 'ea ~74g → $0.49 · 39 kcal' },
+  grapes: { name: 'Grapes', cat: 'fresco', per100: 0.80, kc: 69, carb: 18, prot: 0.7, fat: 0.2, fib: 0.9, est: true, pack: 'price estimate — enter your store price', per: '100g · estimated nutrition and price' },
   orange:           { name: 'Orange',           cat: 'fresco',   per100: 0.440, kc: 47, carb: 12,  prot: 0.9, fat: 0.1, fib: 2.4, fibSol: 1.4, pack: '1.36kg · $5.99',        per: '½ ea ~100g → $0.44 · 47 kcal' },
   cantaloupe: { name: 'Cantaloupe',  cat: 'fresco',   per100: 0.233, kc: 34, carb: 8,  prot: 0.8, fat: 0.2, fib: 0.9, fibSol: 0.3, pack: '~1.5kg · $3.50 est.',   per: '200g → $0.47 · 68 kcal', est: true },
   hazelnuts:          { name: 'Hazelnuts (raw)',   cat: 'fresco',   per100: 2.203, kc: 628, carb: 17, prot: 15,  fat: 61,  fib: 9.7, fibSol: 1.2, store: 'Costco', pack: '908 g (Costco) · $20.00', per: '20g → $0.44 · 126 kcal' },

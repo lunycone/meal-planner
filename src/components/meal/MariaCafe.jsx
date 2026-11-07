@@ -16,7 +16,7 @@ function CafeDish({ recipe, allIng, rate, use, current }) {
           <small>{recipe.prep ?? recipe.minutes + ' min'} · {macros.hasEst && '≈'}{fmtMoney(macros.cost)}</small><span className="cafe-view-recipe">View recipe <span aria-hidden="true">↗</span></span></span>
       </summary>
       <div className="cafe-recipe">
-        <p>{items.map(({k,p}) => (allIng[k].flat != null ? 'Pinch' : fmtPortion(p)) + ' ' + shortName(allIng[k].name).toLowerCase()).join(' · ')}</p>
+        <p>{items.map(({k,p}) => (k === 'espresso' ? '1 shot' : k === 'yeast' ? '1 g' : allIng[k].flat != null ? 'Pinch' : fmtPortion(p)) + ' ' + shortName(allIng[k].name).toLowerCase()).join(' · ')}</p>
         <ol>{recipe.steps.map(step => <li key={step}>{step}</li>)}</ol>
         {recipe.travel && <p><b>To go</b> · {recipe.travel}</p>}
         {recipe.open.length > 0 ? <p>Uses an open pack · {labels(recipe.open)}</p> : recipe.onHand.length > 0 && <p>Recorded in pantry · {labels(recipe.onHand)}</p>}
@@ -50,7 +50,10 @@ export default function MariaCafe({ wk, week, monday, profiles, allIng, allCombo
     feedback, noveltyMax, larger, toGo }) : [], [person, dayIndex, week, allIng, allCombos, tried, stock, openPacks, feedback, noveltyMax, larger, toGo])
   const sweet = menu.filter(r => r.taste === 'Sweet')
   const savory = menu.filter(r => r.taste === 'Savory')
-  const visible = taste === 'Sweet' ? sweet : taste === 'Savory' ? savory :
+  const favorites = ['torrija-classic', 'mini-focaccia', 'torrija-berries', 'tortilla-bocadillo']
+  const rank = recipe => { const i = favorites.indexOf(recipe.id); return i < 0 ? favorites.length : i }
+  const mediterranean = menu.filter(r => r.collection === 'Spanish & Italian').sort((a,b) => rank(a) - rank(b))
+  const visible = taste === 'Spanish & Italian' ? mediterranean : taste === 'Sweet' ? sweet : taste === 'Savory' ? savory :
     Array.from({ length: Math.max(sweet.length, savory.length) }, (_, i) => [sweet[i], savory[i]]).flat().filter(Boolean)
   const slotKey = DAY_KEYS[dayIndex] + '-merienda'
   const current = person && slotForPerson(week[slotKey],person.id)
@@ -84,7 +87,7 @@ export default function MariaCafe({ wk, week, monday, profiles, allIng, allCombo
       </div>
     </div>
     <div className="cafe-browse" role="group" aria-label="Snack taste">
-      {[['All',menu.length],['Sweet',sweet.length],['Savory',savory.length]].map(([label,count])=>
+      {[['All',menu.length],['Sweet',sweet.length],['Savory',savory.length],['Spanish & Italian',mediterranean.length]].map(([label,count])=>
         <button key={label} type="button" aria-pressed={taste===label} onClick={()=>setTaste(label)}>{label}<span>{count}</span></button>)}
     </div>
     {current && <p className="cafe-current">{DAY_SHORT[dayIndex]} · María already has {allCombos[current.recipeKey]?.name ?? 'a snack'} planned.</p>}
