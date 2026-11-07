@@ -141,5 +141,167 @@ export const CAFE_SNACKS = [
     items:[['sourdough-bread',75,105],['ricotta',100,130],['mushrooms',130,170],['butter',7,10],['black-pepper',1,1]],
     steps:['Slice the mushrooms. Cook them in a hot pan with the butter until their liquid evaporates and the edges turn golden. Season with black pepper.',
       'Toast the bread and spread with ricotta. Pile the warm mushrooms on top just before eating.']
-  }
+  },
+  {
+    id: "ricotta-crepes",
+    name: "Lemon ricotta crêpes",
+    taste: "Sweet",
+    minutes: 20,
+    description: "Thin folded crêpes with lemon ricotta and a spoon of warm blueberries.",
+    items: [["flour", 40, 55], ["eggs", 1, 1], ["whole-milk", 90, 110], ["ricotta", 60, 85], ["blueberries", 60, 80], ["lemon", 0.25, 0.25], ["butter", 5, 7]],
+    steps: [
+      "Whisk flour, egg and milk into a smooth batter. Rest for 5 minutes. Cook thin crêpes in a pan with the butter, turning once.",
+      "Simmer the frozen blueberries following the pack directions. Mix ricotta with lemon zest, fill the crêpes and fold into quarters. Spoon the berries alongside."
+    ],
+    prep: "20 min",
+  },
+  {
+    id: "strawberry-chia",
+    name: "Strawberry coconut chia glass",
+    taste: "Sweet",
+    minutes: 10,
+    description: "A pale coconut chia pudding with ruby strawberry compote and toasted coconut.",
+    items: [["chia", 25, 32], ["coconut-milk", 70, 90], ["greek-yogurt", 120, 150], ["strawberries", 100, 130], ["shredded-coconut", 8, 12], ["honey", 8, 10]],
+    steps: [
+      "Stir chia, coconut milk, yogurt and honey thoroughly. Stir again after 10 minutes, then chill for at least 3 hours.",
+      "Cook the frozen strawberries according to the pack directions, crush and cool. Layer over the pudding and finish with dry-toasted coconut."
+    ],
+    prep: "10 min active + 3 h chilling",
+    travel: "Carry chilled with an ice pack; keep the coconut topping separate.",
+  },
+  {
+    id: "mandarin-baked-oats",
+    name: "Mandarin chocolate baked oat ramekin",
+    taste: "Sweet",
+    minutes: 25,
+    description: "A warm little oat cake with dark chocolate pockets and fresh mandarin.",
+    items: [["oats", 45, 60], ["eggs", 1, 1], ["greek-yogurt", 100, 140], ["dark-chocolate", 15, 20], ["mandarin", 80, 110], ["honey", 8, 10]],
+    steps: [
+      "Heat the oven to 180°C. Grind the oats into flour, then stir in the egg, yogurt and honey. Fold in chopped chocolate.",
+      "Spoon into an ovenproof ramekin and bake for 20–25 minutes until the center is fully set. Top with peeled mandarin segments."
+    ],
+    prep: "5 min active + 25 min baking",
+  },
+  {
+    id: "lemon-cheesecake",
+    name: "Little lemon ricotta cheesecake",
+    taste: "Sweet",
+    minutes: 30,
+    description: "A softly set individual cheesecake with lemon zest and blueberry compote.",
+    items: [["ricotta", 120, 160], ["greek-yogurt", 80, 110], ["eggs", 1, 1], ["honey", 12, 16], ["lemon", 0.25, 0.25], ["blueberries", 70, 100]],
+    steps: [
+      "Heat the oven to 165°C. Whisk ricotta, yogurt, egg, honey and lemon zest until smooth. Pour into a small ovenproof ramekin.",
+      "Bake for 25–35 minutes until fully set. Cool, then refrigerate. Cook the frozen blueberries following their pack directions and cool before spooning over the cheesecake."
+    ],
+    prep: "10 min active + baking and cooling",
+    travel: "Pack the chilled ramekin with an ice pack.",
+  },
+  {
+    id: "apple-rose-tartlet",
+    name: "Apple rose & almond tartlet",
+    taste: "Sweet",
+    minutes: 40,
+    description: "A little free-form tart with an apple-slice rose and almond butter filling.",
+    items: [["flour", 40, 55], ["butter", 12, 16], ["greek-yogurt", 25, 35], ["apple", 0.5, 1], ["almond-butter", 15, 20], ["cinnamon", 1, 1], ["honey", 6, 8]],
+    steps: [
+      "Rub cold butter into the flour. Stir in yogurt to make a dough, adding a teaspoon of water if needed. Chill for 10 minutes, then roll into a small circle.",
+      "Heat the oven to 190°C. Slice the apple very thinly and soften briefly in a pan with water. Spread almond butter on the dough, overlap the apple slices in a spiral and fold the edge inward. Brush with honey, dust with cinnamon and bake 25–30 minutes until golden."
+    ],
+    prep: "15 min active + chilling and baking",
+  },
+  {
+    id: "chocolate-almond-truffles",
+    name: "Cocoa almond truffles & yogurt",
+    taste: "Sweet",
+    minutes: 12,
+    description: "Small cocoa-dusted almond bites with a thick vanilla yogurt dip.",
+    items: [["almond-butter", 25, 35], ["oats", 25, 35], ["cocoa", 8, 10], ["honey", 12, 16], ["greek-yogurt", 140, 180], ["vanilla", 1, 1]],
+    steps: [
+      "Grind the oats finely. Mix with almond butter, honey and most of the cocoa, adding a teaspoon of water if needed. Roll into 3–4 small balls and dust with the remaining cocoa.",
+      "Stir vanilla into the yogurt and serve in a small bowl alongside the truffles. Chill the bites for a firmer texture."
+    ],
+    prep: "12 min",
+    travel: "Pack bites and yogurt separately with an ice pack.",
+  },
+  {
+    id: "salmon-tea-sandwiches",
+    name: "Salmon & cucumber tea fingers",
+    taste: "Savory",
+    minutes: 8,
+    description: "Neat little sourdough fingers with salmon, lemon ricotta and fine cucumber.",
+    items: [["sourdough-bread", 75, 100], ["ricotta", 65, 85], ["smoked-salmon", 55, 75], ["cucumber", 70, 100], ["lemon", 0.25, 0.25]],
+    steps: [
+      "Slice the bread thinly. Mix the ricotta with lemon zest. Slice cucumber very thinly and pat it dry.",
+      "Spread the ricotta, layer cucumber and salmon, close the sandwiches and cut into neat fingers. Use all the weighed bread, including any offcuts."
+    ],
+    prep: "8 min",
+    travel: "Keep chilled in a small box with an ice pack.",
+  },
+  {
+    id: "zucchini-galette",
+    name: "Zucchini ribbon & ricotta galette",
+    taste: "Savory",
+    minutes: 40,
+    description: "A crisp free-form pastry with lemon ricotta and folded zucchini ribbons.",
+    items: [["flour", 45, 60], ["butter", 12, 16], ["greek-yogurt", 30, 40], ["ricotta", 65, 85], ["zucchini", 100, 140], ["lemon", 0.25, 0.25], ["basil", 1, 1]],
+    steps: [
+      "Rub cold butter into the flour. Stir in yogurt and a little water to form dough. Chill for 10 minutes. Heat the oven to 200°C.",
+      "Roll into a small circle. Spread ricotta mixed with lemon zest and basil over the center. Add thin zucchini ribbons, fold in the edges and bake for 25–30 minutes until the base is crisp and the zucchini is tender."
+    ],
+    prep: "15 min active + chilling and baking",
+  },
+  {
+    id: "feta-pepper-pancakes",
+    name: "Golden feta & pepper pancakes",
+    taste: "Savory",
+    minutes: 18,
+    description: "Three little savory pancakes with sweet pepper, feta and lemon yogurt.",
+    items: [["flour", 40, 55], ["eggs", 1, 1], ["whole-milk", 60, 80], ["feta-cow", 35, 45], ["yellow-pepper", 80, 110], ["greek-yogurt", 70, 100], ["butter", 5, 7], ["lemon", 0.25, 0.25]],
+    steps: [
+      "Dice the pepper finely and soften in a pan with a little water. Whisk flour, egg and milk, then fold in the pepper and crumbled feta.",
+      "Cook small pancakes in the butter, turning until golden and fully cooked. Mix yogurt with lemon zest and serve alongside."
+    ],
+    prep: "18 min",
+    travel: "Cool the pancakes and pack with the yogurt and an ice pack.",
+  },
+  {
+    id: "cheddar-crackers",
+    name: "Cheddar shortbread & tomato ricotta",
+    taste: "Savory",
+    minutes: 30,
+    description: "Little golden cheese biscuits with cool ricotta and fresh tomato.",
+    items: [["flour", 40, 55], ["cheddar", 35, 45], ["butter", 12, 16], ["ricotta", 55, 75], ["tomato", 100, 140], ["black-pepper", 1, 1]],
+    steps: [
+      "Heat the oven to 180°C. Rub butter into flour, add finely grated cheddar and a little cold water to bind. Roll thinly, cut into small squares and prick with a fork.",
+      "Bake 15–20 minutes until golden and crisp. Serve all the biscuits with ricotta, chopped tomato and black pepper."
+    ],
+    prep: "10 min active + 20 min baking",
+    travel: "Keep the biscuits dry; pack ricotta and tomato separately with an ice pack.",
+  },
+  {
+    id: "egg-ricotta-tartine",
+    name: "Soft scrambled egg & ricotta tartine",
+    taste: "Savory",
+    minutes: 10,
+    description: "Soft folds of egg over lemon ricotta, with warm sourdough and tomato.",
+    items: [["sourdough-bread", 65, 90], ["eggs", 2, 3], ["ricotta", 50, 70], ["butter", 5, 7], ["tomato", 80, 110], ["lemon", 0.25, 0.25]],
+    steps: [
+      "Toast the sourdough. Mix ricotta with a little lemon zest and spread on the toast.",
+      "Beat the eggs. Melt the butter over low heat and gently fold the eggs with a spatula until fully set but still soft. Spoon over the toast and serve with sliced tomato."
+    ],
+    prep: "10 min",
+  },
+  {
+    id: "warm-caprese-peppers",
+    name: "Roasted pepper caprese boats",
+    taste: "Savory",
+    minutes: 30,
+    description: "Golden pepper halves filled with tomato and mozzarella, with crisp toast.",
+    items: [["yellow-pepper", 160, 220], ["mozzarella", 70, 95], ["tomato", 100, 140], ["sourdough-bread", 50, 70], ["evoo", 5, 7], ["basil", 1, 1]],
+    steps: [
+      "Heat the oven to 200°C. Halve and deseed the pepper, brush with olive oil and roast cut-side up for 15 minutes.",
+      "Fill with chopped tomato and mozzarella, add dried basil and roast another 10–15 minutes until bubbling. Serve with toasted sourdough."
+    ],
+    prep: "10 min active + 25 min roasting",
+  },
 ]

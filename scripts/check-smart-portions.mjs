@@ -127,9 +127,9 @@ const { default: cafeStore, selectAllCombos } = require('../src/store/useStore')
 const cafeArgs = { person:people[1], dayIndex:2, week:{}, allIng:ING, allCombos:COMBO, tried:COMBO,
   stock:{ricotta:500}, openPacks:['ricotta'], noveltyMax:6 }
 const cafe = cafeMenu(cafeArgs)
-assert.equal(cafe.length,18)
-assert.equal(cafe.filter(r=>r.taste === 'Sweet').length,9)
-assert.equal(cafe.filter(r=>r.taste === 'Savory').length,9)
+assert.equal(cafe.length,30)
+assert.equal(cafe.filter(r=>r.taste === 'Sweet').length,15)
+assert.equal(cafe.filter(r=>r.taste === 'Savory').length,15)
 const avocadoToast = cafe.find(r=>r.id === 'avocado-egg-toast')
 assert.equal(avocadoToast.items.find(i=>i.k === 'eggs').p.units,1)
 assert.equal(avocadoToast.items.find(i=>i.k === 'avocado').p.units,0.5)
