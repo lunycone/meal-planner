@@ -505,6 +505,27 @@ const useStore = create(
         }))
       },
 
+      // Register the selected serving and update one person's slot in one persisted write.
+      applyCafeSnack(weekKey, slotKey, personId, recipe, activeIds) {
+        set(s => {
+          const id = 'cafe-' + recipe.id + '-' + recipe.size + '-' + personId
+          // Reuse identical servings; keep previous edits and archived recipes intact.
+          const reusable = s.customCombos.find(c => c.cafeServing === id &&
+            !s.deletedCombos.includes('custom-' + c.id) &&
+            !s.comboOverrides['custom-' + c.id] && JSON.stringify(c.items) === JSON.stringify(recipe.items))
+          const finalId = reusable?.id ?? (s.customCombos.some(c => c.id === id) ? id + '-' + crypto.randomUUID() : id)
+          const combo = { id: finalId, cafeServing: id, name: recipe.name, meals: ['merienda'], ownerId: personId,
+            items: recipe.items, snackGenerated: true }
+          const week = s.weekPlan[weekKey] ?? {}
+          const current = week[slotKey]
+          const byPerson = current?.byPerson ? { ...current.byPerson } :
+            Object.fromEntries(activeIds.map(pid => [pid, current ?? null]))
+          byPerson[personId] = { type: 'desayuno', recipeKey: 'custom-' + finalId }
+          return { customCombos: reusable ? s.customCombos : [...s.customCombos, combo],
+            weekPlan: { ...s.weekPlan, [weekKey]: { ...week, [slotKey]: { byPerson } } } }
+        })
+      },
+
       clearMealSlot(weekKey, slotKey) {
         set(s => {
           const week = { ...(s.weekPlan[weekKey] ?? {}) }

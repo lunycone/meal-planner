@@ -704,3 +704,27 @@
 .sw-detail-select { display: flex; flex-wrap: wrap; gap: 12px; margin: 10px 0; }
 .sw-detail select { font: inherit; padding: 4px; }
 .sw-detail ul { margin: 6px 0; padding-left: 20px; }
+
+/* María's café menu */
+.cafe-menu { background: #faf7f1; color: #342b29; }
+.cafe-filters, .cafe-feedback { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; }
+.cafe-filters { margin:4px 0 16px; }
+.cafe-filters label { font-size:13px; display:flex; align-items:center; gap:6px; }
+.cafe-filters select { font:inherit; color:inherit; border:1px solid #d6cbc1; border-radius:7px; background:#fffdfa; padding:5px; }
+.cafe-columns { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
+.cafe-columns h3 { font:italic 25px Georgia,serif; margin:0 0 8px; color:#704533; }
+.cafe-columns section { min-width:0; }
+.cafe-current { font-size:13px; margin:0 0 12px; }
+.cafe-dish { border-top:1px solid #dbcec1; }
+.cafe-dish summary { display:flex; align-items:center; gap:12px; padding:12px 0; cursor:pointer; list-style:none; }
+.cafe-dish summary::-webkit-details-marker { display:none; }
+.cafe-dish summary:focus-visible { outline:2px solid #85583e; outline-offset:2px; }
+.cafe-dish summary img { width:clamp(80px,9vw,112px); height:92px; object-fit:cover; border-radius:8px; }
+.cafe-dish summary strong { font:600 18px/1.15 Georgia,serif; }
+.cafe-description,.cafe-dish summary small { display:block; font-size:13px; line-height:1.4; margin-top:4px; }
+.cafe-dish summary small { color:#705d53; font-size:12px; }
+.cafe-recipe { padding:0 0 16px; font-size:13px; line-height:1.5; }
+.cafe-recipe ol { padding-left:20px; }
+.cafe-recipe p,.cafe-recipe li { margin:6px 0; }
+.cafe-feedback { margin:10px 0; }
+@media(max-width:680px){ .cafe-columns { grid-template-columns:1fr; } .cafe-dish summary img { width:100px; } }
