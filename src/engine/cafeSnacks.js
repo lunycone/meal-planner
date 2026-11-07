@@ -7,7 +7,7 @@ import { reviewDay } from '../lib/reviewWeek'
 import { testedIngredients } from './tolerance'
 
 const piece = new Set(['lemon', 'apple', 'eggs', 'avocado'])
-const pinch = new Set(['basil', 'cinnamon', 'black-pepper', 'vanilla'])
+const pinch = new Set(['basil', 'cinnamon', 'black-pepper', 'vanilla', 'rosemary', 'espresso'])
 const portion = (key, amount) => pinch.has(key) ? {} : piece.has(key) ? { units: amount } : ['evoo', 'coconut-milk'].includes(key) ? { ml: amount } : { grams: amount }
 
 // Food, preview and planner all use the same items. Culinary quantities don't

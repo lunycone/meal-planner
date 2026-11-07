@@ -304,4 +304,165 @@ export const CAFE_SNACKS = [
     ],
     prep: "10 min active + 25 min roasting",
   },
+  {
+    id: "mini-focaccia",
+    collection: "Spanish & Italian",
+    name: "Rosemary focaccia with mozzarella & roasted tomato",
+    taste: "Savory",
+    minutes: 30,
+    description: "A dimpled mini focaccia with rosemary, bubbling mozzarella and roasted tomato.",
+    items: [["flour", 60, 80], ["yeast", 1, 1], ["evoo", 8, 10], ["rosemary", 1, 1], ["mozzarella", 40, 55], ["tomato", 80, 110], ["salt", 1, 1]],
+    steps: [
+      "Mix flour, a pinch of salt and 1 g dry yeast with water equal to three quarters of the flour weight. Fold in half the olive oil, cover and leave somewhere warm until puffy, about 90–120 minutes.",
+      "Oil a small baking dish with the remaining oil. Stretch the dough into it and rest for 30 minutes. Heat the oven to 220°C. Dimple the dough, add rosemary and sliced tomato, then bake for about 18 minutes. Add mozzarella and bake another 5–7 minutes until the base is cooked and the cheese bubbles."
+    ],
+    prep: "15 min active + 2–3 h proving + baking",
+    travel: "Cool before packing. Keep chilled with an ice pack and warm again if possible.",
+  },
+  {
+    id: "tortilla-bocadillo",
+    collection: "Spanish & Italian",
+    name: "Little bocadillo de tortilla",
+    taste: "Savory",
+    minutes: 25,
+    description: "A golden potato tortilla tucked into crisp sourdough, just as it is.",
+    items: [["sourdough-bread", 60, 80], ["potato", 110, 150], ["eggs", 1, 2], ["evoo", 7, 10], ["salt", 1, 1]],
+    steps: [
+      "Slice the potato finely. Soften in a small covered pan with the olive oil and a splash of water, stirring occasionally, until fully tender. Let excess water evaporate.",
+      "Beat the egg and fold in the potato. Cook in a small nonstick pan over low heat, turning carefully, until fully set. Split the bread and tuck the tortilla inside."
+    ],
+    prep: "25 min",
+    travel: "Cool the tortilla, then pack the sandwich with an ice pack.",
+  },
+  {
+    id: "pan-tomate-ricotta",
+    collection: "Spanish & Italian",
+    name: "Pan con tomate, ricotta & ham",
+    taste: "Savory",
+    minutes: 7,
+    description: "Crisp bread rubbed with juicy tomato, topped with ricotta and soft folds of ham.",
+    items: [["sourdough-bread", 70, 95], ["tomato", 100, 130], ["ricotta", 65, 90], ["cooked-ham", 45, 65], ["evoo", 5, 7]],
+    steps: [
+      "Toast the bread. Grate the tomato and spread the pulp over the toast. Drizzle with the olive oil.",
+      "Add small spoonfuls of ricotta and loose folds of cooked ham. Serve immediately while the bread is crisp."
+    ],
+    prep: "7 min",
+    travel: "Pack the ham, ricotta and tomato chilled. Carry dry toast separately and assemble when eating.",
+  },
+  {
+    id: "zucchini-piadina",
+    collection: "Spanish & Italian",
+    name: "Zucchini, mozzarella & lemon piadina",
+    taste: "Savory",
+    minutes: 22,
+    description: "A folded flatbread with golden zucchini, melted mozzarella and lemon zest.",
+    items: [["flour", 55, 75], ["evoo", 7, 9], ["zucchini", 100, 140], ["mozzarella", 55, 75], ["lemon", 0.25, 0.25], ["salt", 1, 1]],
+    steps: [
+      "Mix flour with a pinch of salt, half the oil and enough warm water to make a soft dough. Knead briefly and rest covered for 10 minutes. Slice the zucchini thinly and cook with the remaining oil until golden.",
+      "Roll the dough thinly. Cook in a hot dry pan, turning until both sides have brown spots and no raw dough remains. Add zucchini, mozzarella and lemon zest, fold in half and warm gently until the cheese melts."
+    ],
+    prep: "22 min",
+    travel: "Cool, pack chilled with an ice pack and reheat if possible.",
+  },
+  {
+    id: "roasted-grape-crostini",
+    collection: "Spanish & Italian",
+    name: "Roasted grape, ricotta & walnut crostini",
+    taste: "Savory",
+    minutes: 25,
+    description: "Jammy roasted grapes over creamy ricotta, with toasted walnuts on sourdough.",
+    items: [["sourdough-bread", 65, 90], ["grapes", 100, 140], ["ricotta", 85, 115], ["walnuts", 15, 20], ["rosemary", 1, 1]],
+    steps: [
+      "Heat the oven to 200°C. Put the washed grapes in a small baking dish with rosemary and a teaspoon of water. Roast for 15–20 minutes until softened and juicy.",
+      "Toast the bread and walnuts separately. Spread the ricotta over the toast, spoon over the grapes and scatter the chopped walnuts."
+    ],
+    prep: "10 min active + 20 min roasting",
+    travel: "Cool the grapes and carry them and the ricotta chilled. Keep bread and walnuts separate.",
+  },
+  {
+    id: "mini-vegetable-coca",
+    collection: "Spanish & Italian",
+    name: "Mini coca de verduras",
+    taste: "Savory",
+    minutes: 35,
+    description: "A thin crisp olive-oil base with roasted golden pepper, zucchini and tomato.",
+    items: [["flour", 55, 75], ["evoo", 10, 13], ["yellow-pepper", 80, 110], ["zucchini", 70, 100], ["tomato", 60, 90], ["rosemary", 1, 1], ["salt", 1, 1]],
+    steps: [
+      "Heat the oven to 210°C. Mix flour with a pinch of salt, half the olive oil and enough water to form a firm dough. Rest covered for 10 minutes. Slice the vegetables thinly and pat the tomato dry.",
+      "Roll the dough very thinly on baking paper. Arrange the vegetables over it, brush with the remaining oil and sprinkle with rosemary. Bake 25–30 minutes until the base is crisp and the vegetables are tender."
+    ],
+    prep: "15 min active + 25–30 min baking",
+  },
+  {
+    id: "tiramisu-cup",
+    collection: "Spanish & Italian",
+    name: "Little tiramisù cream cup",
+    taste: "Sweet",
+    minutes: 12,
+    description: "Coffee-soaked toast layers, mascarpone yogurt cream and a fine cocoa veil.",
+    items: [["sourdough-bread", 40, 55], ["mascarpone", 35, 45], ["greek-yogurt", 140, 180], ["espresso", 1, 1], ["cocoa", 5, 7], ["honey", 8, 10]],
+    steps: [
+      "Toast the bread lightly, cool and cut into small pieces. Prepare one small espresso and let it cool. Stir mascarpone, yogurt and honey into a smooth cream.",
+      "Dip the bread briefly in the espresso. Layer with the cream in a small glass, finish with sifted cocoa and chill for at least an hour."
+    ],
+    prep: "12 min active + 1 h chilling",
+    travel: "Carry chilled with an ice pack.",
+  },
+  {
+    id: "orange-olive-oil-cake",
+    collection: "Spanish & Italian",
+    name: "Orange, almond & olive-oil cakelet",
+    taste: "Sweet",
+    minutes: 30,
+    description: "An individual golden cake with orange zest, almonds and olive oil.",
+    items: [["flour", 30, 40], ["almonds", 15, 20], ["eggs", 1, 1], ["greek-yogurt", 65, 85], ["orange", 60, 80], ["evoo", 7, 9], ["honey", 12, 16]],
+    steps: [
+      "Heat the oven to 175°C. Grind the almonds finely. Separate the egg. Whisk the yolk with honey, oil, yogurt, orange zest and the juice squeezed from the weighed orange flesh. Fold in flour and ground almonds.",
+      "Beat the egg white to soft peaks and fold it through gently. Pour into a small ovenproof dish and bake for 20–25 minutes until set and a skewer comes out clean."
+    ],
+    prep: "10 min active + 25 min baking",
+  },
+  {
+    id: "baked-ricotta-strawberry",
+    collection: "Spanish & Italian",
+    name: "Lemon baked ricotta with strawberries",
+    taste: "Sweet",
+    minutes: 30,
+    description: "A warm individual ricotta custard with glossy strawberry compote.",
+    items: [["ricotta", 120, 155], ["greek-yogurt", 80, 110], ["eggs", 1, 1], ["lemon", 0.25, 0.25], ["honey", 10, 14], ["strawberries", 100, 130]],
+    steps: [
+      "Heat the oven to 170°C. Beat ricotta, yogurt, egg, honey and lemon zest until smooth. Spoon into an ovenproof ramekin.",
+      "Bake for 25–30 minutes until fully set. Cook the frozen strawberries according to their pack directions and spoon over the ricotta. Serve warm or cool and refrigerate."
+    ],
+    prep: "10 min active + 30 min baking",
+    travel: "Cool and carry chilled with an ice pack.",
+  },
+  {
+    id: "torrija-classic",
+    collection: "Spanish & Italian",
+    name: "María’s cinnamon & orange torrija",
+    taste: "Sweet",
+    minutes: 20,
+    description: "A thick golden torrija with orange-infused milk, cinnamon and a little honey.",
+    items: [["sourdough-bread", 65, 90], ["whole-milk", 90, 120], ["eggs", 1, 1], ["orange", 50, 70], ["cinnamon", 1, 1], ["butter", 6, 8], ["honey", 8, 12], ["greek-yogurt", 70, 100]],
+    steps: [
+      "Warm the milk with cinnamon and zest from the orange, then cool slightly. Put thick, slightly stale bread in a small dish and slowly spoon over all the milk. Give it time to absorb.",
+      "Beat the egg and coat the soaked bread, using all of it. Cook in the butter over medium-low heat, turning gently, until golden outside and fully cooked inside. Drizzle with honey, dust with cinnamon and serve with yogurt and the remaining orange flesh."
+    ],
+    prep: "20 min",
+  },
+  {
+    id: "torrija-berries",
+    collection: "Spanish & Italian",
+    name: "Torrija with warm berries & yogurt",
+    taste: "Sweet",
+    minutes: 22,
+    description: "A custardy golden torrija with thick yogurt and warm blueberry compote.",
+    items: [["sourdough-bread", 65, 90], ["whole-milk", 90, 120], ["eggs", 1, 1], ["cinnamon", 1, 1], ["butter", 6, 8], ["honey", 8, 12], ["greek-yogurt", 80, 110], ["blueberries", 70, 100]],
+    steps: [
+      "Cook the frozen blueberries with a splash of water according to the pack directions. Warm the milk with cinnamon, then cool slightly. Slowly spoon all the milk over thick, slightly stale bread and let it absorb.",
+      "Beat the egg and coat the bread with all of it. Cook in the butter over medium-low heat until golden on both sides and fully cooked inside. Serve with yogurt, blueberry compote and a drizzle of honey."
+    ],
+    prep: "22 min",
+  },
 ]
