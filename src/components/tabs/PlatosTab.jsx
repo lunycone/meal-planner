@@ -1,14 +1,14 @@
-import { lazy, Suspense, useState, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import useStore, { selectAllIng, selectAllCombos } from '../../store/useStore'
 import Icon, { MEAL_ICON } from '../ui/Icon'
 import Segmented from '../ui/Segmented'
 import PlatoSheet from '../meal/PlatoSheet'
+import SnackPlannerSheet from '../meal/SnackPlannerSheet'
 import { MEAL_STYLE, MEAL_LABEL, fmtMoney, mondayOf, addDays, weekKeyOf } from '../../lib/mealplan'
 import { comboAgg, pcosCarbLevel, proteinLevel, kcalLevel, LEVEL_COLOR } from '../../engine/calc'
 import PcosBadge from '../PcosBadge'
 
 const MEAL_ORDER = ['desayuno', 'comida', 'merienda', 'cena']
-const SnackPlannerSheet = lazy(() => import('../meal/SnackPlannerSheet'))
 const EMPTY_WEEK = {}
 
 // Fila de la lista: abre la ficha del plato (ver = editar, ver PlatoSheet).
@@ -48,6 +48,7 @@ export default function PlatosTab() {
   const [sortBy, setSortBy]         = useState('name')
   const [mealFilter, setMealFilter] = useState('all')
   const [breakfastWeek, setBreakfastWeek] = useState(null)
+  const breakfastKey = breakfastWeek && weekKeyOf(breakfastWeek)
 
   // Platos puestos esta semana o la que viene
   const inPlan = useMemo(() => {
@@ -139,10 +140,8 @@ export default function PlatosTab() {
       )}
 
       {open !== undefined && <PlatoSheet key={open ?? 'new'} comboKey={open} onClose={() => setOpen(undefined)} />}
-      {breakfastWeek && <Suspense fallback={null}>
-        <SnackPlannerSheet breakfastOnly monday={breakfastWeek} wk={weekKeyOf(breakfastWeek)}
-          week={weekPlan[weekKeyOf(breakfastWeek)] ?? EMPTY_WEEK} onClose={() => setBreakfastWeek(null)} />
-      </Suspense>}
+      {breakfastWeek && <SnackPlannerSheet breakfastOnly monday={breakfastWeek} wk={breakfastKey}
+        week={weekPlan[breakfastKey] ?? EMPTY_WEEK} onClose={() => setBreakfastWeek(null)} />}
     </div>
   )
 }
