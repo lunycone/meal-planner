@@ -40,6 +40,7 @@ import { hasPasta, starchFamily, tagsOf } from '../lib/tags'
 import { aggregateIngredients, needAmount, packPlan } from '../lib/needs'
 import { packOf, fmtAmount } from '../lib/packs'
 import { composeDishes, isGenerated, GEN_PREFIX } from './composeDishes'
+import { saladDishes } from './saladDishes'
 import { cuisineDishes } from './cuisines'
 import { rangeLabel } from '../lib/batchConfig'
 import { smartSnackCandidates } from './snackGen'
@@ -48,6 +49,7 @@ export const PRIORITIES = ['price', 'protein', 'veg']
 export const PLAN_DAYS = [0, 1, 2, 3, 4] // por defecto lunes–viernes; los de verdad vienen de Ajustes (ctx.days)
 const EXCLUDE_KEYS = new Set(['b-gentle-shake-bad-stomach-day', 'm-sourdough-toast-with-boiled-apple-and-honey-binding']) // para días malos de estómago
 const TOP_PAIRS = 60
+const INGREDIENT_DISH_LIMIT = 200
 const SNACK_VARIETY_SLACK = 4   // how much worse (in «dollars» of score) an option may get to show a different snack
 
 // Pesos de la puntuación, en dólares equivalentes.
@@ -272,7 +274,7 @@ export function planToSlots(plan, people, allCombos, days = PLAN_DAYS) {
 // ── Fase 2: motor real ──────────────────────────────────────────────────────
 function listDays(ix) { return rangeLabel(ix) }
 
-export function evaluatePlan(plan, people, allIng, allCombos, ctx) {
+export function evaluatePlan(plan, people, allIng, allCombos, ctx, { includePacks = true } = {}) {
   const days = ctx.days ?? PLAN_DAYS
   const slots = planToSlots(plan, people, allCombos, days)
   let cost = 0, score = 0
@@ -345,9 +347,6 @@ export function evaluatePlan(plan, people, allIng, allCombos, ctx) {
     score -= W.pref * prefOf(ctx.prefs, k)
   }
 
-  const pk = packScore(slots, people, allIng, allCombos, ctx.stock ?? {}, days)
-  score += W.waste * pk.waste
-
   const warnings = []
   const group = (list, text) => {
     const byP = {}
@@ -368,7 +367,13 @@ export function evaluatePlan(plan, people, allIng, allCombos, ctx) {
   if (base) warnings.push(`Lunch and dinner share the same base (${base})`)
   if (dishHasTag(dc, 'red-meat', allIng)) warnings.push('Red meat at dinner')
 
-  return { plan, slots, days, daily, violations, uncertainty, cost, weekCost: cost * 7 / days.length, score, perPerson, warnings, packs: pk }
+  const result = { plan, slots, days, daily, violations, uncertainty, cost, weekCost: cost * 7 / days.length, score, perPerson, warnings }
+  return includePacks ? withPackScore(result, people, allIng, allCombos, ctx.stock) : result
+}
+
+function withPackScore(result, people, allIng, allCombos, stock = {}) {
+  const packs = packScore(result.slots, people, allIng, allCombos, stock, result.days)
+  return { ...result, score: result.score + W.waste * packs.waste, packs }
 }
 
 // Cuánto de la despensa usa esta semana y cuánto de lo fresco se tiraría.
@@ -453,26 +458,31 @@ function snackPoolFor({ allIng, allCombos, people, priority, source, seed = 0, s
  *       recent [recipeKey] del batch de las 2 semanas anteriores
  *       locks { L, D, B: {pid}, S: {pid} } para cambiar solo un plato
  *       stock { ingKey: amount } despensa disponible (sin lo caducado)
- *       source 'dishes' (catálogo) | 'ingredients' (platos compuestos, ver composeDishes)
+ *       source 'dishes' | 'ingredients' | 'salads' | 'country' | 'surprise'
  * Devuelve { results: [evaluatePlan…], tried, ms }.
  */
 export function generateSmartWeeks({
   allIng, allCombos, people, priority = 'price', vegMin = VEG_DAILY_MIN, seed = 0,
   shown = [], exclude = [], prefs = {}, recent = [], locks = {}, stock = {}, source = 'dishes', country = null, pairPrefs = {}, days = PLAN_DAYS, count = 3,
-  snackPool = null, snackMode = 'catalog', blockedBase = null, strictRules = false, allPairs = true,
+  snackPool = null, snackMode = 'catalog', blockedBase = null, strictRules = false, allPairs = true, ingredientDishes = null,
 }) {
   const t0 = performance.now()
   // Fuentes de comidas y cenas:
   //   dishes      → el catálogo (y tus platos);
   //   ingredients → platos compuestos de ingredientes (composeDishes);
+  //   salads      → ensaladas completas con aliños (saladDishes);
   //   country     → platos compuestos con el perfil de sabor de un país (cuisines.js);
   //   surprise    → compuestos + recetas del mundo, al azar: sin prioridad, con las reglas.
   // Solo «dishes» usa las comidas y cenas del catálogo; desayunos y meriendas
   // salen siempre del catálogo.
   let generated = null, poolKeys = null
   if (source === 'ingredients') {
-    generated = composeDishes(allIng, allCombos, { stock, pairPrefs, priority, limit: 200 })
+    generated = ingredientDishes ?? composeDishes(allIng, allCombos, { stock, pairPrefs, priority, limit: INGREDIENT_DISH_LIMIT })
     poolKeys = new Set(Object.keys(generated))
+  } else if (source === 'salads') {
+    const salads = saladDishes(allIng, stock)
+    poolKeys = new Set(Object.keys(salads))
+    generated = Object.fromEntries(Object.entries(salads).filter(([key]) => !allCombos[key]))
   } else if (source === 'country') {
     generated = cuisineDishes(allIng, allCombos, { country, stock, pairPrefs })
     poolKeys = new Set(Object.keys(generated))
@@ -518,12 +528,14 @@ export function generateSmartWeeks({
 
   const byDinner = new Map()
   const order = (a,b) => compareFit(a,b) || a.score-b.score
+  const nonnegativeWaste = Object.values(allIng).every(ing => (packOf(ing)?.price ?? 0) >= 0)
   const personalChoices = people.reduce((n,p) => n * P.per[p.id].B.length * P.per[p.id].S.length, 1)
   const exhaustive = P.L.length * P.D.length * personalChoices <= 3000
   // On small catalogs retain every admissible pair and test its personal meals.
   const { top: pairs, tried } = rankPairs(ctx, P, people, exhaustive || allPairs || strictRules)
   for (const x of pairs) {
     const plan = { L: x.l, D: x.d, B: {}, S: {} }
+    const kept = byDinner.get(x.d) ?? []
     let best
     function visit(index) {
       if (index === people.length) {
@@ -544,11 +556,14 @@ export function generateSmartWeeks({
         plan.B[p.id] = x.choice[p.id].b
         plan.S[p.id] = x.choice[p.id].s
       }
-      best = evaluatePlan(plan, people, allIng, allCombos, ctx)
+      const candidate = evaluatePlan(plan, people, allIng, allCombos, ctx, { includePacks: false })
+      // Pack waste can only add to the score. Skip it when even zero waste
+      // couldn't put this plan ahead of the retained options for this dinner.
+      if (nonnegativeWaste && kept.length >= count && order(candidate, kept[kept.length - 1]) >= 0) continue
+      best = withPackScore(candidate, people, allIng, allCombos, ctx.stock)
     }
     if (!best) continue
     // At most count results with the same dinner can appear in the final selection.
-    const kept = byDinner.get(x.d) ?? []
     if (kept.length < count || order(best,kept[kept.length-1]) < 0) {
       kept.push(best)
       kept.sort(order)
@@ -610,9 +625,12 @@ export function generateSmartPlan({ sessions = [PLAN_DAYS], locks = {}, count = 
   const partLocks = i => locks.parts?.[i] ?? {}
   const multi = sessions.length > 1
   const snackPool = snackPoolFor(args)
+  const ingredientDishes = multi && args.source === 'ingredients'
+    ? composeDishes(args.allIng, args.allCombos, { stock: args.stock, pairPrefs: args.pairPrefs, priority: args.priority ?? 'price', limit: INGREDIENT_DISH_LIMIT })
+    : null
   if (args.splitDinners && sessions.length === 2) {
     const run = (days, lock, n, blockedBase) => generateSmartWeeks({
-      ...args, snackPool, days, locks: lock, count: n, blockedBase,
+      ...args, snackPool, ingredientDishes, days, locks: lock, count: n, blockedBase,
     })
     const first = run(sessions[0], partLocks(0), count * 4)
     const candidates = []
@@ -645,8 +663,11 @@ export function generateSmartPlan({ sessions = [PLAN_DAYS], locks = {}, count = 
     }
     return { results: results.slice(0,count), closest: results.length ? null : closest, tried, ms: Math.round(performance.now()-t0), composed: first.composed, snacks: snackPool?.count ?? 0 }
   }
-  const runs = sessions.map((days, i) => generateSmartWeeks({ ...args, snackPool, snackMode: args.snackMode ?? 'catalog', days, locks: partLocks(i), count: multi ? count * 2 : count }))
-  const fam = (k, r) => familyOf((r.newDishes?.[k] ?? args.allCombos[k])?.name ?? k)
+  const salads = args.source === 'salads'
+  // Keep extra candidates so dressing variants of the same salads don't crowd out other menus.
+  const candidateCount = salads ? count * 3 : multi ? count * 2 : count
+  const runs = sessions.map((days, i) => generateSmartWeeks({ ...args, snackPool, ingredientDishes, snackMode: args.snackMode ?? 'catalog', days, locks: partLocks(i), count: candidateCount }))
+  const fam = (k, r) => salads ? famOfKey(k, args.allCombos) : familyOf((r.newDishes?.[k] ?? args.allCombos[k])?.name ?? k)
   const results = [], seenSets = new Set()
   for (const first of runs[0].results) {
     if (results.length >= count) break

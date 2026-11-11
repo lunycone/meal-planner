@@ -20,7 +20,7 @@ import { VEG_DAILY_MIN, SOLUBLE_FIBER_DAILY_MIN } from '../../engine/weekRules'
 // Titles shout in CAPS ('WEIGHT GAIN — …'): calm them down, keep acronyms.
 const pretty = t => { const s = t.replace(/\b[A-Z]{3,}\b/g, w => w === 'PCOS' ? w : w.toLowerCase()); return s.charAt(0).toUpperCase() + s.slice(1) }
 
-const SOURCE_OPTS = [{ value: 'dishes', label: 'My dishes' }, { value: 'ingredients', label: 'From ingredients' }]
+const SOURCE_OPTS = [{ value: 'dishes', label: 'My dishes' }, { value: 'ingredients', label: 'From ingredients' }, { value: 'salads', label: 'Salads' }]
 const SPECIAL_OPTS = [{ value: 'surprise', label: 'Surprise' }, { value: 'country', label: 'Countries' }, { value: 'date', label: '♥ Date night' }]
 function RecipeSource({ source, onChange }) {
   return <>
@@ -88,7 +88,7 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
   const dishPrefs = useStore(s => s.dishPrefs) ?? {}
   const rateDishes = useStore(s => s.rateDishes)
   const addGeneratedCombos = useStore(s => s.addGeneratedCombos)
-  const [source, setSource] = useState('dishes') // 'dishes' | 'ingredients' | 'surprise' | 'country'
+  const [source, setSource] = useState('dishes')
   const [country, setCountry] = useState('es')
   const resetDishPrefs = useStore(s => s.resetDishPrefs)
   const pairPrefs = useStore(s => s.pairPrefs) ?? {}
@@ -174,7 +174,7 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
   function saveSmart() {
     if (!smartSel || smart.busy || smart.error) return
     addGeneratedCombos(smartSel.newDishes)
-    const name = `Smart · ${PRIORITY_OPTS.find(o => o.value === priority).label.toLowerCase()} · ${fmtShortDate(new Date())}`
+    const name = `${source === 'salads' ? 'Salads' : 'Smart'} · ${PRIORITY_OPTS.find(o => o.value === priority).label.toLowerCase()} · ${fmtShortDate(new Date())}`
     saveCustomWeek({ name, slots: JSON.parse(JSON.stringify(smartSel.slots)) })
     setSavedAs(name)
   }
@@ -277,7 +277,7 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
           <>
             <div className="sw-controls">
               <RecipeSource source={source} onChange={pickSource} />
-              {(source === 'dishes' || source === 'ingredients') && <Segmented label="Priority" value={priority} onChange={changeOpt(setPriority)} options={PRIORITY_OPTS} />}
+              {SOURCE_OPTS.some(option => option.value === source) && <Segmented label="Priority" value={priority} onChange={changeOpt(setPriority)} options={PRIORITY_OPTS} />}
               <Segmented label="Daily rules" value={strictRules} onChange={changeOpt(v => setSmartSetting('strictRules', v))} options={[{value: false, label: 'Show closest matches'}, {value: true, label: 'Verified daily targets only'}]} />
               {canSplit && <Segmented label="Dinners per batch" value={dinners} onChange={changeOpt(v => setSmartSetting('dinners', v))} options={[{value: 1, label: 'One dinner'}, {value: 2, label: 'Two dinner bases'}]} />}
               <Segmented label="Vegetables per day" value={vegMin} onChange={changeOpt(setVegMin)} options={VEG_OPTS} />
@@ -303,6 +303,9 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
               {source === 'ingredients' && !locks && (
                 <span className="sw-srcnote mp-in"><Icon name="leaf" size={13} />New lunches and dinners made from your ingredients — a protein and a base, with vegetables where selected — using the pantry first and whole packs. Loading or saving a week adds its new dishes to Dishes.</span>
               )}
+              {source === 'salads' && !locks && (
+                <span className="sw-srcnote mp-in"><Icon name="leaf" size={13} />Build lunches and dinners around hearty salads with different bases, proteins and dressings. Use New ideas to see more combinations.</span>
+              )}
               {locks && (
                 <div className="sw-lockbar mp-in">
                   <span>Other options for <strong>{locks.label}</strong>, keeping the rest of the week.</span>
@@ -316,7 +319,7 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
                 <p>The closest option for a blocked batch had these issues:</p>
                 <ul>{smart.closest.warnings.map(note => <li key={note}>{note}</li>)}</ul>
                 <button className="mp-btn mp-btn-glass" onClick={() => changeOpt(v => setSmartSetting('strictRules', v))(false)}>Show closest matches</button>
-              </> : splitDinners ? 'No matching pair of dinners found with different bases. Try One dinner or change your ingredient selection.' : source === 'ingredients' ? 'Not enough tagged ingredients to compose dishes. Tag proteins, bases and vegetables in Ingredients.' : 'Not enough dishes to build a week. Add lunches and dinners in Dishes.'}</div>}
+              </> : splitDinners ? 'No matching pair of dinners found with different bases. Try One dinner or change your ingredient selection.' : source === 'salads' ? 'No salad week found with the current ingredients and options.' : source === 'ingredients' ? 'Not enough tagged ingredients to compose dishes. Tag proteins, bases and vegetables in Ingredients.' : 'Not enough dishes to build a week. Add lunches and dinners in Dishes.'}</div>}
               {smart.results.map((r, i) => (
                 <SmartCard key={allKeys(r).join() + i} r={r} i={i} on={i === pick} busy={smart.busy} onReject={(slot, pid, pi) => reject(r, slot, pid, pi)} sessions={sessions} covered={covered}
                   best={source === 'surprise' ? 'Surprise' : source === 'country' ? (country === 'all' ? 'World week' : COUNTRY_LABEL[country]) : PRIORITY_BEST[priority]} people={people} allIng={allIng} allCombos={r.newDishes ? { ...allCombos, ...r.newDishes } : allCombos} vegMin={vegMin}
@@ -327,7 +330,7 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
               <span className="mp-muted" style={{ fontSize: 12.5, lineHeight: 1.4, maxWidth: 380 }}>
                 {savedAs ? <span style={{ color: 'var(--c-green)', fontWeight: 600 }}>Saved as “{savedAs}”</span>
                   : smart.busy ? 'Trying combinations with today’s prices…'
-                  : smart.tried ? `${smart.composed ? `Composed ${smart.composed} dishes · ` : ''}${smart.snacks ? `${smart.snacks} new snack recipes in the mix · ` : ''}Tried ${smart.tried.toLocaleString('en-US')} combinations with today’s prices.` : ''}
+                  : smart.tried ? `${smart.composed ? `Shortlisted ${smart.composed} lunch and dinner recipes · ` : ''}${smart.snacks ? `${smart.snacks} new snack recipes in the mix · ` : ''}Checked ${smart.tried.toLocaleString('en-US')} meal combinations with today’s prices.` : ''}
                 {rejected > 0 && !savedAs && <> · {rejected} dish{rejected > 1 ? 'es' : ''} you said no to <button type="button" className="ig-manage" onClick={() => resetDishPrefs(true)}>Reset</button></>}
               </span>
               <div style={{ display: 'flex', gap: 8 }}>
