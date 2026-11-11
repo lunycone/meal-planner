@@ -40,7 +40,7 @@ import { hasPasta, starchFamily, tagsOf } from '../lib/tags'
 import { aggregateIngredients, needAmount, packPlan } from '../lib/needs'
 import { packOf, fmtAmount } from '../lib/packs'
 import { composeDishes, isGenerated, GEN_PREFIX } from './composeDishes'
-import { saladDishes } from './saladDishes'
+import { isGeneratedSalad, saladDishes } from './saladDishes'
 import { cuisineDishes } from './cuisines'
 import { rangeLabel } from '../lib/batchConfig'
 import { smartSnackCandidates } from './snackGen'
@@ -114,14 +114,18 @@ function pools(allCombos, allIng, people, ctx) {
   const withSnacks = ctx.snackPool ? { ...allCombos, ...ctx.snackPool.combos } : allCombos
   const st = k => (stat[k] ??= dishStats(k, withSnacks[k], allIng, ctx.seed))
   const of = slot => all.filter(([k, c]) => (c.meals ?? []).includes(slot) && !ctx.exclude.has(k)).map(([k]) => st(k))
-  // Por ingredientes: comida y cena solo de los platos compuestos.
-  const main = slot => ctx.poolKeys ? of(slot).filter(d => ctx.poolKeys.has(d.key)) : of(slot)
+  const main = slot => {
+    const list = of(slot)
+    if (!ctx.poolKeys || (ctx.source === 'salads' && slot === 'cena')) return list
+    return list.filter(d => ctx.poolKeys.has(d.key))
+  }
   const lock = (list, k) => k && withSnacks[k] ? [st(k)] : list
   // «New ideas»: lo ya enseñado como comida no vuelve como comida (ni en
   // variante) mientras queden alternativas de sobra; igual con la cena.
   const fresh = (list, seen) => { const f = list.filter(d => !seen.has(d.fam)); return f.length >= 6 ? f : list }
   const L = lock(fresh(main('comida'), ctx.shownL), ctx.locks.L)
-  const D = lock(fresh(main('cena').filter(d => !d.red), ctx.shownD), ctx.locks.D).filter(d => !d.red) // cena sin carne roja
+  const canDine = d => !d.red && !isGeneratedSalad(d.key)
+  const D = lock(fresh(main('cena').filter(canDine), ctx.shownD), ctx.locks.D).filter(canDine)
   const B = of('desayuno'), S = of('merienda')
   const per = {}
   for (const p of people) {
@@ -470,11 +474,9 @@ export function generateSmartWeeks({
   // Fuentes de comidas y cenas:
   //   dishes      → el catálogo (y tus platos);
   //   ingredients → platos compuestos de ingredientes (composeDishes);
-  //   salads      → ensaladas completas con aliños (saladDishes);
+  //   salads      → ensaladas para la comida y cenas del catálogo;
   //   country     → platos compuestos con el perfil de sabor de un país (cuisines.js);
   //   surprise    → compuestos + recetas del mundo, al azar: sin prioridad, con las reglas.
-  // Solo «dishes» usa las comidas y cenas del catálogo; desayunos y meriendas
-  // salen siempre del catálogo.
   let generated = null, poolKeys = null
   if (source === 'ingredients') {
     generated = ingredientDishes ?? composeDishes(allIng, allCombos, { stock, pairPrefs, priority, limit: INGREDIENT_DISH_LIMIT })

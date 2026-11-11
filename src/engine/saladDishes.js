@@ -1,6 +1,9 @@
 import { GEN_PREFIX } from './composeDishes'
 import { rotationHeld, rotationPaused } from '../lib/rotation'
 
+const SALAD_PREFIX = `${GEN_PREFIX}salad-`
+export const isGeneratedSalad = key => key?.startsWith(SALAD_PREFIX) ?? false
+
 const grams = (k, grams) => ({ k, p: { grams } })
 const ml = (k, ml) => ({ k, p: { ml } })
 const units = (k, units) => ({ k, p: { units } })
@@ -53,11 +56,11 @@ export function saladDishes(allIng, stock = {}) {
       const dressing = DRESSINGS[dressingKey]
       const items = [...salad.items, ...dressing.items]
       if (items.some(({ k }) => !allIng[k] || allIng[k].pend || rotationPaused(k, allIng[k], stock, held))) continue
-      const key = `${GEN_PREFIX}salad-${salad.id}+${dressingKey}`
+      const key = `${SALAD_PREFIX}${salad.id}+${dressingKey}`
       dishes[key] = {
         customId: key.slice('custom-'.length),
         name: `${salad.name} with ${dressing.name}`,
-        meals: ['comida', 'cena'],
+        meals: ['comida'],
         items,
       }
     }
