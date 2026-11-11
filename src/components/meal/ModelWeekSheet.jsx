@@ -304,7 +304,7 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
                 <span className="sw-srcnote mp-in"><Icon name="leaf" size={13} />New lunches and dinners made from your ingredients — a protein and a base, with vegetables where selected — using the pantry first and whole packs. Loading or saving a week adds its new dishes to Dishes.</span>
               )}
               {source === 'salads' && !locks && (
-                <span className="sw-srcnote mp-in"><Icon name="leaf" size={13} />Build lunches and dinners around hearty salads with different bases, proteins and dressings. Use New ideas to see more combinations.</span>
+                <span className="sw-srcnote mp-in"><Icon name="leaf" size={13} />Salads for lunch, with dinners from My dishes.</span>
               )}
               {locks && (
                 <div className="sw-lockbar mp-in">
