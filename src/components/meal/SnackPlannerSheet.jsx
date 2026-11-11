@@ -23,6 +23,7 @@ const SLOT_NAME = { merienda: 'snack', desayuno: 'breakfast' }
 const PRIORITY_OPTS = [{ value: 'price', label: 'Cheapest' }, { value: 'protein', label: 'More protein' }, { value: 'variety', label: 'More variety' }]
 const PRIORITY_BEST = { price: 'Best price', protein: 'Most protein', variety: 'Most variety' }
 const BATCH_OPTS = [{ value: 'auto', label: 'Batches: auto' }, { value: 'yes', label: 'Batch Mon–Fri' }, { value: 'no', label: 'No batches' }]
+const BREAKFAST_BATCH_OPTS = BATCH_OPTS.map(option => option.value === 'yes' ? { ...option, label: 'Start with a batch' } : option)
 const NEW_OPTS = [{ value: 0, label: 'Only tried ingredients' }, { value: 1, label: 'Up to 1 new' }]
 const randomSeed = () => 1 + Math.floor(Math.random() * 1e9)
 const short = n => n.replace(/\s*\(.*$/, '').toLowerCase()
@@ -133,7 +134,7 @@ function SnackCard({ r, i, on, busy, best, persons, slot, allIng, colorOf, saved
   )
 }
 
-function SnackPlannerBody({ wk, week, monday, onClose, onApplied }) {
+function SnackPlannerBody({ wk, week, monday, onClose, onApplied, breakfastOnly = false }) {
   const allIng = useStore(selectAllIng)
   const allCombos = useStore(selectAllCombos)
   const profiles = useStore(s => s.profiles)
@@ -150,7 +151,7 @@ function SnackPlannerBody({ wk, week, monday, onClose, onApplied }) {
   const openPacks = useMemo(()=>Object.keys(inventory).filter(k=>inventory[k]?.open),[inventory])
   const available = useMemo(() => stockAvailable(inventory,allIng,addDays(monday,dayIndex)),[inventory,allIng,wk,dayIndex])
   const [tab, setTab] = useState('ideas')
-  const [slot, setSlot] = useState('merienda')
+  const [slot, setSlot] = useState(breakfastOnly ? 'desayuno' : 'merienda')
   const [priority, setPriority] = useState('price')
   const [batches, setBatches] = useState('auto')
   const [novelty, setNovelty] = useState(1)
@@ -199,7 +200,8 @@ function SnackPlannerBody({ wk, week, monday, onClose, onApplied }) {
   // The options are built from the data as it was when the sheet opened. Saving a snack changes
   // your dishes (and so what counts as «tried»): without this the options would reshuffle
   // under your hands. Closing and reopening picks up the new data.
-  const live = { allIng, tried, persons, baseWeek }
+  const breakfastIng = useMemo(() => Object.fromEntries(Object.entries(allIng).filter(([key]) => key !== 'tahini')), [allIng])
+  const live = { allIng: breakfastOnly ? breakfastIng : allIng, tried, persons, baseWeek }
   const frozen = useRef(null)
   if (!frozen.current && persons.length === 2) frozen.current = live
   const data = frozen.current ?? live
@@ -207,10 +209,11 @@ function SnackPlannerBody({ wk, week, monday, onClose, onApplied }) {
   const dataKey = useMemo(() => randomSeed(), [data.allIng, data.tried, data.persons]) // eslint-disable-line react-hooks/exhaustive-deps
   const args = useMemo(() => ({
     allIng: data.allIng, dishes: data.tried, persons: data.persons, dataKey, mealSlot: slot, baseWeek: data.baseWeek, noveltyMax: novelty, batches, priority, seed,
+    maxBatchDays: breakfastOnly ? 3 : undefined,
     quickContext: {week, allCombos, stock:available, openPacks, dayIndex, portable, eggsReady, feedback},
     candidateSeed: lock ? lock.candSeed : candSeed, avoidKeys: shown, banned, pinned: lock ? lock.pins : {},
     avoidWeight: lock ? 8 : 2.5, count: 3, restarts: 300,
-  }), [data, dataKey, slot, novelty, batches, priority, seed, candSeed, shown, banned, lock, week, allCombos, available, openPacks, dayIndex, portable, eggsReady, feedback])
+  }), [data, dataKey, slot, novelty, batches, priority, seed, candSeed, shown, banned, lock, week, allCombos, available, openPacks, dayIndex, portable, eggsReady, feedback, breakfastOnly])
   const snack = useSnackWeeks(args, data.persons.length === 2 && tab === 'ideas')
   const results = snack.out?.options ?? []
   const sel = results[Math.min(pick, results.length - 1)] ?? null
@@ -240,7 +243,9 @@ function SnackPlannerBody({ wk, week, monday, onClose, onApplied }) {
     onApplied?.('Snack added for ' + DAY_SHORT[dayIndex])
     onClose()
   }
-  function saveGroups(r, gs) {
+  function saveGroups(groups) {
+    const gs = groups.filter(g => !saved[g.candidateId])
+    if (!gs.length) return
     addCustomCombos(gs.flatMap(g => Object.keys(g.persons).map(pid => ({
       name: `★ ${g.label} · ${nameOf(pid)}`, items: g.persons[pid].combo.items, ownerId: pid, snack: true, meals: [slot],
     }))))
@@ -271,35 +276,36 @@ function SnackPlannerBody({ wk, week, monday, onClose, onApplied }) {
   }
 
   const savedCombos = Object.entries(allCombos).filter(([, c]) => c.snack)
-  const subtitle = tab === 'cafe' ? 'Yorkville-inspired snacks, made in your kitchen.' : tab === 'ideas' ? 'Built from your ingredients, following your rules.' : 'Snacks you liked. Their ingredients count as tried.'
+  const title = tab === 'ideas' ? (slot === 'merienda' ? 'Snack ideas' : 'Breakfast ideas') : tab === 'cafe' ? 'María’s picks' : 'Saved snacks'
+  const subtitle = breakfastOnly ? 'Generate recipes from your ingredients and save your favorites to Dishes.' : tab === 'cafe' ? 'Yorkville-inspired snacks, made in your kitchen.' : tab === 'ideas' ? 'Built from your ingredients, following your rules.' : 'Snacks you liked. Their ingredients count as tried.'
   const empty = !snack.busy && !snack.error && !results.length
 
   return (
     <Overlay onClose={onClose}>
-      <div className="mp-sheet mw-sheet" style={{ maxWidth: 880, height: 'min(820px, calc(100dvh - 48px))' }} onClick={e => e.stopPropagation()} role="dialog" aria-label="Plan snacks">
+      <div className="mp-sheet mw-sheet" style={{ maxWidth: 880, height: 'min(820px, calc(100dvh - 48px))' }} onClick={e => e.stopPropagation()} role="dialog" aria-label={title}>
         <div className="mp-sheet-head">
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span className="mp-bubble" style={{ width: 42, height: 42, background: 'rgba(139,111,232,0.15)', color: '#7154DA' }}><Icon name="sparkle" size={20} stroke={2.2} /></span>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.02em' }}>{tab === 'ideas' ? (slot === 'merienda' ? 'Snack ideas' : 'Breakfast ideas') : tab === 'cafe' ? 'María’s picks' : 'Saved snacks'}</span>
+              <span style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.02em' }}>{title}</span>
               <span className="mp-muted" style={{ fontSize: 13 }}>{subtitle}</span>
             </div>
           </div>
           <button className="mp-icon-btn" style={{ width: 32, height: 32 }} aria-label="Close" onClick={onClose}><Icon name="x" size={12} stroke={3} /></button>
         </div>
 
-        <div className="mw-bar">
+        {!breakfastOnly && <div className="mw-bar">
           <Segmented label="Section" value={tab} onChange={v => { setTab(v); setConfirmDel(null) }}
             options={[{ value: 'ideas', label: 'Ideas' }, ...(profiles.some(p=>p.id === 'maria') ? [{ value:'cafe', label:'María’s picks' }] : []), { value: 'saved', label: `Saved · ${savedCombos.length}` }]} />
           {tab === 'ideas' && <Segmented label="Meal" value={slot} onChange={changeOpt(setSlot)} options={[{ value: 'merienda', label: 'Snack' }, { value: 'desayuno', label: 'Breakfast' }]} />}
           <span className="mp-muted" style={{ fontSize: 12.5 }}>Week of {fmtRange(monday, addDays(monday, 6))}</span>
-        </div>
+        </div>}
 
         {tab === 'ideas' && (
           <>
             <div className="sw-controls">
               <Segmented label="Priority" value={priority} onChange={changeOpt(setPriority)} options={PRIORITY_OPTS} />
-              <Segmented label="Batches" value={batches} onChange={changeOpt(setBatches)} options={BATCH_OPTS} />
+              <Segmented label="Batches" value={batches} onChange={changeOpt(setBatches)} options={breakfastOnly ? BREAKFAST_BATCH_OPTS : BATCH_OPTS} />
               <Segmented label="New ingredients" value={novelty} onChange={changeOpt(setNovelty)} options={NEW_OPTS} />
               <button type="button" className="mp-btn mp-btn-dark mp-btn-sm sw-new" onClick={newIdeas} disabled={snack.busy || persons.length !== 2}>
                 {snack.busy ? <Spinner size={14} stroke={2.6} color="#fff" /> : <Icon name="repeat" size={14} />}{snack.busy ? 'Thinking…' : 'New ideas'}
@@ -332,7 +338,7 @@ function SnackPlannerBody({ wk, week, monday, onClose, onApplied }) {
                   {!!g.novelty.length && <span>New ingredient · {g.novelty.map(k=>allIng[k]?.name ?? k).join(', ')}</span>}
                 </section>)}
               </details>}
-              {persons.length !== 2 && <div className="mp-empty" style={{ padding: 40 }}>Plan snacks needs exactly two active profiles this week.</div>}
+              {persons.length !== 2 && <div className="mp-empty" style={{ padding: 40 }}>This generator needs two active profiles this week.</div>}
               {persons.length === 2 && !lock && (
                 <span className="sw-srcnote snk-note mp-in"><Icon name="leaf" size={13} /><span>New {SLOT_NAME[slot]} recipes made from your ingredients: an idea (oats, bowl, toast, cake…) with flavors that go together, sized to each person’s kcal. Open an option and tap <strong>Not this one</strong> on anything you don’t like.</span></span>
               )}
@@ -346,14 +352,14 @@ function SnackPlannerBody({ wk, week, monday, onClose, onApplied }) {
               {snack.error && <div className="mp-empty">Couldn’t build a week: {snack.error}</div>}
               {empty && persons.length === 2 && (
                 <div className="mp-empty" style={{ padding: 40 }}>
-                  {lock ? 'No other recipe fits the rest of that week.' : 'No snack idea fits your rules right now. Try “Up to 1 new” or “No batches”.'}
+                  {lock ? 'No other recipe fits the rest of that week.' : `No ${SLOT_NAME[slot]} idea fits your rules right now. Try “Up to 1 new” or “No batches”.`}
                   {(lock || banned.length > 0) && <> <button type="button" className="ig-manage" onClick={lock ? backToWeeks : () => { setBanned([]); setSeed(s => s + 1) }}>{lock ? 'Back to full weeks' : 'Reset what you said no to'}</button></>}
                 </div>
               )}
               {results.map((r, i) => (
                 <SnackCard key={r.days.map(d => d.candidateId).join('|') + i} r={r} i={i} on={i === Math.min(pick, results.length - 1)} busy={snack.busy}
                   best={PRIORITY_BEST[priority]} persons={ordered} slot={slot} allIng={allIng} colorOf={colorOf} saved={saved} openRecipes={openRecipes}
-                  onPick={() => setPick(i)} onReject={g => reject(r, g)} onSave={g => saveGroups(r, [g])} onSaveAll={() => saveGroups(r, groupsOf(r))}
+                  onPick={() => setPick(i)} onReject={g => reject(r, g)} onSave={g => saveGroups([g])} onSaveAll={() => saveGroups(groupsOf(r))}
                   onToggleRecipe={d => setOpenRecipes(o => ({ ...o, [d]: !o[d] }))} />
               ))}
             </div>
@@ -364,8 +370,8 @@ function SnackPlannerBody({ wk, week, monday, onClose, onApplied }) {
                 {banned.length > 0 && <> · {plural(banned.length, 'idea')} you said no to <button type="button" className="ig-manage" onClick={() => { setBanned([]); setSeed(s => s + 1) }}>Reset</button></>}
               </span>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button className="mp-btn mp-btn-glass" disabled={!sel || groupsOf(sel).every(g => saved[g.candidateId])} onClick={() => sel && saveGroups(sel, groupsOf(sel))}><Icon name="star" size={14} />Save</button>
-                <button className="mp-btn mp-btn-dark" disabled={!sel || snack.busy} onClick={apply}>Apply to this week</button>
+                <button className={`mp-btn ${breakfastOnly ? 'mp-btn-dark' : 'mp-btn-glass'}`} disabled={!sel || snack.busy || groupsOf(sel).every(g => saved[g.candidateId])} onClick={() => sel && saveGroups(groupsOf(sel))}><Icon name="star" size={14} />{breakfastOnly ? 'Save breakfasts' : 'Save'}</button>
+                {!breakfastOnly && <button className="mp-btn mp-btn-dark" disabled={!sel || snack.busy} onClick={apply}>Apply to this week</button>}
               </div>
             </div>
           </>
@@ -428,7 +434,7 @@ function SnackPlannerBody({ wk, week, monday, onClose, onApplied }) {
 
 export default function SnackPlannerSheet(props) {
   return (
-    <SheetGate title="Plan snacks" hint="Mixing ingredients…" icon="sparkle" onClose={props.onClose}>
+    <SheetGate title={props.breakfastOnly ? 'Breakfast ideas' : 'Plan snacks'} hint="Mixing ingredients…" icon="sparkle" onClose={props.onClose}>
       <SnackPlannerBody {...props} />
     </SheetGate>
   )
