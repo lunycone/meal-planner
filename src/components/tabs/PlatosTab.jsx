@@ -3,11 +3,13 @@ import useStore, { selectAllIng, selectAllCombos } from '../../store/useStore'
 import Icon, { MEAL_ICON } from '../ui/Icon'
 import Segmented from '../ui/Segmented'
 import PlatoSheet from '../meal/PlatoSheet'
+import SnackPlannerSheet from '../meal/SnackPlannerSheet'
 import { MEAL_STYLE, MEAL_LABEL, fmtMoney, mondayOf, addDays, weekKeyOf } from '../../lib/mealplan'
 import { comboAgg, pcosCarbLevel, proteinLevel, kcalLevel, LEVEL_COLOR } from '../../engine/calc'
 import PcosBadge from '../PcosBadge'
 
 const MEAL_ORDER = ['desayuno', 'comida', 'merienda', 'cena']
+const EMPTY_WEEK = {}
 
 // Fila de la lista: abre la ficha del plato (ver = editar, ver PlatoSheet).
 function PlatoRow({ combo, mealType, agg, inPlan, modified, onOpen }) {
@@ -45,6 +47,8 @@ export default function PlatosTab() {
   const [searchTerm, setSearchTerm] = useState('')
   const [sortBy, setSortBy]         = useState('name')
   const [mealFilter, setMealFilter] = useState('all')
+  const [breakfastWeek, setBreakfastWeek] = useState(null)
+  const breakfastKey = breakfastWeek && weekKeyOf(breakfastWeek)
 
   // Platos puestos esta semana o la que viene
   const inPlan = useMemo(() => {
@@ -95,6 +99,11 @@ export default function PlatosTab() {
           <span>{Object.keys(allCombos).length} dishes · {inPlan.size} in this or next week's plan</span>
         </div>
         <div className="mp-page-tools">
+          <button type="button" className="mp-btn mp-btn-glass" onClick={() => {
+            setMealFilter('desayuno')
+            setSearchTerm('')
+            setBreakfastWeek(mondayOf(new Date()))
+          }}><Icon name="sparkle" size={14} />Generate breakfasts</button>
           <button className="mp-btn mp-btn-dark" onClick={() => setOpen(null)}><Icon name="plus" size={14} stroke={2.6} />New dish</button>
         </div>
       </div>
@@ -131,6 +140,8 @@ export default function PlatosTab() {
       )}
 
       {open !== undefined && <PlatoSheet key={open ?? 'new'} comboKey={open} onClose={() => setOpen(undefined)} />}
+      {breakfastWeek && <SnackPlannerSheet breakfastOnly monday={breakfastWeek} wk={breakfastKey}
+        week={weekPlan[breakfastKey] ?? EMPTY_WEEK} onClose={() => setBreakfastWeek(null)} />}
     </div>
   )
 }
