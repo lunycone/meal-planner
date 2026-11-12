@@ -1,8 +1,9 @@
 import { GEN_PREFIX } from './composeDishes'
 import { rotationHeld, rotationPaused } from '../lib/rotation'
 
-const SALAD_PREFIX = `${GEN_PREFIX}salad-`
-export const isGeneratedSalad = key => key?.startsWith(SALAD_PREFIX) ?? false
+const PREFIXES = { salads: `${GEN_PREFIX}salad-`, bowls: `${GEN_PREFIX}bowl-` }
+export const isBatchLunchDish = key => typeof key === 'string' &&
+  (key.startsWith(PREFIXES.salads) || key.startsWith(PREFIXES.bowls))
 
 const grams = (k, grams) => ({ k, p: { grams } })
 const ml = (k, ml) => ({ k, p: { ml } })
@@ -17,6 +18,9 @@ const DRESSINGS = {
   balsamic: { name: 'balsamic vinaigrette', items: [oil, ml('balsamic-vinegar', 10)] },
   yogurt: { name: 'lemon dill yogurt', items: [oil, grams('greek-yogurt', 40), lemon, { k: 'dill', p: {} }] },
   lime: { name: 'lime dressing', items: [oil, units('lime', 0.25)] },
+  ginger: { name: 'ginger soy sauce', items: [oil, ml('soy-sauce', 10), grams('ginger', 5)] },
+  tomato: { name: 'tomato cumin sauce', items: [oil, ml('passata', 60), { k: 'cumin', p: {} }] },
+  paprika: { name: 'paprika lemon oil', items: [oil, lemon, { k: 'paprika', p: {} }] },
 }
 
 // Each salad has a base the planner can scale and dressings that suit its ingredients.
@@ -48,18 +52,48 @@ const SALADS = [
     items: [grams('white-beans', 70), grams('shrimp', 110), grams('tomato', 120), grams('arugula', 45)] },
 ]
 
-export function saladDishes(allIng, stock = {}) {
+const BOWLS = [
+  { id: 'chicken-broccoli-rice', name: 'Chicken, broccoli & rice bowl', dressings: ['ginger', 'lime'],
+    items: [grams('rice', 85), grams('chicken-breast', 125), grams('broccoli', 125), grams('carrot', 75)] },
+  { id: 'salmon-rice', name: 'Salmon, roasted pepper & rice bowl', dressings: ['ginger', 'lemon'],
+    items: [grams('rice', 80), grams('salmon-fillet', 115), grams('yellow-pepper', 110), grams('carrot', 85), grams('sunflower-seeds', 10)] },
+  { id: 'pork-potato', name: 'Pork tenderloin, roasted potato & green bean bowl', dressings: ['dijon', 'paprika'],
+    items: [grams('potato', 280), grams('pork-tenderloin', 125), grams('green-beans', 145), grams('pumpkin-seeds', 10)] },
+  { id: 'chicken-squash-potato', name: 'Chicken, roast squash & crispy potato bowl', dressings: ['yogurt', 'paprika'],
+    items: [grams('potato', 250), grams('chicken-breast', 110), grams('butternut-squash', 160), grams('feta-cow', 20)] },
+  { id: 'cod-potato', name: 'Cod, potato & roasted pepper bowl', dressings: ['paprika', 'lemon'],
+    items: [grams('potato', 280), grams('cod', 150), grams('yellow-pepper', 115), grams('green-beans', 90)] },
+  { id: 'egg-buckwheat', name: 'Egg, buckwheat & roasted broccoli bowl', dressings: ['ginger', 'dijon'],
+    items: [grams('buckwheat', 85), units('eggs', 2), grams('broccoli', 120), grams('carrot', 95), grams('pumpkin-seeds', 10)] },
+  { id: 'pork-buckwheat', name: 'Pork tenderloin, buckwheat & roasted beet bowl', dressings: ['balsamic', 'dijon'],
+    items: [grams('buckwheat', 85), grams('pork-tenderloin', 110), grams('beet', 105), grams('carrot', 95), grams('walnuts', 10)] },
+  { id: 'shrimp-rice', name: 'Shrimp, rice & sautéed green bean bowl', dressings: ['ginger', 'lime'],
+    items: [grams('rice', 85), grams('shrimp', 135), grams('green-beans', 110), grams('carrot', 85)] },
+  { id: 'black-bean-chicken', name: 'Black bean, chicken & roasted pepper bowl', dressings: ['lime', 'tomato'],
+    items: [grams('black-beans', 85), grams('chicken-breast', 100), grams('yellow-pepper', 110), grams('carrot', 90)] },
+  { id: 'chickpea-squash', name: 'Chickpea, roasted squash & feta bowl', dressings: ['tomato', 'yogurt'],
+    items: [grams('chickpeas', 90), grams('butternut-squash', 150), grams('carrot', 85), grams('feta-cow', 30), grams('pumpkin-seeds', 12)] },
+  { id: 'lentil-egg', name: 'Green lentil, egg & roasted carrot bowl', dressings: ['tomato', 'dijon'],
+    items: [grams('green-lentils', 85), units('eggs', 2), grams('carrot', 130), grams('beet', 90)] },
+  { id: 'romano-pork', name: 'Romano bean, pork tenderloin & roasted vegetable bowl', dressings: ['tomato', 'paprika'],
+    items: [grams('romano-beans', 85), grams('pork-tenderloin', 100), grams('yellow-pepper', 105), grams('carrot', 95)] },
+]
+
+const RECIPES = { salads: SALADS, bowls: BOWLS }
+export const isBatchLunchSource = source => Object.hasOwn(RECIPES, source)
+
+export function batchLunchDishes(source, allIng, stock = {}) {
   const held = rotationHeld(allIng, stock)
   const dishes = {}
-  for (const salad of SALADS) {
-    for (const dressingKey of salad.dressings) {
+  for (const recipe of RECIPES[source]) {
+    for (const dressingKey of recipe.dressings) {
       const dressing = DRESSINGS[dressingKey]
-      const items = [...salad.items, ...dressing.items]
+      const items = [...recipe.items, ...dressing.items]
       if (items.some(({ k }) => !allIng[k] || allIng[k].pend || rotationPaused(k, allIng[k], stock, held))) continue
-      const key = `${SALAD_PREFIX}${salad.id}+${dressingKey}`
+      const key = `${PREFIXES[source]}${recipe.id}+${dressingKey}`
       dishes[key] = {
         customId: key.slice('custom-'.length),
-        name: `${salad.name} with ${dressing.name}`,
+        name: `${recipe.name} with ${dressing.name}`,
         meals: ['comida'],
         items,
       }
