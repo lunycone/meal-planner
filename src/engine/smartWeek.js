@@ -36,7 +36,7 @@ import {
 } from './calc'
 import { SOLUBLE_FIBER_DAILY_MIN, VEG_DAILY_MIN, DIGESTIVE_MAX_PER_DAY, dishVegGrams } from './weekRules'
 import { DAY_KEYS, dayForPerson, dayTotals } from '../lib/mealplan'
-import { hasPasta, starchFamily, tagsOf } from '../lib/tags'
+import { hasPasta, hasWholeLegumes, starchFamily, tagsOf } from '../lib/tags'
 import { aggregateIngredients, needAmount, packPlan } from '../lib/needs'
 import { packOf, fmtAmount } from '../lib/packs'
 import { composeDishes, isGenerated, GEN_PREFIX } from './composeDishes'
@@ -97,7 +97,7 @@ function dishStats(key, combo, allIng, seed) {
     key, name: combo.name, fam: isGenerated(key) ? famOfKey(key) : familyOf(combo.name), kcal: a.kcal, cost: a.cost * n, prot: a.prot ?? 0, fat: a.fat ?? 0,
     sol: comboFibSol(combo, allIng), veg: dishVegGrams(combo, allIng), bases: basesOf(combo, allIng),
     gos: dishHasGOS(combo, allIng) ? 1 : 0, all: dishHasAllium(combo, allIng) ? 1 : 0, ins: dishHasInsolubleFiber(combo, allIng) ? 1 : 0,
-    red: dishHasTag(combo, 'red-meat', allIng), pasta: hasPasta(combo, allIng),
+    red: dishHasTag(combo, 'red-meat', allIng), pasta: hasPasta(combo, allIng), wholeLegumes: hasWholeLegumes(combo, allIng),
     pcosB: pcosCarbLevel(combo, allIng, 'desayuno'), pcosD: pcosCarbLevel(combo, allIng, 'cena'),
     starch: cap.key,
     missingStarchGI: !!cap.key && allIng[cap.key]?.gi == null,
@@ -124,7 +124,7 @@ function pools(allCombos, allIng, people, ctx) {
   // variante) mientras queden alternativas de sobra; igual con la cena.
   const fresh = (list, seen) => { const f = list.filter(d => !seen.has(d.fam)); return f.length >= 6 ? f : list }
   const L = lock(fresh(main('comida'), ctx.shownL), ctx.locks.L)
-  const canDine = d => !d.red && !isBatchLunchDish(d.key)
+  const canDine = d => !d.red && !d.pasta && !d.wholeLegumes && !isBatchLunchDish(d.key)
   const D = lock(fresh(main('cena').filter(canDine), ctx.shownD), ctx.locks.D).filter(canDine)
   const B = of('desayuno'), S = of('merienda')
   const per = {}
@@ -528,7 +528,6 @@ export function generateSmartWeeks({
   if (locks.D) ctx.shownFam.delete(fam(locks.D))
   if (!people.length) return { results: [], tried: 0, ms: 0 }
   const P = pools(allCombos, allIng, people, ctx)
-  P.D = P.D.filter(d => !d.pasta)
   if (blockedBase) P.D = P.D.filter(d => (d.dinnerBase ?? 'none') !== blockedBase)
   if (!P.L.length || !P.D.length || people.some(p => !P.per[p.id].B.length || !P.per[p.id].S.length)) return { results: [], tried: 0, ms: 0 }
   // From here on the plan may use the snack recipes, so evaluating it must find them.

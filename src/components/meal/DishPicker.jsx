@@ -7,6 +7,7 @@ import Segmented from '../ui/Segmented'
 import { MEAL_LABEL, MEAL_STYLE, PCOS_STYLE, DAY_LONG, DAY_KEYS, fmtMoney, activeProfilesOn } from '../../lib/mealplan'
 import { batchSessions, freeDayKeys, rangeLabel, sessionOfDay } from '../../lib/batchConfig'
 import { defaultScope, buildSelection } from '../../lib/planActions'
+import { hasWholeLegumes } from '../../lib/tags'
 
 // Selector de plato: lista a la izquierda, ficha a la derecha, y abajo a qué
 // días (solo este / lun-vie del batch / fin de semana) y a quién se aplica.
@@ -31,6 +32,7 @@ export default function DishPicker({ weekKey, weekData, dayKey, date, mealType, 
     const s = q.trim().toLowerCase()
     let list = Object.entries(allCombos)
       .filter(([, c]) => (c.meals ?? []).includes(mealType))
+      .filter(([, c]) => mealType !== 'cena' || !hasWholeLegumes(c, allIng))
       .map(([key, c]) => ({ key, c, agg: comboAgg(c, allIng), pcos: pcosCarbLevel(c, allIng, mealType) }))
     if (s) list = list.filter(d => d.c.name.toLowerCase().includes(s))
     if (onlyGreen) list = list.filter(d => d.pcos === 'green')
@@ -39,6 +41,7 @@ export default function DishPicker({ weekKey, weekData, dayKey, date, mealType, 
   }, [allCombos, allIng, mealType, q, sort, onlyGreen])
 
   const sel = selKey ? allCombos[selKey] : null
+  const canApply = !!sel && (mealType !== 'cena' || !hasWholeLegumes(sel, allIng))
   const selAgg = sel ? comboAgg(sel, allIng, {}, {}, optionals) : null
   const st = MEAL_STYLE[mealType]
   useStore(s => s.batchSettings) // repintar si cambian los días de batch
@@ -54,7 +57,7 @@ export default function DishPicker({ weekKey, weekData, dayKey, date, mealType, 
   if (people.length > 2) whoOptions[0].label = 'Everyone'
 
   function confirm() {
-    if (!selKey) return
+    if (!canApply) return
     const slots = buildSelection({ weekData, dayKey, mealType, recipeKey: selKey, optionals, scope, who, profiles: people })
     setMealSlots(weekKey, slots)
     onDone?.()
@@ -173,7 +176,7 @@ export default function DishPicker({ weekKey, weekData, dayKey, date, mealType, 
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="mp-btn mp-btn-glass" onClick={onClose}>Cancel</button>
-            <button className="mp-btn mp-btn-dark" disabled={!selKey} onClick={confirm}>
+            <button className="mp-btn mp-btn-dark" disabled={!canApply} onClick={confirm}>
               {scope === 'day' ? 'Set this day' : `Set ${rangeLabel(groupDays)}`}
             </button>
           </div>
