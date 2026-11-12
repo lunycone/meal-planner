@@ -1,4 +1,4 @@
-import { hasPasta } from '../../lib/tags'
+import { hasPasta, hasWholeLegumes } from '../../lib/tags'
 import { useMemo, useState } from 'react'
 import useStore from '../../store/useStore'
 import Icon, { MEAL_ICON } from '../ui/Icon'
@@ -41,7 +41,7 @@ export default function DateNightPanel({ wk, monday, people, allIng, allCombos, 
 
   const options = useMemo(() => {
     const pref = k => Math.max(-3, Math.min(3, dishPrefs[k] ?? 0))
-    const mains = Object.entries(allCombos).filter(([k, c]) => c.date && !c.dessert && !hasPasta(c, allIng) && !excluded.includes(k))
+    const mains = Object.entries(allCombos).filter(([k, c]) => c.date && !c.dessert && !hasPasta(c, allIng) && !hasWholeLegumes(c, allIng) && !excluded.includes(k))
     const desserts = Object.entries(allCombos).filter(([k, c]) => c.date && c.dessert && !excluded.includes(k))
     const score = k => hash(`${seed}:${k}`) / 4294967295 + (recent.has(k) ? 0.7 : 0) - pref(k) * 0.25
     const top = mains.map(([k]) => k).sort((a, b) => score(a) - score(b)).slice(0, 3)

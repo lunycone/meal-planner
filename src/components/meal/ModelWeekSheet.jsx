@@ -399,7 +399,7 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
             <div className="mp-sheet-foot" style={{ justifyContent: 'space-between' }}>
               <span className="mp-muted" style={{ fontSize: 12.5, maxWidth: 440, lineHeight: 1.4 }}>
                 {selectedReview && <details><summary>{selectedReview.notes.length} person-days to review</summary>{selectedReview.notes.map(n=><div key={n}>{n}</div>)}</details>}
-                {!!selectedReview?.skipped.length && <strong>Pasta dinners skipped · {selectedReview.skipped.join(', ')}. </strong>}
+                {!!selectedReview?.skipped.length && <strong>Dinners with pasta or whole legumes skipped · {selectedReview.skipped.join(', ')}. </strong>}
                 {strictRules && selectedReview?.required && <strong>Outside your required daily rules. </strong>}
                 {selRow?.note ? (selRow.note.split('.')[0] + '.') : selRow ? 'Double-click a week to load it directly.' : `Whole-week cost for ${people.map(p => p.name).join(' and ')}, at today’s prices.`}
               </span>

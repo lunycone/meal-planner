@@ -1,5 +1,5 @@
 import { DAY_KEYS, DAY_SHORT, dayForPerson, dayTotals } from './mealplan'
-import { hasPasta } from './tags'
+import { hasPasta, hasWholeLegumes } from './tags'
 import { comboAgg, comboFibSol, dishHasAllium, dishHasGOS, dishHasInsolubleFiber, glycemicCheck } from '../engine/calc'
 import { dishVegGrams, SOLUBLE_FIBER_DAILY_MIN, VEG_DAILY_MIN } from '../engine/weekRules'
 
@@ -38,11 +38,12 @@ export function reviewSaved(slots, current, people, allIng, allCombos, vegMin) {
   let required = false
   for (const [i,dk] of DAY_KEYS.entries()) {
     if (!Object.keys(slots).some(k => k.startsWith(dk + '-'))) continue
-    const hasDinnerPasta = people.some(p => {
+    const restrictedDinner = people.some(p => {
       const meal = dayForPerson(slots,dk,p.id).cena
-      return hasPasta(allCombos[meal?.recipeKey ?? meal?.comboKey],allIng)
+      const dish = allCombos[meal?.recipeKey ?? meal?.comboKey]
+      return hasPasta(dish, allIng) || hasWholeLegumes(dish, allIng)
     })
-    if (hasDinnerPasta) { delete incoming[dk + '-cena']; skipped.push(DAY_SHORT[i]) }
+    if (restrictedDinner) { delete incoming[dk + '-cena']; skipped.push(DAY_SHORT[i]) }
     for (const p of people) {
       const day = dayForPerson({...current,...incoming},dk,p.id)
       const {issues} = reviewDay(day,p,i,allIng,allCombos,vegMin)

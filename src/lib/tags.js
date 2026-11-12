@@ -124,3 +124,12 @@ export function hasPasta(combo, allIng) {
     return starchFamily(k, allIng) === 'pasta' || /\b(?:noodles?|spaghetti|macaroni|fettuccine|tagliatelle|ravioli|tortellini|linguine|penne|rigatoni|lasagna sheets)\b/i.test(allIng[k]?.name ?? k)
   })
 }
+
+// Flour and edible pods are separate from the whole pulses restricted at dinner.
+export function hasWholeLegumes(combo, allIng) {
+  return (combo?.items ?? []).some(({ k }) => {
+    const text = `${allIng?.[k]?.name ?? ''} ${k}`
+    if (/\b(?:flour|harina|green[ -]beans?|string[ -]beans?|ejotes?|jud[ií]as?[ -]verdes?)\b/i.test(text)) return false
+    return hasTag(k, 'legume', allIng) || /\b(?:peas?|guisantes?|arvejas?|habas?)\b/i.test(text)
+  })
+}
