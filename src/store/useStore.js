@@ -5,7 +5,7 @@ import { persist }  from 'zustand/middleware'
 import { ING, CAT_LABELS, CAT_ORDER } from '../data/ingredients'
 import { storeOf as storeOfIng, applyColorOverrides } from '../lib/stores'
 import { COMBO }            from '../data/combos'
-import { isGeneratedSalad } from '../engine/saladDishes'
+import { isBatchLunchDish } from '../engine/batchLunchDishes'
 import { STORAGE_KEY, createStorageAdapter } from './storage'
 import { migrateWeekKeys } from '../utils/date'
 import { migrateKeysV2 } from './migrateKeys'
@@ -831,7 +831,7 @@ export const selectAllCombos = catalogSelector(['deletedCombos', 'comboOverrides
   }
   for (const c of s.customCombos) {
     const key = 'custom-' + c.id
-    const meals = isGeneratedSalad(key) ? ['comida'] : c.meals ?? []
+    const meals = isBatchLunchDish(key) ? ['comida'] : c.meals ?? []
     if (!deleted.has(key)) result[key] = { name: c.name, items: c.items, meals, isCustom: true, customId: c.id, ...(c.ownerId && { ownerId: c.ownerId }), ...(c.snack ? { snack: true } : {}), ...(c.snackGenerated ? { snackGenerated: true } : {}), ...(c.scalable ? { scalable: c.scalable } : {}), ...(c.scalableMax != null ? { scalableMax: c.scalableMax } : {}), ...(c.noAove ? { noAove: true } : {}), ...(c.optionalItems ? { optionalItems: c.optionalItems } : {}) }
   }
   return result

@@ -20,7 +20,7 @@ import { VEG_DAILY_MIN, SOLUBLE_FIBER_DAILY_MIN } from '../../engine/weekRules'
 // Titles shout in CAPS ('WEIGHT GAIN — …'): calm them down, keep acronyms.
 const pretty = t => { const s = t.replace(/\b[A-Z]{3,}\b/g, w => w === 'PCOS' ? w : w.toLowerCase()); return s.charAt(0).toUpperCase() + s.slice(1) }
 
-const SOURCE_OPTS = [{ value: 'dishes', label: 'My dishes' }, { value: 'ingredients', label: 'From ingredients' }, { value: 'salads', label: 'Salads' }]
+const SOURCE_OPTS = [{ value: 'dishes', label: 'My dishes' }, { value: 'ingredients', label: 'From ingredients' }, { value: 'salads', label: 'Salads' }, { value: 'bowls', label: 'Bowls' }]
 const SPECIAL_OPTS = [{ value: 'surprise', label: 'Surprise' }, { value: 'country', label: 'Countries' }, { value: 'date', label: '♥ Date night' }]
 function RecipeSource({ source, onChange }) {
   return <>
@@ -174,7 +174,8 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
   function saveSmart() {
     if (!smartSel || smart.busy || smart.error) return
     addGeneratedCombos(smartSel.newDishes)
-    const name = `${source === 'salads' ? 'Salads' : 'Smart'} · ${PRIORITY_OPTS.find(o => o.value === priority).label.toLowerCase()} · ${fmtShortDate(new Date())}`
+    const label = source === 'salads' ? 'Salads' : source === 'bowls' ? 'Bowls' : 'Smart'
+    const name = `${label} · ${PRIORITY_OPTS.find(o => o.value === priority).label.toLowerCase()} · ${fmtShortDate(new Date())}`
     saveCustomWeek({ name, slots: JSON.parse(JSON.stringify(smartSel.slots)) })
     setSavedAs(name)
   }
@@ -306,6 +307,9 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
               {source === 'salads' && !locks && (
                 <span className="sw-srcnote mp-in"><Icon name="leaf" size={13} />Salads for lunch, with dinners from My dishes.</span>
               )}
+              {source === 'bowls' && !locks && (
+                <span className="sw-srcnote mp-in"><Icon name="plate" size={13} />Warm bowls for lunch, with dinners from My dishes.</span>
+              )}
               {locks && (
                 <div className="sw-lockbar mp-in">
                   <span>Other options for <strong>{locks.label}</strong>, keeping the rest of the week.</span>
@@ -319,7 +323,7 @@ function ModelWeekSheetBody({ initialTarget = 1, initialTab = 'smart', onClose, 
                 <p>The closest option for a blocked batch had these issues:</p>
                 <ul>{smart.closest.warnings.map(note => <li key={note}>{note}</li>)}</ul>
                 <button className="mp-btn mp-btn-glass" onClick={() => changeOpt(v => setSmartSetting('strictRules', v))(false)}>Show closest matches</button>
-              </> : splitDinners ? 'No matching pair of dinners found with different bases. Try One dinner or change your ingredient selection.' : source === 'salads' ? 'No salad week found with the current ingredients and options.' : source === 'ingredients' ? 'Not enough tagged ingredients to compose dishes. Tag proteins, bases and vegetables in Ingredients.' : 'Not enough dishes to build a week. Add lunches and dinners in Dishes.'}</div>}
+              </> : splitDinners ? 'No matching pair of dinners found with different bases. Try One dinner or change your ingredient selection.' : source === 'salads' ? 'No salad week found with the current ingredients and options.' : source === 'bowls' ? 'No bowl week found with the current ingredients and options.' : source === 'ingredients' ? 'Not enough tagged ingredients to compose dishes. Tag proteins, bases and vegetables in Ingredients.' : 'Not enough dishes to build a week. Add lunches and dinners in Dishes.'}</div>}
               {smart.results.map((r, i) => (
                 <SmartCard key={allKeys(r).join() + i} r={r} i={i} on={i === pick} busy={smart.busy} onReject={(slot, pid, pi) => reject(r, slot, pid, pi)} sessions={sessions} covered={covered}
                   best={source === 'surprise' ? 'Surprise' : source === 'country' ? (country === 'all' ? 'World week' : COUNTRY_LABEL[country]) : PRIORITY_BEST[priority]} people={people} allIng={allIng} allCombos={r.newDishes ? { ...allCombos, ...r.newDishes } : allCombos} vegMin={vegMin}

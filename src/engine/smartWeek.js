@@ -40,7 +40,7 @@ import { hasPasta, starchFamily, tagsOf } from '../lib/tags'
 import { aggregateIngredients, needAmount, packPlan } from '../lib/needs'
 import { packOf, fmtAmount } from '../lib/packs'
 import { composeDishes, isGenerated, GEN_PREFIX } from './composeDishes'
-import { isGeneratedSalad, saladDishes } from './saladDishes'
+import { batchLunchDishes, isBatchLunchDish, isBatchLunchSource } from './batchLunchDishes'
 import { cuisineDishes } from './cuisines'
 import { rangeLabel } from '../lib/batchConfig'
 import { smartSnackCandidates } from './snackGen'
@@ -116,7 +116,7 @@ function pools(allCombos, allIng, people, ctx) {
   const of = slot => all.filter(([k, c]) => (c.meals ?? []).includes(slot) && !ctx.exclude.has(k)).map(([k]) => st(k))
   const main = slot => {
     const list = of(slot)
-    if (!ctx.poolKeys || (ctx.source === 'salads' && slot === 'cena')) return list
+    if (!ctx.poolKeys || (isBatchLunchSource(ctx.source) && slot === 'cena')) return list
     return list.filter(d => ctx.poolKeys.has(d.key))
   }
   const lock = (list, k) => k && withSnacks[k] ? [st(k)] : list
@@ -124,7 +124,7 @@ function pools(allCombos, allIng, people, ctx) {
   // variante) mientras queden alternativas de sobra; igual con la cena.
   const fresh = (list, seen) => { const f = list.filter(d => !seen.has(d.fam)); return f.length >= 6 ? f : list }
   const L = lock(fresh(main('comida'), ctx.shownL), ctx.locks.L)
-  const canDine = d => !d.red && !isGeneratedSalad(d.key)
+  const canDine = d => !d.red && !isBatchLunchDish(d.key)
   const D = lock(fresh(main('cena').filter(canDine), ctx.shownD), ctx.locks.D).filter(canDine)
   const B = of('desayuno'), S = of('merienda')
   const per = {}
@@ -418,20 +418,26 @@ function compareFit(a, b) {
   return a.violations - b.violations || a.uncertainty - b.uncertainty
 }
 
-function pickDiverse(exact, count, baseOf, locked) {
+function pickDiverse(exact, count, baseOf, locked, lunchFamily = null) {
   const chosen = []
   const usedBases = new Set()
   const usedDinners = new Set()
+  const usedLunches = new Set()
   const remaining = [...exact]
   while (chosen.length < count && remaining.length) {
     const first = remaining[0]
-    const tier = remaining.filter(r => Boolean(r.violations) === Boolean(first.violations) && Boolean(r.uncertainty) === Boolean(first.uncertainty))
+    let tier = remaining.filter(r => Boolean(r.violations) === Boolean(first.violations) && Boolean(r.uncertainty) === Boolean(first.uncertainty))
+    if (lunchFamily) {
+      const newLunches = tier.filter(r => !usedLunches.has(lunchFamily(r.plan.L)))
+      if (newLunches.length) tier = newLunches
+    }
     const next = (!locked.D && tier.find(r => !usedBases.has(baseOf(r.plan.D))))
       || tier.find(r => !usedDinners.has(r.plan.D))
-      || remaining[0]
+      || tier[0]
     chosen.push(next)
     usedBases.add(baseOf(next.plan.D))
     usedDinners.add(next.plan.D)
+    if (lunchFamily) usedLunches.add(lunchFamily(next.plan.L))
     remaining.splice(remaining.indexOf(next), 1)
   }
   return chosen
@@ -462,7 +468,7 @@ function snackPoolFor({ allIng, allCombos, people, priority, source, seed = 0, s
  *       recent [recipeKey] del batch de las 2 semanas anteriores
  *       locks { L, D, B: {pid}, S: {pid} } para cambiar solo un plato
  *       stock { ingKey: amount } despensa disponible (sin lo caducado)
- *       source 'dishes' | 'ingredients' | 'salads' | 'country' | 'surprise'
+ *       source 'dishes' | 'ingredients' | 'salads' | 'bowls' | 'country' | 'surprise'
  * Devuelve { results: [evaluatePlan…], tried, ms }.
  */
 export function generateSmartWeeks({
@@ -474,17 +480,17 @@ export function generateSmartWeeks({
   // Fuentes de comidas y cenas:
   //   dishes      → el catálogo (y tus platos);
   //   ingredients → platos compuestos de ingredientes (composeDishes);
-  //   salads      → ensaladas para la comida y cenas del catálogo;
+  //   salads/bowls → comidas de su familia y cenas del catálogo;
   //   country     → platos compuestos con el perfil de sabor de un país (cuisines.js);
   //   surprise    → compuestos + recetas del mundo, al azar: sin prioridad, con las reglas.
   let generated = null, poolKeys = null
   if (source === 'ingredients') {
     generated = ingredientDishes ?? composeDishes(allIng, allCombos, { stock, pairPrefs, priority, limit: INGREDIENT_DISH_LIMIT })
     poolKeys = new Set(Object.keys(generated))
-  } else if (source === 'salads') {
-    const salads = saladDishes(allIng, stock)
-    poolKeys = new Set(Object.keys(salads))
-    generated = Object.fromEntries(Object.entries(salads).filter(([key]) => !allCombos[key]))
+  } else if (isBatchLunchSource(source)) {
+    const lunches = batchLunchDishes(source, allIng, stock)
+    poolKeys = new Set(Object.keys(lunches))
+    generated = Object.fromEntries(Object.entries(lunches).filter(([key]) => !allCombos[key]))
   } else if (source === 'country') {
     generated = cuisineDishes(allIng, allCombos, { country, stock, pairPrefs })
     poolKeys = new Set(Object.keys(generated))
@@ -576,7 +582,7 @@ export function generateSmartWeeks({
   const exact = [...byDinner.values()].flat().sort(order)
   const dinnerBases = new Map(P.D.map(d => [d.key, d.dinnerBase]))
   const eligible = strictRules ? exact.filter(r => !r.violations && !r.uncertainty) : exact
-  const results = pickDiverse(eligible, count, key => dinnerBases.get(key), locks)
+  const results = pickDiverse(eligible, count, key => dinnerBases.get(key), locks, source === 'bowls' ? fam : null)
   // Smart keeps only the best snack per lunch/dinner pair, so options with the same pair would
   // all show the same snack. In options 2 and 3, swap in the best snack not shown yet, as long as
   // the plan does not get much worse (SNACK_VARIETY_SLACK).
@@ -652,24 +658,30 @@ export function generateSmartPlan({ sessions = [PLAN_DAYS], locks = {}, count = 
     }
     candidates.sort((a,b) => compareFit(a,b) || a.score-b.score)
     const results = []
-    const seenBases = new Set(), seenPairs = new Set()
+    const seenBases = new Set(), seenPairs = new Set(), seenLunches = new Set()
+    const lunchFamily = c => famOfKey(c.parts[0].plan.L, args.allCombos)
     while (results.length < count && candidates.length) {
-      const tier = candidates.filter(c => !!c.violations === !!candidates[0].violations && !!c.uncertainty === !!candidates[0].uncertainty)
+      let tier = candidates.filter(c => !!c.violations === !!candidates[0].violations && !!c.uncertainty === !!candidates[0].uncertainty)
+      if (args.source === 'bowls') {
+        const newLunches = tier.filter(c => !seenLunches.has(lunchFamily(c)))
+        if (newLunches.length) tier = newLunches
+      }
       const bases = c => c.parts.map(base).sort().join('|')
       const pair = c => c.parts.map(p => p.plan.D).sort().join('|')
       const pick = tier.find(c => !seenBases.has(bases(c))) || tier.find(c => !seenPairs.has(pair(c))) || tier[0]
       results.push(pick)
       seenBases.add(bases(pick))
       seenPairs.add(pair(pick))
+      if (args.source === 'bowls') seenLunches.add(lunchFamily(pick))
       candidates.splice(candidates.indexOf(pick),1)
     }
     return { results: results.slice(0,count), closest: results.length ? null : closest, tried, ms: Math.round(performance.now()-t0), composed: first.composed, snacks: snackPool?.count ?? 0 }
   }
-  const salads = args.source === 'salads'
-  // Keep extra candidates so dressing variants of the same salads don't crowd out other menus.
-  const candidateCount = salads ? count * 3 : multi ? count * 2 : count
+  const batchLunch = isBatchLunchSource(args.source)
+  // Keep extra candidates so sauce variants of the same lunch don't crowd out other menus.
+  const candidateCount = batchLunch ? count * 3 : multi ? count * 2 : count
   const runs = sessions.map((days, i) => generateSmartWeeks({ ...args, snackPool, ingredientDishes, snackMode: args.snackMode ?? 'catalog', days, locks: partLocks(i), count: candidateCount }))
-  const fam = (k, r) => salads ? famOfKey(k, args.allCombos) : familyOf((r.newDishes?.[k] ?? args.allCombos[k])?.name ?? k)
+  const fam = (k, r) => batchLunch ? famOfKey(k, args.allCombos) : familyOf((r.newDishes?.[k] ?? args.allCombos[k])?.name ?? k)
   const results = [], seenSets = new Set()
   for (const first of runs[0].results) {
     if (results.length >= count) break
