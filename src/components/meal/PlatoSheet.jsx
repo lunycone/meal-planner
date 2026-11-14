@@ -14,6 +14,7 @@ function StoreDot({ ing }) {
 import { storeOf, storeColor } from '../../lib/stores'
 import Icon, { MEAL_ICON } from '../ui/Icon'
 import MicrosCard from './MicrosCard'
+import { BakingRecipe } from './BakingSheet'
 import {
   MEALS, MEAL_LABEL, MEAL_STYLE, PCOS_STYLE, fmtMoney, fmtRange, addDays, mondayOf, dishUsage, DAY_KEYS, DAY_SHORT,
 } from '../../lib/mealplan'
@@ -276,6 +277,7 @@ export default function PlatoSheet({ comboKey = null, onClose }) {
 
           {/* ── Resumen vivo ── */}
           <aside className="pl-summary">
+            {combo?.bakingRecipe && <BakingRecipe recipe={combo.bakingRecipe} allIng={allIng} />}
             <div className="pl-card">
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
                 <span className="mp-num" style={{ fontSize: 34, fontWeight: 700, letterSpacing: '-0.03em' }}>{Math.round(agg.kcal)}</span>

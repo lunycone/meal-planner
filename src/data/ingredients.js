@@ -21,6 +21,9 @@ export const ING = {
   'chickpea-flour': { name: 'Chickpea flour (Ambrosia)', cat: 'base', per100: 0.428, kc: 387, carb: 58, prot: 22, fat: 7, fib: 11, fibSol: 1.5, gi: 35, pack: '908g · $3.89', per: '60g → $0.26 · 232 kcal · GI~35' },
   'masa-harina':   { name: 'Masa harina, nixtamalized (Maseca)', cat: 'base', per100: 0.500, kc: 363, carb: 76, prot: 10, fat: 4, fib: 7, fibSol: 1.0, gi: 52, pack: '2kg · $9.99', per: '55g → $0.28 · 200 kcal · GI~52' },
   sugar:          { name: 'Sugar',              cat: 'base',     per100: 0.15,  kc: 400, carb: 100, prot: 0,   fat: 0,   fib: 0,   pack: 'estimate',                per: '15g → $0.02', est: true },
+  'organic-white-sugar': { name: 'Organic white sugar', cat: 'base', kc: 400, carb: 100, prot: 0, fat: 0, fib: 0, organic: true },
+  'coconut-sugar': { name: 'Coconut sugar', cat: 'base', kc: 400, carb: 100, prot: 0, fat: 0, fib: 0, est: true },
+  'baking-powder': { name: 'Baking powder', cat: 'otro', kc: 53, carb: 28, prot: 0, fat: 0, fib: 0, est: true },
 
   // LEGUMBRES (peso seco) — precios actualizados jun 2026
   'red-lentils':  { cookYield: 2.5, name: 'Red lentils',    cat: 'legumbre', per100: 0.220, kc: 340, carb: 60, prot: 24,  fat: 1,   fib: 7.9, fibSol: 1.0, brand: 'Divya Red Split Lentils',          store: 'Food Basics', pack: '1.81 kg · $3.98', per: '80g dry → $0.18' },

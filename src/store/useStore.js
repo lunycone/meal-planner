@@ -832,7 +832,7 @@ export const selectAllCombos = catalogSelector(['deletedCombos', 'comboOverrides
   for (const c of s.customCombos) {
     const key = 'custom-' + c.id
     const meals = isBatchLunchDish(key) ? ['comida'] : c.meals ?? []
-    if (!deleted.has(key)) result[key] = { name: c.name, items: c.items, meals, isCustom: true, customId: c.id, ...(c.ownerId && { ownerId: c.ownerId }), ...(c.snack ? { snack: true } : {}), ...(c.snackGenerated ? { snackGenerated: true } : {}), ...(c.scalable ? { scalable: c.scalable } : {}), ...(c.scalableMax != null ? { scalableMax: c.scalableMax } : {}), ...(c.noAove ? { noAove: true } : {}), ...(c.optionalItems ? { optionalItems: c.optionalItems } : {}) }
+    if (!deleted.has(key)) result[key] = { name: c.name, items: c.items, meals, isCustom: true, customId: c.id, ...(c.ownerId && { ownerId: c.ownerId }), ...(c.snack ? { snack: true } : {}), ...(c.snackGenerated ? { snackGenerated: true } : {}), ...(c.scalable ? { scalable: c.scalable } : {}), ...(c.scalableMax != null ? { scalableMax: c.scalableMax } : {}), ...(c.noAove ? { noAove: true } : {}), ...(c.optionalItems ? { optionalItems: c.optionalItems } : {}), ...(c.bakingRecipe ? { bakingRecipe: c.bakingRecipe } : {}) }
   }
   return result
 })
