@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import useStore, { selectAllIng, selectAllCombos } from '../../store/useStore'
-import { BAKING_TYPES, BAKING_SUGARS, bakingIdeas, bakingPortion } from '../../engine/baking'
+import { BAKING_TYPES, BAKING_SUGARS, bakingIdeas, bakingPortion, bakingSettings } from '../../engine/baking'
 import { stockAvailable } from '../../lib/needs'
 import { fmtAmount } from '../../lib/packs'
 import { fmtPortion } from '../../engine/calc'
@@ -27,10 +27,9 @@ export default function BakingSheet({ onClose }) {
   const allCombos = useStore(selectAllCombos)
   const stock = useStore(s => s.stock)
   const addCustomCombo = useStore(s => s.addCustomCombo)
-  const [type, setType] = useState('any')
-  const [sugar, setSugar] = useState('none')
-  const [sweetness, setSweetness] = useState('light')
-  const [batches, setBatches] = useState(1)
+  const preferences = useStore(s => s.bakingSettings)
+  const setBakingSetting = useStore(s => s.setBakingSetting)
+  const { type, sugar, sweetness, batches } = bakingSettings(preferences)
   const [seen, setSeen] = useState([])
   const available = useMemo(() => stockAvailable(stock, allIng), [stock, allIng])
   const ideas = useMemo(() => bakingIdeas({ allIng, stock: available, type, sugar, sweetness, batches }),
@@ -39,7 +38,7 @@ export default function BakingSheet({ onClose }) {
   const previousFormula = ideas.find(idea => idea.id === seen.at(-1))?.formula
   const recipe = remaining.find(idea => idea.formula !== previousFormula) ?? remaining[0] ?? ideas[0]
   const saved = recipe && Object.values(allCombos).some(dish => dish.bakingRecipe?.id === recipe.id)
-  const change = setter => value => { setter(value); setSeen([]) }
+  const change = key => value => { setBakingSetting(key, value); setSeen([]) }
 
   function save() {
     if (!recipe || saved) return
@@ -56,23 +55,24 @@ export default function BakingSheet({ onClose }) {
       <div className="mp-sheet-head">
         <div>
           <strong style={{ fontSize: 21 }}>Baking</strong>
-          <div className="mp-muted">One recipe matched to your pantry.</div>
+          <div className="mp-muted">Matched to your pantry and prep effort. No sweeteners.</div>
         </div>
         <button type="button" className="mp-icon-btn" aria-label="Close" onClick={onClose}><Icon name="x" size={13} /></button>
       </div>
       <div className="sw-controls">
-        <Segmented label="What to bake" value={type} onChange={change(setType)} options={BAKING_TYPES} />
-        <Segmented label="Sugar" value={sugar} onChange={change(setSugar)} options={BAKING_SUGARS} />
-        {sugar !== 'none' && <Segmented label="Sweetness" value={sweetness} onChange={change(setSweetness)} options={SWEETNESS} />}
-        <Segmented label="Batch size" value={batches} onChange={change(setBatches)} options={BATCHES} />
+        <Segmented label="What to bake" value={type} onChange={change('type')} options={BAKING_TYPES} />
+        <Segmented label="Sugar" value={sugar} onChange={change('sugar')} options={BAKING_SUGARS} />
+        {sugar !== 'none' && <Segmented label="Sweetness" value={sweetness} onChange={change('sweetness')} options={SWEETNESS} />}
+        <Segmented label="Batch size" value={batches} onChange={change('batches')} options={BATCHES} />
       </div>
       <div className="mp-sheet-body" aria-live="polite">
         {recipe ? <>
           <h2 style={{ margin: '0 0 4px', fontSize: 21 }}>{recipe.name}</h2>
           <p className="mp-muted" style={{ margin: '0 0 12px' }}>
-            {recipe.texture} · ~{recipe.minutes} min before cooling · {Math.round(recipe.kcal)} kcal per portion
+            {recipe.texture} · ~{recipe.minutes} min before cooling{batches === 2 ? ' (allowing for separate oven batches)' : ''} · {Math.round(recipe.kcal)} kcal per portion
             {' · '}{recipe.sugarGrams ? `${+(recipe.sugarGrams / recipe.pieces).toFixed(1)} g added sugar per portion` : 'No added sugar'}
           </p>
+          <p className="mp-muted" style={{ margin: '0 0 12px' }}>{recipe.reason}</p>
           <BakingRecipe recipe={recipe} allIng={allIng} />
           <p className="mp-muted" style={{ marginBottom: 0 }}>
             {recipe.missing.length ? `Check or buy: ${recipe.missing.map(({ k, dim, shortfall }) => dim && shortfall > 0 ? `${fmtAmount(shortfall, dim)} ${allIng[k].name}` : allIng[k].name).join(', ')}.` : 'Everything is recorded in your pantry.'}

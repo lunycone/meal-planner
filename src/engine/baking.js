@@ -11,8 +11,18 @@ export const BAKING_SUGARS = [
   { value: 'none', label: 'No added sugar' }, { value: 'organic-white-sugar', label: 'Organic white' },
   { value: 'coconut-sugar', label: 'Coconut' },
 ]
+export const DEFAULT_BAKING_SETTINGS = { type: 'any', sugar: 'none', sweetness: 'light', batches: 1 }
+export function bakingSettings(value = {}) {
+  const settings = value ?? {}
+  return {
+    type: BAKING_TYPES.some(x => x.value === settings.type) ? settings.type : 'any',
+    sugar: BAKING_SUGARS.some(x => x.value === settings.sugar) ? settings.sugar : 'none',
+    sweetness: settings.sweetness === 'classic' ? 'classic' : 'light',
+    batches: settings.batches === 2 ? 2 : 1,
+  }
+}
 const TEMP = '175°C / 350°F'
-const SWEETENERS = /\b(?:stevia|erythritol|eritritol|xylitol|xilitol|sucralose|sucralosa|allulose|alulosa|aspartame|aspartamo|monk fruit|saccharin|sacarina|acesulfame|maltitol|sorbitol|sweetener|edulcorante)\b/i
+const SWEETENERS = /\b(?:stevia|erythritol|eritritol|xylitol|xilitol|sucralose|sucralosa|allulose|alulosa|aspartame|aspartamo|monk[ -]fruit|saccharin|sacarina|acesulfame|maltitol|sorbitol|sweetener|edulcorante)\b/i
 const g = (k, grams) => ({ k, p: { grams } })
 const egg = { k: 'eggs', p: { units: 1 } }
 const spice = k => ({ k, p: {} })
@@ -106,8 +116,8 @@ export function bakingPortion(recipe) {
   return scaleItems(recipe.items, 1 / recipe.pieces)
 }
 
-export function bakingIdeas({ allIng, stock = {}, type = 'any', sugar = 'organic-white-sugar', sweetness = 'light', batches = 1 }) {
-  if (!BAKING_SUGARS.some(option => option.value === sugar) || ![1, 2].includes(batches)) return []
+export function bakingIdeas({ allIng, stock = {}, type = 'any', sugar = 'none', sweetness = 'light', batches = 1 }) {
+  if (!BAKING_SUGARS.some(option => option.value === sugar) || ![1, 2].includes(batches) || !['light', 'classic'].includes(sweetness)) return []
   const ideas = []
   for (const formula of FORMULAS) {
     if (type !== 'any' && formula.type !== type) continue
@@ -119,32 +129,53 @@ export function bakingIdeas({ allIng, stock = {}, type = 'any', sugar = 'organic
       if (sugarGrams) items.push(g(sugar, sugarGrams))
       if (items.some(({ k }) => !allIng[k] || allIng[k].pend || SWEETENERS.test(allIng[k].name))) continue
       const pieces = formula.pieces * batches
+      let pantryGap = 0
       const missing = items.flatMap(({ k, p }) => {
         const ing = allIng[k]
         const pack = packOf(ing)
         const dim = pack?.dim ?? (p.grams != null ? 'g' : p.units != null ? 'unit' : null)
+        const seasoning = Object.keys(p).length === 0
+        // Pinches/dashes have no measured weight: ask to check, never invent grams.
+        if (seasoning) {
+          if (stock[k] > 0) return []
+          pantryGap += 0.15
+          return [{ k, dim: null, shortfall: null }]
+        }
         const quantity = dim ? needAmount({ qtyByUnit: p }, ing, { dim }) : batches
-        const shortfall = quantity - (stock[k] ?? 0)
-        return stock[k] == null || shortfall > 0 ? [{ k, dim, shortfall }] : []
+        const have = Number.isFinite(stock[k]) ? Math.max(0, stock[k]) : 0
+        const shortfall = Math.max(0, quantity - have)
+        pantryGap += quantity > 0 ? shortfall / quantity : 1
+        return shortfall > 0 || !quantity ? [{ k, dim, shortfall }] : []
       })
       const unpriced = items.filter(({ k, p }) => ingCost(k, p, allIng) === 0 && allIng[k].flat !== 0).map(({ k }) => k)
       const name = `${profile.name[0].toUpperCase()}${profile.name.slice(1)} ${formula.name}`
       const pan = formula.vessel ? `Use ${formula.vessel}. ` : ''
       const steps = [
         `Preheat to ${TEMP}. ${pan}`.trim(),
+        ...(batches === 2 ? ['Use two pans of the stated size or bake cookies in separate tray batches. Do not double the batter depth or baking time; check each batch for doneness.'] : []),
+        ...(items.some(({ k }) => k === 'banana') ? ['Use ripe banana; weigh it after peeling.'] : []),
+        ...(profile.items.some(({ k }) => ['walnuts', 'almonds'].includes(k)) ? ['Chop the nuts finely before mixing.'] : []),
         formula.prep,
         formula.shape ?? 'Divide the batter evenly among the prepared pans or cups.',
         `Bake for ${formula.bake.join('–')} minutes. ${formula.done}`,
         ...(sugarGrams && sugar === 'coconut-sugar' ? ['Coconut sugar darkens the dough. Use the texture cue to judge doneness.'] : []),
       ]
       const { kcal, cost } = comboAgg({ items: scaleItems(items, 1 / batches) }, allIng)
+      const active = formula.active * batches
+      const bowls = ['banana-cookie', 'shortbread', 'oat-cookie', 'cocoa-brownie', 'oat-bar'].includes(formula.id) ? 1 : 2
+      const effort = active + (bowls - 1) * 3 + (formula.wait ? 3 : 0) + (formula.id === 'shortbread' ? 3 : 0)
+      const pantryReason = missing.length === 0 ? 'Ingredients recorded in your pantry' : pantryGap < 1 ? 'Almost covered by your pantry' : `${missing.length} ingredient${missing.length === 1 ? '' : 's'} to check or buy`
       ideas.push({
         id: [formula.id, profile.name, sugarGrams ? sugar : 'none', sugarGrams, batches].join('|'),
         formula: formula.id,
         name, items, steps, pieces, batches, sugarGrams, kcal: kcal / formula.pieces, cost: cost * batches, missing, unpriced,
-        texture: formula.texture, minutes: formula.active + formula.bake[1] + (formula.wait ?? 0),
+        texture: formula.texture, active, bowls, pantryGap, effort,
+        reason: `${pantryReason} · ~${active} min hands-on · ${bowls} mixing bowl${bowls === 1 ? '' : 's'}.`,
+        minutes: active + formula.bake[1] * batches + (formula.wait ?? 0),
       })
     }
   }
-  return ideas.sort((a, b) => a.missing.length - b.missing.length || a.minutes - b.minutes || a.cost - b.cost)
+  // Pantry shortfall is proportional per ingredient; seasonings carry less weight.
+  // Unknown prices must not masquerade as cheaper complete recipes.
+  return ideas.sort((a, b) => a.pantryGap - b.pantryGap || a.effort - b.effort || a.minutes - b.minutes || a.unpriced.length - b.unpriced.length || a.cost - b.cost)
 }
