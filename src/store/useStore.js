@@ -1,3 +1,4 @@
+import { DEFAULT_BAKING_SETTINGS, bakingSettings } from '../engine/baking'
 import { DEFAULT_BATCH, normalizeBatch, applyBatchSettings } from '../lib/batchConfig'
 import { withEstimatedNutrition } from '../data/nutritionRef'
 import { create } from 'zustand'
@@ -266,6 +267,8 @@ const useStore = create(
       rateSnack(person, key, value) {
         set(s => ({ snackFeedback: { ...s.snackFeedback, [person]: { ...s.snackFeedback?.[person], [key]: value } } }))
       },
+      bakingSettings: DEFAULT_BAKING_SETTINGS,
+      setBakingSetting(key, value) { set(s => ({ bakingSettings: bakingSettings({ ...s.bakingSettings, [key]: value }) })) },
       smartSettings: { dinners: 2, strictRules: false },
       setSmartSetting(key, value) { set(s => ({ smartSettings: { ...s.smartSettings, [key]: value } })) },
       batchSettings: DEFAULT_BATCH,
@@ -760,6 +763,7 @@ const useStore = create(
         pairPrefs:           s.pairPrefs,
         batchSettings:       s.batchSettings,
         smartSettings:       s.smartSettings,
+        bakingSettings:      s.bakingSettings,
         snackFeedback:       s.snackFeedback,
         storeColors:         s.storeColors,
         catColors:           s.catColors,
