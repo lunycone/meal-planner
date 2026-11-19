@@ -6,7 +6,9 @@ import Icon, { MEAL_ICON } from '../ui/Icon'
 import Segmented from '../ui/Segmented'
 import { MEAL_LABEL, MEAL_STYLE, PCOS_STYLE, DAY_LONG, DAY_KEYS, fmtMoney, activeProfilesOn } from '../../lib/mealplan'
 import { batchSessions, freeDayKeys, rangeLabel, sessionOfDay } from '../../lib/batchConfig'
-import { defaultScope, buildSelection } from '../../lib/planActions'
+import { defaultScope, buildSelection, scopeDays } from '../../lib/planActions'
+import BreakfastIdeas from './BreakfastIdeas'
+import { stockAvailable } from '../../lib/needs'
 import { hasWholeLegumes } from '../../lib/tags'
 
 // Selector de plato: lista a la izquierda, ficha a la derecha, y abajo a qué
@@ -16,6 +18,11 @@ export default function DishPicker({ weekKey, weekData, dayKey, date, mealType, 
   const allCombos = useStore(selectAllCombos)
   const profiles  = useStore(s => s.profiles)
   const setMealSlots = useStore(s => s.setMealSlots)
+  const applyBreakfastIdea = useStore(s => s.applyBreakfastIdea)
+  const stock = useStore(s => s.stock)
+  const [ideasOpen, setIdeasOpen] = useState(false)
+  const [generated, setGenerated] = useState(null)
+  const [previewPerson, setPreviewPerson] = useState(null)
   const people = activeProfilesOn(profiles, date ?? new Date())
   const pcosPerson = people.find(p => p.pcos)
   const tracksPcos = !!pcosPerson && (mealType === 'desayuno' || mealType === 'cena')
@@ -40,7 +47,15 @@ export default function DishPicker({ weekKey, weekData, dayKey, date, mealType, 
     return list.sort(by)
   }, [allCombos, allIng, mealType, q, sort, onlyGreen])
 
-  const sel = selKey ? allCombos[selKey] : null
+  const generationArgs = {
+    allIng, allCombos, persons: people.filter(p => who === 'all' || p.id === who),
+    days: scopeDays(scope, dayKey), week: weekData, onlyGreen,
+    stock: stockAvailable(stock, allIng, date ?? new Date()), seed: 19,
+  }
+  const contextKey = JSON.stringify(generationArgs)
+  const idea = ideasOpen && generated?.contextKey === contextKey ? generated.idea : null
+  const previewId = idea?.recipes[previewPerson] ? previewPerson : generationArgs.persons[0]?.id
+  const sel = idea ? idea.recipes[previewId] : ideasOpen ? null : selKey ? allCombos[selKey] : null
   const canApply = !!sel && (mealType !== 'cena' || !hasWholeLegumes(sel, allIng))
   const selAgg = sel ? comboAgg(sel, allIng, {}, {}, optionals) : null
   const st = MEAL_STYLE[mealType]
@@ -58,6 +73,12 @@ export default function DishPicker({ weekKey, weekData, dayKey, date, mealType, 
 
   function confirm() {
     if (!canApply) return
+    if (idea) {
+      applyBreakfastIdea(weekKey, scopeDays(scope, dayKey), idea.recipes, people.map(p => p.id))
+      onDone?.()
+      onClose()
+      return
+    }
     const slots = buildSelection({ weekData, dayKey, mealType, recipeKey: selKey, optionals, scope, who, profiles: people })
     setMealSlots(weekKey, slots)
     onDone?.()
@@ -80,7 +101,10 @@ export default function DishPicker({ weekKey, weekData, dayKey, date, mealType, 
 
         <div className="dp-grid" style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 340px', gap: 16, padding: '0 24px 16px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minHeight: 0 }}>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            {mealType === 'desayuno' && <button type="button" className="mp-btn mp-btn-glass" aria-pressed={ideasOpen} onClick={() => { setIdeasOpen(v => !v); setGenerated(null); setOptionals([]) }}>
+              <Icon name={ideasOpen ? 'left' : 'sparkle'} size={14} />{ideasOpen ? 'Back to my dishes' : 'Generate breakfast ideas'}
+            </button>}
+            {!ideasOpen && <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
               <label className="mp-search" style={{ flex: 1, minWidth: 180 }}>
                 <Icon name="search" size={14} stroke={2.4} />
                 <span className="sr-only">Search dishes</span>
@@ -88,14 +112,14 @@ export default function DishPicker({ weekKey, weekData, dayKey, date, mealType, 
               </label>
               <Segmented label="Sort" value={sort} onChange={setSort}
                 options={[{ value: 'name', label: 'A–Z' }, { value: 'price', label: 'Price' }, { value: 'kcal', label: 'Kcal' }, { value: 'prot', label: 'Protein' }]} />
-            </div>
+            </div>}
             {tracksPcos && (
               <button type="button" className="mp-chip" onClick={() => setOnlyGreen(v => !v)} aria-pressed={onlyGreen}
                 style={{ alignSelf: 'flex-start', border: 0, cursor: 'pointer', background: onlyGreen ? 'rgba(47,158,91,0.16)' : 'rgba(255,255,255,0.78)', color: onlyGreen ? '#1F7A45' : 'var(--c-ink-2)' }}>
                 <span className="mp-dot" style={{ background: PCOS_STYLE.green.color }} />PCOS low only ({pcosPerson.name})
               </button>
             )}
-            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4, paddingRight: 4 }}>
+            {ideasOpen ? <BreakfastIdeas args={generationArgs} selected={idea?.id} onPick={picked => { setGenerated({ idea: picked, contextKey }); setOptionals([]) }} /> : <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4, paddingRight: 4 }}>
               {dishes.length === 0 && <div className="mp-empty">No dishes match that filter.</div>}
               {dishes.map(d => {
                 const on = d.key === selKey
@@ -111,13 +135,14 @@ export default function DishPicker({ weekKey, weekData, dayKey, date, mealType, 
                   </button>
                 )
               })}
-            </div>
+            </div>}
           </div>
 
           <div className="mp-glass" style={{ borderRadius: 24, padding: 18, display: 'flex', flexDirection: 'column', gap: 12, minHeight: 0, overflowY: 'auto' }}>
-            {!sel && <div className="mp-empty" style={{ padding: '60px 10px' }}>Pick a dish from the list to see its details.</div>}
+            {!sel && <div className="mp-empty" style={{ padding: '60px 10px' }}>{ideasOpen ? 'Pick an idea to see ingredients, preparation and notes.' : 'Pick a dish from the list to see its details.'}</div>}
             {sel && (
               <>
+                {idea && generationArgs.persons.length > 1 && <Segmented label="Preview portion" value={previewId} onChange={setPreviewPerson} options={generationArgs.persons.map(p => ({ value: p.id, label: p.name }))} />}
                 <span style={{ fontSize: 17, fontWeight: 650, letterSpacing: '-0.02em', lineHeight: 1.25 }}>{sel.name}</span>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
                   {[['kcal', Math.round(selAgg.kcal)], ['protein', Math.round(selAgg.prot) + ' g'], ['cost', fmtMoney(selAgg.cost)]].map(([l, v]) => (
@@ -127,7 +152,7 @@ export default function DishPicker({ weekKey, weekData, dayKey, date, mealType, 
                     </div>
                   ))}
                 </div>
-                <span className="mp-muted" style={{ fontSize: 11.5 }}>Base recipe. Lunch and dinner are then adjusted to each person.</span>
+                <span className="mp-muted" style={{ fontSize: 11.5 }}>{idea ? 'One breakfast portion for the selected person. Repeated on each selected day.' : 'Base recipe. Lunch and dinner are then adjusted to each person.'}</span>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   {(sel.items ?? []).map((it, i) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, padding: '7px 0', borderTop: i ? '1px solid var(--c-line)' : 0, fontSize: 13 }}>
@@ -136,6 +161,8 @@ export default function DishPicker({ weekKey, weekData, dayKey, date, mealType, 
                     </div>
                   ))}
                 </div>
+                {sel.recipeSteps?.length > 0 && <div><strong style={{ fontSize: 13 }}>Preparation</strong><ol style={{ paddingLeft: 18, fontSize: 13, lineHeight: 1.5 }}>{sel.recipeSteps.map((step, i) => <li key={i}>{step}</li>)}</ol></div>}
+                {idea?.notes.length > 0 && <div className="sw-warnings"><strong>Check before applying</strong><ul style={{ paddingLeft: 18 }}>{idea.notes.map(note => <li key={note}>{note}</li>)}</ul></div>}
                 {(sel.optionalItems ?? []).length > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     <span className="mp-eyebrow">Optional extras</span>

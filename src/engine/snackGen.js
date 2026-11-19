@@ -277,7 +277,7 @@ function companionFor(arch, gap, ctx) {
 export function solveCandidate(c, ctx) {
   const { allIng, persons, tested, mealSlot, rules } = ctx
   const arch = ARCHETYPES[c.archId]
-  const [J, M] = persons
+  const [J, M = J] = persons
   const tJ = ctx.targets[J.id], tM = ctx.targets[M.id]
   const pgJ = ctx.protGoals[J.id], pgM = ctx.protGoals[M.id]
 
@@ -430,6 +430,7 @@ export function buildPool(opts) {
   const cands = buildCandidates({ allIng, mealSlot, rnd: rngFrom(candidateSeed) })
   const sols = []
   for (const c of cands) {
+    if (opts.portionOnly && c.kind !== 'portion') continue
     const sol = solveCandidate(c, ctx)
     if (sol) sols.push(sol)
   }

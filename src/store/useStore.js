@@ -530,6 +530,29 @@ const useStore = create(
         })
       },
 
+      // Commit generated servings and selected breakfast slots in one persisted write.
+      applyBreakfastIdea(weekKey, days, recipes, activeIds) {
+        set(s => {
+          const customCombos = [...s.customCombos], recipeKeys = {}
+          for (const [pid, recipe] of Object.entries(recipes)) {
+            const reusable = customCombos.find(c => c.ownerId === pid && c.name === recipe.name &&
+              !s.deletedCombos.includes('custom-' + c.id) && !s.comboOverrides['custom-' + c.id] &&
+              JSON.stringify(c.items) === JSON.stringify(recipe.items) && JSON.stringify(c.recipeSteps) === JSON.stringify(recipe.recipeSteps))
+            const id = reusable?.id ?? 'breakfast-' + crypto.randomUUID()
+            if (!reusable) customCombos.push({ ...recipe, id })
+            recipeKeys[pid] = 'custom-' + id
+          }
+          const week = { ...(s.weekPlan[weekKey] ?? {}) }
+          for (const dk of days) {
+            const key = dk + '-desayuno', existing = week[key]
+            const byPerson = existing?.byPerson ? { ...existing.byPerson } : Object.fromEntries(activeIds.map(pid => [pid, existing ?? null]))
+            for (const [pid, recipeKey] of Object.entries(recipeKeys)) byPerson[pid] = { type: 'desayuno', recipeKey }
+            week[key] = { byPerson }
+          }
+          return { customCombos, weekPlan: { ...s.weekPlan, [weekKey]: week } }
+        })
+      },
+
       clearMealSlot(weekKey, slotKey) {
         set(s => {
           const week = { ...(s.weekPlan[weekKey] ?? {}) }
@@ -836,7 +859,7 @@ export const selectAllCombos = catalogSelector(['deletedCombos', 'comboOverrides
   for (const c of s.customCombos) {
     const key = 'custom-' + c.id
     const meals = isBatchLunchDish(key) ? ['comida'] : c.meals ?? []
-    if (!deleted.has(key)) result[key] = { name: c.name, items: c.items, meals, isCustom: true, customId: c.id, ...(c.ownerId && { ownerId: c.ownerId }), ...(c.snack ? { snack: true } : {}), ...(c.snackGenerated ? { snackGenerated: true } : {}), ...(c.scalable ? { scalable: c.scalable } : {}), ...(c.scalableMax != null ? { scalableMax: c.scalableMax } : {}), ...(c.noAove ? { noAove: true } : {}), ...(c.optionalItems ? { optionalItems: c.optionalItems } : {}), ...(c.bakingRecipe ? { bakingRecipe: c.bakingRecipe } : {}) }
+    if (!deleted.has(key)) result[key] = { name: c.name, items: c.items, meals, isCustom: true, customId: c.id, ...(c.ownerId && { ownerId: c.ownerId }), ...(c.snack ? { snack: true } : {}), ...(c.snackGenerated ? { snackGenerated: true } : {}), ...(c.scalable ? { scalable: c.scalable } : {}), ...(c.scalableMax != null ? { scalableMax: c.scalableMax } : {}), ...(c.noAove ? { noAove: true } : {}), ...(c.optionalItems ? { optionalItems: c.optionalItems } : {}), ...(c.bakingRecipe ? { bakingRecipe: c.bakingRecipe } : {}), ...(c.recipeSteps ? { recipeSteps: c.recipeSteps } : {}) }
   }
   return result
 })
