@@ -277,6 +277,7 @@ export default function PlatoSheet({ comboKey = null, onClose }) {
 
           {/* ── Resumen vivo ── */}
           <aside className="pl-summary">
+            {combo?.recipeSteps?.length > 0 && <div className="sw-recipe"><strong>Preparation</strong><ol>{combo.recipeSteps.map((step, i) => <li key={i}>{step}</li>)}</ol></div>}
             {combo?.bakingRecipe && <BakingRecipe recipe={combo.bakingRecipe} allIng={allIng} />}
             <div className="pl-card">
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
